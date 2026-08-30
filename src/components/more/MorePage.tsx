@@ -19,9 +19,10 @@ import { useFinancial } from '../../context/FinancialContext';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
+  onOpenPwaModal?: () => void;
 }
 
-export const MorePage: React.FC<MorePageProps> = ({ setActiveTab }) => {
+export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, onOpenPwaModal }) => {
   const { exportBackupJSON, user } = useFinancial();
   const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'GERENCIAR' | 'SOBRE'>('GERAL');
 
@@ -58,6 +59,24 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab }) => {
         {/* ABA GERAL */}
         {segmentedTab === 'GERAL' && (
           <>
+            {onOpenPwaModal && (
+              <button
+                onClick={onOpenPwaModal}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                    <Download className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white block">Instalar Aplicativo (PWA)</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Instalar no Celular (Android/iOS) ou no PC/Mac</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+            )}
+
             <button
               onClick={() => setActiveTab('metas')}
               className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer"

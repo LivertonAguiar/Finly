@@ -167,7 +167,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'relatorios' && <ReportsPage />}
           {activeTab === 'calendario' && <CalendarPage />}
           {activeTab === 'settings' && <SettingsPage />}
-          {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} />}
+          {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} onOpenPwaModal={() => setIsPwaModalOpen(true)} />}
           {activeTab === 'metas' && <GoalsPage />}
           {activeTab === 'dividas' && <DebtsPage />}
           {activeTab === 'investimentos' && <InvestmentsTab />}
