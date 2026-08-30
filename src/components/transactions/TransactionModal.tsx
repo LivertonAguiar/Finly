@@ -54,6 +54,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [recurring, setRecurring] = useState(false);
   const [recurrenceFreq, setRecurrenceFreq] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [isInstallment, setIsInstallment] = useState(false);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [ignoreTransaction, setIgnoreTransaction] = useState(false);
+  const [saveAndNew, setSaveAndNew] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState('2');
   const [notes, setNotes] = useState('');
   const [tagInput, setTagInput] = useState('');
@@ -214,7 +217,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       }
     }
 
-    onClose();
+    if (saveAndNew) {
+      setDescription('');
+      setAmount('');
+      setDate(getTodayString());
+      setNotes('');
+      setTags([]);
+    } else {
+      onClose();
+    }
   };
 
   return (
@@ -320,8 +331,31 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           </div>
 
+
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Data *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Data *</label>
+              <div className="flex items-center gap-1 text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setDate(getTodayString())}
+                  className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-slate-600 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer"
+                >
+                  Hoje
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 1);
+                    setDate(d.toISOString().substring(0, 10));
+                  }}
+                  className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-slate-600 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer"
+                >
+                  Ontem
+                </button>
+              </div>
+            </div>
             <div className="relative">
               <input
                 type="date"
@@ -332,6 +366,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               />
             </div>
           </div>
+
         </div>
 
         {/* Description Field */}

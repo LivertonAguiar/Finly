@@ -97,6 +97,26 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
   }, [cards, transactions, currentMonthPrefix, selectedMonthOffset]);
 
   // Consolidated KPIs
+  
+  // Calculate best card to buy today (card with the farthest closing date)
+  const bestCardToBuyToday = useMemo(() => {
+    if (cards.length === 0) return null;
+    const now = new Date();
+    const todayDay = now.getDate();
+
+    // Sort by days remaining until next closing day
+    const scored = cards.map(c => {
+      let daysUntilClosing = c.closingDay - todayDay;
+      if (daysUntilClosing < 0) {
+        daysUntilClosing += 30;
+      }
+      return { card: c, daysUntilClosing };
+    });
+
+    scored.sort((a, b) => b.daysUntilClosing - a.daysUntilClosing);
+    return scored[0]?.card || cards[0];
+  }, [cards]);
+
   const totalInvoicesSum = useMemo(() => {
     return cardsData.reduce((sum, c) => sum + c.invoiceTotal, 0);
   }, [cardsData]);
