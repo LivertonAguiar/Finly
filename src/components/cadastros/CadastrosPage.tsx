@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { formatCurrency } from '../../utils/formatters';
 import { AccountModal } from './AccountModal';
 import { CardModal } from './CardModal';
@@ -26,6 +27,7 @@ import { Modal } from '../ui/Modal';
 import { Account, CreditCard, Category } from '../../types';
 
 export const CadastrosPage: React.FC = () => {
+  const { confirm } = useConfirm();
   const {
     accounts,
     cards,
@@ -344,8 +346,14 @@ export const CadastrosPage: React.FC = () => {
                 <Minimize2 className="w-3 h-3" /> Recolher tudo
               </button>
               <button
-                onClick={() => {
-                  if (window.confirm('Deseja restaurar as categorias padrão do PlannerFin?')) {
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: 'Restaurar Categorias',
+                    message: 'Deseja restaurar as categorias padrão do PlannerFin?',
+                    confirmText: 'Restaurar',
+                    type: 'warning'
+                  });
+                  if (ok) {
                     resetCategoriesToDefault();
                   }
                 }}
