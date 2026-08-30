@@ -45,12 +45,28 @@ export const CadastrosPage: React.FC = () => {
   } = useFinancial();
 
   const [activeTab, setActiveTab] = useState<'resumo' | 'contas' | 'cartoes' | 'categorias'>('resumo');
-  const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
   const [categorySearch, setCategorySearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    'cat-alimentacao': true,
-    'cat-moradia': true,
-    'cat-salario': true,
+    'cat-desp-alimentacao': true,
+    'cat-desp-moradia': true,
+    'cat-desp-transporte': true,
+    'cat-desp-saude': true,
+    'cat-desp-academia-esportes': true,
+    'cat-desp-filhos': true,
+    'cat-desp-compras-pessoal': true,
+    'cat-desp-educacao': true,
+    'cat-desp-lazer': true,
+    'cat-desp-pets': true,
+    'cat-desp-igreja-doacoes': true,
+    'cat-desp-financeiro': true,
+    'cat-desp-impostos': true,
+    'cat-rec-trabalho': true,
+    'cat-rec-investimentos': true,
+    'cat-rec-beneficios-outras': true,
+    'cat-mov-transferencias': true,
+    'cat-mov-investimentos': true,
+    'cat-mov-emprestimos': true,
   });
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -304,30 +320,38 @@ export const CadastrosPage: React.FC = () => {
         <div className="space-y-4">
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setCategoryTypeFilter('all')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl ${
-                  categoryTypeFilter === 'all' ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  categoryTypeFilter === 'all' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                 }`}
               >
-                Todos
-              </button>
-              <button
-                onClick={() => setCategoryTypeFilter('income')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl ${
-                  categoryTypeFilter === 'income' ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'
-                }`}
-              >
-                Receitas
+                Todos ({categories.length})
               </button>
               <button
                 onClick={() => setCategoryTypeFilter('expense')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl ${
-                  categoryTypeFilter === 'expense' ? 'bg-rose-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  categoryTypeFilter === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                 }`}
               >
-                Despesas
+                Despesas ({categories.filter(c => c.type === 'expense').length})
+              </button>
+              <button
+                onClick={() => setCategoryTypeFilter('income')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  categoryTypeFilter === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                }`}
+              >
+                Receitas ({categories.filter(c => c.type === 'income').length})
+              </button>
+              <button
+                onClick={() => setCategoryTypeFilter('transfer')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  categoryTypeFilter === 'transfer' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                }`}
+              >
+                Movimentações ({categories.filter(c => c.type === 'transfer').length})
               </button>
             </div>
 
@@ -397,14 +421,16 @@ export const CadastrosPage: React.FC = () => {
                           <span className="text-xs font-black text-slate-800 dark:text-slate-100">{cat.name}</span>
                           <span className="text-[10px] text-slate-400 font-bold">({cat.subcategories?.length || 0})</span>
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.2 rounded-md ${
-                              cat.type === 'income'
-                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600'
-                                : 'bg-rose-50 dark:bg-rose-950/50 text-rose-600'
-                            }`}
-                          >
-                            {cat.type === 'income' ? 'Receita (+)' : 'Despesa (-)'}
-                          </span>
+    className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+      cat.type === 'income'
+        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600'
+        : cat.type === 'transfer'
+        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600'
+        : 'bg-rose-50 dark:bg-rose-950/50 text-rose-600'
+    }`}
+  >
+    {cat.type === 'income' ? 'Receita (+)' : cat.type === 'transfer' ? 'Movimentação (⇄)' : 'Despesa (-)'}
+  </span>
                         </div>
                       </div>
                     </div>

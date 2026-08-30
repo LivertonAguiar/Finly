@@ -8,7 +8,7 @@ interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   editingCategory?: Category | null;
-  defaultType?: 'income' | 'expense';
+  defaultType?: 'income' | 'expense' | 'transfer';
 }
 
 export const CategoryModal: React.FC<CategoryModalProps> = ({
@@ -20,7 +20,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   const { addCategory, updateCategory } = useFinancial();
 
   const [name, setName] = useState('');
-  const [type, setType] = useState<'income' | 'expense'>(defaultType);
+  const [type, setType] = useState<'income' | 'expense' | 'transfer'>(defaultType);
   const [icon, setIcon] = useState('📁');
   const [color, setColor] = useState('#10b981');
 
@@ -33,7 +33,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
     } else {
       setName('');
       setType(defaultType);
-      setIcon(defaultType === 'income' ? '💰' : '🍽️');
+      setIcon(defaultType === 'income' ? '💰' : defaultType === 'transfer' ? '🔄' : '🍽️');
       setColor('#10b981');
     }
   }, [editingCategory, defaultType, isOpen]);
@@ -55,11 +55,11 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo da Categoria</label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setType('expense')}
-              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 type === 'expense'
                   ? 'bg-rose-500 text-white shadow-md'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -70,13 +70,24 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
             <button
               type="button"
               onClick={() => setType('income')}
-              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 type === 'income'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
               }`}
             >
               Receita
+            </button>
+            <button
+              type="button"
+              onClick={() => setType('transfer')}
+              className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                type === 'transfer'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              Movimentação
             </button>
           </div>
         </div>

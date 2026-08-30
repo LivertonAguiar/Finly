@@ -203,31 +203,22 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Helper to merge default categories with any existing user categories
   const mergeCategories = (savedCats: any[]): Category[] => {
-    if (!Array.isArray(savedCats) || savedCats.length === 0) return DEFAULT_CATEGORIES;
-    const map = new Map<string, Category>();
-    DEFAULT_CATEGORIES.forEach(c => {
-      map.set(c.id, { ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
-      map.set(c.name.toLowerCase().trim(), { ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
-    });
-    savedCats.forEach(c => {
-      if (c && c.id && c.name) {
-        const match = map.get(c.name.toLowerCase().trim());
-        if (match) {
-          map.set(match.id, { ...match, ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
-        } else {
-          map.set(c.id, { ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
+    // Standard default categories are authoritative
+    const standardIds = new Set(DEFAULT_CATEGORIES.map(c => c.id));
+    const userCustomCats: Category[] = [];
+
+    if (Array.isArray(savedCats)) {
+      savedCats.forEach(c => {
+        if (c && c.id && !standardIds.has(c.id) && c.id.startsWith('cat-custom-')) {
+          userCustomCats.push({
+            ...c,
+            subcategories: Array.isArray(c.subcategories) ? c.subcategories : []
+          });
         }
-      }
-    });
-    const res: Category[] = [];
-    const seen = new Set<string>();
-    map.forEach(c => {
-      if (!seen.has(c.id)) {
-        seen.add(c.id);
-        res.push(c);
-      }
-    });
-    return res;
+      });
+    }
+
+    return [...DEFAULT_CATEGORIES, ...userCustomCats];
   };
 
   // Helper to load user's initial state
