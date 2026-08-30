@@ -1,34 +1,34 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  subtitle?: string;
   children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   title,
-  subtitle,
   children,
-  maxWidth = 'lg',
+  maxWidth = 'md',
 }) => {
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handleEscape);
     }
+
     return () => {
       document.body.style.overflow = 'unset';
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
 
@@ -40,33 +40,36 @@ export const Modal: React.FC<ModalProps> = ({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
-    '3xl': 'max-w-3xl',
-  }[maxWidth];
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      {/* Modal / Bottom Sheet Card */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-in fade-in"
-        onClick={onClose}
-      />
-
-      <div
-        className={`relative w-full ${maxWidthClasses} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800 z-10 overflow-hidden my-8 animate-in zoom-in-95 duration-200`}
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#2C2C2E] border-t sm:border border-slate-200/80 dark:border-slate-700/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-250 text-slate-900 dark:text-white`}
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h2>
-            {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
-          </div>
+        {/* Mobile Drag Indicator Bar */}
+        <div className="w-10 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2.5 sm:hidden" />
+
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
+          <h3 className="text-base font-black tracking-tight">{title}</h3>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
+        {/* Modal Content with Smooth Momentum Scrolling */}
+        <div className="p-6 overflow-y-auto overscroll-contain flex-1">
+          {children}
+        </div>
       </div>
     </div>
   );
