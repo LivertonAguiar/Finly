@@ -25,6 +25,7 @@ interface TransactionModalProps {
   initialType?: TransactionType;
   initialAccountId?: string;
   initialCardId?: string;
+  initialPaymentMethod?: 'account' | 'card';
   editingTransaction?: Transaction | null;
 }
 
@@ -34,6 +35,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   initialType = 'expense',
   initialAccountId,
   initialCardId,
+  initialPaymentMethod,
   editingTransaction = null,
 }) => {
   const { categories, accounts, cards, addTransaction, updateTransaction, user } = useFinancial();
@@ -98,7 +100,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setAccountId(initialAccountId || accounts[0]?.id || '');
         setTargetAccountId(accounts[1]?.id || '');
         setCardId(initialCardId || cards[0]?.id || '');
-        setPaymentMethod(initialCardId ? 'card' : 'account');
+        setPaymentMethod(initialPaymentMethod || (initialCardId ? 'card' : 'account'));
         setStatus('completed');
         setRecurring(false);
         setIsInstallment(false);
@@ -107,7 +109,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setTags([]);
       }
     }
-  }, [isOpen, editingTransaction?.id, initialType, initialAccountId, initialCardId]);
+  }, [isOpen, editingTransaction?.id, initialType, initialAccountId, initialCardId, initialPaymentMethod]);
 
 
   const filteredCategories = categories.filter(c => {

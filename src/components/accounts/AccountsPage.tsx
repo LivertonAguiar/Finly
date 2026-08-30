@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   Plus,
+  TrendingDown,
+  CreditCard,
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
@@ -39,6 +41,7 @@ export const AccountsPage: React.FC = () => {
   const [txModalState, setTxModalState] = useState<{
     isOpen: boolean;
     type: 'income' | 'expense' | 'transfer' | 'investment';
+    paymentMethod?: 'account' | 'card';
     accountId?: string;
   }>({
     isOpen: false,
@@ -58,6 +61,9 @@ export const AccountsPage: React.FC = () => {
   const [isReajusteOpen, setIsReajusteOpen] = useState(false);
   const [reajusteAccount, setReajusteAccount] = useState<Account | null>(null);
   const [reajusteNovoSaldo, setReajusteNovoSaldo] = useState('');
+
+  // + Novo Menu State
+  const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
 
   // 3-dots Context Menu State
   const [openMenuAccountId, setOpenMenuAccountId] = useState<string | null>(null);
@@ -192,50 +198,98 @@ export const AccountsPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Right: Differentiated Quick Actions (+ Receita, - Despesa, ⇄ Transferência, + Nova Conta) */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* + Nova Receita / Saldo */}
-          <button
-            onClick={() => setTxModalState({ isOpen: true, type: 'income' })}
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-600 dark:text-emerald-400 text-xs font-black shadow-xs hover:bg-emerald-100 transition-all cursor-pointer"
-            title="Nova Receita / Entrada"
-          >
-            <ArrowDownLeft className="w-4 h-4" />
-            <span>+ Receita</span>
-          </button>
+        {/* Right: Single Unified + Novo Button with Menu Popover */}
+        <div className="flex items-center gap-2">
+          {/* Unified + Novo Button */}
+          <div className="relative">
+            <button
+              onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer"
+              title="Novo Lançamento"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Novo</span>
+            </button>
 
-          {/* - Nova Despesa */}
-          <button
-            onClick={() => setTxModalState({ isOpen: true, type: 'expense' })}
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs font-black shadow-xs hover:bg-rose-100 transition-all cursor-pointer"
-            title="Nova Despesa / Saída"
-          >
-            <ArrowUpRight className="w-4 h-4" />
-            <span>- Despesa</span>
-          </button>
+            {/* Mobills Replica Dark Popover Menu */}
+            {isNovoMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsNovoMenuOpen(false)}
+                />
+                <div
+                  onClick={e => e.stopPropagation()}
+                  className="absolute right-0 top-11 z-50 w-52 rounded-2xl bg-[#28282b] dark:bg-[#1E1E20] border border-slate-700/80 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-slate-100 overflow-hidden divide-y divide-slate-700/40"
+                >
+                  <div className="py-1">
+                    {/* 1. Despesa */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setTxModalState({ isOpen: true, type: 'expense', paymentMethod: 'account' });
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <TrendingDown className="w-4 h-4 text-[#ef5350]" />
+                      <span>Despesa</span>
+                    </button>
 
-          {/* ⇄ Transferir */}
-          <button
-            onClick={() => setIsTransferOpen(true)}
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 text-blue-600 dark:text-blue-400 text-xs font-black shadow-xs hover:bg-blue-100 transition-all cursor-pointer"
-            title="Transferir entre Contas"
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
-            <span>Transferir</span>
-          </button>
+                    {/* 2. Receita */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setTxModalState({ isOpen: true, type: 'income' });
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <TrendingUp className="w-4 h-4 text-[#66bb6a]" />
+                      <span>Receita</span>
+                    </button>
 
-          {/* + Nova Conta Button */}
-          <button
-            onClick={async () => {
-              setEditingAccount(null);
-              setIsAccountModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all cursor-pointer"
-            title="Cadastrar Nova Conta / Banco"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Nova Conta</span>
-          </button>
+                    {/* 3. Despesa cartão */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setTxModalState({ isOpen: true, type: 'expense', paymentMethod: 'card' });
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#26a69a]" />
+                      <span>Despesa cartão</span>
+                    </button>
+
+                    {/* 4. Transferência */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setIsTransferOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <ArrowLeftRight className="w-4 h-4 text-[#42a5f5]" />
+                      <span>Transferência</span>
+                    </button>
+                  </div>
+
+                  <div className="py-1">
+                    {/* 5. Nova Conta */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setEditingAccount(null);
+                        setIsAccountModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-purple-400 hover:text-purple-300"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Nova Conta</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Projeção de Saldo Button */}
           <button
@@ -495,6 +549,7 @@ export const AccountsPage: React.FC = () => {
           onClose={() => setTxModalState(prev => ({ ...prev, isOpen: false }))}
           initialType={txModalState.type}
           initialAccountId={txModalState.accountId}
+          initialPaymentMethod={txModalState.paymentMethod}
         />
       )}
 
