@@ -28,7 +28,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { useFinancial } from '../../context/FinancialContext';
-import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
@@ -173,22 +173,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       const limitUsedPercent = c.limit > 0 ? (invoiceTotal / c.limit) * 100 : 0;
 
       const isPaid = cardTxs.length > 0 && cardTxs.every(t => t.status === 'completed');
-      const isOverdue = !isPaid && invoiceTotal > 0 && todayDay > c.dueDay;
+      const viewMonthNum = viewDate.getMonth() + 1;
+      const viewYearNum = viewDate.getFullYear();
+
+      const statusInfo = calculateCardInvoiceStatus(c, viewYearNum, viewMonthNum, invoiceTotal, isPaid);
+      const statusLabel = statusInfo.statusLabel;
+      const statusColor = statusInfo.badgeColor;
+      const isOverdue = statusInfo.isOverdue;
       const isZero = invoiceTotal === 0;
-
-      let statusLabel = 'Fatura aberta';
-      let statusColor = 'text-slate-500 dark:text-slate-400';
-
-      if (isPaid) {
-        statusLabel = 'Fatura paga';
-        statusColor = 'text-emerald-600 dark:text-emerald-400';
-      } else if (isOverdue) {
-        statusLabel = 'Fatura vencida';
-        statusColor = 'text-rose-600 dark:text-rose-500 font-bold';
-      } else if (isZero) {
-        statusLabel = 'Fatura zerada';
-        statusColor = 'text-slate-400';
-      }
 
       return {
         ...c,

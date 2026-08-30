@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
 import { CardModal } from '../cadastros/CardModal';
 import { TransactionModal } from '../transactions/TransactionModal';
@@ -74,25 +74,13 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
       const available = Math.max(0, card.limit - totalSpent);
       const usedPercentage = card.limit > 0 ? Math.min(100, (invoiceTotal / card.limit) * 100) : 0;
 
-      const today = getTodayString();
-      const todayDay = parseInt(today.split('-')[2]);
       const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
-      const isOverdue = !isPaid && invoiceTotal > 0 && selectedMonthOffset <= 0 && todayDay > card.dueDay;
-      const isClosed = todayDay >= card.closingDay;
+      const viewMonthNum = viewDate.getMonth() + 1;
+      const viewYearNum = viewDate.getFullYear();
 
-      let statusLabel = 'Fatura aberta';
-      let statusColor = 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30';
-
-      if (isPaid) {
-        statusLabel = 'Fatura paga ✓';
-        statusColor = 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
-      } else if (isOverdue) {
-        statusLabel = 'Fatura vencida!';
-        statusColor = 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30';
-      } else if (isClosed) {
-        statusLabel = 'Fatura fechada';
-        statusColor = 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/30';
-      }
+      const statusInfo = calculateCardInvoiceStatus(card, viewYearNum, viewMonthNum, invoiceTotal, isPaid);
+      const statusLabel = statusInfo.statusLabel;
+      const statusColor = statusInfo.statusColor;
 
       return {
         ...card,
