@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import {
+  X,
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
@@ -562,7 +563,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
               >
                 #{t}
-                <button type="button" onClick={() => handleRemoveTag(t)} className="hover:text-rose-500">Ã—</button>
+                <button type="button" onClick={() => handleRemoveTag(t)} className="hover:text-rose-500 transition-colors p-0.5 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/50"><X className="w-3 h-3" /></button>
               </span>
             ))}
           </div>
