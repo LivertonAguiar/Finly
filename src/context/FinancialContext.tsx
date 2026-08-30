@@ -16,6 +16,30 @@ import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 
+
+const SEED_ACCOUNTS: Account[] = [
+  { id: 'acc-1', name: 'Nubank Principal', type: 'checking', balance: 4250.00, initialBalance: 4250.00, color: '#820ad1', institution: 'Nubank', includeInTotal: true },
+  { id: 'acc-2', name: 'Banco Inter Reserva', type: 'investment', balance: 8900.50, initialBalance: 8900.50, color: '#ff7a00', institution: 'Banco Inter', includeInTotal: true },
+  { id: 'acc-3', name: 'Itaú Corrente', type: 'checking', balance: 1540.20, initialBalance: 1540.20, color: '#ec7000', institution: 'Itaú', includeInTotal: true },
+  { id: 'acc-4', name: 'Carteira Física', type: 'cash', balance: 350.00, initialBalance: 350.00, color: '#10b981', institution: 'Carteira', includeInTotal: true },
+];
+
+const SEED_CARDS: CreditCard[] = [
+  { id: 'card-1', name: 'Nubank Ultravioleta', limit: 12000.00, closingDay: 28, dueDay: 5, color: '#820ad1', brand: 'Mastercard', defaultAccountId: 'acc-1' },
+  { id: 'card-2', name: 'Inter Black', limit: 8000.00, closingDay: 20, dueDay: 27, color: '#ff7a00', brand: 'Mastercard', defaultAccountId: 'acc-2' },
+  { id: 'card-3', name: 'PicPay Card', limit: 5000.00, closingDay: 15, dueDay: 22, color: '#11c76f', brand: 'Mastercard', defaultAccountId: 'acc-1' },
+  { id: 'card-4', name: 'Mercado Pago', limit: 3500.00, closingDay: 10, dueDay: 17, color: '#009ee3', brand: 'Visa', defaultAccountId: 'acc-1' },
+];
+
+const SEED_TRANSACTIONS: Transaction[] = [
+  { id: 'tx-1', description: 'Salário Mensal', amount: 8500.00, type: 'income', date: `${getCurrentMonth()}-05`, categoryId: 'cat-salario', accountId: 'acc-1', status: 'completed', recurring: true, tags: ['renda', 'mensal'], createdAt: new Date().toISOString() },
+  { id: 'tx-2', description: 'Supermercado Mensal', amount: 1240.50, type: 'expense', date: `${getCurrentMonth()}-08`, categoryId: 'cat-alimentacao', cardId: 'card-1', status: 'completed', recurring: false, tags: ['mercado', 'essencial'], createdAt: new Date().toISOString() },
+  { id: 'tx-3', description: 'Combustível Posto Shell', amount: 280.00, type: 'expense', date: `${getCurrentMonth()}-12`, categoryId: 'cat-transporte', cardId: 'card-1', status: 'completed', recurring: false, tags: ['carro'], createdAt: new Date().toISOString() },
+  { id: 'tx-4', description: 'Netflix & Spotify', amount: 79.80, type: 'expense', date: `${getCurrentMonth()}-15`, categoryId: 'cat-lazer', cardId: 'card-2', status: 'completed', recurring: true, tags: ['streaming'], createdAt: new Date().toISOString() },
+  { id: 'tx-5', description: 'Rendimento CDB 110% CDI', amount: 115.40, type: 'income', date: `${getCurrentMonth()}-18`, categoryId: 'cat-investimentos-rec', accountId: 'acc-2', status: 'completed', recurring: false, tags: ['rendimento'], createdAt: new Date().toISOString() },
+];
+
+
 interface UserStoreData {
   accounts: Account[];
   cards: CreditCard[];
@@ -206,18 +230,22 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error('Error loading user store:', e);
     }
 
-    // Default clean initial store for new/unseeded users
+    // Default initial seeded store for new sessions/mobile devices
     return {
-      accounts: [],
-      cards: [],
+      accounts: SEED_ACCOUNTS,
+      cards: SEED_CARDS,
       categories: DEFAULT_CATEGORIES,
       budgets: [],
-      goals: [],
+      goals: [
+        { id: 'goal-1', title: 'Reserva de Emergência', targetAmount: 30000.00, currentAmount: 18500.00, deadline: '2026-12-31', color: '#10b981', icon: '🛡️', category: 'Segurança', deposits: [], completed: false }
+      ],
       debts: [],
-      investments: [],
-      transactions: [],
+      investments: [
+        { id: 'inv-1', name: 'Tesouro Selic 2029', type: 'fixed', institution: 'Banco Inter', investedAmount: 5000.00, currentBalance: 5450.00, monthlyYield: 45.00, yieldPercentage: 0.9, updatedAt: '2026-08-30' }
+      ],
+      transactions: SEED_TRANSACTIONS,
       familyMembers: [
-        { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
+        { id: 'fam-1', name: currentUser?.name || 'Liverton', email: currentUser?.email || 'liverton.aguiar@hotmail.com', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
       ],
       notifications: [],
       userProfile: {
