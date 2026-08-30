@@ -1,6 +1,27 @@
 {
   "accounts": [],
-  "cards": [],
+  "cards": [
+    {
+      "name": "Nubank Crédito",
+      "brand": "Mastercard",
+      "limit": 5000,
+      "closingDay": 27,
+      "dueDay": 1,
+      "color": "#820ad1",
+      "defaultAccountId": "",
+      "id": "card-1788094641945-bzt"
+    },
+    {
+      "name": "Banco Inter Crédito",
+      "brand": "Mastercard",
+      "limit": 5000,
+      "closingDay": 28,
+      "dueDay": 2,
+      "color": "#ff7a00",
+      "defaultAccountId": "",
+      "id": "card-1788094677952-2ym"
+    }
+  ],
   "categories": [
     {
       "id": "cat-alimentacao",
@@ -394,7 +415,8 @@
   "userProfile": {
     "name": "Liverton",
     "email": "liverton.aguiar@hotmail.com",
-    "showValues": true
+    "showValues": true,
+    "theme": "dark"
   },
-  "_serverTimestamp": "2026-08-30T12:56:45.539Z"
+  "_serverTimestamp": "2026-08-30T13:02:03.046Z"
 }

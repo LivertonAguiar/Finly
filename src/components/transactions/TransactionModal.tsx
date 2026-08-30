@@ -55,43 +55,58 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
 
-  // Load editing transaction if provided
+
+  const prevIsOpenRef = React.useRef(false);
+  const prevEditingIdRef = React.useRef<string | null>(null);
+
+  // Initialize ONLY when opening modal or switching editing transaction
   useEffect(() => {
-    if (editingTransaction) {
-      setType(editingTransaction.type);
-      setDescription(editingTransaction.description);
-      setAmount(editingTransaction.amount.toString());
-      setDate(editingTransaction.date);
-      setCategoryId(editingTransaction.categoryId);
-      setSubcategoryId(editingTransaction.subcategoryId || '');
-      setAccountId(editingTransaction.accountId || '');
-      setTargetAccountId(editingTransaction.targetAccountId || '');
-      setCardId(editingTransaction.cardId || '');
-      setPaymentMethod(editingTransaction.cardId ? 'card' : 'account');
-      setStatus(editingTransaction.status);
-      setRecurring(editingTransaction.recurring);
-      setNotes(editingTransaction.notes || '');
-      setTags(editingTransaction.tags || []);
-    } else {
-      // Default reset
-      setType(initialType);
-      setDescription('');
-      setAmount('');
-      setDate(getTodayString());
-      setCategoryId(categories.filter(c => c.type === (initialType === 'income' ? 'income' : 'expense'))[0]?.id || '');
-      setSubcategoryId('');
-      setAccountId(accounts[0]?.id || '');
-      setTargetAccountId(accounts[1]?.id || '');
-      setCardId(cards[0]?.id || '');
-      setPaymentMethod('account');
-      setStatus('completed');
-      setRecurring(false);
-      setIsInstallment(false);
-      setTotalInstallments('2');
-      setNotes('');
-      setTags([]);
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    const isSwitchingTx = editingTransaction?.id !== prevEditingIdRef.current;
+
+    prevIsOpenRef.current = isOpen;
+    prevEditingIdRef.current = editingTransaction?.id || null;
+
+    if (!isOpen) return;
+
+    if (isOpening || isSwitchingTx) {
+      if (editingTransaction) {
+        setType(editingTransaction.type);
+        setDescription(editingTransaction.description || '');
+        setAmount(editingTransaction.amount ? editingTransaction.amount.toString() : '');
+        setDate(editingTransaction.date || getTodayString());
+        setCategoryId(editingTransaction.categoryId || '');
+        setSubcategoryId(editingTransaction.subcategoryId || '');
+        setAccountId(editingTransaction.accountId || '');
+        setTargetAccountId(editingTransaction.targetAccountId || '');
+        setCardId(editingTransaction.cardId || '');
+        setPaymentMethod(editingTransaction.cardId ? 'card' : 'account');
+        setStatus(editingTransaction.status || 'completed');
+        setRecurring(editingTransaction.recurring || false);
+        setNotes(editingTransaction.notes || '');
+        setTags(editingTransaction.tags || []);
+      } else {
+        setType(initialType);
+        setDescription('');
+        setAmount('');
+        setDate(getTodayString());
+        const defaultCat = categories.filter(c => c.type === (initialType === 'income' ? 'income' : 'expense'))[0]?.id || '';
+        setCategoryId(defaultCat);
+        setSubcategoryId('');
+        setAccountId(accounts[0]?.id || '');
+        setTargetAccountId(accounts[1]?.id || '');
+        setCardId(initialCardId || cards[0]?.id || '');
+        setPaymentMethod(initialCardId ? 'card' : 'account');
+        setStatus('completed');
+        setRecurring(false);
+        setIsInstallment(false);
+        setTotalInstallments('2');
+        setNotes('');
+        setTags([]);
+      }
     }
-  }, [editingTransaction, initialType, isOpen, categories, accounts, cards]);
+  }, [isOpen, editingTransaction?.id, initialType, initialCardId]);
+
 
   const filteredCategories = categories.filter(c => {
     if (type === 'income') return c.type === 'income';
@@ -213,7 +228,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               type="button"
               onClick={() => {
                 setType('expense');
-                setPaymentMethod('account');
+                if (paymentMethod !== 'card' && paymentMethod !== 'account') setPaymentMethod('account');
+                const expCats = categories.filter(c => c.type === 'expense');
+                if (!expCats.some(c => c.id === categoryId)) {
+                  setCategoryId(expCats[0]?.id || '');
+                  setSubcategoryId('');
+                }
               }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 type === 'expense'
@@ -229,6 +249,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               onClick={() => {
                 setType('income');
                 setPaymentMethod('account');
+                const incCats = categories.filter(c => c.type === 'income');
+                if (!incCats.some(c => c.id === categoryId)) {
+                  setCategoryId(incCats[0]?.id || '');
+                  setSubcategoryId('');
+                }
               }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 type === 'income'
@@ -275,7 +300,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Valor ({user.currency}) *
+              Valor ({user?.currency || "R$"}) *
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>

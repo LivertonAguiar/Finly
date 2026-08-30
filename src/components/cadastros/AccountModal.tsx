@@ -21,23 +21,38 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, edi
   const [color, setColor] = useState(ALL_BANKS[0].color);
   const [includeInTotal, setIncludeInTotal] = useState(true);
 
+
+  const prevIsOpenRef = React.useRef(false);
+  const prevEditingIdRef = React.useRef<string | null>(null);
+
   useEffect(() => {
-    if (editingAccount) {
-      setName(editingAccount.name);
-      setType(editingAccount.type);
-      setInstitution(editingAccount.institution);
-      setBalance(editingAccount.balance.toString());
-      setColor(editingAccount.color);
-      setIncludeInTotal(editingAccount.includeInTotal);
-    } else {
-      setName('');
-      setType('checking');
-      setInstitution(ALL_BANKS[0].name);
-      setBalance('0');
-      setColor(ALL_BANKS[0].color);
-      setIncludeInTotal(true);
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    const isSwitching = editingAccount?.id !== prevEditingIdRef.current;
+
+    prevIsOpenRef.current = isOpen;
+    prevEditingIdRef.current = editingAccount?.id || null;
+
+    if (!isOpen) return;
+
+    if (isOpening || isSwitching) {
+      if (editingAccount) {
+        setName(editingAccount.name);
+        setType(editingAccount.type);
+        setInstitution(editingAccount.institution);
+        setBalance(editingAccount.balance.toString());
+        setColor(editingAccount.color);
+        setIncludeInTotal(editingAccount.includeInTotal);
+      } else {
+        setName('');
+        setType('checking');
+        setInstitution(ALL_BANKS[0].name);
+        setBalance('0');
+        setColor(ALL_BANKS[0].color);
+        setIncludeInTotal(true);
+      }
     }
-  }, [editingAccount, isOpen]);
+  }, [isOpen, editingAccount?.id]);
+
 
   const handleSelectBank = (bank: typeof ALL_BANKS[0]) => {
     setInstitution(bank.name);

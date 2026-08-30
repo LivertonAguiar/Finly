@@ -22,25 +22,40 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
   const [color, setColor] = useState('#820ad1');
   const [defaultAccountId, setDefaultAccountId] = useState(accounts[0]?.id || '');
 
+
+  const prevIsOpenRef = React.useRef(false);
+  const prevEditingIdRef = React.useRef<string | null>(null);
+
   useEffect(() => {
-    if (editingCard) {
-      setName(editingCard.name);
-      setBrand(editingCard.brand);
-      setLimit(editingCard.limit.toString());
-      setClosingDay(editingCard.closingDay.toString());
-      setDueDay(editingCard.dueDay.toString());
-      setColor(editingCard.color);
-      setDefaultAccountId(editingCard.defaultAccountId || accounts[0]?.id || '');
-    } else {
-      setName('');
-      setBrand('Mastercard');
-      setLimit('5000');
-      setClosingDay('20');
-      setDueDay('27');
-      setColor('#820ad1');
-      setDefaultAccountId(accounts[0]?.id || '');
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    const isSwitching = editingCard?.id !== prevEditingIdRef.current;
+
+    prevIsOpenRef.current = isOpen;
+    prevEditingIdRef.current = editingCard?.id || null;
+
+    if (!isOpen) return;
+
+    if (isOpening || isSwitching) {
+      if (editingCard) {
+        setName(editingCard.name);
+        setBrand(editingCard.brand);
+        setLimit(editingCard.limit.toString());
+        setClosingDay(editingCard.closingDay.toString());
+        setDueDay(editingCard.dueDay.toString());
+        setColor(editingCard.color);
+        setDefaultAccountId(editingCard.defaultAccountId || accounts[0]?.id || '');
+      } else {
+        setName('');
+        setBrand('Mastercard');
+        setLimit('5000');
+        setClosingDay('20');
+        setDueDay('27');
+        setColor('#820ad1');
+        setDefaultAccountId(accounts[0]?.id || '');
+      }
     }
-  }, [editingCard, isOpen, accounts]);
+  }, [isOpen, editingCard?.id]);
+
 
   const handleSelectBrand = (b: typeof CARD_BRANDS[0]) => {
     setBrand(b.name);
