@@ -75,7 +75,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       if (editingTransaction) {
         setType(editingTransaction.type);
         setDescription(editingTransaction.description || '');
-        setAmount(editingTransaction.amount ? editingTransaction.amount.toString() : '');
+        setAmount(editingTransaction.amount ? Number(editingTransaction.amount).toFixed(2) : '');
         setDate(editingTransaction.date || getTodayString());
         setCategoryId(editingTransaction.categoryId || '');
         setSubcategoryId(editingTransaction.subcategoryId || '');
@@ -134,7 +134,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const numAmount = parseFloat(amount);
+    const numAmount = Math.round((parseFloat(amount) || 0) * 100) / 100;
     if (isNaN(numAmount) || numAmount <= 0) return;
 
     if (editingTransaction) {
@@ -157,7 +157,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     } else {
             if (isInstallment && parseInt(totalInstallments) > 1) {
         const total = parseInt(totalInstallments);
-        const installmentValue = numAmount / total;
+        const installmentValue = Math.round((numAmount / total) * 100) / 100;
         const parentId = `inst-${Date.now()}`;
 
         // Check Card Closing Day (Melhor dia de compra)

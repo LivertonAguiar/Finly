@@ -433,7 +433,7 @@
     {
       "id": "tx-pay-1788095517022",
       "description": "Pagamento Fatura Nubank Crédito (08/2026)",
-      "amount": 666.6666666666667,
+      "amount": 666.67,
       "type": "expense",
       "date": "2026-08-30",
       "categoryId": "cat-financas-desp",
@@ -465,7 +465,7 @@
     },
     {
       "description": "Geladeira (12/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-07-22",
       "categoryId": "cat-moradia",
@@ -485,7 +485,7 @@
     },
     {
       "description": "Geladeira (11/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-06-22",
       "categoryId": "cat-moradia",
@@ -505,7 +505,7 @@
     },
     {
       "description": "Geladeira (10/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-05-22",
       "categoryId": "cat-moradia",
@@ -525,7 +525,7 @@
     },
     {
       "description": "Geladeira (9/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-04-22",
       "categoryId": "cat-moradia",
@@ -545,7 +545,7 @@
     },
     {
       "description": "Geladeira (8/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-03-22",
       "categoryId": "cat-moradia",
@@ -565,7 +565,7 @@
     },
     {
       "description": "Geladeira (7/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-02-22",
       "categoryId": "cat-moradia",
@@ -585,7 +585,7 @@
     },
     {
       "description": "Geladeira (6/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2027-01-22",
       "categoryId": "cat-moradia",
@@ -605,7 +605,7 @@
     },
     {
       "description": "Geladeira (5/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2026-12-22",
       "categoryId": "cat-moradia",
@@ -625,7 +625,7 @@
     },
     {
       "description": "Geladeira (4/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2026-11-22",
       "categoryId": "cat-moradia",
@@ -645,7 +645,7 @@
     },
     {
       "description": "Geladeira (3/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2026-10-22",
       "categoryId": "cat-moradia",
@@ -665,7 +665,7 @@
     },
     {
       "description": "Geladeira (2/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2026-09-22",
       "categoryId": "cat-moradia",
@@ -685,7 +685,7 @@
     },
     {
       "description": "Geladeira (1/12)",
-      "amount": 416.6666666666667,
+      "amount": 416.67,
       "type": "expense",
       "date": "2026-08-22",
       "categoryId": "cat-moradia",
@@ -804,5 +804,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-30T13:22:21.582Z"
+  "_serverTimestamp": "2026-08-30T13:23:55.048Z"
 }

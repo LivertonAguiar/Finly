@@ -39,7 +39,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
       if (editingCard) {
         setName(editingCard.name);
         setBrand(editingCard.brand);
-        setLimit(editingCard.limit.toString());
+        setLimit(editingCard.limit !== undefined ? Number(editingCard.limit).toFixed(2) : '0');
         setClosingDay(editingCard.closingDay.toString());
         setDueDay(editingCard.dueDay.toString());
         setColor(editingCard.color);
@@ -223,7 +223,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
               step="0.01"
               required
               value={limit}
-              onChange={e => setLimit(e.target.value)}
+              onChange={e => setLimit(e.target.value !== undefined && e.target.value !== null ? Number(e.target.value).toFixed(2) : '')}
               className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100"
             />
           </div>
