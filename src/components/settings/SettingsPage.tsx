@@ -77,7 +77,7 @@ export const SettingsPage: React.FC = () => {
   const handleSelectPreset = (preset: ThemePreset) => {
     setSelectedThemePreset(preset);
     applyTheme({ preset, accentColor: selectedAccentColor, cardRadius: selectedCardRadius });
-    updateUser({ themePreset: preset, theme: preset === 'clean-light' || preset === 'warm-sand' ? 'light' : 'dark' });
+    updateUser({ themePreset: preset, theme: preset === 'clean-light' ? 'light' : 'dark' });
   };
 
   // Instant live preview on clicking accent color
@@ -104,7 +104,7 @@ export const SettingsPage: React.FC = () => {
     updateUser({
       language: selectedLang,
       currency: selectedCurrency,
-      theme: selectedThemePreset === 'clean-light' || selectedThemePreset === 'warm-sand' ? 'light' : 'dark',
+      theme: selectedThemePreset === 'clean-light' ? 'light' : 'dark',
       themePreset: selectedThemePreset,
       accentColor: selectedAccentColor,
       cardRadius: selectedCardRadius,

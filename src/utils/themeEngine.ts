@@ -1,11 +1,10 @@
-export type ThemePreset = 'mobills-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light' | 'warm-sand';
+export type ThemePreset = 'mobills-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light';
 export type CardRadius = 'rounded' | 'medium' | 'sharp';
 
 export interface ThemeConfig {
   preset: ThemePreset;
   accentColor: string;
   cardRadius: CardRadius;
-  mode: 'dark' | 'light' | 'system';
 }
 
 const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: string; mode: 'dark' | 'light' }> = {
@@ -33,18 +32,12 @@ const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: str
     text: '#0F172A',
     mode: 'light',
   },
-  'warm-sand': {
-    bg: '#FAF8F5',
-    cardBg: '#FFFFFF',
-    text: '#292524',
-    mode: 'light',
-  },
 };
 
-const RADIUS_VALUES: Record<CardRadius, string> = {
+const RADIUS_MAP: Record<CardRadius, string> = {
   rounded: '25px',
   medium: '16px',
-  sharp: '8px',
+  sharp: '6px',
 };
 
 export const applyTheme = (config: Partial<ThemeConfig>) => {
@@ -66,7 +59,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   if (config.accentColor) localStorage.setItem('plannerfin_accent_color', config.accentColor);
   if (config.cardRadius) localStorage.setItem('plannerfin_card_radius', config.cardRadius);
 
-  // Apply root attributes and CSS variables
+  // Set DOM attributes
   root.setAttribute('data-theme-preset', preset);
   root.setAttribute('data-card-radius', radius);
 
@@ -76,13 +69,33 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     root.classList.remove('dark');
   }
 
+  // Set CSS Variables directly on root and body
+  const radiusPx = RADIUS_MAP[radius] || '25px';
+
   root.style.setProperty('--app-bg', presetData.bg);
   root.style.setProperty('--app-card-bg', presetData.cardBg);
   root.style.setProperty('--primary-accent', accent);
-  root.style.setProperty('--card-radius', RADIUS_VALUES[radius] || '25px');
+  root.style.setProperty('--card-radius', radiusPx);
 
   document.body.style.backgroundColor = presetData.bg;
   document.body.style.color = presetData.text;
+
+  // Also inject / update a high-priority style tag for instant override
+  let dynamicStyleTag = document.getElementById('plannerfin-dynamic-theme-style');
+  if (!dynamicStyleTag) {
+    dynamicStyleTag = document.createElement('style');
+    dynamicStyleTag.id = 'plannerfin-dynamic-theme-style';
+    document.head.appendChild(dynamicStyleTag);
+  }
+
+  dynamicStyleTag.innerHTML = `
+    :root {
+      --app-bg: ${presetData.bg} !important;
+      --app-card-bg: ${presetData.cardBg} !important;
+      --primary-accent: ${accent} !important;
+      --card-radius: ${radiusPx} !important;
+    }
+  `;
 };
 
 export const initThemeEngine = () => {

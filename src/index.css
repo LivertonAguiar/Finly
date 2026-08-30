@@ -10,24 +10,92 @@
 }
 
 body {
-  background-color: var(--app-bg);
+  background-color: var(--app-bg) !important;
   color: #FFFFFF;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Custom rounded utility matching user card radius */
+/* ========================================================================= */
+/* DYNAMIC CARD RADIUS OVERRIDES (Affects ALL cards, panels, and modals)     */
+/* ========================================================================= */
+.rounded-\[25px\],
+.rounded-3xl,
 .rounded-theme-card {
-  border-radius: var(--card-radius, 25px);
+  border-radius: var(--card-radius, 25px) !important;
 }
 
-.bg-theme-card {
-  background-color: var(--app-card-bg, #2C2C2E);
+.rounded-2xl {
+  border-radius: calc(var(--card-radius, 25px) * 0.72) !important;
 }
 
-.bg-theme-app {
-  background-color: var(--app-bg, #1C1C1E);
+.rounded-xl {
+  border-radius: calc(var(--card-radius, 25px) * 0.52) !important;
+}
+
+/* ========================================================================= */
+/* DYNAMIC ACCENT COLOR OVERRIDES (Affects buttons, badges, active tabs)     */
+/* ========================================================================= */
+.bg-purple-600,
+.bg-purple-500,
+.hover\:bg-purple-700:hover,
+.hover\:bg-purple-600:hover {
+  background-color: var(--primary-accent, #7C4DFF) !important;
+}
+
+.text-purple-600,
+.text-purple-500,
+.text-purple-400,
+.dark\:text-purple-400,
+.dark\:text-purple-300 {
+  color: var(--primary-accent, #7C4DFF) !important;
+}
+
+.border-purple-600,
+.border-purple-500,
+.border-purple-400,
+.dark\:border-purple-500,
+.dark\:border-purple-600 {
+  border-color: var(--primary-accent, #7C4DFF) !important;
+}
+
+.ring-purple-600,
+.ring-purple-500 {
+  --tw-ring-color: var(--primary-accent, #7C4DFF) !important;
+}
+
+.shadow-purple-600\/25,
+.shadow-purple-600\/30 {
+  --tw-shadow-color: var(--primary-accent, #7C4DFF) !important;
+}
+
+/* Translucent tint backgrounds for badges and icons */
+.bg-purple-50,
+.dark\:bg-purple-950\/20,
+.dark\:bg-purple-950\/30,
+.dark\:bg-purple-950\/40,
+.dark\:bg-purple-900\/30,
+.dark\:bg-purple-600\/20,
+.dark\:bg-purple-500\/10 {
+  background-color: color-mix(in srgb, var(--primary-accent, #7C4DFF) 18%, transparent) !important;
+}
+
+/* ========================================================================= */
+/* DYNAMIC BACKGROUNDS & SURFACES OVERRIDES                                  */
+/* ========================================================================= */
+.bg-\[\#2C2C2E\],
+.dark\:bg-\[\#2C2C2E\],
+.dark\:bg-\[\#1e222d\],
+.dark\:bg-\[\#252b38\] {
+  background-color: var(--app-card-bg, #2C2C2E) !important;
+}
+
+.bg-slate-50,
+.dark\:bg-slate-950,
+.dark\:bg-\[\#1C1C1E\],
+.dark\:bg-slate-900 {
+  background-color: var(--app-bg, #1C1C1E) !important;
 }
 
 /* Custom Scrollbars */
