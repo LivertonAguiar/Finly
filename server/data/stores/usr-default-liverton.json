@@ -1,5 +1,16 @@
 {
-  "accounts": [],
+  "accounts": [
+    {
+      "id": "acc-carteira-padrao",
+      "name": "Carteira",
+      "type": "cash",
+      "balance": 0,
+      "initialBalance": 0,
+      "institution": "Carteira",
+      "color": "#10b981",
+      "includeInTotal": true
+    }
+  ],
   "cards": [
     {
       "name": "Nubank Crédito",
@@ -400,7 +411,343 @@
   "goals": [],
   "debts": [],
   "investments": [],
-  "transactions": [],
+  "transactions": [
+    {
+      "description": "Salário",
+      "amount": 10000,
+      "type": "income",
+      "date": "2026-08-20",
+      "categoryId": "cat-salario",
+      "subcategoryId": "sub-salario-mensal",
+      "accountId": "",
+      "status": "completed",
+      "recurring": false,
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095170268-ynrd",
+      "createdAt": "2026-08-30T13:06:10.268Z"
+    },
+    {
+      "description": "Geladeira (12/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-07-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 12,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-0wf2",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (11/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-06-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 11,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-3txy",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (10/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-05-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 10,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-b4nt",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (9/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-04-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 9,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-shbc",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (8/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-03-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 8,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-k50c",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (7/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-02-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 7,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-gp2l",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (6/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2027-01-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 6,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140919-vwsh",
+      "createdAt": "2026-08-30T13:05:40.919Z"
+    },
+    {
+      "description": "Geladeira (5/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2026-12-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 5,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140918-m92i",
+      "createdAt": "2026-08-30T13:05:40.918Z"
+    },
+    {
+      "description": "Geladeira (4/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2026-11-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 4,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140918-jcv1",
+      "createdAt": "2026-08-30T13:05:40.918Z"
+    },
+    {
+      "description": "Geladeira (3/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2026-10-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 3,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140918-bamb",
+      "createdAt": "2026-08-30T13:05:40.918Z"
+    },
+    {
+      "description": "Geladeira (2/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2026-09-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 2,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140918-brbh",
+      "createdAt": "2026-08-30T13:05:40.918Z"
+    },
+    {
+      "description": "Geladeira (1/12)",
+      "amount": 416.6666666666667,
+      "type": "expense",
+      "date": "2026-08-22",
+      "categoryId": "cat-moradia",
+      "subcategoryId": "sub-manutencao",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 1,
+        "total": 12,
+        "parentId": "inst-1788095140918"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095140918-65is",
+      "createdAt": "2026-08-30T13:05:40.918Z"
+    },
+    {
+      "description": "Faculdade (4/4)",
+      "amount": 250,
+      "type": "expense",
+      "date": "2026-11-20",
+      "categoryId": "cat-educacao",
+      "subcategoryId": "sub-mensalidade",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 4,
+        "total": 4,
+        "parentId": "inst-1788095071870"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095071870-iafp",
+      "createdAt": "2026-08-30T13:04:31.870Z"
+    },
+    {
+      "description": "Faculdade (3/4)",
+      "amount": 250,
+      "type": "expense",
+      "date": "2026-10-20",
+      "categoryId": "cat-educacao",
+      "subcategoryId": "sub-mensalidade",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 3,
+        "total": 4,
+        "parentId": "inst-1788095071870"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095071870-1iv9",
+      "createdAt": "2026-08-30T13:04:31.870Z"
+    },
+    {
+      "description": "Faculdade (2/4)",
+      "amount": 250,
+      "type": "expense",
+      "date": "2026-09-20",
+      "categoryId": "cat-educacao",
+      "subcategoryId": "sub-mensalidade",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 2,
+        "total": 4,
+        "parentId": "inst-1788095071870"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095071870-bfkd",
+      "createdAt": "2026-08-30T13:04:31.870Z"
+    },
+    {
+      "description": "Faculdade (1/4)",
+      "amount": 250,
+      "type": "expense",
+      "date": "2026-08-20",
+      "categoryId": "cat-educacao",
+      "subcategoryId": "sub-mensalidade",
+      "cardId": "card-1788094641945-bzt",
+      "status": "pending",
+      "recurring": false,
+      "installments": {
+        "current": 1,
+        "total": 4,
+        "parentId": "inst-1788095071870"
+      },
+      "notes": "",
+      "tags": [],
+      "id": "tx-1788095071870-bott",
+      "createdAt": "2026-08-30T13:04:31.870Z"
+    }
+  ],
   "familyMembers": [
     {
       "id": "fam-1",
@@ -418,5 +765,5 @@
     "showValues": true,
     "theme": "dark"
   },
-  "_serverTimestamp": "2026-08-30T13:02:03.046Z"
+  "_serverTimestamp": "2026-08-30T13:07:52.877Z"
 }

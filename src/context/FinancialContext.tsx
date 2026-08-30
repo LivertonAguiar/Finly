@@ -18,6 +18,18 @@ import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
 
 
+
+export const DEFAULT_WALLET_ACCOUNT: Account = {
+  id: 'acc-carteira-padrao',
+  name: 'Carteira',
+  type: 'cash',
+  balance: 0.00,
+  initialBalance: 0.00,
+  institution: 'Carteira',
+  color: '#10b981',
+  includeInTotal: true,
+};
+
 const SEED_ACCOUNTS: Account[] = [
   { id: 'acc-1', name: 'Nubank Principal', type: 'checking', balance: 4250.00, initialBalance: 4250.00, color: '#820ad1', institution: 'Nubank', includeInTotal: true },
   { id: 'acc-2', name: 'Banco Inter Reserva', type: 'investment', balance: 8900.50, initialBalance: 8900.50, color: '#ff7a00', institution: 'Banco Inter', includeInTotal: true },
@@ -207,7 +219,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (saved) {
         const parsed = JSON.parse(saved);
         return sanitizeStoredData({
-          accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
+          accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
           cards: Array.isArray(parsed.cards) ? parsed.cards : [],
           categories: Array.isArray(parsed.categories) && parsed.categories.length > 0 ? parsed.categories : DEFAULT_CATEGORIES,
           budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
@@ -233,9 +245,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error('Error loading user store:', e);
     }
 
-    // Default clean initial store for REAL users (0 mock data)
+    // Default clean initial store for REAL users with standard Carteira
     return {
-      accounts: [],
+      accounts: [DEFAULT_WALLET_ACCOUNT],
       cards: [],
       categories: DEFAULT_CATEGORIES,
       budgets: [],
@@ -288,7 +300,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Initial pull from server
     apiSync.fetchServerStore(currentUser.id).then(serverStore => {
       if (serverStore && serverStore.accounts) {
-        setAccounts(serverStore.accounts || []);
+        setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
         setCards(serverStore.cards || []);
         setCategories(serverStore.categories && serverStore.categories.length > 0 ? serverStore.categories : DEFAULT_CATEGORIES);
         setBudgets(serverStore.budgets || []);
@@ -715,7 +727,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Reset / Clear Data
   const resetAllUserData = () => {
-    setAccounts([]);
+    setAccounts([DEFAULT_WALLET_ACCOUNT]);
     setCards([]);
     setTransactions([]);
     setGoals([]);
@@ -786,7 +798,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCategories(DEFAULT_CATEGORIES);
 
     const cleanStore: UserStoreData = {
-      accounts: [],
+      accounts: [DEFAULT_WALLET_ACCOUNT],
       cards: [],
       categories: DEFAULT_CATEGORIES,
       budgets: [],
