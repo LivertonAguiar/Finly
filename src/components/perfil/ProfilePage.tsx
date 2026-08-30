@@ -18,9 +18,12 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
+import { useConfirm } from '../../context/ConfirmContext';
+import { Trash2, Sparkles, RefreshCw } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { user, updateUser, toggleTheme, exportBackupJSON, importBackupJSON } = useFinancial();
+  const { user, updateUser, toggleTheme, exportBackupJSON, importBackupJSON, resetToCleanState, loadDemoData } = useFinancial();
+  const { confirm } = useConfirm();
   const { currentUser, updateUserAccount, logout, changePassword } = useAuth();
 
   const [name, setName] = useState(currentUser?.name || user.name);

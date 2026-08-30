@@ -136,6 +136,8 @@ interface FinancialContextType {
   // Data Management & Backups
   clearAppCache: () => void;
   resetAllUserData: () => void;
+  resetToCleanState: () => void;
+  loadDemoData: () => void;
   exportBackupJSON: () => void;
   importBackupJSON: (jsonString: string) => boolean;
 
@@ -230,20 +232,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error('Error loading user store:', e);
     }
 
-    // Default initial seeded store for new sessions/mobile devices
+    // Default clean initial store for REAL users (0 mock data)
     return {
-      accounts: SEED_ACCOUNTS,
-      cards: SEED_CARDS,
+      accounts: [],
+      cards: [],
       categories: DEFAULT_CATEGORIES,
       budgets: [],
-      goals: [
-        { id: 'goal-1', title: 'Reserva de Emergência', targetAmount: 30000.00, currentAmount: 18500.00, deadline: '2026-12-31', color: '#10b981', icon: '🛡️', category: 'Segurança', deposits: [], completed: false }
-      ],
+      goals: [],
       debts: [],
-      investments: [
-        { id: 'inv-1', name: 'Tesouro Selic 2029', type: 'fixed', institution: 'Banco Inter', investedAmount: 5000.00, currentBalance: 5450.00, monthlyYield: 45.00, yieldPercentage: 0.9, updatedAt: '2026-08-30' }
-      ],
-      transactions: SEED_TRANSACTIONS,
+      investments: [],
+      transactions: [],
       familyMembers: [
         { id: 'fam-1', name: currentUser?.name || 'Liverton', email: currentUser?.email || 'liverton.aguiar@hotmail.com', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
       ],
@@ -701,6 +699,43 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     URL.revokeObjectURL(url);
   };
 
+  
+  const resetToCleanState = () => {
+    setAccounts([]);
+    setCards([]);
+    setTransactions([]);
+    setBudgets([]);
+    setGoals([]);
+    setDebts([]);
+    setInvestments([]);
+    setCategories(DEFAULT_CATEGORIES);
+
+    const cleanStore: UserStoreData = {
+      accounts: [],
+      cards: [],
+      categories: DEFAULT_CATEGORIES,
+      budgets: [],
+      goals: [],
+      debts: [],
+      investments: [],
+      transactions: [],
+      familyMembers: [
+        { id: 'fam-1', name: currentUser?.name || 'Liverton', email: currentUser?.email || 'liverton.aguiar@hotmail.com', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
+      ],
+      notifications: [],
+      userProfile: user,
+    };
+
+    localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
+  };
+
+  const loadDemoData = () => {
+    setAccounts(SEED_ACCOUNTS);
+    setCards(SEED_CARDS);
+    setTransactions(SEED_TRANSACTIONS);
+    setCategories(DEFAULT_CATEGORIES);
+  };
+
   const importBackupJSON = (jsonString: string): boolean => {
     try {
       const parsed = JSON.parse(jsonString);
@@ -833,6 +868,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         resetAllUserData,
         exportBackupJSON,
         importBackupJSON,
+        resetToCleanState,
+        loadDemoData,
         metrics,
       }}
     >
