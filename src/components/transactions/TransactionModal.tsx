@@ -17,7 +17,7 @@ import {
 import { Modal } from '../ui/Modal';
 import { useFinancial } from '../../context/FinancialContext';
 import { Transaction, TransactionType, TransactionStatus } from '../../types';
-import { formatCurrency, getTodayString } from '../../utils/formatters';
+import { formatCurrency, getTodayString, round2 } from '../../utils/formatters';
 
 interface TransactionModalProps {
   isOpen: boolean;

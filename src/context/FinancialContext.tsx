@@ -13,7 +13,7 @@ import {
   NotificationItem,
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
-import { getCurrentMonth, getTodayString } from '../utils/formatters';
+import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 
 interface UserStoreData {
@@ -337,7 +337,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!card) return;
 
     // Deduct from paying account
-    setAccounts(prev => prev.map(a => (a.id === accountId ? { ...a, balance: a.balance - amount } : a)));
+    setAccounts(prev => prev.map(a => (a.id === accountId ? { ...a, balance: round2(a.balance - amount) } : a)));
 
     // Mark card transactions of that month as completed/paid
     setTransactions(prev =>
@@ -385,7 +385,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // If a payment transaction existed and had an account, restore the money
     if (payTx && payTx.accountId) {
       setAccounts(prev =>
-        prev.map(a => (a.id === payTx.accountId ? { ...a, balance: a.balance + payTx.amount } : a))
+        prev.map(a => (a.id === payTx.accountId ? { ...a, balance: round2(a.balance + payTx.amount) } : a))
       );
       // Remove payment transaction
       setTransactions(prev => prev.filter(t => t.id !== payTx.id));
@@ -440,9 +440,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     if (newTx.status === 'completed') {
       if (newTx.type === 'income' && newTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: a.balance + newTx.amount } : a)));
+        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance + newTx.amount) } : a)));
       } else if (newTx.type === 'expense' && newTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: a.balance - newTx.amount } : a)));
+        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance - newTx.amount) } : a)));
       } else if (newTx.type === 'transfer' && newTx.accountId && newTx.targetAccountId) {
         setAccounts(prev =>
           prev.map(a => {

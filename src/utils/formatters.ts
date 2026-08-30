@@ -1,11 +1,28 @@
-﻿export function formatCurrency(value: number, currency = 'BRL', hide = false): string {
+export function round2(num: number | string): number {
+  const n = typeof num === 'string' ? parseFloat(num) || 0 : (Number(num) || 0);
+  return Math.round(n * 100) / 100;
+}
+
+export function formatCurrency(value: number | string, currency = 'BRL', hide = false): string {
   if (hide) return 'R$ ••••••';
+  const num = typeof value === 'string' ? parseFloat(value) || 0 : (Number(value) || 0);
+  const safeNum = isNaN(num) ? 0 : round2(num);
+
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: currency,
+    currency: currency || 'BRL',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value);
+  }).format(safeNum);
+}
+
+export function formatNumber(value: number | string, decimals = 2): string {
+  const num = typeof value === 'string' ? parseFloat(value) || 0 : (Number(value) || 0);
+  const safeNum = isNaN(num) ? 0 : num;
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(safeNum);
 }
 
 export function formatDate(dateString: string): string {
@@ -22,8 +39,10 @@ export function formatMonthYear(yearMonth: string): string {
   return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
-export function formatPercentage(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+export function formatPercentage(value: number | string, decimals = 2): string {
+  const num = typeof value === 'string' ? parseFloat(value) || 0 : (Number(value) || 0);
+  const safeNum = isNaN(num) ? 0 : num;
+  return `${safeNum >= 0 ? '+' : ''}${safeNum.toFixed(decimals).replace('.', ',')}%`;
 }
 
 export function getCurrentMonth(): string {
