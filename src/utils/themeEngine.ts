@@ -27,7 +27,7 @@ const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: str
     mode: 'dark',
   },
   'clean-light': {
-    bg: '#F8FAFC',
+    bg: '#F1F5F9',
     cardBg: '#FFFFFF',
     text: '#0F172A',
     mode: 'light',
@@ -98,7 +98,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     }
     ${presetData.mode === 'light' ? `
       body {
-        background-color: #F8FAFC !important;
+        background-color: #F1F5F9 !important;
         color: #0F172A !important;
       }
     ` : `

@@ -16,16 +16,73 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Light Mode Defaults */
+/* ========================================================================= */
+/* LIGHT MODE: CRISP BORDERS, ELEVATED SURFACES & SHARP CONTRAST           */
+/* ========================================================================= */
 html:not(.dark) body {
-  background-color: #F8FAFC !important;
+  background-color: #F1F5F9 !important; /* Soft slate canvas for high card pop */
   color: #0F172A !important;
 }
 
-/* Dark Mode Defaults */
+/* Crisp 1px border on all light mode cards, widgets and panels */
+html:not(.dark) .rounded-\[25px\],
+html:not(.dark) .rounded-3xl,
+html:not(.dark) .rounded-theme-card {
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
+}
+
+/* Light mode Header, Sidebar & BottomNav borders */
+html:not(.dark) header,
+html:not(.dark) aside,
+html:not(.dark) nav {
+  border-color: #E2E8F0 !important;
+  background-color: #FFFFFF !important;
+}
+
+/* Light mode Form Inputs */
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  border: 1px solid #CBD5E1 !important;
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  border-color: var(--primary-accent, #7C4DFF) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent, #7C4DFF) 25%, transparent) !important;
+}
+
+/* Light mode Table Dividers and Separators */
+html:not(.dark) .border-slate-100,
+html:not(.dark) .border-slate-200,
+html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #E2E8F0 !important;
+}
+
+/* ========================================================================= */
+/* DARK MODE: HIGH CONTRAST SURFACES (Mobills Dark, Midnight, Emerald)      */
+/* ========================================================================= */
 html.dark body {
   background-color: var(--app-bg, #1C1C1E) !important;
   color: #FFFFFF !important;
+}
+
+html.dark .dark\:bg-\[\#2C2C2E\],
+html.dark .bg-\[\#2C2C2E\],
+html.dark .dark\:bg-\[\#1e222d\],
+html.dark .dark\:bg-\[\#252b38\] {
+  background-color: var(--app-card-bg, #2C2C2E) !important;
+}
+
+html.dark .dark\:bg-slate-950,
+html.dark .dark\:bg-\[\#1C1C1E\],
+html.dark .dark\:bg-slate-900 {
+  background-color: var(--app-bg, #1C1C1E) !important;
 }
 
 /* ========================================================================= */
@@ -90,22 +147,6 @@ html.dark body {
 .dark\:bg-purple-600\/20,
 .dark\:bg-purple-500\/10 {
   background-color: color-mix(in srgb, var(--primary-accent, #7C4DFF) 16%, transparent) !important;
-}
-
-/* ========================================================================= */
-/* DARK MODE SURFACE OVERRIDES (Mobills Dark, Midnight OLED, Emerald Slate)  */
-/* ========================================================================= */
-html.dark .dark\:bg-\[\#2C2C2E\],
-html.dark .bg-\[\#2C2C2E\],
-html.dark .dark\:bg-\[\#1e222d\],
-html.dark .dark\:bg-\[\#252b38\] {
-  background-color: var(--app-card-bg, #2C2C2E) !important;
-}
-
-html.dark .dark\:bg-slate-950,
-html.dark .dark\:bg-\[\#1C1C1E\],
-html.dark .dark\:bg-slate-900 {
-  background-color: var(--app-bg, #1C1C1E) !important;
 }
 
 /* Scrollbars */
