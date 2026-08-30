@@ -70,10 +70,10 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
     return cards.map(card => {
       const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense');
       const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
-      const invoiceTotal = monthTxs.reduce((sum, t) => sum + t.amount, 0);
+      const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
-      const totalSpent = cardTxs.reduce((sum, t) => sum + t.amount, 0);
-      const available = Math.max(0, card.limit - totalSpent);
+      const totalSpent = Math.round(cardTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+      const available = Math.max(0, Math.round((card.limit - totalSpent) * 100) / 100);
       const usedPercentage = card.limit > 0 ? Math.min(100, (invoiceTotal / card.limit) * 100) : 0;
 
       const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
@@ -162,7 +162,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
   const handlePayInvoiceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isPayingInvoice || !payingCard) return;
-    const amt = parseFloat(payAmount) || 0;
+    const amt = Math.round((parseFloat(payAmount) || 0) * 100) / 100;
     if (amt <= 0 || !payAccountId) return;
 
     setIsPayingInvoice(true);
@@ -242,7 +242,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                         onClick={() => {
                           setIsHeaderMenuOpen(false);
                           setPayingCard(activeCardDetail);
-                          setPayAmount(activeCardDetail.invoiceTotal.toString());
+                          setPayAmount(activeCardDetail.invoiceTotal.toFixed(2));
                           setIsPayModalOpen(true);
                         }}
                         className="w-full px-4 py-2.5 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2.5 cursor-pointer"
@@ -335,7 +335,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   <button
                     onClick={async () => {
                       setPayingCard(activeCardDetail);
-                      setPayAmount(activeCardDetail.invoiceTotal.toString());
+                      setPayAmount(activeCardDetail.invoiceTotal.toFixed(2));
                       setIsPayModalOpen(true);
                     }}
                     className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
@@ -764,7 +764,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                       <button
                         onClick={async () => {
                           setPayingCard(card);
-                          setPayAmount(card.invoiceTotal.toString());
+                          setPayAmount(card.invoiceTotal.toFixed(2));
                           setIsPayModalOpen(true);
                         }}
                         className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer hover:scale-105"
