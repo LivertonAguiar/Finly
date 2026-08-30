@@ -111,17 +111,21 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
     return cardsData.find(c => c.id === activeCardDetailId) || null;
   }, [cardsData, activeCardDetailId]);
 
+  const [isPayingInvoice, setIsPayingInvoice] = useState(false);
+
   const handlePayInvoiceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!payingCard) return;
+    if (isPayingInvoice || !payingCard) return;
     const amt = parseFloat(payAmount) || 0;
     if (amt <= 0 || !payAccountId) return;
 
+    setIsPayingInvoice(true);
     payCardInvoice(payingCard.id, payAccountId, amt, currentMonthPrefix);
 
     setIsPayModalOpen(false);
     setPayingCard(null);
     setPayAmount('');
+    setIsPayingInvoice(false);
   };
 
   return (

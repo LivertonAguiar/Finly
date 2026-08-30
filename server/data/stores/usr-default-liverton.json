@@ -4,7 +4,7 @@
       "id": "acc-carteira-padrao",
       "name": "Carteira",
       "type": "cash",
-      "balance": -1333.34,
+      "balance": -666.67,
       "initialBalance": 0,
       "institution": "Carteira",
       "color": "#10b981",
@@ -431,24 +431,6 @@
       "createdAt": "2026-08-30T13:11:57.022Z"
     },
     {
-      "id": "tx-pay-1788095507585",
-      "description": "Pagamento Fatura Nubank Crédito (08/2026)",
-      "amount": 666.6666666666667,
-      "type": "expense",
-      "date": "2026-08-30",
-      "categoryId": "cat-financas-desp",
-      "subcategoryId": "sub-tarifas",
-      "accountId": "acc-carteira-padrao",
-      "status": "completed",
-      "recurring": false,
-      "tags": [
-        "fatura",
-        "cartao"
-      ],
-      "notes": "Pagamento de fatura referente a 08/2026",
-      "createdAt": "2026-08-30T13:11:47.585Z"
-    },
-    {
       "description": "Salário",
       "amount": 10000,
       "type": "income",
@@ -801,5 +783,5 @@
     "showValues": true,
     "theme": "dark"
   },
-  "_serverTimestamp": "2026-08-30T13:13:53.010Z"
+  "_serverTimestamp": "2026-08-30T13:16:56.045Z"
 }

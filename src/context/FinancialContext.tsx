@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import {
   Account,
   CreditCard,
@@ -208,6 +208,8 @@ function sanitizeStoredData<T>(obj: T): T {
 }
 
 export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const payingInvoiceLockRef = useRef<Record<string, number>>({});
+
   const { currentUser } = useAuth();
   const userId = currentUser ? currentUser.id : 'guest';
   const userStoreKey = `plannerfin_user_${userId}_store`;
@@ -445,17 +447,44 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCards(prev => prev.filter(c => c.id !== id));
   };
 
-    const payCardInvoice = (cardId: string, accountId: string, amount: number, month: string) => {
+  
+  const payCardInvoice = (cardId: string, accountId: string, amount: number, month: string) => {
     const card = cards.find(c => c.id === cardId);
-    if (!card) return;
+    if (!card || amount <= 0) return;
+
+    const lockKey = `${cardId}_${month}`;
+    const now = Date.now();
+    if (payingInvoiceLockRef.current[lockKey] && now - payingInvoiceLockRef.current[lockKey] < 4000) {
+      console.warn('⚠️ Pagamento já em processamento para este cartão. Ignorando clique duplicado.');
+      return;
+    }
+    payingInvoiceLockRef.current[lockKey] = now;
+
+    // Check if there is already an existing payment transaction for this card and month
+    const existingPayTx = transactions.find(
+      t =>
+        t.tags?.includes('fatura') &&
+        t.tags?.includes('cartao') &&
+        t.description.includes(card.name) &&
+        t.description.includes(month)
+    );
+
+    if (existingPayTx) {
+      console.warn('⚠️ Fatura já consta como paga. Ignorando pagamento duplicado.');
+      return;
+    }
+
+    const roundedAmount = round2(amount);
 
     // Deduct from paying account
-    setAccounts(prev => prev.map(a => (a.id === accountId ? { ...a, balance: round2(a.balance - amount) } : a)));
+    setAccounts(prev =>
+      prev.map(a => (a.id === accountId ? { ...a, balance: round2(a.balance - roundedAmount) } : a))
+    );
 
     // Mark card transactions of that month as completed/paid
     setTransactions(prev =>
       prev.map(t => {
-        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(month)) {
+        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(month.replace('/', '-'))) {
           return { ...t, status: 'completed' };
         }
         return t;
@@ -466,7 +495,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const payTx: Transaction = {
       id: `tx-pay-${Date.now()}`,
       description: `Pagamento Fatura ${card.name} (${month})`,
-      amount,
+      amount: roundedAmount,
       type: 'expense',
       date: getTodayString(),
       categoryId: 'cat-financas-desp',
@@ -482,12 +511,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => [payTx, ...prev]);
   };
 
+
+
   const unpayCardInvoice = (cardId: string, month: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
 
-    // Find any payment transaction created for this invoice
-    const payTx = transactions.find(
+    // Find all payment transactions created for this invoice
+    const payTxs = transactions.filter(
       t =>
         t.tags?.includes('fatura') &&
         t.tags?.includes('cartao') &&
@@ -495,19 +526,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         t.description.includes(month)
     );
 
-    // If a payment transaction existed and had an account, restore the money
-    if (payTx && payTx.accountId) {
-      setAccounts(prev =>
-        prev.map(a => (a.id === payTx.accountId ? { ...a, balance: round2(a.balance + payTx.amount) } : a))
-      );
-      // Remove payment transaction
-      setTransactions(prev => prev.filter(t => t.id !== payTx.id));
-    }
+    // Refund each payment transaction to its account
+    payTxs.forEach(payTx => {
+      if (payTx.accountId) {
+        setAccounts(prev =>
+          prev.map(a => (a.id === payTx.accountId ? { ...a, balance: round2(a.balance + payTx.amount) } : a))
+        );
+      }
+    });
+
+    const payTxIds = new Set(payTxs.map(t => t.id));
+    setTransactions(prev => prev.filter(t => !payTxIds.has(t.id)));
 
     // Set all card expense transactions for this month back to pending
+    const normalizedMonth = month.replace('/', '-');
     setTransactions(prev =>
       prev.map(t => {
-        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(month)) {
+        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(normalizedMonth)) {
           return { ...t, status: 'pending' };
         }
         return t;
@@ -516,9 +551,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
 
+
   // Category Actions
   const addCategory = (cat: Omit<Category, 'id' | 'subcategories'>) => {
-    const newCat: Category = { ...cat, id: `cat-${Date.now()}`, subcategories: [] };
+    const newCat: Category = {
+      ...cat,
+      id: `cat-${Date.now()}`,
+      subcategories: [],
+    };
     setCategories(prev => [...prev, newCat]);
   };
 
@@ -531,12 +571,18 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const addSubcategory = (categoryId: string, name: string, icon?: string) => {
-    const newSub = { id: `sub-${Date.now()}`, name, icon: icon || '📁', categoryId };
-    setCategories(prev => prev.map(c => (c.id === categoryId ? { ...c, subcategories: [...c.subcategories, newSub] } : c)));
+    const newSub = { id: `sub-${Date.now()}`, name, icon, categoryId };
+    setCategories(prev =>
+      prev.map(c => (c.id === categoryId ? { ...c, subcategories: [...c.subcategories, newSub] } : c))
+    );
   };
 
   const deleteSubcategory = (categoryId: string, subcategoryId: string) => {
-    setCategories(prev => prev.map(c => (c.id === categoryId ? { ...c, subcategories: c.subcategories.filter(s => s.id !== subcategoryId) } : c)));
+    setCategories(prev =>
+      prev.map(c =>
+        c.id === categoryId ? { ...c, subcategories: c.subcategories.filter(s => s.id !== subcategoryId) } : c
+      )
+    );
   };
 
   const resetCategoriesToDefault = () => {
@@ -547,6 +593,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const addTransaction = (tx: Omit<Transaction, 'id' | 'createdAt'>) => {
     const newTx: Transaction = {
       ...tx,
+      amount: round2(tx.amount),
       id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       createdAt: new Date().toISOString(),
     };
@@ -559,8 +606,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } else if (newTx.type === 'transfer' && newTx.accountId && newTx.targetAccountId) {
         setAccounts(prev =>
           prev.map(a => {
-            if (a.id === newTx.accountId) return { ...a, balance: a.balance - newTx.amount };
-            if (a.id === newTx.targetAccountId) return { ...a, balance: a.balance + newTx.amount };
+            if (a.id === newTx.accountId) return { ...a, balance: round2(a.balance - newTx.amount) };
+            if (a.id === newTx.targetAccountId) return { ...a, balance: round2(a.balance + newTx.amount) };
             return a;
           })
         );
@@ -575,11 +622,37 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteTransaction = (id: string) => {
+    const tx = transactions.find(t => t.id === id);
+    if (tx && tx.status === 'completed') {
+      if (tx.type === 'income' && tx.accountId) {
+        setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
+      } else if (tx.type === 'expense' && tx.accountId) {
+        setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
+      } else if (tx.type === 'transfer' && tx.accountId && tx.targetAccountId) {
+        setAccounts(prev =>
+          prev.map(a => {
+            if (a.id === tx.accountId) return { ...a, balance: round2(a.balance + tx.amount) };
+            if (a.id === tx.targetAccountId) return { ...a, balance: round2(a.balance - tx.amount) };
+            return a;
+          })
+        );
+      }
+    }
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
   const deleteMultipleTransactions = (ids: string[]) => {
     const idSet = new Set(ids);
+    const txsToDelete = transactions.filter(t => idSet.has(t.id));
+    txsToDelete.forEach(tx => {
+      if (tx.status === 'completed') {
+        if (tx.type === 'income' && tx.accountId) {
+          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
+        } else if (tx.type === 'expense' && tx.accountId) {
+          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
+        }
+      }
+    });
     setTransactions(prev => prev.filter(t => !idSet.has(t.id)));
   };
 
@@ -588,6 +661,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       prev.map(t => {
         if (t.id !== id) return t;
         const nextStatus = t.status === 'completed' ? 'pending' : 'completed';
+        if (t.accountId) {
+          const delta = nextStatus === 'completed' ? 1 : -1;
+          if (t.type === 'income') {
+            setAccounts(accs => accs.map(a => a.id === t.accountId ? { ...a, balance: round2(a.balance + delta * t.amount) } : a));
+          } else if (t.type === 'expense') {
+            setAccounts(accs => accs.map(a => a.id === t.accountId ? { ...a, balance: round2(a.balance - delta * t.amount) } : a));
+          }
+        }
         return { ...t, status: nextStatus };
       })
     );
@@ -596,22 +677,34 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const importTransactions = (txs: Omit<Transaction, 'id' | 'createdAt'>[]) => {
     const formatted = txs.map((tx, idx) => ({
       ...tx,
+      amount: round2(tx.amount),
       id: `tx-imp-${Date.now()}-${idx}`,
       createdAt: new Date().toISOString(),
     }));
+
+    // Update balances for completed imports
+    formatted.forEach(tx => {
+      if (tx.status === 'completed') {
+        if (tx.type === 'income' && tx.accountId) {
+          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
+        } else if (tx.type === 'expense' && tx.accountId) {
+          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
+        }
+      }
+    });
+
     setTransactions(prev => [...formatted, ...prev]);
   };
 
   // Budgets
-  const setCategoryBudget = (categoryId: string, limit: number, month: string = getCurrentMonth()) => {
+  const setCategoryBudget = (categoryId: string, limit: number, month?: string) => {
+    const targetMonth = month || getCurrentMonth();
     setBudgets(prev => {
-      const idx = prev.findIndex(b => b.categoryId === categoryId && b.month === month);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = { ...copy[idx], limit };
-        return copy;
+      const existing = prev.find(b => b.categoryId === categoryId && b.month === targetMonth);
+      if (existing) {
+        return prev.map(b => (b.id === existing.id ? { ...b, limit: round2(limit) } : b));
       }
-      return [...prev, { id: `b-${Date.now()}`, categoryId, month, limit }];
+      return [...prev, { id: `bdg-${Date.now()}`, categoryId, limit: round2(limit), month: targetMonth }];
     });
   };
 

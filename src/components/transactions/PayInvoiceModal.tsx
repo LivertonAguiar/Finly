@@ -19,6 +19,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
   const [selectedYear, setSelectedYear] = useState<string>('2026');
   const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id || '');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,13 +69,15 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCard || !selectedAccount || totalInvoice <= 0) return;
+    if (isSubmitting || !selectedCard || !selectedAccount || totalInvoice <= 0) return;
 
-    payCardInvoice(selectedCard.id, selectedAccount.id, totalInvoice, `${selectedMonth}/${selectedYear}`);
+    setIsSubmitting(true);
+    payCardInvoice(selectedCard.id, selectedAccount.id, totalInvoice, `${selectedYear}-${selectedMonth}`);
     setIsSuccess(true);
     setTimeout(() => {
+      setIsSubmitting(false);
       onClose();
-    }, 1500);
+    }, 400);
   };
 
   return (
