@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-bg: #1C1C1E;
+  --app-card-bg: #2C2C2E;
+  --primary-accent: #7C4DFF;
+  --card-radius: 25px;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: #FFFFFF;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom rounded utility matching user card radius */
+.rounded-theme-card {
+  border-radius: var(--card-radius, 25px);
+}
+
+.bg-theme-card {
+  background-color: var(--app-card-bg, #2C2C2E);
+}
+
+.bg-theme-app {
+  background-color: var(--app-bg, #1C1C1E);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 9999px;
+}

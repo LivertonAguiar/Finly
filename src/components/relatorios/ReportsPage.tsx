@@ -1,0 +1,1013 @@
+import React, { useState, useMemo } from 'react';
+import {
+  PieChart as PieIcon,
+  BarChart3,
+  TrendingUp,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Filter,
+  Download,
+  Calendar,
+  X,
+  Check,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from 'recharts';
+import { useFinancial } from '../../context/FinancialContext';
+import { formatCurrency, formatDate } from '../../utils/formatters';
+import { Modal } from '../ui/Modal';
+
+type TabType = 'donut' | 'line' | 'bar';
+
+type DonutSubtype =
+  | 'despesas_categoria'
+  | 'despesas_contas'
+  | 'receitas_categoria'
+  | 'receitas_contas'
+  | 'saldos_contas';
+
+type LineSubtype =
+  | 'despesas_mes'
+  | 'despesas_semana'
+  | 'despesas_ano';
+
+type BarSubtype =
+  | 'balanco_mensal'
+  | 'fluxo_caixa_anual'
+  | 'despesas_dia_semana';
+
+export const ReportsPage: React.FC = () => {
+  const { transactions, categories, accounts, cards, user } = useFinancial();
+
+  // Tab State: 'donut' | 'line' | 'bar'
+  const [activeTab, setActiveTab] = useState<TabType>('donut');
+
+  // Subtypes for each tab
+  const [donutSubtype, setDonutSubtype] = useState<DonutSubtype>('despesas_categoria');
+  const [lineSubtype, setLineSubtype] = useState<LineSubtype>('despesas_mes');
+  const [barSubtype, setBarSubtype] = useState<BarSubtype>('balanco_mensal');
+  const [hoveredDonutItem, setHoveredDonutItem] = useState<any>(null);
+
+  // Dropdown open state
+  const [isSubtypeDropdownOpen, setIsSubtypeDropdownOpen] = useState(false);
+
+  // Month navigation
+  const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+
+  // Filter Modal state
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
+  const [filterAccountId, setFilterAccountId] = useState<string>('all');
+
+  // Base Date
+  const viewDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + selectedMonthOffset);
+    return d;
+  }, [selectedMonthOffset]);
+
+  const monthName = viewDate.toLocaleDateString('pt-BR', { month: 'long' });
+  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const yearNum = viewDate.getFullYear();
+  const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
+
+  // Filtered Transactions
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      // Status filter
+      if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+      // Account filter
+      if (filterAccountId !== 'all' && t.accountId !== filterAccountId && t.cardId !== filterAccountId) {
+        return false;
+      }
+      return true;
+    });
+  }, [transactions, filterStatus, filterAccountId]);
+
+  // Palette of colors
+  const palette = [
+    '#0099CC', '#9933CC', '#FF8A00', '#FF9494', '#439996',
+    '#EB5757', '#00E676', '#7C4DFF', '#3B82F6', '#EC4899',
+    '#F59E0B', '#10B981', '#6366F1', '#06B6D4'
+  ];
+
+  // -----------------------------------------------------------------------------------
+  // 1. DATA FOR DONUT TAB
+  // -----------------------------------------------------------------------------------
+  const donutData = useMemo(() => {
+    const monthTxs = filteredTransactions.filter(t => t.date.startsWith(currentMonthPrefix));
+
+    if (donutSubtype === 'despesas_categoria' || donutSubtype === 'receitas_categoria') {
+      const isExpense = donutSubtype === 'despesas_categoria';
+      const targetType = isExpense ? 'expense' : 'income';
+      const map: Record<string, { id: string; name: string; icon: string; amount: number; color?: string }> = {};
+
+      monthTxs.filter(t => t.type === targetType).forEach(t => {
+        const cat = categories.find(
+          c =>
+            c.id === t.categoryId ||
+            c.name.toLowerCase() === t.categoryId?.toLowerCase() ||
+            (t.subcategoryId && c.subcategories?.some(s => s.id === t.subcategoryId || s.name.toLowerCase() === t.subcategoryId?.toLowerCase()))
+        );
+        const id = cat ? cat.id : (t.categoryId || 'others');
+        const name = (cat ? cat.name : (t.categoryId || 'OUTROS')).toUpperCase();
+        const icon = cat?.icon || (isExpense ? '📁' : '💰');
+        const color = cat?.color;
+
+        if (!map[id]) map[id] = { id, name, icon, amount: 0, color };
+        map[id].amount += t.amount;
+      });
+
+      const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
+      const items = Object.values(map)
+        .map((i, idx) => ({
+          ...i,
+          percentage: total > 0 ? (i.amount / total) * 100 : 0,
+          color: i.color || palette[idx % palette.length],
+        }))
+        .sort((a, b) => b.amount - a.amount);
+
+      return { items, total, isExpense };
+    }
+
+    if (donutSubtype === 'despesas_contas' || donutSubtype === 'receitas_contas') {
+      const isExpense = donutSubtype === 'despesas_contas';
+      const targetType = isExpense ? 'expense' : 'income';
+      const map: Record<string, { id: string; name: string; icon: string; amount: number }> = {};
+
+      monthTxs.filter(t => t.type === targetType).forEach(t => {
+        let name = 'CARTEIRA / DINHEIRO';
+        let icon = '💵';
+        let id = 'wallet';
+
+        if (t.cardId) {
+          const card = cards.find(c => c.id === t.cardId);
+          name = card ? `CARTÃO ${card.name.toUpperCase()}` : 'CARTÃO DE CRÉDITO';
+          icon = '💳';
+          id = t.cardId;
+        } else if (t.accountId) {
+          const acc = accounts.find(a => a.id === t.accountId);
+          name = acc ? acc.name.toUpperCase() : 'CONTA BANCÁRIA';
+          icon = '🏦';
+          id = t.accountId;
+        }
+
+        if (!map[id]) map[id] = { id, name, icon, amount: 0 };
+        map[id].amount += t.amount;
+      });
+
+      const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
+      const items = Object.values(map)
+        .map((i, idx) => ({
+          ...i,
+          percentage: total > 0 ? (i.amount / total) * 100 : 0,
+          color: palette[idx % palette.length],
+        }))
+        .sort((a, b) => b.amount - a.amount);
+
+      return { items, total, isExpense };
+    }
+
+    // saldos_contas
+    const total = accounts.reduce((sum, a) => sum + a.balance, 0);
+    const items = accounts.map((a, idx) => ({
+      id: a.id,
+      name: a.name.toUpperCase(),
+      icon: '🏦',
+      amount: a.balance,
+      percentage: total > 0 ? (Math.max(0, a.balance) / total) * 100 : 0,
+      color: a.color || palette[idx % palette.length],
+    })).sort((a, b) => b.amount - a.amount);
+
+    return { items, total, isExpense: false };
+  }, [donutSubtype, filteredTransactions, currentMonthPrefix, categories, accounts, cards]);
+
+  // -----------------------------------------------------------------------------------
+  // 2. DATA FOR LINE TAB
+  // -----------------------------------------------------------------------------------
+  const lineData = useMemo(() => {
+    if (lineSubtype === 'despesas_mes') {
+      const daysInMonth = new Date(yearNum, viewDate.getMonth() + 1, 0).getDate();
+      const items = Array.from({ length: daysInMonth }, (_, i) => {
+        const dayNum = String(i + 1).padStart(2, '0');
+        const dateStr = `${currentMonthPrefix}-${dayNum}`;
+        const dayAmount = filteredTransactions
+          .filter(t => t.date === dateStr && t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        return {
+          key: dateStr,
+          label: dayNum,
+          displayLabel: `${dayNum} ${capitalizedMonth}`,
+          amount: dayAmount,
+        };
+      });
+
+      const total = items.reduce((sum, i) => sum + i.amount, 0);
+      return { items, total, xKey: 'label' };
+    }
+
+    if (lineSubtype === 'despesas_semana') {
+      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const items = days.map((dayName, idx) => {
+        const dayAmount = filteredTransactions
+          .filter(t => {
+            if (t.type !== 'expense' || !t.date.startsWith(currentMonthPrefix)) return false;
+            const d = new Date(t.date + 'T12:00:00');
+            return d.getDay() === idx;
+          })
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        return {
+          key: dayName,
+          label: dayName,
+          displayLabel: dayName,
+          amount: dayAmount,
+        };
+      });
+
+      const total = items.reduce((sum, i) => sum + i.amount, 0);
+      return { items, total, xKey: 'label' };
+    }
+
+    // despesas_ano
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const items = months.map((m, idx) => {
+      const mStr = `${yearNum}-${String(idx + 1).padStart(2, '0')}`;
+      const monthAmount = filteredTransactions
+        .filter(t => t.date.startsWith(mStr) && t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return {
+        key: mStr,
+        label: m,
+        displayLabel: `${m} ${yearNum}`,
+        amount: monthAmount,
+      };
+    });
+
+    const total = items.reduce((sum, i) => sum + i.amount, 0);
+    return { items, total, xKey: 'label' };
+  }, [lineSubtype, filteredTransactions, currentMonthPrefix, yearNum, viewDate, capitalizedMonth]);
+
+  // -----------------------------------------------------------------------------------
+  // 3. DATA FOR BAR TAB
+  // -----------------------------------------------------------------------------------
+  const barData = useMemo(() => {
+    if (barSubtype === 'balanco_mensal') {
+      // Last 6 months
+      const offsets = [-5, -4, -3, -2, -1, 0];
+      const items = offsets.map(offset => {
+        const d = new Date(viewDate);
+        d.setMonth(d.getMonth() + offset);
+        const mStr = d.toISOString().substring(0, 7);
+        const label = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
+
+        const rec = filteredTransactions
+          .filter(t => t.date.startsWith(mStr) && t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const desp = filteredTransactions
+          .filter(t => t.date.startsWith(mStr) && t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        return {
+          key: mStr,
+          label,
+          displayLabel: `${label} ${d.getFullYear()}`,
+          Receita: rec,
+          Despesa: desp,
+          saldo: rec - desp,
+        };
+      });
+
+      return { items, type: 'dual' as const };
+    }
+
+    if (barSubtype === 'fluxo_caixa_anual') {
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const items = months.map((m, idx) => {
+        const mStr = `${yearNum}-${String(idx + 1).padStart(2, '0')}`;
+        const rec = filteredTransactions
+          .filter(t => t.date.startsWith(mStr) && t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+        const desp = filteredTransactions
+          .filter(t => t.date.startsWith(mStr) && t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+        const saldo = rec - desp;
+
+        return {
+          key: mStr,
+          label: m,
+          displayLabel: `${m} ${yearNum}`,
+          Balanco: saldo,
+          Receita: rec,
+          Despesa: desp,
+        };
+      });
+
+      return { items, type: 'single' as const };
+    }
+
+    // despesas_dia_semana
+    const days = [
+      { name: 'Dom', full: 'Domingo' },
+      { name: 'Seg', full: 'Segunda-feira' },
+      { name: 'Ter', full: 'Terça-feira' },
+      { name: 'Qua', full: 'Quarta-feira' },
+      { name: 'Qui', full: 'Quinta-feira' },
+      { name: 'Sex', full: 'Sexta-feira' },
+      { name: 'Sáb', full: 'Sábado' },
+    ];
+
+    const items = days.map((day, idx) => {
+      const dayAmount = filteredTransactions
+        .filter(t => {
+          if (t.type !== 'expense' || !t.date.startsWith(currentMonthPrefix)) return false;
+          const d = new Date(t.date + 'T12:00:00');
+          return d.getDay() === idx;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return {
+        key: day.name,
+        label: day.name,
+        displayLabel: day.full,
+        Despesa: dayAmount,
+      };
+    });
+
+    return { items, type: 'weekday' as const };
+  }, [barSubtype, filteredTransactions, viewDate, currentMonthPrefix, yearNum]);
+
+  // Labels mappings
+  const donutSubtypeLabels: Record<DonutSubtype, string> = {
+    despesas_categoria: 'Despesas por categorias',
+    despesas_contas: 'Despesas por contas',
+    receitas_categoria: 'Receitas por categorias',
+    receitas_contas: 'Receitas por contas',
+    saldos_contas: 'Saldos por conta',
+  };
+
+  const lineSubtypeLabels: Record<LineSubtype, string> = {
+    despesas_mes: 'Despesas do mês (diário)',
+    despesas_semana: 'Despesas da semana',
+    despesas_ano: 'Despesas por ano (mensal)',
+  };
+
+  const barSubtypeLabels: Record<BarSubtype, string> = {
+    balanco_mensal: 'Balanço mensal (6 meses)',
+    fluxo_caixa_anual: 'Fluxo de caixa anual',
+    despesas_dia_semana: 'Despesas x dia da semana',
+  };
+
+  const currentDropdownLabel =
+    activeTab === 'donut'
+      ? donutSubtypeLabels[donutSubtype]
+      : activeTab === 'line'
+      ? lineSubtypeLabels[lineSubtype]
+      : barSubtypeLabels[barSubtype];
+
+  const monthsShort = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in pb-16">
+      {/* 1. TOP HEADER (MOBILLS SPEC: TITLE + 3 TABS + SUBTYPE DROPDOWN + FILTER) */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+          Relatórios
+        </h2>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* 3 Tabs Segmented Control Pill */}
+          <div className="p-1 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 flex items-center shadow-xs">
+            <button
+              onClick={() => setActiveTab('donut')}
+              title="Gráfico Donut / Pizza"
+              className={`p-2 rounded-full transition-all cursor-pointer ${
+                activeTab === 'donut'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
+              }`}
+            >
+              <PieIcon className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setActiveTab('line')}
+              title="Gráfico de Linha / Evolução"
+              className={`p-2 rounded-full transition-all cursor-pointer ${
+                activeTab === 'line'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setActiveTab('bar')}
+              title="Gráfico de Barras / Comparativo"
+              className={`p-2 rounded-full transition-all cursor-pointer ${
+                activeTab === 'bar'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Subtype Dropdown Pill */}
+          <div className="relative">
+            <button
+              onClick={() => setIsSubtypeDropdownOpen(!isSubtypeDropdownOpen)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-white hover:border-purple-500 shadow-xs cursor-pointer"
+            >
+              <span>{currentDropdownLabel}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            {isSubtypeDropdownOpen && (
+              <div className="absolute right-0 mt-1.5 w-60 bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-1.5 z-40 animate-in fade-in divide-y divide-slate-100 dark:divide-slate-800/60">
+                {activeTab === 'donut' &&
+                  Object.entries(donutSubtypeLabels).map(([k, label]) => (
+                    <button
+                      key={k}
+                      onClick={() => {
+                        setDonutSubtype(k as DonutSubtype);
+                        setIsSubtypeDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                        donutSubtype === k
+                          ? 'bg-purple-50 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+
+                {activeTab === 'line' &&
+                  Object.entries(lineSubtypeLabels).map(([k, label]) => (
+                    <button
+                      key={k}
+                      onClick={() => {
+                        setLineSubtype(k as LineSubtype);
+                        setIsSubtypeDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                        lineSubtype === k
+                          ? 'bg-purple-50 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+
+                {activeTab === 'bar' &&
+                  Object.entries(barSubtypeLabels).map(([k, label]) => (
+                    <button
+                      key={k}
+                      onClick={() => {
+                        setBarSubtype(k as BarSubtype);
+                        setIsSubtypeDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                        barSubtype === k
+                          ? 'bg-purple-50 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Funnel Filter Button */}
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            title="Filtro de relatórios"
+            className={`p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer shadow-xs ${
+              filterStatus !== 'all' || filterAccountId !== 'all'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white dark:bg-[#2C2C2E] text-slate-600 dark:text-slate-300 hover:text-purple-600'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. EXPANDABLE PERIOD SELECTOR PILL (MOBILLS SPEC) */}
+      <div className="flex flex-col items-center justify-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSelectedMonthOffset(prev => prev - 1)}
+            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => setShowMonthPicker(!showMonthPicker)}
+            className="px-5 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
+          >
+            {capitalizedMonth} {yearNum}
+          </button>
+
+          <button
+            onClick={() => setSelectedMonthOffset(prev => prev + 1)}
+            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Inline Month Picker Matrix */}
+        {showMonthPicker && (
+          <div className="p-4 rounded-3xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 shadow-xl space-y-3 animate-in fade-in max-w-sm w-full">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-white px-2">
+              <button
+                onClick={() => setSelectedMonthOffset(prev => prev - 12)}
+                className="p-1 hover:text-purple-600"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span>{yearNum}</span>
+              <button
+                onClick={() => setSelectedMonthOffset(prev => prev + 12)}
+                className="p-1 hover:text-purple-600"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {monthsShort.map((m, idx) => {
+                const isSelected = viewDate.getMonth() === idx;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      const now = new Date();
+                      const currentYear = now.getFullYear();
+                      const currentMonth = now.getMonth();
+                      const targetOffset = (yearNum - currentYear) * 12 + (idx - currentMonth);
+                      setSelectedMonthOffset(targetOffset);
+                      setShowMonthPicker(false);
+                    }}
+                    className={`py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-900/30'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. MAIN CARD CONTAINER (2-COLUMN RESPONSIVE LAYOUT) */}
+      <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl">
+        {/* ========================================================================= */}
+        {/* TAB 1: DONUT / PIE VIEW */}
+        {/* ========================================================================= */}
+        {activeTab === 'donut' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Column: Donut Chart with Centered Total */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-center">
+              {donutData.items.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  Nenhuma transação encontrada no período.
+                </div>
+              ) : (
+                <div className="relative w-64 h-64 flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={donutData.items}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={70}
+                        outerRadius={98}
+                        paddingAngle={3}
+                        dataKey="amount"
+                        stroke="transparent"
+                        onMouseEnter={(_, index) => setHoveredDonutItem(donutData.items[index])}
+                        onMouseLeave={() => setHoveredDonutItem(null)}
+                      >
+                        {donutData.items.map((entry, index) => (
+                          <Cell
+                            key={`cell-donut-${index}`}
+                            fill={entry.color}
+                            className="cursor-pointer transition-all hover:opacity-90"
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Interactive Center (No Overlapping Tooltip) */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+                    {hoveredDonutItem ? (
+                      <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
+                        <span className="text-[11px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[140px]">
+                          {hoveredDonutItem.icon} {hoveredDonutItem.name}
+                        </span>
+                        <span className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                          {formatCurrency(hoveredDonutItem.amount, user.currency, !user.showValues)}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+                          {hoveredDonutItem.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                          {formatCurrency(donutData.total, user.currency, !user.showValues)}
+                        </span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                          Total
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Ranked Breakdown List (ALL CAPS, ICON, PERCENT, VALUE) */}
+            <div className="lg:col-span-7 space-y-3">
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
+                {donutSubtypeLabels[donutSubtype]}
+              </h3>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[380px] overflow-y-auto scrollbar-thin pr-1">
+                {donutData.items.length === 0 ? (
+                  <p className="p-6 text-center text-xs text-slate-400">Nenhum dado para exibir.</p>
+                ) : (
+                  donutData.items.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className="py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 px-2 rounded-xl transition-colors cursor-pointer"
+                    >
+                      {/* Left: Round Colored Icon + ALL CAPS Title + "Porcentagem" */}
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white shadow-xs"
+                          style={{ backgroundColor: item.color }}
+                        >
+                          {item.icon}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                            {item.name}
+                          </p>
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
+                            Porcentagem
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right: Amount + Formatted % */}
+                      <div className="text-right shrink-0">
+                        <p
+                          className={`text-xs font-black ${
+                            donutData.isExpense ? 'text-rose-600 dark:text-[#FF5252]' : 'text-emerald-600 dark:text-[#00E676]'
+                          }`}
+                        >
+                          {formatCurrency(item.amount, user.currency, !user.showValues)}
+                        </p>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold block">
+                          {item.percentage.toFixed(2).replace('.', ',')}%
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2: LINE / EVOLUTION VIEW */}
+        {/* ========================================================================= */}
+        {activeTab === 'line' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Column: Smooth Line Chart */}
+            <div className="lg:col-span-7 h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineData.items} margin={{ top: 15, right: 20, left: -10, bottom: 0 }}>
+                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderColor: '#334155',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    formatter={(val: number) => [formatCurrency(val, user.currency), 'Gasto']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#EB5757"
+                    strokeWidth={2.5}
+                    dot={{ r: 4, fill: '#EB5757' }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Right Column: Chronological List of Days/Months */}
+            <div className="lg:col-span-5 space-y-3">
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
+                Detalhamento Cronológico
+              </h3>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
+                {lineData.items.map((i, idx) => (
+                  <div key={idx} className="py-2.5 flex items-center justify-between text-xs px-2">
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold">{i.displayLabel}</span>
+                    <span className={`font-black ${i.amount > 0 ? 'text-rose-600 dark:text-[#FF5252]' : 'text-slate-400'}`}>
+                      {formatCurrency(i.amount, user.currency, !user.showValues)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total Footer */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-black px-2">
+                <span className="text-slate-900 dark:text-white uppercase">Total</span>
+                <span className="text-rose-600 dark:text-[#FF5252]">
+                  {formatCurrency(lineData.total, user.currency, !user.showValues)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3: BAR / COMPARATIVE VIEW */}
+        {/* ========================================================================= */}
+        {activeTab === 'bar' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Column: Bar Chart */}
+            <div className="lg:col-span-7 h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                {barData.type === 'dual' ? (
+                  <BarChart data={barData.items} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
+                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                      }}
+                      formatter={(val: number) => formatCurrency(val, user.currency)}
+                    />
+                    <Bar dataKey="Receita" fill="#00E676" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Despesa" fill="#EB5757" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                ) : barData.type === 'single' ? (
+                  <BarChart data={barData.items} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
+                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                      }}
+                      formatter={(val: number) => formatCurrency(val, user.currency)}
+                    />
+                    <Bar dataKey="Balanco" fill="#7C4DFF" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                ) : (
+                  <BarChart data={barData.items} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
+                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                      }}
+                      formatter={(val: number) => formatCurrency(val, user.currency)}
+                    />
+                    <Bar dataKey="Despesa" fill="#EB5757" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                )}
+              </ResponsiveContainer>
+
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-6 pt-3 text-[11px] font-bold">
+                {barData.type === 'dual' ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#00E676]" />
+                      <span className="text-slate-600 dark:text-slate-300">Receita</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#EB5757]" />
+                      <span className="text-slate-600 dark:text-slate-300">Despesa</span>
+                    </div>
+                  </>
+                ) : barData.type === 'single' ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
+                    <span className="text-slate-600 dark:text-slate-300">Balanço Líquido</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#EB5757]" />
+                    <span className="text-slate-600 dark:text-slate-300">Despesas</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Breakdown List */}
+            <div className="lg:col-span-5 space-y-3">
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
+                Detalhamento dos Valores
+              </h3>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
+                {barData.items.map((i: any, idx) => (
+                  <div key={idx} className="py-2.5 px-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                      <span>{i.displayLabel}</span>
+                      {i.saldo !== undefined && (
+                        <span className={`${i.saldo >= 0 ? 'text-emerald-600 dark:text-[#00E676]' : 'text-rose-600 dark:text-[#EB5757]'}`}>
+                          {formatCurrency(i.saldo, user.currency, !user.showValues)}
+                        </span>
+                      )}
+                      {i.Balanco !== undefined && (
+                        <span className={`${i.Balanco >= 0 ? 'text-emerald-600 dark:text-[#00E676]' : 'text-rose-600 dark:text-[#EB5757]'}`}>
+                          {formatCurrency(i.Balanco, user.currency, !user.showValues)}
+                        </span>
+                      )}
+                      {i.Despesa !== undefined && i.saldo === undefined && (
+                        <span className="text-rose-600 dark:text-[#EB5757]">
+                          {formatCurrency(i.Despesa, user.currency, !user.showValues)}
+                        </span>
+                      )}
+                    </div>
+
+                    {i.Receita !== undefined && (
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Rec: {formatCurrency(i.Receita, user.currency)}</span>
+                        <span>Desp: {formatCurrency(i.Despesa, user.currency)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. FILTER MODAL (MOBILLS SPEC) */}
+      {isFilterModalOpen && (
+        <Modal
+          isOpen={isFilterModalOpen}
+          onClose={() => setIsFilterModalOpen(false)}
+          title="Filtro de relatórios"
+        >
+          <div className="space-y-5">
+            {/* Situações */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                Situações:
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'all', label: 'Todas as situações' },
+                  { id: 'completed', label: 'Efetuada / Paga' },
+                  { id: 'pending', label: 'Pendente' },
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setFilterStatus(opt.id as any)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                      filterStatus === opt.id
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Contas */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                Contas e Cartões:
+              </label>
+              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                <button
+                  onClick={() => setFilterAccountId('all')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                    filterAccountId === 'all'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                  }`}
+                >
+                  Todas as contas
+                </button>
+                {accounts.map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => setFilterAccountId(a.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                      filterAccountId === a.id
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    {a.name}
+                  </button>
+                ))}
+                {cards.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setFilterAccountId(c.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                      filterAccountId === c.id
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    💳 {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterStatus('all');
+                  setFilterAccountId('all');
+                  setIsFilterModalOpen(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200"
+              >
+                Limpar / Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsFilterModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-lg"
+              >
+                Aplicar filtros
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
