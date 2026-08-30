@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
+import { apiSync, SyncStatus } from '../../utils/apiSync';
+import { Cloud, CheckCircle2, RefreshCw, CloudOff } from 'lucide-react';
 
 interface HeaderProps {
   activeTab?: string;
@@ -42,6 +44,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+
+  useEffect(() => {
+    return apiSync.subscribeStatus(setSyncStatus);
+  }, []);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;

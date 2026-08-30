@@ -15,6 +15,7 @@ import {
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
 import { useAuth } from './AuthContext';
+import { apiSync } from '../utils/apiSync';
 
 
 const SEED_ACCOUNTS: Account[] = [
@@ -277,6 +278,80 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     start: `${getCurrentMonth()}-01`,
     end: getTodayString(),
   });
+
+  
+  // CONTINUOUS SERVER AUTO-SYNC
+  useEffect(() => {
+    if (!currentUser) return;
+    apiSync.setUserId(currentUser.id);
+
+    // Initial pull from server
+    apiSync.fetchServerStore(currentUser.id).then(serverStore => {
+      if (serverStore && serverStore.accounts) {
+        setAccounts(serverStore.accounts || []);
+        setCards(serverStore.cards || []);
+        setCategories(serverStore.categories && serverStore.categories.length > 0 ? serverStore.categories : DEFAULT_CATEGORIES);
+        setBudgets(serverStore.budgets || []);
+        setGoals(serverStore.goals || []);
+        setDebts(serverStore.debts || []);
+        setInvestments(serverStore.investments || []);
+        setTransactions(serverStore.transactions || []);
+        if (serverStore.userProfile) setUser(serverStore.userProfile);
+      }
+    });
+
+    // Sync on window focus (e.g. when user switches from mobile to PC)
+    const handleFocus = () => {
+      apiSync.fetchServerStore(currentUser.id).then(serverStore => {
+        if (serverStore && serverStore.accounts) {
+          setAccounts(serverStore.accounts || []);
+          setCards(serverStore.cards || []);
+          setTransactions(serverStore.transactions || []);
+          setBudgets(serverStore.budgets || []);
+          setGoals(serverStore.goals || []);
+          setDebts(serverStore.debts || []);
+          setInvestments(serverStore.investments || []);
+        }
+      });
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Background Heartbeat sync every 20 seconds
+    const interval = setInterval(handleFocus, 20000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [currentUser?.id]);
+
+  // Push updates to server on any state change (debounced)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const currentStore: UserStoreData = {
+      accounts,
+      cards,
+      categories,
+      budgets,
+      goals,
+      debts,
+      investments,
+      transactions,
+      familyMembers,
+      notifications,
+      userProfile: user,
+    };
+
+    // Save to local storage as offline cache
+    try {
+      localStorage.setItem(userStoreKey, JSON.stringify(currentStore));
+    } catch (e) {}
+
+    // Push to backend server
+    apiSync.pushStore(currentUser.id, currentStore);
+  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, user, userStoreKey, currentUser?.id]);
 
   // Reload state whenever active user changes
   useEffect(() => {

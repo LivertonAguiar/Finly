@@ -1,0 +1,11 @@
+[
+  {
+    "id": "usr-default-liverton",
+    "name": "Liverton",
+    "email": "liverton.aguiar@hotmail.com",
+    "password": "123",
+    "phone": "85985949115",
+    "role": "admin",
+    "createdAt": "2026-01-01"
+  }
+]
