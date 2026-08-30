@@ -21,6 +21,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
 import { CardModal } from '../cadastros/CardModal';
@@ -30,6 +31,7 @@ import { CreditCard as CreditCardType, Transaction } from '../../types';
 
 export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCard }) => {
   const { cards, user, transactions, accounts, categories, payCardInvoice, unpayCardInvoice, toggleTransactionStatus, deleteCard, addTransaction } = useFinancial();
+  const { confirm } = useConfirm();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [activeCardDetailId, setActiveCardDetailId] = useState<string | null>(null);
@@ -153,7 +155,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
+                onClick={async () => {
                   setSelectedCardForExpense(activeCardDetail.id);
                   setIsAddExpenseModalOpen(true);
                 }}
@@ -215,7 +217,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
 
                 {activeCardDetail.invoiceTotal > 0 && !activeCardDetail.isPaid ? (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       setPayingCard(activeCardDetail);
                       setPayAmount(activeCardDetail.invoiceTotal.toString());
                       setIsPayModalOpen(true);
@@ -226,8 +228,15 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   </button>
                 ) : activeCardDetail.isPaid ? (
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Deseja marcar a fatura de ${capitalizedMonth} do cartão ${activeCardDetail.name} como NÃO PAGA e reabrir os lançamentos?`)) {
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: 'Marcar Fatura como Não Paga?',
+                        message: `Deseja marcar a fatura de ${capitalizedMonth} do cartão ${activeCardDetail.name} como NÃO PAGA e reabrir os lançamentos?`,
+                        confirmText: 'Sim, Marcar Não Paga',
+                        cancelText: 'Cancelar',
+                        type: 'warning'
+                      });
+                      if (ok) {
                         unpayCardInvoice(activeCardDetail.id, currentMonthPrefix);
                       }
                     }}
@@ -468,7 +477,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                         className="absolute right-0 top-7 z-30 w-48 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold"
                       >
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setActiveCardDetailId(card.id);
                             setOpenMenuCardId(null);
                           }}
@@ -480,8 +489,14 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
 
                         {card.isPaid && (
                           <button
-                            onClick={() => {
-                              if (window.confirm(`Marcar a fatura de ${card.name} como NÃO PAGA?`)) {
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Marcar Fatura como Não Paga?',
+                                message: `Marcar a fatura de ${card.name} como NÃO PAGA?`,
+                                confirmText: 'Marcar Não Paga',
+                                type: 'warning'
+                              });
+                              if (ok) {
                                 unpayCardInvoice(card.id, currentMonthPrefix);
                               }
                               setOpenMenuCardId(null);
@@ -494,7 +509,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                         )}
 
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setEditingCard(card);
                             setIsEditModalOpen(true);
                             setOpenMenuCardId(null);
@@ -508,9 +523,15 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                         <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setOpenMenuCardId(null);
-                            if (window.confirm(`Excluir o cartão ${card.name}?`)) {
+                            const ok = await confirm({
+                              title: 'Excluir Cartão de Crédito',
+                              message: `Tem certeza que deseja excluir o cartão ${card.name}? Esta ação não pode ser desfeita.`,
+                              confirmText: 'Excluir Cartão',
+                              type: 'danger'
+                            });
+                            if (ok) {
                               deleteCard(card.id);
                             }
                           }}
@@ -570,7 +591,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   <div className="flex items-center gap-1.5">
                     {card.invoiceTotal > 0 && !card.isPaid ? (
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setPayingCard(card);
                           setPayAmount(card.invoiceTotal.toString());
                           setIsPayModalOpen(true);
@@ -581,8 +602,15 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                       </button>
                     ) : card.isPaid ? (
                       <button
-                        onClick={() => {
-                          if (window.confirm(`Marcar a fatura de ${card.name} como NÃO PAGA?`)) {
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: 'Marcar Fatura como Não Paga?',
+                            message: `Deseja marcar a fatura de ${card.name} como NÃO PAGA e estornar o valor?`,
+                            confirmText: 'Sim, Marcar Não Paga',
+                            cancelText: 'Cancelar',
+                            type: 'warning'
+                          });
+                          if (ok) {
                             unpayCardInvoice(card.id, currentMonthPrefix);
                           }
                         }}
@@ -594,7 +622,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                     ) : null}
 
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setSelectedCardForExpense(card.id);
                         setIsAddExpenseModalOpen(true);
                       }}

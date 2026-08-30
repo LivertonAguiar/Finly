@@ -18,11 +18,13 @@ import {
   Info,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { TransactionModal } from '../transactions/TransactionModal';
 
 export const CalendarPage: React.FC = () => {
+  const { confirm } = useConfirm();
   const {
     transactions,
     categories,
@@ -375,7 +377,7 @@ export const CalendarPage: React.FC = () => {
 
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   setEditingTransaction(t);
                                   setIsModalOpen(true);
                                 }}
@@ -384,8 +386,14 @@ export const CalendarPage: React.FC = () => {
                                 <Edit2 className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => {
-                                  if (window.confirm('Excluir este lançamento?')) {
+                                onClick={async () => {
+                                  const ok = await confirm({
+                                    title: 'Excluir Lançamento',
+                                    message: `Deseja excluir "${t.description}"?`,
+                                    confirmText: 'Excluir',
+                                    type: 'danger'
+                                  });
+                                  if (ok) {
                                     deleteTransaction(t.id);
                                   }
                                 }}
@@ -407,7 +415,7 @@ export const CalendarPage: React.FC = () => {
           {/* Action Button: Adicionar Despesa no dia selecionado */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
-              onClick={() => {
+              onClick={async () => {
                 setEditingTransaction(null);
                 setIsModalOpen(true);
               }}

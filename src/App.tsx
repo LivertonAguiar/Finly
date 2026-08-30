@@ -6,6 +6,7 @@ import { MorePage } from './components/more/MorePage';
 import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { FinancialProvider } from './context/FinancialContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
@@ -208,7 +209,9 @@ export const App: React.FC = () => {
   return (
     <AuthProvider>
       <FinancialProvider>
-        <AppContent />
+        <ConfirmProvider>
+          <AppContent />
+        </ConfirmProvider>
       </FinancialProvider>
     </AuthProvider>
   );

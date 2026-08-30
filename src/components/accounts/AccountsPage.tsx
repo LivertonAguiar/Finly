@@ -17,6 +17,7 @@ import {
   Banknote,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Account } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { BankLogo, ALL_BANKS } from '../../utils/bankLogos';
@@ -26,6 +27,7 @@ import { Modal } from '../ui/Modal';
 
 export const AccountsPage: React.FC = () => {
   const { accounts, transactions, addTransaction, deleteAccount, user } = useFinancial();
+  const { confirm } = useConfirm();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -186,7 +188,7 @@ export const AccountsPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {/* + Nova Conta Button */}
           <button
-            onClick={() => {
+            onClick={async () => {
               setEditingAccount(null);
               setIsAccountModalOpen(true);
             }}
@@ -221,7 +223,7 @@ export const AccountsPage: React.FC = () => {
                 className="absolute right-0 top-12 z-40 w-48 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-700 dark:text-slate-200"
               >
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setIsTransferOpen(true);
                     setIsHeaderMenuOpen(false);
                   }}
@@ -242,7 +244,7 @@ export const AccountsPage: React.FC = () => {
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* NOVA CONTA CARD */}
           <div
-            onClick={() => {
+            onClick={async () => {
               setEditingAccount(null);
               setIsAccountModalOpen(true);
             }}
@@ -291,7 +293,7 @@ export const AccountsPage: React.FC = () => {
                       className="absolute right-0 top-7 z-30 w-44 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 animate-in fade-in zoom-in-95"
                     >
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setEditingAccount(acc);
                           setIsAccountModalOpen(true);
                           setOpenMenuAccountId(null);
@@ -303,7 +305,7 @@ export const AccountsPage: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setReajusteAccount(acc);
                           setReajusteNovoSaldo(acc.balance.toString());
                           setIsReajusteOpen(true);
@@ -318,9 +320,15 @@ export const AccountsPage: React.FC = () => {
                       <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setOpenMenuAccountId(null);
-                          if (window.confirm(`Excluir a conta ${acc.name}?`)) {
+                          const ok = await confirm({
+                            title: 'Excluir Conta Bancária',
+                            message: `Tem certeza que deseja excluir a conta ${acc.name}?`,
+                            confirmText: 'Excluir Conta',
+                            type: 'danger'
+                          });
+                          if (ok) {
                             deleteAccount(acc.id);
                           }
                         }}
@@ -359,7 +367,7 @@ export const AccountsPage: React.FC = () => {
               {/* Footer: ADICIONAR DESPESA Text Button */}
               <div className="pt-2 flex justify-end">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setTargetAccountIdForExpense(acc.id);
                     setIsExpenseModalOpen(true);
                   }}

@@ -18,12 +18,14 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { Modal } from '../ui/Modal';
 import { Goal } from '../../types';
 
 export const GoalsPage: React.FC = () => {
   const { goals, addGoal, updateGoal, deleteGoal, depositToGoal, accounts, user } = useFinancial();
+  const { confirm } = useConfirm();
 
   const [activeSegment, setActiveSegment] = useState<'andamento' | 'concluidos'>('andamento');
 
@@ -273,8 +275,14 @@ export const GoalsPage: React.FC = () => {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (window.confirm(`Excluir o objetivo "${goal.title}"?`)) {
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: 'Excluir Objetivo',
+                          message: `Deseja excluir o objetivo "${goal.title}"?`,
+                          confirmText: 'Excluir Objetivo',
+                          type: 'danger'
+                        });
+                        if (ok) {
                           deleteGoal(goal.id);
                         }
                       }}
@@ -319,7 +327,7 @@ export const GoalsPage: React.FC = () => {
                   </span>
 
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       setSelectedGoalForDeposit(goal);
                       setIsDepositModalOpen(true);
                     }}
