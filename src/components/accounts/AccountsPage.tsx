@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   Plus,
+  ArrowDownLeft,
+  ArrowUpRight,
   ArrowLeftRight,
   TrendingUp,
   LineChart,
@@ -33,9 +35,15 @@ export const AccountsPage: React.FC = () => {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
-  // Quick Expense Modal for Account
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [targetAccountIdForExpense, setTargetAccountIdForExpense] = useState<string | null>(null);
+  // Differentiated Transaction Modal (Receita / Despesa / Transferência)
+  const [txModalState, setTxModalState] = useState<{
+    isOpen: boolean;
+    type: 'income' | 'expense' | 'transfer' | 'investment';
+    accountId?: string;
+  }>({
+    isOpen: false,
+    type: 'income',
+  });
 
   // Quick Transfer Modal
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -184,18 +192,49 @@ export const AccountsPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Right: Circular Icon Actions (+, Projeção, ⋮) */}
-        <div className="flex items-center gap-2">
+        {/* Right: Differentiated Quick Actions (+ Receita, - Despesa, ⇄ Transferência, + Nova Conta) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* + Nova Receita / Saldo */}
+          <button
+            onClick={() => setTxModalState({ isOpen: true, type: 'income' })}
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-600 dark:text-emerald-400 text-xs font-black shadow-xs hover:bg-emerald-100 transition-all cursor-pointer"
+            title="Nova Receita / Entrada"
+          >
+            <ArrowDownLeft className="w-4 h-4" />
+            <span>+ Receita</span>
+          </button>
+
+          {/* - Nova Despesa */}
+          <button
+            onClick={() => setTxModalState({ isOpen: true, type: 'expense' })}
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs font-black shadow-xs hover:bg-rose-100 transition-all cursor-pointer"
+            title="Nova Despesa / Saída"
+          >
+            <ArrowUpRight className="w-4 h-4" />
+            <span>- Despesa</span>
+          </button>
+
+          {/* ⇄ Transferir */}
+          <button
+            onClick={() => setIsTransferOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 text-blue-600 dark:text-blue-400 text-xs font-black shadow-xs hover:bg-blue-100 transition-all cursor-pointer"
+            title="Transferir entre Contas"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            <span>Transferir</span>
+          </button>
+
           {/* + Nova Conta Button */}
           <button
             onClick={async () => {
               setEditingAccount(null);
               setIsAccountModalOpen(true);
             }}
-            className="w-10 h-10 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
-            title="Nova conta"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+            title="Cadastrar Nova Conta / Banco"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Nova Conta</span>
           </button>
 
           {/* Projeção de Saldo Button */}
@@ -364,16 +403,35 @@ export const AccountsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Footer: ADICIONAR DESPESA Text Button */}
-              <div className="pt-2 flex justify-end">
+              {/* Footer: Differentiated Quick Action Buttons */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1 text-[11px] font-bold">
                 <button
-                  onClick={async () => {
-                    setTargetAccountIdForExpense(acc.id);
-                    setIsExpenseModalOpen(true);
-                  }}
-                  className="text-[10px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+                  onClick={() => setTxModalState({ isOpen: true, type: 'income', accountId: acc.id })}
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 flex items-center justify-center gap-1 transition-all cursor-pointer font-black"
+                  title="Adicionar Receita / Depósito nesta conta"
                 >
-                  ADICIONAR DESPESA
+                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                  <span>+ Receita</span>
+                </button>
+
+                <button
+                  onClick={() => setTxModalState({ isOpen: true, type: 'expense', accountId: acc.id })}
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 flex items-center justify-center gap-1 transition-all cursor-pointer font-black"
+                  title="Adicionar Despesa / Saída nesta conta"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span>- Despesa</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setFromAccountId(acc.id);
+                    setIsTransferOpen(true);
+                  }}
+                  className="py-1.5 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 flex items-center justify-center gap-1 transition-all cursor-pointer"
+                  title="Transferir a partir desta conta"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -430,15 +488,13 @@ export const AccountsPage: React.FC = () => {
         />
       )}
 
-      {/* Quick Add Expense Modal */}
-      {isExpenseModalOpen && (
+      {/* Differentiated Transaction Modal (Receita / Despesa / Saldo) */}
+      {txModalState.isOpen && (
         <TransactionModal
-          isOpen={isExpenseModalOpen}
-          onClose={() => {
-            setIsExpenseModalOpen(false);
-            setTargetAccountIdForExpense(null);
-          }}
-          initialType="expense"
+          isOpen={txModalState.isOpen}
+          onClose={() => setTxModalState(prev => ({ ...prev, isOpen: false }))}
+          initialType={txModalState.type}
+          initialAccountId={txModalState.accountId}
         />
       )}
 

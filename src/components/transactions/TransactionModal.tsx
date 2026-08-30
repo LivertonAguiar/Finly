@@ -23,6 +23,7 @@ interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialType?: TransactionType;
+  initialAccountId?: string;
   initialCardId?: string;
   editingTransaction?: Transaction | null;
 }
@@ -31,6 +32,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   isOpen,
   onClose,
   initialType = 'expense',
+  initialAccountId,
   initialCardId,
   editingTransaction = null,
 }) => {
@@ -93,7 +95,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         const defaultCat = categories.filter(c => c.type === (initialType === 'income' ? 'income' : 'expense'))[0]?.id || '';
         setCategoryId(defaultCat);
         setSubcategoryId('');
-        setAccountId(accounts[0]?.id || '');
+        setAccountId(initialAccountId || accounts[0]?.id || '');
         setTargetAccountId(accounts[1]?.id || '');
         setCardId(initialCardId || cards[0]?.id || '');
         setPaymentMethod(initialCardId ? 'card' : 'account');
@@ -105,7 +107,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setTags([]);
       }
     }
-  }, [isOpen, editingTransaction?.id, initialType, initialCardId]);
+  }, [isOpen, editingTransaction?.id, initialType, initialAccountId, initialCardId]);
 
 
   const filteredCategories = categories.filter(c => {
