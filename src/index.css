@@ -9,16 +9,27 @@
   --card-radius: 25px;
 }
 
+/* Base Body Styles */
 body {
-  background-color: var(--app-bg) !important;
-  color: #FFFFFF;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Light Mode Defaults */
+html:not(.dark) body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+/* Dark Mode Defaults */
+html.dark body {
+  background-color: var(--app-bg, #1C1C1E) !important;
+  color: #FFFFFF !important;
 }
 
 /* ========================================================================= */
-/* DYNAMIC CARD RADIUS OVERRIDES (Affects ALL cards, panels, and modals)     */
+/* DYNAMIC CARD RADIUS (Works seamlessly in BOTH Light and Dark modes)       */
 /* ========================================================================= */
 .rounded-\[25px\],
 .rounded-3xl,
@@ -35,7 +46,7 @@ body {
 }
 
 /* ========================================================================= */
-/* DYNAMIC ACCENT COLOR OVERRIDES (Affects buttons, badges, active tabs)     */
+/* DYNAMIC ACCENT COLOR (Works seamlessly in BOTH Light and Dark modes)     */
 /* ========================================================================= */
 .bg-purple-600,
 .bg-purple-500,
@@ -70,7 +81,7 @@ body {
   --tw-shadow-color: var(--primary-accent, #7C4DFF) !important;
 }
 
-/* Translucent tint backgrounds for badges and icons */
+/* Dynamic tint backgrounds */
 .bg-purple-50,
 .dark\:bg-purple-950\/20,
 .dark\:bg-purple-950\/30,
@@ -78,27 +89,26 @@ body {
 .dark\:bg-purple-900\/30,
 .dark\:bg-purple-600\/20,
 .dark\:bg-purple-500\/10 {
-  background-color: color-mix(in srgb, var(--primary-accent, #7C4DFF) 18%, transparent) !important;
+  background-color: color-mix(in srgb, var(--primary-accent, #7C4DFF) 16%, transparent) !important;
 }
 
 /* ========================================================================= */
-/* DYNAMIC BACKGROUNDS & SURFACES OVERRIDES                                  */
+/* DARK MODE SURFACE OVERRIDES (Mobills Dark, Midnight OLED, Emerald Slate)  */
 /* ========================================================================= */
-.bg-\[\#2C2C2E\],
-.dark\:bg-\[\#2C2C2E\],
-.dark\:bg-\[\#1e222d\],
-.dark\:bg-\[\#252b38\] {
+html.dark .dark\:bg-\[\#2C2C2E\],
+html.dark .bg-\[\#2C2C2E\],
+html.dark .dark\:bg-\[\#1e222d\],
+html.dark .dark\:bg-\[\#252b38\] {
   background-color: var(--app-card-bg, #2C2C2E) !important;
 }
 
-.bg-slate-50,
-.dark\:bg-slate-950,
-.dark\:bg-\[\#1C1C1E\],
-.dark\:bg-slate-900 {
+html.dark .dark\:bg-slate-950,
+html.dark .dark\:bg-\[\#1C1C1E\],
+html.dark .dark\:bg-slate-900 {
   background-color: var(--app-bg, #1C1C1E) !important;
 }
 
-/* Custom Scrollbars */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -107,6 +117,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #94A3B8;
   border-radius: 9999px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
 }

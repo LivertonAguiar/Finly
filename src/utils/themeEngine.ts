@@ -62,6 +62,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   // Set DOM attributes
   root.setAttribute('data-theme-preset', preset);
   root.setAttribute('data-card-radius', radius);
+  root.setAttribute('data-theme-mode', presetData.mode);
 
   if (presetData.mode === 'dark') {
     root.classList.add('dark');
@@ -69,7 +70,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     root.classList.remove('dark');
   }
 
-  // Set CSS Variables directly on root and body
+  // Set CSS Variables directly on root
   const radiusPx = RADIUS_MAP[radius] || '25px';
 
   root.style.setProperty('--app-bg', presetData.bg);
@@ -80,7 +81,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   document.body.style.backgroundColor = presetData.bg;
   document.body.style.color = presetData.text;
 
-  // Also inject / update a high-priority style tag for instant override
+  // Update dynamic style tag
   let dynamicStyleTag = document.getElementById('plannerfin-dynamic-theme-style');
   if (!dynamicStyleTag) {
     dynamicStyleTag = document.createElement('style');
@@ -95,6 +96,17 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       --primary-accent: ${accent} !important;
       --card-radius: ${radiusPx} !important;
     }
+    ${presetData.mode === 'light' ? `
+      body {
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
+      }
+    ` : `
+      body {
+        background-color: ${presetData.bg} !important;
+        color: #FFFFFF !important;
+      }
+    `}
   `;
 };
 
