@@ -165,7 +165,7 @@ export const CadastrosPage: React.FC = () => {
                 {categories.length}
               </p>
               <span className="text-[11px] text-slate-400 mt-1 block">
-                {categories.reduce((sum, c) => sum + c.subcategories.length, 0)} subcategorias
+                {categories.reduce((sum, c) => sum + (c.subcategories?.length || 0), 0)} subcategorias
               </span>
             </div>
           </div>
@@ -395,7 +395,7 @@ export const CadastrosPage: React.FC = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-black text-slate-800 dark:text-slate-100">{cat.name}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">({cat.subcategories.length})</span>
+                          <span className="text-[10px] text-slate-400 font-bold">({cat.subcategories?.length || 0})</span>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.2 rounded-md ${
                               cat.type === 'income'
@@ -431,7 +431,7 @@ export const CadastrosPage: React.FC = () => {
                   {/* Subcategories Sub-Tree */}
                   {isExpanded && (
                     <div className="mt-3 pl-10 space-y-2 border-l-2 border-slate-100 dark:border-slate-800 ml-4 animate-in fade-in">
-                      {cat.subcategories.map(sub => (
+                      {(cat.subcategories || []).map(sub => (
                         <div key={sub.id} className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs">
                           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                             <span>{sub.icon || '•'}</span>

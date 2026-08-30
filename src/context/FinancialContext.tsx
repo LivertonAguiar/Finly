@@ -174,33 +174,20 @@ interface FinancialContextType {
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
 
 function sanitizeStoredData<T>(obj: T): T {
-  if (typeof obj === 'string') {
-    let str = obj as string;
-    return str
-      .replace(/🛡️|🛡️/g, '🛡️')
-      .replace(/✈️|✈️/g, '✈️')
-      .replace(/👋/g, '👋')
-      .replace(/💰/g, '💰')
-      .replace(/💵/g, '💵')
-      .replace(/💳/g, '💳')
-      .replace(/🏦/g, '🏦')
-      .replace(/📈/g, '📈')
-      .replace(/💸/g, '💸')
-      .replace(/💎/g, '💎')
-      .replace(/🍽️|🍽️/g, '🍽️')
-      .replace(/ðŸ›’/g, '🛒')
-      .replace(/ðŸ •/g, '🍕')
-      .replace(/â˜•/g, '☕')
-      .replace(/ðŸ¥–/g, '🥖')
-      .replace(/🏠/g, '🏠') as unknown as T;
-  }
+  if (!obj) return obj;
   if (Array.isArray(obj)) {
     return obj.map(sanitizeStoredData) as unknown as T;
   }
-  if (obj !== null && typeof obj === 'object') {
+  if (typeof obj === 'object') {
     const res: any = {};
     for (const k of Object.keys(obj)) {
       res[k] = sanitizeStoredData((obj as any)[k]);
+    }
+    // If it's a category, ensure subcategories is an array
+    if (res.id && res.name && res.type && (res.type === 'income' || res.type === 'expense')) {
+      if (!Array.isArray(res.subcategories)) {
+        res.subcategories = [];
+      }
     }
     return res;
   }
@@ -214,6 +201,35 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userId = currentUser ? currentUser.id : 'guest';
   const userStoreKey = `plannerfin_user_${userId}_store`;
 
+  // Helper to merge default categories with any existing user categories
+  const mergeCategories = (savedCats: any[]): Category[] => {
+    if (!Array.isArray(savedCats) || savedCats.length === 0) return DEFAULT_CATEGORIES;
+    const map = new Map<string, Category>();
+    DEFAULT_CATEGORIES.forEach(c => {
+      map.set(c.id, { ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
+      map.set(c.name.toLowerCase().trim(), { ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
+    });
+    savedCats.forEach(c => {
+      if (c && c.id && c.name) {
+        const match = map.get(c.name.toLowerCase().trim());
+        if (match) {
+          map.set(match.id, { ...match, ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
+        } else {
+          map.set(c.id, { ...c, subcategories: Array.isArray(c.subcategories) ? c.subcategories : [] });
+        }
+      }
+    });
+    const res: Category[] = [];
+    const seen = new Set<string>();
+    map.forEach(c => {
+      if (!seen.has(c.id)) {
+        seen.add(c.id);
+        res.push(c);
+      }
+    });
+    return res;
+  };
+
   // Helper to load user's initial state
   const loadUserStore = (): UserStoreData => {
     try {
@@ -223,7 +239,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return sanitizeStoredData({
           accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
           cards: Array.isArray(parsed.cards) ? parsed.cards : [],
-          categories: Array.isArray(parsed.categories) && parsed.categories.length > 0 ? parsed.categories : DEFAULT_CATEGORIES,
+          categories: mergeCategories(parsed.categories),
           budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
           goals: Array.isArray(parsed.goals) ? parsed.goals : [],
           debts: Array.isArray(parsed.debts) ? parsed.debts : [],
@@ -304,7 +320,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (serverStore && serverStore.accounts) {
         setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
         setCards(serverStore.cards || []);
-        setCategories(serverStore.categories && serverStore.categories.length > 0 ? serverStore.categories : DEFAULT_CATEGORIES);
+        setCategories(mergeCategories(serverStore.categories));
         setBudgets(serverStore.budgets || []);
         setGoals(serverStore.goals || []);
         setDebts(serverStore.debts || []);
@@ -320,6 +336,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (serverStore && serverStore.accounts) {
           setAccounts(serverStore.accounts || []);
           setCards(serverStore.cards || []);
+          if (serverStore.categories) setCategories(mergeCategories(serverStore.categories));
           setTransactions(serverStore.transactions || []);
           setBudgets(serverStore.budgets || []);
           setGoals(serverStore.goals || []);
