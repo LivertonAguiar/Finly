@@ -18,40 +18,28 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Modal } from '../ui/Modal';
-
-interface FamilyMember {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  isOwner?: boolean;
-  type: 'linked' | 'unlinked';
-  joinedAt: string;
-}
+import { FamilyMember } from '../../types';
 
 export const FamilyPage: React.FC = () => {
-  const { user } = useFinancial();
+  const { user, familyMembers, inviteFamilyMember, updateFamilyMember, removeFamilyMember } = useFinancial();
+  const { confirm } = useConfirm();
 
-  const [members, setMembers] = useState<FamilyMember[]>([
+  // Ensure user is in family list
+  const allMembers: FamilyMember[] = familyMembers.length > 0 ? familyMembers : [
     {
-      id: 'mem-1',
-      name: 'Mariane Farias Aguiar',
-      email: 'mary031fariias@gmail.com',
-      isOwner: false,
-      type: 'linked',
-      joinedAt: '12/05/2026',
-    },
-    {
-      id: 'mem-2',
+      id: 'mem-owner',
       name: user.name || 'Liverton da Ponte Aguiar',
       email: user.email || 'liverton.aguiar@hotmail.com',
       phone: '85985949115',
+      role: 'admin',
+      status: 'active',
       isOwner: true,
       type: 'linked',
       joinedAt: '01/01/2026',
-    },
-  ]);
+    }
+  ];
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
@@ -76,89 +64,106 @@ export const FamilyPage: React.FC = () => {
     setFormName(m.name);
     setFormEmail(m.email);
     setFormPhone(m.phone || '');
-    setFormType(m.type);
+    setFormType(m.type || 'linked');
     setIsAddModalOpen(true);
   };
 
-  const handleDeleteMember = (id: string) => {
-    setMembers(prev => prev.filter(m => m.id !== id));
+  const handleDeleteMember = async (m: FamilyMember) => {
+    if (m.isOwner) {
+      alert('O titular da conta não pode ser removido.');
+      return;
+    }
+
+    const ok = await confirm({
+      title: 'Remover Membro',
+      message: `Deseja realmente remover ${m.name} da sua família financeira?`,
+      confirmText: 'Remover',
+      type: 'danger',
+    });
+
+    if (ok) {
+      removeFamilyMember(m.id);
+    }
   };
 
   const handleSaveMember = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formEmail) return;
+    if (!formName.trim() || !formEmail.trim()) return;
 
     if (editingMember) {
-      setMembers(prev =>
-        prev.map(m =>
-          m.id === editingMember.id
-            ? { ...m, name: formName, email: formEmail, phone: formPhone, type: formType }
-            : m
-        )
-      );
+      updateFamilyMember(editingMember.id, {
+        name: formName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim(),
+        type: formType,
+      });
     } else {
-      const newM: FamilyMember = {
-        id: 'mem-' + Date.now(),
-        name: formName,
-        email: formEmail,
-        phone: formPhone,
+      inviteFamilyMember({
+        name: formName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim(),
+        role: 'editor',
+        status: 'active',
         isOwner: false,
         type: formType,
-        joinedAt: new Date().toLocaleDateString('pt-BR'),
-      };
-      setMembers(prev => [newM, ...prev]);
+      });
     }
     setIsAddModalOpen(false);
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in pb-16">
       {/* Top Title & Header Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Família</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Gerencie os membros da sua família financeira
+            Gerencie os membros da sua família financeira com sincronização instantânea
           </p>
         </div>
 
-        {/* Adquirir +1 Membro Button */}
+        {/* Adicionar Membro Button */}
         <button
+          type="button"
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-purple-300 dark:border-purple-800 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 text-xs font-bold shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all self-start sm:self-auto"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer self-start sm:self-auto"
         >
-          <ShoppingCart className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          <span>Adquirir +1 Membro</span>
+          <UserPlus className="w-4 h-4" />
+          <span>+ Adicionar Membro</span>
         </button>
       </div>
 
       {/* Card: Minha Família */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-        <div className="flex items-center gap-2.5">
-          <Users className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">Minha Família</h3>
+      <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">Minha Família</h3>
+          </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+            {allMembers.length} {allMembers.length === 1 ? 'membro' : 'membros'}
+          </span>
         </div>
-        <p className="text-xs text-slate-400 font-medium -mt-2">{members.length} membros</p>
 
         {/* Member Cards List */}
         <div className="space-y-3 pt-2">
-          {members.map((member) => {
+          {allMembers.map((member) => {
             const initial = member.name.charAt(0).toUpperCase();
 
             return (
               <div
                 key={member.id}
-                className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 shadow-xs flex items-center justify-between gap-4 transition-all"
+                className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-[#343437]/50 border border-slate-200/80 dark:border-slate-700/60 hover:border-purple-300 dark:hover:border-purple-800 shadow-xs flex items-center justify-between gap-4 transition-all group"
               >
                 {/* Left: Avatar + Details */}
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   {/* Avatar */}
                   <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-[#4f46e5] text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    <div className="w-12 h-12 rounded-full bg-[#7c4dff] text-white flex items-center justify-center font-black text-lg shadow-sm">
                       {initial}
                     </div>
                     {member.isOwner && (
-                      <span className="absolute -top-1 -right-1 text-base leading-none drop-shadow">
+                      <span className="absolute -top-1 -right-1 text-base leading-none drop-shadow" title="Titular">
                         👑
                       </span>
                     )}
@@ -166,9 +171,16 @@ export const FamilyPage: React.FC = () => {
 
                   {/* Name, Email, Phone, Badges */}
                   <div className="min-w-0 space-y-1">
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                      {member.name}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                        {member.name}
+                      </h4>
+                      {member.isOwner && (
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                          Titular
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                       <span className="flex items-center gap-1.5 truncate">
@@ -186,14 +198,14 @@ export const FamilyPage: React.FC = () => {
 
                     {/* Status Pill Badge */}
                     <div className="pt-0.5">
-                      {member.type === 'linked' ? (
+                      {member.type === 'linked' || !member.type ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-bold shadow-xs">
-                          <LinkIcon className="w-2.5 h-2.5 text-slate-300" />
+                          <LinkIcon className="w-2.5 h-2.5 text-emerald-400" />
                           Vinculado
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
-                          <Unlink className="w-2.5 h-2.5" />
+                          <Unlink className="w-2.5 h-2.5 text-slate-400" />
                           Não Vinculado
                         </span>
                       )}
@@ -204,8 +216,9 @@ export const FamilyPage: React.FC = () => {
                 {/* Right: Actions */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
+                    type="button"
                     onClick={() => handleOpenEdit(member)}
-                    className="p-2 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                    className="p-2 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                     title="Editar membro"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -213,9 +226,10 @@ export const FamilyPage: React.FC = () => {
 
                   {!member.isOwner && (
                     <button
-                      onClick={() => handleDeleteMember(member.id)}
-                      className="p-2 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                      title="Excluir membro"
+                      type="button"
+                      onClick={() => handleDeleteMember(member)}
+                      className="p-2 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                      title="Excluir membro permanentemente"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -228,7 +242,7 @@ export const FamilyPage: React.FC = () => {
       </div>
 
       {/* Card: Tipos de Vínculo */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
+      <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
         <div>
           <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">Tipos de Vínculo</h3>
           <p className="text-xs text-slate-400 mt-0.5">Entenda as diferenças entre os tipos de membros</p>
@@ -248,61 +262,53 @@ export const FamilyPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Compartilham todas as transações, contas e cartões. Cada transação mostra quem a criou.
+              O membro vinculado tem acesso completo aos dados financeiros da família. Pode visualizar e registrar transações em todas as contas e cartões compartilhados.
             </p>
 
-            <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+            <ul className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Compartilha lançamentos</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Visualiza saldo de todas as contas</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Vê todas as contas e cartões</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Registra despesas e receitas</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Email e perfil independentes</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Personalização própria</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Acompanha limites de cartões e faturas</span>
               </li>
             </ul>
           </div>
 
           {/* Box 2: Membro Não Vinculado */}
-          <div className="p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 space-y-4">
-            <div className="flex items-center gap-2.5 text-blue-800 dark:text-blue-300">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-4">
+            <div className="flex items-center gap-2.5 text-slate-800 dark:text-slate-200">
+              <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                <Unlink className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
               <div>
                 <h4 className="text-sm font-extrabold">Membro Não Vinculado</h4>
-                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Irmãos e amigos</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ideal para dependentes</span>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Cada membro tem suas próprias transações e contas completamente independentes.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              O membro não vinculado serve apenas para categorizar despesas e receitas atribuídas a ele (como filhos, dependentes ou funcionários), sem conceder acesso de login à conta.
             </p>
 
-            <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+            <ul className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-400">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                <span>Lançamentos independentes</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>Não possui acesso ao login</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                <span>Contas e cartões próprios</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>Permite filtrar gastos específicos deste membro</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                <span>Total privacidade</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                <span>Personalização própria</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>Ideal para gestão de mesada e despesas de filhos</span>
               </li>
             </ul>
           </div>
@@ -313,87 +319,80 @@ export const FamilyPage: React.FC = () => {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title={editingMember ? 'Editar Membro da Família' : 'Adicionar Membro da Família'}
-        maxWidth="md"
+        title={editingMember ? 'Editar Membro da Família' : 'Novo Membro da Família'}
+        maxWidth="lg"
       >
         <form onSubmit={handleSaveMember} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nome Completo *</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Nome Completo *
+            </label>
             <input
               type="text"
               required
               placeholder="Ex: Mariane Farias"
               value={formName}
-              onChange={e => setFormName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              onChange={(e) => setFormName(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">E-mail do Membro *</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              E-mail *
+            </label>
             <input
               type="email"
               required
-              placeholder="Ex: mariane@email.com"
+              placeholder="Ex: mary@gmail.com"
               value={formEmail}
-              onChange={e => setFormEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              onChange={(e) => setFormEmail(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">WhatsApp / Telefone</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Telefone / WhatsApp (Opcional)
+            </label>
             <input
               type="text"
               placeholder="Ex: (85) 98594-9115"
               value={formPhone}
-              onChange={e => setFormPhone(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              onChange={(e) => setFormPhone(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Tipo de Vínculo</label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`p-3 rounded-xl border cursor-pointer flex flex-col justify-between transition-all ${
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Tipo de Vínculo
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormType('linked')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   formType === 'linked'
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Vinculado</span>
-                  <input
-                    type="radio"
-                    name="type"
-                    checked={formType === 'linked'}
-                    onChange={() => setFormType('linked')}
-                    className="text-emerald-600 focus:ring-emerald-500"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-500">Compartilha finanças e contas (ideal para casais)</p>
-              </label>
-
-              <label
-                className={`p-3 rounded-xl border cursor-pointer flex flex-col justify-between transition-all ${
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Vinculado</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormType('unlinked')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   formType === 'unlinked'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                    ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-md'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Não Vinculado</span>
-                  <input
-                    type="radio"
-                    name="type"
-                    checked={formType === 'unlinked'}
-                    onChange={() => setFormType('unlinked')}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-500">Finanças e contas 100% independentes</p>
-              </label>
+                <Unlink className="w-3.5 h-3.5" />
+                <span>Não Vinculado</span>
+              </button>
             </div>
           </div>
 
@@ -401,30 +400,19 @@ export const FamilyPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all"
+              className="px-5 py-2 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
             >
-              {editingMember ? 'Salvar Alterações' : 'Convidar / Adicionar'}
+              {editingMember ? 'Salvar Alterações' : 'Adicionar Membro'}
             </button>
           </div>
         </form>
       </Modal>
-
-      {/* Floating WhatsApp Button */}
-      <a
-        href="https://wa.me/5535984595502"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
-        title="Falar no WhatsApp"
-      >
-        <MessageSquare className="w-6 h-6 fill-current" />
-      </a>
     </div>
   );
 };

@@ -138,7 +138,8 @@ interface FinancialContextType {
 
   // Family Members
   familyMembers: FamilyMember[];
-  inviteFamilyMember: (name: string, email: string, role: 'admin' | 'editor' | 'viewer') => void;
+  inviteFamilyMember: (member: Omit<FamilyMember, 'id' | 'joinedAt'>) => void;
+  updateFamilyMember: (id: string, data: Partial<FamilyMember>) => void;
   removeFamilyMember: (id: string) => void;
 
   // Notifications
@@ -317,6 +318,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setDebts(serverStore.debts || []);
         setInvestments(serverStore.investments || []);
         setTransactions(serverStore.transactions || []);
+        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (serverStore.userProfile) setUser(serverStore.userProfile);
       }
     });
@@ -333,6 +335,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setGoals(serverStore.goals || []);
           setDebts(serverStore.debts || []);
           setInvestments(serverStore.investments || []);
+          if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         }
       });
     };
@@ -873,9 +876,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Family Members
-  const inviteFamilyMember = (name: string, email: string, role: 'admin' | 'editor' | 'viewer') => {
-    const newMember: FamilyMember = { id: `fam-${Date.now()}`, name, email, role, status: 'pending', joinedAt: getTodayString() };
+  const inviteFamilyMember = (member: Omit<FamilyMember, 'id' | 'joinedAt'>) => {
+    const newMember: FamilyMember = {
+      ...member,
+      id: `fam-${Date.now()}`,
+      joinedAt: getTodayString(),
+    };
     setFamilyMembers(prev => [...prev, newMember]);
+  };
+
+  const updateFamilyMember = (id: string, data: Partial<FamilyMember>) => {
+    setFamilyMembers(prev => prev.map(m => (m.id === id ? { ...m, ...data } : m)));
   };
 
   const removeFamilyMember = (id: string) => {
@@ -1113,6 +1124,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         deleteInvestment,
         familyMembers,
         inviteFamilyMember,
+        updateFamilyMember,
         removeFamilyMember,
         notifications,
         markNotificationRead,

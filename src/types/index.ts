@@ -158,8 +158,11 @@ export interface FamilyMember {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: 'admin' | 'editor' | 'viewer';
   status: 'active' | 'pending';
+  type?: 'linked' | 'unlinked';
+  isOwner?: boolean;
   joinedAt: string;
 }
 
