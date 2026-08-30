@@ -55,6 +55,7 @@ interface FinancialContextType {
   updateCard: (id: string, data: Partial<CreditCard>) => void;
   deleteCard: (id: string) => void;
   payCardInvoice: (cardId: string, accountId: string, amount: number, month: string) => void;
+  unpayCardInvoice: (cardId: string, month: string) => void;
 
   // Categories
   categories: Category[];
@@ -367,6 +368,40 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setTransactions(prev => [payTx, ...prev]);
   };
+
+  const unpayCardInvoice = (cardId: string, month: string) => {
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    // Find any payment transaction created for this invoice
+    const payTx = transactions.find(
+      t =>
+        t.tags?.includes('fatura') &&
+        t.tags?.includes('cartao') &&
+        t.description.includes(card.name) &&
+        t.description.includes(month)
+    );
+
+    // If a payment transaction existed and had an account, restore the money
+    if (payTx && payTx.accountId) {
+      setAccounts(prev =>
+        prev.map(a => (a.id === payTx.accountId ? { ...a, balance: a.balance + payTx.amount } : a))
+      );
+      // Remove payment transaction
+      setTransactions(prev => prev.filter(t => t.id !== payTx.id));
+    }
+
+    // Set all card expense transactions for this month back to pending
+    setTransactions(prev =>
+      prev.map(t => {
+        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(month)) {
+          return { ...t, status: 'pending' };
+        }
+        return t;
+      })
+    );
+  };
+
 
   // Category Actions
   const addCategory = (cat: Omit<Category, 'id' | 'subcategories'>) => {
@@ -729,6 +764,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateCard,
         deleteCard,
         payCardInvoice,
+        unpayCardInvoice,
         categories,
         addCategory,
         updateCategory,

@@ -53,7 +53,7 @@ const getInitialTabFromPath = (): string => {
   if (!path || path === 'dashboard' || path === 'principal') return 'dashboard';
   if (path === 'transacoes' || path === 'transacoes' || path === 'transactions') return 'transacoes';
   if (path === 'contas' || path === 'accounts') return 'contas';
-  if (path === 'cartoes' || path === 'cards') return 'cartoes';
+  if (path === 'cartoes' || path === 'cartoescredito' || path === 'cards') return 'cartoes';
   if (path === 'planejamento' || path === 'orcamentos' || path === 'criarnovoplanejamento' || path === 'budgets') return 'planejamento';
   if (path === 'relatorios' || path === 'reports') return 'relatorios';
   if (path === 'calendario' || path === 'calendar') return 'calendario';

@@ -22,6 +22,7 @@ interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialType?: TransactionType;
+  initialCardId?: string;
   editingTransaction?: Transaction | null;
 }
 
@@ -29,6 +30,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   isOpen,
   onClose,
   initialType = 'expense',
+  initialCardId,
   editingTransaction = null,
 }) => {
   const { categories, accounts, cards, addTransaction, updateTransaction, user } = useFinancial();
@@ -41,7 +43,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [subcategoryId, setSubcategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [targetAccountId, setTargetAccountId] = useState('');
-  const [cardId, setCardId] = useState('');
+  const [cardId, setCardId] = useState(initialCardId || '');
   const [paymentMethod, setPaymentMethod] = useState<'account' | 'card'>('account');
   const [status, setStatus] = useState<TransactionStatus>('completed');
   const [recurring, setRecurring] = useState(false);
