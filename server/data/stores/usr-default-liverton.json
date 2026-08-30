@@ -19,7 +19,7 @@
       "closingDay": 27,
       "dueDay": 1,
       "color": "#820ad1",
-      "defaultAccountId": "",
+      "defaultAccountId": "acc-carteira-padrao",
       "id": "card-1788094641945-bzt"
     },
     {
@@ -768,5 +768,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-30T13:54:48.151Z"
+  "_serverTimestamp": "2026-08-30T13:58:56.159Z"
 }

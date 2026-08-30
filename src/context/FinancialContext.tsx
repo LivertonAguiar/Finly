@@ -617,9 +617,54 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => [newTx, ...prev]);
   };
 
+
   const updateTransaction = (id: string, data: Partial<Transaction>) => {
-    setTransactions(prev => prev.map(t => (t.id === id ? { ...t, ...data } : t)));
+    const oldTx = transactions.find(t => t.id === id);
+    if (!oldTx) return;
+
+    const newTx: Transaction = {
+      ...oldTx,
+      ...data,
+      amount: data.amount !== undefined ? round2(data.amount) : oldTx.amount,
+    };
+
+    // 1. Revert old transaction balance effect if completed
+    if (oldTx.status === 'completed') {
+      if (oldTx.type === 'income' && oldTx.accountId) {
+        setAccounts(prev => prev.map(a => (a.id === oldTx.accountId ? { ...a, balance: round2(a.balance - oldTx.amount) } : a)));
+      } else if (oldTx.type === 'expense' && oldTx.accountId) {
+        setAccounts(prev => prev.map(a => (a.id === oldTx.accountId ? { ...a, balance: round2(a.balance + oldTx.amount) } : a)));
+      } else if (oldTx.type === 'transfer' && oldTx.accountId && oldTx.targetAccountId) {
+        setAccounts(prev =>
+          prev.map(a => {
+            if (a.id === oldTx.accountId) return { ...a, balance: round2(a.balance + oldTx.amount) };
+            if (a.id === oldTx.targetAccountId) return { ...a, balance: round2(a.balance - oldTx.amount) };
+            return a;
+          })
+        );
+      }
+    }
+
+    // 2. Apply new transaction balance effect if completed
+    if (newTx.status === 'completed') {
+      if (newTx.type === 'income' && newTx.accountId) {
+        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance + newTx.amount) } : a)));
+      } else if (newTx.type === 'expense' && newTx.accountId) {
+        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance - newTx.amount) } : a)));
+      } else if (newTx.type === 'transfer' && newTx.accountId && newTx.targetAccountId) {
+        setAccounts(prev =>
+          prev.map(a => {
+            if (a.id === newTx.accountId) return { ...a, balance: round2(a.balance - newTx.amount) };
+            if (a.id === newTx.targetAccountId) return { ...a, balance: round2(a.balance + newTx.amount) };
+            return a;
+          })
+        );
+      }
+    }
+
+    setTransactions(prev => prev.map(t => (t.id === id ? newTx : t)));
   };
+
 
 
   const deleteTransaction = (id: string) => {

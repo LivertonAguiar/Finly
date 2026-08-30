@@ -98,7 +98,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setDescription(editingTransaction.description || '');
         setAmount(editingTransaction.amount ? Number(editingTransaction.amount).toFixed(2) : '');
         setDate(editingTransaction.date || getTodayString());
-        setCategoryId(editingTransaction.categoryId || '');
+        
+        const foundCat = categories.find(c => c.id === editingTransaction.categoryId || c.name.toLowerCase() === editingTransaction.categoryId?.toLowerCase());
+        setCategoryId(foundCat ? foundCat.id : (editingTransaction.categoryId || categories[0]?.id || ''));
+
         setSubcategoryId(editingTransaction.subcategoryId || '');
         setAccountId(editingTransaction.accountId || '');
         setTargetAccountId(editingTransaction.targetAccountId || '');
@@ -302,6 +305,38 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         {!isAmountValid && amount !== '' && (
           <p className="text-[11px] font-bold text-rose-500 px-1 -mt-2">Deve ter um valor diferente de 0</p>
         )}
+
+        {/* Payment Method Switcher (Conta Bancária vs Cartão de Crédito) */}
+        {type === 'expense' && (
+          <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('account')}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                paymentMethod === 'account'
+                  ? 'bg-white dark:bg-[#2C2C2E] text-purple-600 dark:text-purple-400 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+              }`}
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>Conta Bancária</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('card')}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                paymentMethod === 'card'
+                  ? 'bg-white dark:bg-[#2C2C2E] text-teal-600 dark:text-teal-400 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+              }`}
+            >
+              <CardIcon className="w-3.5 h-3.5" />
+              <span>Cartão de Crédito</span>
+            </button>
+          </div>
+        )}
+
 
         {/* ========================================================================= */}
         {/* 2. DATE WITH QUICK CHIPS ([HOJE], [ONTEM], [OUTROS...]) */}

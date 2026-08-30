@@ -32,7 +32,7 @@ import { Modal } from '../ui/Modal';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 
 export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCard }) => {
-  const { cards, user, transactions, accounts, categories, payCardInvoice, unpayCardInvoice, toggleTransactionStatus, deleteCard, addTransaction } = useFinancial();
+  const { cards, user, transactions, accounts, categories, payCardInvoice, unpayCardInvoice, toggleTransactionStatus, deleteCard, addTransaction, deleteTransaction } = useFinancial();
   const { confirm } = useConfirm();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
@@ -48,6 +48,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
   const [payAmount, setPayAmount] = useState('');
 
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+  const [editingInvoiceTx, setEditingInvoiceTx] = useState<Transaction | null>(null);
   const [selectedCardForExpense, setSelectedCardForExpense] = useState<string | null>(null);
 
   const [openMenuCardId, setOpenMenuCardId] = useState<string | null>(null);
@@ -403,11 +404,12 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   const cat = categories.find(c => c.id === t.categoryId);
 
                   return (
-                    <div key={t.id} className="py-3.5 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
+
+                    <div key={t.id} className="py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50/50 dark:hover:bg-[#343437]/30 px-2 rounded-2xl transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
                         <button
                           onClick={() => toggleTransactionStatus(t.id)}
-                          className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer shrink-0"
                           title={t.status === 'completed' ? 'Marcar como pendente' : 'Marcar como pago'}
                         >
                           {t.status === 'completed' ? (
@@ -425,19 +427,49 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                         >
                           {cat?.icon || '💳'}
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900 dark:text-white">{t.description}</p>
-                          <span className="text-[10px] text-slate-400">
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{t.description}</p>
+                          <span className="text-[10px] text-slate-400 block truncate">
                             {formatDate(t.date)} • {cat?.name || 'Geral'}
                             {t.installments ? ` • Parcela ${t.installments.current}/${t.installments.total}` : ''}
                           </span>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className="text-xs font-black text-rose-600 dark:text-rose-400 block">
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-black text-rose-600 dark:text-rose-400">
                           -{formatCurrency(t.amount, user.currency, !user.showValues)}
                         </span>
+
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              setEditingInvoiceTx(t);
+                              setIsAddExpenseModalOpen(true);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
+                            title="Editar lançamento"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Excluir Lançamento',
+                                message: `Deseja realmente excluir "${t.description}" de ${formatCurrency(t.amount, user.currency)}?`,
+                                confirmText: 'Excluir',
+                                type: 'danger',
+                              });
+                              if (ok) {
+                                deleteTransaction(t.id);
+                              }
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                            title="Excluir lançamento"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
