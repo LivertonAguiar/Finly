@@ -61,14 +61,7 @@
       "icon": "🚰",
       "color": "#06b6d4",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-agua-mensal",
-          "name": "Conta de Água Mensal",
-          "icon": "🚿",
-          "categoryId": "cat-agua"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-alimentacao",
@@ -78,27 +71,21 @@
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-mercado",
-          "name": "Mercado / Supermercado",
+          "id": "sub-mercado-alim",
+          "name": "Supermercado",
           "icon": "🛒",
           "categoryId": "cat-alimentacao"
         },
         {
           "id": "sub-restaurante",
-          "name": "Restaurante / Delivery",
-          "icon": "🍕",
+          "name": "Restaurante / Almoço",
+          "icon": "🍽️",
           "categoryId": "cat-alimentacao"
         },
         {
           "id": "sub-lanches",
           "name": "Café / Lanches",
           "icon": "☕",
-          "categoryId": "cat-alimentacao"
-        },
-        {
-          "id": "sub-padaria",
-          "name": "Padaria / Feira",
-          "icon": "🥖",
           "categoryId": "cat-alimentacao"
         }
       ]
@@ -109,14 +96,7 @@
       "icon": "🏠",
       "color": "#3b82f6",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-aluguel-mensal",
-          "name": "Aluguel do Imóvel",
-          "icon": "🏠",
-          "categoryId": "cat-aluguel-d"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-assinaturas",
@@ -181,26 +161,7 @@
       "icon": "🛍️",
       "color": "#f43f5e",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-compras-online",
-          "name": "Compras Online (Amazon, ML)",
-          "icon": "📦",
-          "categoryId": "cat-compras"
-        },
-        {
-          "id": "sub-compras-vestuario",
-          "name": "Roupas & Acessórios",
-          "icon": "👕",
-          "categoryId": "cat-compras"
-        },
-        {
-          "id": "sub-compras-presentes",
-          "name": "Presentes",
-          "icon": "🎁",
-          "categoryId": "cat-compras"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-condominio",
@@ -208,14 +169,7 @@
       "icon": "🏙️",
       "color": "#3b82f6",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-condominio-taxa",
-          "name": "Taxa de Condomínio",
-          "icon": "🏢",
-          "categoryId": "cat-condominio"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-delivery",
@@ -261,44 +215,25 @@
       "icon": "⭐",
       "color": "#eab308",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-dizimo",
-          "name": "Dízimo",
-          "icon": "🙏",
-          "categoryId": "cat-dizimos-ofertas"
-        },
-        {
-          "id": "sub-ofertas",
-          "name": "Ofertas & Missões",
-          "icon": "🎁",
-          "categoryId": "cat-dizimos-ofertas"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-educacao",
       "name": "Educação",
-      "icon": "🎓",
-      "color": "#10b981",
+      "icon": "📚",
+      "color": "#8b5cf6",
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-mensalidade",
+          "id": "sub-faculdade",
           "name": "Faculdade / Escola",
-          "icon": "🏫",
+          "icon": "🎓",
           "categoryId": "cat-educacao"
         },
         {
           "id": "sub-cursos",
-          "name": "Cursos / Treinamentos",
+          "name": "Cursos & Treinamentos",
           "icon": "💻",
-          "categoryId": "cat-educacao"
-        },
-        {
-          "id": "sub-livros",
-          "name": "Livros / Papelaria",
-          "icon": "📚",
           "categoryId": "cat-educacao"
         }
       ]
@@ -309,26 +244,7 @@
       "icon": "🖥️",
       "color": "#6366f1",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-eletro-hardware",
-          "name": "Hardware & Peças",
-          "icon": "💻",
-          "categoryId": "cat-eletronicos"
-        },
-        {
-          "id": "sub-eletro-perifericos",
-          "name": "Periféricos & Cabos",
-          "icon": "🔌",
-          "categoryId": "cat-eletronicos"
-        },
-        {
-          "id": "sub-eletro-gadgets",
-          "name": "Smartphones & Gadgets",
-          "icon": "📱",
-          "categoryId": "cat-eletronicos"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-energia",
@@ -336,14 +252,7 @@
       "icon": "💡",
       "color": "#eab308",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-energia-mensal",
-          "name": "Conta de Luz Mensal",
-          "icon": "⚡",
-          "categoryId": "cat-energia"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-farmacia",
@@ -366,20 +275,7 @@
       "icon": "💳",
       "color": "#820ad1",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-fatura-nubank",
-          "name": "Fatura Nubank",
-          "icon": "💳",
-          "categoryId": "cat-fatura-cartao"
-        },
-        {
-          "id": "sub-fatura-inter",
-          "name": "Fatura Inter",
-          "icon": "💳",
-          "categoryId": "cat-fatura-cartao"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-filhos",
@@ -387,44 +283,7 @@
       "icon": "👶",
       "color": "#ec4899",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-filhos-alimentacao",
-          "name": "Alimentação / Fórmulas",
-          "icon": "🍼",
-          "categoryId": "cat-filhos"
-        },
-        {
-          "id": "sub-filhos-higiene",
-          "name": "Fraldas & Higiene",
-          "icon": "🧼",
-          "categoryId": "cat-filhos"
-        },
-        {
-          "id": "sub-filhos-saude",
-          "name": "Saúde & Pediatra",
-          "icon": "🩺",
-          "categoryId": "cat-filhos"
-        },
-        {
-          "id": "sub-filhos-roupas",
-          "name": "Roupas & Calçados",
-          "icon": "👕",
-          "categoryId": "cat-filhos"
-        },
-        {
-          "id": "sub-filhos-escola",
-          "name": "Educação & Escola",
-          "icon": "🎓",
-          "categoryId": "cat-filhos"
-        },
-        {
-          "id": "sub-filhos-lazer",
-          "name": "Brinquedos & Passeios",
-          "icon": "🧸",
-          "categoryId": "cat-filhos"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-financiamento",
@@ -432,20 +291,7 @@
       "icon": "🪙",
       "color": "#64748b",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-fin-imobiliario",
-          "name": "Financiamento Imobiliário",
-          "icon": "🏠",
-          "categoryId": "cat-financiamento"
-        },
-        {
-          "id": "sub-fin-veiculo",
-          "name": "Financiamento de Veículo",
-          "icon": "🚗",
-          "categoryId": "cat-financiamento"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-imposto",
@@ -468,14 +314,7 @@
       "icon": "🛜",
       "color": "#0ea5e9",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-internet-fibra",
-          "name": "Internet Fibra / Wi-Fi",
-          "icon": "🌐",
-          "categoryId": "cat-internet"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-investimento-aporte",
@@ -504,56 +343,25 @@
       "icon": "📈",
       "color": "#f43f5e",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-juros-cartao",
-          "name": "Juros de Cartão",
-          "icon": "📉",
-          "categoryId": "cat-juros-multas"
-        },
-        {
-          "id": "sub-multas-transito",
-          "name": "Multas de Trânsito",
-          "icon": "🚨",
-          "categoryId": "cat-juros-multas"
-        },
-        {
-          "id": "sub-encargos-atraso",
-          "name": "Encargos de Atraso",
-          "icon": "⏳",
-          "categoryId": "cat-juros-multas"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-lazer",
-      "name": "Lazer e Entretenimento",
-      "icon": "🎮",
+      "name": "Lazer",
+      "icon": "🏖️",
       "color": "#ec4899",
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-streaming",
-          "name": "Assinaturas / Streaming",
-          "icon": "📺",
-          "categoryId": "cat-lazer"
-        },
-        {
-          "id": "sub-passeios",
-          "name": "Cinema / Shows / Festas",
-          "icon": "🎟️",
-          "categoryId": "cat-lazer"
-        },
-        {
-          "id": "sub-viagens",
-          "name": "Viagens / Hospedagem",
+          "id": "sub-viagem",
+          "name": "Viagens & Passeios",
           "icon": "✈️",
           "categoryId": "cat-lazer"
         },
         {
-          "id": "sub-jogos",
-          "name": "Jogos / Hobbies",
-          "icon": "🎲",
+          "id": "sub-cinema",
+          "name": "Cinema & Shows",
+          "icon": "🎟️",
           "categoryId": "cat-lazer"
         }
       ]
@@ -564,20 +372,7 @@
       "icon": "📚",
       "color": "#8b5cf6",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-livros-tecnicos",
-          "name": "Livros Técnicos / Teologia",
-          "icon": "📚",
-          "categoryId": "cat-livros-papelaria"
-        },
-        {
-          "id": "sub-papelaria-mat",
-          "name": "Material de Escritório",
-          "icon": "✏️",
-          "categoryId": "cat-livros-papelaria"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-mercado",
@@ -606,20 +401,7 @@
       "icon": "🛏️",
       "color": "#d97706",
       "type": "expense",
-      "subcategories": [
-        {
-          "id": "sub-moveis-casa",
-          "name": "Móveis para Casa",
-          "icon": "🛋️",
-          "categoryId": "cat-moveis-eletro"
-        },
-        {
-          "id": "sub-eletrodomesticos",
-          "name": "Eletrodomésticos",
-          "icon": "🛏️",
-          "categoryId": "cat-moveis-eletro"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-necessidades",
@@ -661,15 +443,15 @@
     },
     {
       "id": "cat-saude",
-      "name": "Saúde e Cuidados",
-      "icon": "💊",
+      "name": "Saúde",
+      "icon": "🏥",
       "color": "#ef4444",
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-farmacia",
-          "name": "Farmácia / Remédios",
-          "icon": "💉",
+          "id": "sub-consultas",
+          "name": "Consultas & Exames",
+          "icon": "🩺",
           "categoryId": "cat-saude"
         },
         {
@@ -677,32 +459,14 @@
           "name": "Plano de Saúde",
           "icon": "🏥",
           "categoryId": "cat-saude"
-        },
-        {
-          "id": "sub-consultas",
-          "name": "Consultas / Exames",
-          "icon": "🩺",
-          "categoryId": "cat-saude"
-        },
-        {
-          "id": "sub-academia",
-          "name": "Academia / Esportes",
-          "icon": "🏋️",
-          "categoryId": "cat-saude"
-        },
-        {
-          "id": "sub-higiene",
-          "name": "Higiene e Beleza",
-          "icon": "🧴",
-          "categoryId": "cat-saude"
         }
       ]
     },
     {
       "id": "cat-transporte",
       "name": "Transporte",
-      "icon": "🚗",
-      "color": "#8b5cf6",
+      "icon": "🚌",
+      "color": "#3b82f6",
       "type": "expense",
       "subcategories": [
         {
@@ -712,26 +476,14 @@
           "categoryId": "cat-transporte"
         },
         {
-          "id": "sub-aplicativos",
+          "id": "sub-uber",
           "name": "Uber / 99 / Táxi",
           "icon": "🚕",
           "categoryId": "cat-transporte"
         },
         {
-          "id": "sub-estacionamento",
-          "name": "Estacionamento / Pedágio",
-          "icon": "🅿️",
-          "categoryId": "cat-transporte"
-        },
-        {
-          "id": "sub-seguro-auto",
-          "name": "Seguro / IPVA / Manutenção",
-          "icon": "🔧",
-          "categoryId": "cat-transporte"
-        },
-        {
-          "id": "sub-publico",
-          "name": "Transporte Público",
+          "id": "sub-onibus-metro",
+          "name": "Ônibus / Metrô",
           "icon": "🚌",
           "categoryId": "cat-transporte"
         }
@@ -743,14 +495,7 @@
       "icon": "🏠",
       "color": "#10b981",
       "type": "income",
-      "subcategories": [
-        {
-          "id": "sub-aluguel-recebido",
-          "name": "Aluguel de Imóveis",
-          "icon": "🏠",
-          "categoryId": "cat-aluguel-r"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-beneficios-ajuda",
@@ -779,14 +524,7 @@
       "icon": "📝",
       "color": "#3b82f6",
       "type": "income",
-      "subcategories": [
-        {
-          "id": "sub-emprestimo-rec",
-          "name": "Empréstimo Recebido",
-          "icon": "💵",
-          "categoryId": "cat-emprestimo-r"
-        }
-      ]
+      "subcategories": []
     },
     {
       "id": "cat-investimentos-rend",
@@ -826,54 +564,48 @@
     },
     {
       "id": "cat-renda-extra",
-      "name": "Renda Extra & Freelance",
-      "icon": "🪙",
-      "color": "#06b6d4",
+      "name": "Renda Extra",
+      "icon": "💰",
+      "color": "#10b981",
       "type": "income",
       "subcategories": [
         {
           "id": "sub-freelance",
-          "name": "Projetos Freelance",
-          "icon": "💻",
+          "name": "Freelance / Bicos",
+          "icon": "💰",
           "categoryId": "cat-renda-extra"
         },
         {
-          "id": "sub-vendas",
-          "name": "Venda de Produtos",
-          "icon": "📦",
-          "categoryId": "cat-renda-extra"
-        },
-        {
-          "id": "sub-servicos",
-          "name": "Prestação de Serviços",
-          "icon": "🛠️",
+          "id": "sub-consultoria",
+          "name": "Consultoria / Serviços",
+          "icon": "💼",
           "categoryId": "cat-renda-extra"
         }
       ]
     },
     {
       "id": "cat-salario",
-      "name": "Salário & Renda Principal",
-      "icon": "💰",
+      "name": "Salário",
+      "icon": "💸",
       "color": "#10b981",
       "type": "income",
       "subcategories": [
         {
           "id": "sub-salario-mensal",
-          "name": "Salário Fixo",
-          "icon": "💼",
+          "name": "Salário Mensal",
+          "icon": "💸",
           "categoryId": "cat-salario"
         },
         {
           "id": "sub-adiantamento",
           "name": "Adiantamento / 13º",
-          "icon": "💵",
+          "icon": "💸",
           "categoryId": "cat-salario"
         },
         {
-          "id": "sub-ferias",
-          "name": "Férias / Bônus",
-          "icon": "🏖️",
+          "id": "sub-bonus",
+          "name": "Bônus / PLR",
+          "icon": "🎁",
           "categoryId": "cat-salario"
         }
       ]
@@ -894,149 +626,653 @@
       ]
     },
     {
-      "id": "cat-moradia",
-      "name": "Moradia / Casa",
+      "id": "cat-desp-moradia",
+      "name": "Moradia",
       "icon": "🏠",
       "color": "#3b82f6",
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-aluguel",
-          "name": "Aluguel / Condomínio",
-          "icon": "🏢",
-          "categoryId": "cat-moradia"
+          "id": "sub-mor-aluguel",
+          "name": "Aluguel",
+          "icon": "🏠",
+          "categoryId": "cat-desp-moradia"
         },
         {
-          "id": "sub-energia",
+          "id": "sub-mor-condominio",
+          "name": "Condomínio",
+          "icon": "🏢",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-energia",
           "name": "Energia Elétrica",
           "icon": "⚡",
-          "categoryId": "cat-moradia"
+          "categoryId": "cat-desp-moradia"
         },
         {
-          "id": "sub-agua",
-          "name": "Água e Esgoto",
+          "id": "sub-mor-agua",
+          "name": "Água / Esgoto",
           "icon": "🚰",
-          "categoryId": "cat-moradia"
+          "categoryId": "cat-desp-moradia"
         },
         {
-          "id": "sub-internet",
-          "name": "Internet / Telefone",
-          "icon": "📶",
-          "categoryId": "cat-moradia"
+          "id": "sub-mor-internet",
+          "name": "Internet",
+          "icon": "🌐",
+          "categoryId": "cat-desp-moradia"
         },
         {
-          "id": "sub-manutencao",
-          "name": "Manutenção / Móveis",
-          "icon": "🛠️",
-          "categoryId": "cat-moradia"
+          "id": "sub-mor-telefone",
+          "name": "Telefone",
+          "icon": "📱",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-diarista",
+          "name": "Diarista",
+          "icon": "🧹",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-manutencao",
+          "name": "Manutenção da Casa",
+          "icon": "🔧",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-moveis",
+          "name": "Móveis",
+          "icon": "🛋️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-eletro",
+          "name": "Eletrodomésticos",
+          "icon": "🧊",
+          "categoryId": "cat-desp-moradia"
         }
       ]
     },
     {
-      "id": "cat-pets",
+      "id": "cat-desp-academia-esportes",
+      "name": "Academia & Esportes",
+      "icon": "🏋️",
+      "color": "#10b981",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-acad-academia",
+          "name": "Academia",
+          "icon": "🏋️",
+          "categoryId": "cat-desp-academia-esportes"
+        },
+        {
+          "id": "sub-acad-esportes",
+          "name": "Esportes",
+          "icon": "⚽",
+          "categoryId": "cat-desp-academia-esportes"
+        },
+        {
+          "id": "sub-acad-suplementos",
+          "name": "Suplementos",
+          "icon": "🥤",
+          "categoryId": "cat-desp-academia-esportes"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-filhos",
+      "name": "Filhos & Família",
+      "icon": "👶",
+      "color": "#ec4899",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-filhos-alimentacao",
+          "name": "Alimentação / Fórmulas",
+          "icon": "🍼",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-fraldas",
+          "name": "Fraldas / Higiene",
+          "icon": "🧼",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-saude",
+          "name": "Saúde / Pediatra",
+          "icon": "🩺",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-roupas",
+          "name": "Roupas / Calçados",
+          "icon": "👕",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-escola",
+          "name": "Educação / Escola",
+          "icon": "🎓",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-brinquedos",
+          "name": "Brinquedos",
+          "icon": "🧸",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-passeios",
+          "name": "Passeios / Atividades",
+          "icon": "🎡",
+          "categoryId": "cat-desp-filhos"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-compras-pessoal",
+      "name": "Compras & Pessoal",
+      "icon": "🛍️",
+      "color": "#f43f5e",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-comp-roupas",
+          "name": "Roupas / Calçados",
+          "icon": "👕",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-presentes",
+          "name": "Presentes",
+          "icon": "🎁",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-eletronicos",
+          "name": "Eletrônicos",
+          "icon": "📺",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-informatica",
+          "name": "Informática / Hardware",
+          "icon": "💻",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-perifericos",
+          "name": "Periféricos",
+          "icon": "🔌",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-celular",
+          "name": "Celular / Smartphones",
+          "icon": "📱",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-plano-cel",
+          "name": "Plano de Celular",
+          "icon": "📶",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-recarga",
+          "name": "Recarga",
+          "icon": "🔋",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-higiene",
+          "name": "Higiene / Cosméticos",
+          "icon": "🧴",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-salao",
+          "name": "Salão / Barbearia",
+          "icon": "💈",
+          "categoryId": "cat-desp-compras-pessoal"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-lazer",
+      "name": "Lazer & Entretenimento",
+      "icon": "🎮",
+      "color": "#a855f7",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-lazer-streaming",
+          "name": "Streaming / Assinaturas",
+          "icon": "📺",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-cinema",
+          "name": "Cinema / Shows",
+          "icon": "🎬",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-festas",
+          "name": "Festas / Eventos",
+          "icon": "🎉",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-jogos",
+          "name": "Jogos / Hobbies",
+          "icon": "🎮",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-viagens",
+          "name": "Viagens",
+          "icon": "✈️",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-hospedagem",
+          "name": "Hospedagem",
+          "icon": "🏨",
+          "categoryId": "cat-desp-lazer"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-pets",
       "name": "Pets",
       "icon": "🐶",
       "color": "#eab308",
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-racao",
-          "name": "Ração e Petiscos",
+          "id": "sub-pets-racao",
+          "name": "Ração / Petiscos",
           "icon": "🥩",
-          "categoryId": "cat-pets"
+          "categoryId": "cat-desp-pets"
         },
         {
-          "id": "sub-vet",
+          "id": "sub-pets-vet",
           "name": "Veterinário / Vacinas",
           "icon": "🩺",
-          "categoryId": "cat-pets"
+          "categoryId": "cat-desp-pets"
         },
         {
-          "id": "sub-banho",
-          "name": "Banho e Tosa",
+          "id": "sub-pets-banho",
+          "name": "Banho / Tosa",
           "icon": "✂️",
-          "categoryId": "cat-pets"
+          "categoryId": "cat-desp-pets"
+        },
+        {
+          "id": "sub-pets-acessorios",
+          "name": "Acessórios / Brinquedos",
+          "icon": "🧸",
+          "categoryId": "cat-desp-pets"
         }
       ]
     },
     {
-      "id": "cat-financas-desp",
-      "name": "Juros e Tarifas",
-      "icon": "💸",
+      "id": "cat-desp-igreja-doacoes",
+      "name": "Igreja & Doações",
+      "icon": "🙏",
+      "color": "#eab308",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-igreja-dizimos",
+          "name": "Dízimos",
+          "icon": "🙏",
+          "categoryId": "cat-desp-igreja-doacoes"
+        },
+        {
+          "id": "sub-igreja-ofertas",
+          "name": "Ofertas",
+          "icon": "🎁",
+          "categoryId": "cat-desp-igreja-doacoes"
+        },
+        {
+          "id": "sub-igreja-missoes",
+          "name": "Missões",
+          "icon": "🌎",
+          "categoryId": "cat-desp-igreja-doacoes"
+        },
+        {
+          "id": "sub-igreja-doacoes",
+          "name": "Doações",
+          "icon": "❤️",
+          "categoryId": "cat-desp-igreja-doacoes"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-financeiro",
+      "name": "Financeiro",
+      "icon": "💳",
       "color": "#64748b",
       "type": "expense",
       "subcategories": [
         {
-          "id": "sub-juros",
-          "name": "Juros e Multas",
-          "icon": "⚠️",
-          "categoryId": "cat-financas-desp"
+          "id": "sub-fin-juros",
+          "name": "Juros",
+          "icon": "📈",
+          "categoryId": "cat-desp-financeiro"
         },
         {
-          "id": "sub-tarifas",
+          "id": "sub-fin-multas",
+          "name": "Multas",
+          "icon": "⚠️",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-tarifas",
           "name": "Tarifas Bancárias",
           "icon": "🏦",
-          "categoryId": "cat-financas-desp"
+          "categoryId": "cat-desp-financeiro"
         },
         {
-          "id": "sub-impostos",
-          "name": "Impostos e Tributos",
+          "id": "sub-fin-juros-cartao",
+          "name": "Juros do Cartão",
+          "icon": "💳",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-pagamento-dividas",
+          "name": "Pagamento de Dívidas",
+          "icon": "🤝",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-acordos",
+          "name": "Acordos / Renegociações",
+          "icon": "🤝",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-encargos",
+          "name": "Outros Encargos Financeiros",
           "icon": "📄",
-          "categoryId": "cat-financas-desp"
+          "categoryId": "cat-desp-financeiro"
         }
       ]
     },
     {
-      "id": "cat-rendimentos",
-      "name": "Investimentos & Rendimentos",
-      "icon": "📈",
-      "color": "#6366f1",
+      "id": "cat-desp-impostos",
+      "name": "Impostos & Obrigações",
+      "icon": "🏛️",
+      "color": "#ef4444",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-imp-iptu",
+          "name": "IPTU",
+          "icon": "🏠",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-ipva",
+          "name": "IPVA",
+          "icon": "🚗",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-ir",
+          "name": "Imposto de Renda",
+          "icon": "📄",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-multas-transito",
+          "name": "Multas de Trânsito",
+          "icon": "🚨",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-taxas",
+          "name": "Outros Impostos / Taxas",
+          "icon": "🧾",
+          "categoryId": "cat-desp-impostos"
+        }
+      ]
+    },
+    {
+      "id": "cat-rec-trabalho",
+      "name": "Trabalho & Renda",
+      "icon": "💼",
+      "color": "#10b981",
       "type": "income",
       "subcategories": [
         {
-          "id": "sub-dividendos",
-          "name": "Dividendos / JCP",
-          "icon": "📊",
-          "categoryId": "cat-rendimentos"
+          "id": "sub-rec-salario",
+          "name": "Salário",
+          "icon": "💰",
+          "categoryId": "cat-rec-trabalho"
         },
         {
-          "id": "sub-renda-fixa",
-          "name": "Rendimento Renda Fixa",
-          "icon": "🏦",
-          "categoryId": "cat-rendimentos"
+          "id": "sub-rec-adiantamento",
+          "name": "Adiantamento",
+          "icon": "💵",
+          "categoryId": "cat-rec-trabalho"
         },
         {
-          "id": "sub-aluguel-rec",
-          "name": "Renda de Aluguéis",
-          "icon": "🏠",
-          "categoryId": "cat-rendimentos"
+          "id": "sub-rec-13",
+          "name": "13º Salário",
+          "icon": "🎄",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-ferias",
+          "name": "Férias",
+          "icon": "🏖️",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-bonus",
+          "name": "Bônus",
+          "icon": "🎁",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-freelance",
+          "name": "Freelance",
+          "icon": "💻",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-servicos",
+          "name": "Prestação de Serviços",
+          "icon": "🛠️",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-venda-produtos",
+          "name": "Venda de Produtos",
+          "icon": "📦",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-venda-usados",
+          "name": "Venda de Usados",
+          "icon": "💵",
+          "categoryId": "cat-rec-trabalho"
         }
       ]
     },
     {
-      "id": "cat-outras-rec",
-      "name": "Outras Receitas",
+      "id": "cat-rec-investimentos",
+      "name": "Investimentos & Rendas Passivas",
+      "icon": "📈",
+      "color": "#06b6d4",
+      "type": "income",
+      "subcategories": [
+        {
+          "id": "sub-rec-renda-fixa",
+          "name": "Rendimento de Renda Fixa",
+          "icon": "💰",
+          "categoryId": "cat-rec-investimentos"
+        },
+        {
+          "id": "sub-rec-dividendos",
+          "name": "Dividendos / JCP",
+          "icon": "📊",
+          "categoryId": "cat-rec-investimentos"
+        },
+        {
+          "id": "sub-rec-outros-rendimentos",
+          "name": "Outros Rendimentos de Investimentos",
+          "icon": "📈",
+          "categoryId": "cat-rec-investimentos"
+        },
+        {
+          "id": "sub-rec-aluguel-imoveis",
+          "name": "Aluguel de Imóveis",
+          "icon": "🏠",
+          "categoryId": "cat-rec-investimentos"
+        }
+      ]
+    },
+    {
+      "id": "cat-rec-beneficios-outras",
+      "name": "Benefícios & Outras Receitas",
       "icon": "🎁",
       "color": "#a855f7",
       "type": "income",
       "subcategories": [
         {
-          "id": "sub-presente",
-          "name": "Presentes / Prêmios",
-          "icon": "🎉",
-          "categoryId": "cat-outras-rec"
+          "id": "sub-rec-va-vr",
+          "name": "Vale Alimentação / Refeição",
+          "icon": "🍽️",
+          "categoryId": "cat-rec-beneficios-outras"
         },
         {
-          "id": "sub-reembolso",
+          "id": "sub-rec-auxilios",
+          "name": "Auxílios / Subsídios",
+          "icon": "💶",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-cashback",
+          "name": "Cashback",
+          "icon": "💸",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-presentes",
+          "name": "Presentes",
+          "icon": "🎁",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-premios",
+          "name": "Prêmios",
+          "icon": "🏆",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-reembolsos",
           "name": "Reembolsos",
           "icon": "↩️",
-          "categoryId": "cat-outras-rec"
+          "categoryId": "cat-rec-beneficios-outras"
         },
         {
-          "id": "sub-cashback",
-          "name": "Cashback e Recompensas",
+          "id": "sub-rec-outras-receitas",
+          "name": "Outras Receitas",
+          "icon": "💰",
+          "categoryId": "cat-rec-beneficios-outras"
+        }
+      ]
+    },
+    {
+      "id": "cat-mov-transferencias",
+      "name": "Transferências",
+      "icon": "🔄",
+      "color": "#3b82f6",
+      "type": "transfer",
+      "subcategories": [
+        {
+          "id": "sub-mov-transf-contas",
+          "name": "Transferência entre Contas",
+          "icon": "🏦",
+          "categoryId": "cat-mov-transferencias"
+        },
+        {
+          "id": "sub-mov-pagamento-cartao",
+          "name": "Pagamento de Cartão",
           "icon": "💳",
-          "categoryId": "cat-outras-rec"
+          "categoryId": "cat-mov-transferencias"
+        },
+        {
+          "id": "sub-mov-transf-poupanca",
+          "name": "Transferência para Poupança",
+          "icon": "🏦",
+          "categoryId": "cat-mov-transferencias"
+        }
+      ]
+    },
+    {
+      "id": "cat-mov-investimentos",
+      "name": "Investimentos / Patrimônio",
+      "icon": "📈",
+      "color": "#10b981",
+      "type": "transfer",
+      "subcategories": [
+        {
+          "id": "sub-mov-aporte-renda-fixa",
+          "name": "Aporte em Renda Fixa",
+          "icon": "💰",
+          "categoryId": "cat-mov-investimentos"
+        },
+        {
+          "id": "sub-mov-aporte-acoes",
+          "name": "Aporte em Ações / FIIs",
+          "icon": "📊",
+          "categoryId": "cat-mov-investimentos"
+        },
+        {
+          "id": "sub-mov-resgate-invest",
+          "name": "Resgate de Investimento",
+          "icon": "💵",
+          "categoryId": "cat-mov-investimentos"
+        }
+      ]
+    },
+    {
+      "id": "cat-mov-emprestimos",
+      "name": "Empréstimos",
+      "icon": "🤝",
+      "color": "#f59e0b",
+      "type": "transfer",
+      "subcategories": [
+        {
+          "id": "sub-mov-emprestimo-recebido",
+          "name": "Empréstimo Recebido",
+          "icon": "💵",
+          "categoryId": "cat-mov-emprestimos"
+        },
+        {
+          "id": "sub-mov-emprestimo-concedido",
+          "name": "Empréstimo Concedido",
+          "icon": "💸",
+          "categoryId": "cat-mov-emprestimos"
+        },
+        {
+          "id": "sub-mov-recebimento-emp",
+          "name": "Recebimento de Empréstimo",
+          "icon": "↩️",
+          "categoryId": "cat-mov-emprestimos"
+        },
+        {
+          "id": "sub-mov-pagamento-emp",
+          "name": "Pagamento de Empréstimo",
+          "icon": "💳",
+          "categoryId": "cat-mov-emprestimos"
         }
       ]
     }
@@ -1052,7 +1288,7 @@
       "amount": 666.67,
       "type": "expense",
       "date": "2026-08-30",
-      "categoryId": "cat-fatura-cartao",
+      "categoryId": "cat-mov-transferencias",
       "accountId": "acc-carteira-padrao",
       "status": "completed",
       "recurring": false,
@@ -1061,15 +1297,16 @@
         "cartao"
       ],
       "notes": "Pagamento de fatura referente a 2026-08",
-      "createdAt": "2026-08-30T14:04:45.041Z"
+      "createdAt": "2026-08-30T14:04:45.041Z",
+      "subcategoryId": "sub-mov-pagamento-cartao"
     },
     {
       "description": "Salário",
       "amount": 10000,
       "type": "income",
       "date": "2026-08-20",
-      "categoryId": "cat-salario",
-      "subcategoryId": "sub-salario-mensal",
+      "categoryId": "cat-rec-trabalho",
+      "subcategoryId": "sub-rec-salario",
       "accountId": "",
       "status": "completed",
       "recurring": false,
@@ -1083,8 +1320,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-07-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1103,8 +1340,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-06-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1123,8 +1360,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-05-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1143,8 +1380,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-04-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1163,8 +1400,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-03-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1183,8 +1420,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-02-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1203,8 +1440,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2027-01-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1223,8 +1460,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2026-12-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1243,8 +1480,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2026-11-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1263,8 +1500,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2026-10-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1283,8 +1520,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2026-09-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1303,8 +1540,8 @@
       "amount": 416.67,
       "type": "expense",
       "date": "2026-08-22",
-      "categoryId": "cat-moradia",
-      "subcategoryId": "sub-manutencao",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
       "status": "completed",
       "recurring": false,
@@ -1323,8 +1560,8 @@
       "amount": 250,
       "type": "expense",
       "date": "2026-11-20",
-      "categoryId": "cat-educacao",
-      "subcategoryId": "sub-mensalidade",
+      "categoryId": "cat-desp-educacao",
+      "subcategoryId": "sub-educ-escola",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1343,8 +1580,8 @@
       "amount": 250,
       "type": "expense",
       "date": "2026-10-20",
-      "categoryId": "cat-educacao",
-      "subcategoryId": "sub-mensalidade",
+      "categoryId": "cat-desp-educacao",
+      "subcategoryId": "sub-educ-escola",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1363,8 +1600,8 @@
       "amount": 250,
       "type": "expense",
       "date": "2026-09-20",
-      "categoryId": "cat-educacao",
-      "subcategoryId": "sub-mensalidade",
+      "categoryId": "cat-desp-educacao",
+      "subcategoryId": "sub-educ-escola",
       "cardId": "card-1788094641945-bzt",
       "status": "pending",
       "recurring": false,
@@ -1383,8 +1620,8 @@
       "amount": 250,
       "type": "expense",
       "date": "2026-08-20",
-      "categoryId": "cat-educacao",
-      "subcategoryId": "sub-mensalidade",
+      "categoryId": "cat-desp-educacao",
+      "subcategoryId": "sub-educ-escola",
       "cardId": "card-1788094641945-bzt",
       "status": "completed",
       "recurring": false,
@@ -1419,5 +1656,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-30T14:30:56.534Z"
+  "_serverTimestamp": "2026-08-30T14:40:28.366Z"
 }
