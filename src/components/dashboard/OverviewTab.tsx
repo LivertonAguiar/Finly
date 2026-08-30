@@ -540,15 +540,33 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           Limite Disponível {formatCurrency(card.availableLimit, user.currency, !user.showValues)}
                         </span>
 
-                        <button
-                          onClick={() => {
-                            setSelectedCardForPay(card.id);
-                            setIsInvoiceModalOpen(true);
-                          }}
-                          className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
-                        >
-                          {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
-                        </button>
+                        {card.isPaid ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
+                            </span>
+                            <button
+                              onClick={() => setActiveTab('cartoes')}
+                              className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
+                            >
+                              Ver Detalhes
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (card.invoiceTotal > 0) {
+                                setSelectedCardForPay(card.id);
+                                setIsInvoiceModalOpen(true);
+                              } else {
+                                setActiveTab('cartoes');
+                              }
+                            }}
+                            className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+                          >
+                            {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
