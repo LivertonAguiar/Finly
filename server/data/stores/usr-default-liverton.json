@@ -418,8 +418,7 @@
       "amount": 666.67,
       "type": "expense",
       "date": "2026-08-30",
-      "categoryId": "cat-financas-desp",
-      "subcategoryId": "sub-tarifas",
+      "categoryId": "cat-fatura-cartao",
       "accountId": "acc-carteira-padrao",
       "status": "completed",
       "recurring": false,
@@ -786,5 +785,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-30T13:31:04.173Z"
+  "_serverTimestamp": "2026-08-30T13:31:44.137Z"
 }
