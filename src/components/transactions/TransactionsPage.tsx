@@ -417,71 +417,103 @@ export const TransactionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 4 TOP SUMMARY KPIS (MOBILLS SPEC WITH CIRCULAR BADGES) */}
+      {/* 2. 4 TOP SUMMARY KPIS (INTERACTIVE FILTER BUTTONS + MOBILLS SPEC) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* KPI 1: Saldo atual */}
-        <div className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-full bg-[#42a5f5]/15 text-[#42a5f5] flex items-center justify-center font-black shrink-0">
+        <button
+          type="button"
+          onClick={() => setFilterType('all')}
+          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+            filterType === 'all'
+              ? 'bg-white dark:bg-[#2C2C2E] border-blue-500/50 ring-2 ring-blue-500/30'
+              : 'bg-white/90 dark:bg-[#2C2C2E]/90 border-slate-200/80 dark:border-slate-800/80 hover:bg-white dark:hover:bg-[#2C2C2E]'
+          }`}
+        >
+          <div className="w-10 h-10 rounded-full bg-[#42a5f5]/15 text-[#42a5f5] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
             <Building2 className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
               <span>Saldo atual</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 truncate">
+            <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 truncate">
               {formatCurrency(totalCurrentBalance, user.currency, !user.showValues)}
             </p>
           </div>
-        </div>
+        </button>
 
-        {/* KPI 2: Despesas */}
-        <div className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-full bg-[#ef5350]/15 text-[#ef5350] flex items-center justify-center font-black shrink-0">
+        {/* KPI 2: Despesas (Click to filter Despesas) */}
+        <button
+          type="button"
+          onClick={() => setFilterType(filterType === 'expense' ? 'all' : 'expense')}
+          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+            filterType === 'expense'
+              ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/40'
+              : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-[#343437]'
+          }`}
+        >
+          <div className="w-10 h-10 rounded-full bg-[#ef5350]/15 text-[#ef5350] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
             <ArrowUpRight className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
               <span>Despesas</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className="text-base font-black text-[#ef5350] tracking-tight mt-0.5 truncate">
+            <p className="text-sm sm:text-base font-black text-[#ef5350] tracking-tight mt-0.5 truncate">
               {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
             </p>
           </div>
-        </div>
+        </button>
 
-        {/* KPI 3: Receitas recebidas */}
-        <div className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0">
+        {/* KPI 3: Receitas recebidas (Click to filter Receitas) */}
+        <button
+          type="button"
+          onClick={() => setFilterType(filterType === 'income' ? 'all' : 'income')}
+          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+            filterType === 'income'
+              ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/40'
+              : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-[#343437]'
+          }`}
+        >
+          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
             <ArrowDownLeft className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
               <span>Receitas recebidas</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className="text-base font-black text-[#66bb6a] dark:text-white tracking-tight mt-0.5 truncate">
+            <p className="text-sm sm:text-base font-black text-[#66bb6a] tracking-tight mt-0.5 truncate">
               {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
             </p>
           </div>
-        </div>
+        </button>
 
-        {/* KPI 4: Total / Balanço */}
-        <div className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0">
+        {/* KPI 4: Total / Balanço (Click to reset filter) */}
+        <button
+          type="button"
+          onClick={() => setFilterType('all')}
+          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+            filterType === 'all'
+              ? 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80'
+              : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80'
+          }`}
+        >
+          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
             <Scale className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
               <span>Total</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className={`text-base font-black tracking-tight mt-0.5 truncate ${monthlyBalance >= 0 ? 'text-[#66bb6a] dark:text-white' : 'text-[#ef5350]'}`}>
+            <p className={`text-sm sm:text-base font-black tracking-tight mt-0.5 truncate ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
               {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
             </p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* 3. MONTH NAVIGATOR (PILL BAR) */}
