@@ -19,6 +19,8 @@ import {
   Banknote,
   Sparkles,
   Layers,
+  Download,
+  RotateCcw,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -117,6 +119,30 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
     return scored[0]?.card || cards[0];
   }, [cards]);
 
+  
+  const handleExportCardsCSV = () => {
+    const headers = ['Cartao', 'Bandeira', 'Limite Total', 'Limite Disponivel', 'Fatura Atual', 'Fechamento', 'Vencimento', 'Status'];
+    const rows = cardsData.map(c => [
+      c.name,
+      c.brand,
+      c.limit.toFixed(2),
+      c.available.toFixed(2),
+      c.invoiceTotal.toFixed(2),
+      `Dia ${c.closingDay}`,
+      `Dia ${c.dueDay}`,
+      c.statusLabel
+    ].join(';'));
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `cartoes_${currentMonthPrefix}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const totalInvoicesSum = useMemo(() => {
     return cardsData.reduce((sum, c) => sum + c.invoiceTotal, 0);
   }, [cardsData]);
@@ -165,6 +191,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
               <span>Voltar para Cartões</span>
             </button>
 
+
             <div className="flex items-center gap-2">
               <button
                 onClick={async () => {
@@ -176,7 +203,84 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                 <Plus className="w-4 h-4" />
                 <span>Nova Despesa</span>
               </button>
+
+              <div className="relative">
+                <button
+                  onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
+                  className="w-10 h-10 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  title="Mais opções"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {isHeaderMenuOpen && (
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    className="absolute right-0 top-12 z-50 w-56 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-2xl py-2 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-800 dark:text-slate-100"
+                  >
+                    {activeCardDetail.isPaid ? (
+                      <button
+                        onClick={async () => {
+                          setIsHeaderMenuOpen(false);
+                          const ok = await confirm({
+                            title: 'Reabrir Fatura?',
+                            message: `Deseja reabrir a fatura de ${activeCardDetail.name} e estornar o pagamento?`,
+                            confirmText: 'Reabrir Fatura',
+                            type: 'warning'
+                          });
+                          if (ok) {
+                            unpayCardInvoice(activeCardDetail.id, currentMonthPrefix);
+                          }
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <RotateCcw className="w-4 h-4 text-amber-500" />
+                        <span>Reabrir fatura</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setIsHeaderMenuOpen(false);
+                          setPayingCard(activeCardDetail);
+                          setPayAmount(activeCardDetail.invoiceTotal.toString());
+                          setIsPayModalOpen(true);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <CardIcon className="w-4 h-4 text-emerald-500" />
+                        <span>Pagar fatura</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        setEditingCard(activeCardDetail);
+                        setIsEditModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Edit2 className="w-4 h-4 text-purple-600" />
+                      <span>Editar cartão</span>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                    <button
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        handleExportCardsCSV();
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 text-blue-500" />
+                      <span>Exportar fatura para CSV</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+
           </div>
 
           {/* Card Invoice Header Summary */}
@@ -385,6 +489,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                 <Plus className="w-5 h-5" />
               </button>
 
+
               <div className="relative">
                 <button
                   onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
@@ -393,7 +498,61 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
+
+                {isHeaderMenuOpen && (
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    className="absolute right-0 top-12 z-50 w-56 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-2xl py-2 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-800 dark:text-slate-100"
+                  >
+                    <button
+                      onClick={() => {
+                        onOpenNewCard();
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 text-purple-600" />
+                      <span>Novo cartão de crédito</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsPayModalOpen(true);
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <CardIcon className="w-4 h-4 text-emerald-600" />
+                      <span>Pagar fatura</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsAddExpenseModalOpen(true);
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 text-rose-500" />
+                      <span>Adicionar despesa no cartão</span>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                    <button
+                      onClick={() => {
+                        handleExportCardsCSV();
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 text-blue-500" />
+                      <span>Exportar para CSV</span>
+                    </button>
+                  </div>
+                )}
               </div>
+
             </div>
           </div>
 
