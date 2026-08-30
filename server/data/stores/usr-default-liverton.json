@@ -799,7 +799,10 @@
     "name": "Liverton",
     "email": "liverton.aguiar@hotmail.com",
     "showValues": true,
-    "theme": "dark"
+    "theme": "dark",
+    "accentColor": "#00A884",
+    "themePreset": "midnight-oled",
+    "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-30T13:19:13.054Z"
+  "_serverTimestamp": "2026-08-30T13:20:39.721Z"
 }

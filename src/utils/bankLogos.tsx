@@ -1,4 +1,5 @@
 import React from 'react';
+import { Wallet } from 'lucide-react';
 import {
   Nubank,
   Inter,
@@ -70,7 +71,7 @@ export const ALL_BANKS: BankInfo[] = [
   { id: 'wise', name: 'Wise', code: '999', color: '#9fe870', textColor: '#163300', bgGradient: 'from-[#9fe870] to-[#7dc950]' },
   { id: 'will', name: 'Will Bank', code: '280', color: '#ffd600', textColor: '#000000', bgGradient: 'from-[#ffd600] to-[#e6c200]' },
   { id: 'neon', name: 'Neon', code: '735', color: '#00e5ff', textColor: '#003366', bgGradient: 'from-[#00e5ff] to-[#0099cc]' },
-  { id: 'dinheiro', name: 'Carteira / Dinheiro', code: '000', color: '#10b981', textColor: '#ffffff', bgGradient: 'from-[#10b981] to-[#047857]' },
+  { id: 'carteira', name: 'Carteira', code: '000', color: '#10b981', textColor: '#ffffff', bgGradient: 'from-[#10b981] to-[#047857]' },
 ];
 
 export interface CardBrandInfo {
@@ -122,6 +123,10 @@ export const BankLogo: React.FC<{ nameOrId?: string; className?: string; size?: 
   radius = 6,
 }) => {
   const norm = nameOrId.trim().toLowerCase();
+
+  if (norm.includes('carteira') || norm.includes('dinheiro') || norm.includes('cash') || norm.includes('carteira-padrao')) {
+    return <Wallet size={size} className={className} />;
+  }
 
   if (norm.includes('nu') || norm.includes('260')) return <Nubank size={size} radius={radius} className={className} />;
   if (norm.includes('inter') || norm.includes('077')) return <Inter size={size} radius={radius} className={className} />;
