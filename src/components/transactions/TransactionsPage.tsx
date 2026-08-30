@@ -27,12 +27,14 @@ import {
   Check,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction, TransactionType } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { BankLogo } from '../../utils/bankLogos';
 import { TransactionModal } from './TransactionModal';
 
 export const TransactionsPage: React.FC = () => {
+  const { confirm } = useConfirm();
   const {
     transactions,
     categories,
@@ -152,6 +154,19 @@ export const TransactionsPage: React.FC = () => {
 
     return groups;
   }, [displayTransactions]);
+
+  
+  const handleDeleteTransaction = async (tx: Transaction) => {
+    const ok = await confirm({
+      title: 'Excluir Lançamento',
+      message: `Deseja realmente excluir "${tx.description}" no valor de ${formatCurrency(tx.amount, user.currency)}?`,
+      confirmText: 'Excluir',
+      type: 'danger',
+    });
+    if (ok) {
+      deleteTransaction(tx.id);
+    }
+  };
 
   const handleExportCSV = () => {
     const headers = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta/Cartao', 'Valor', 'Status'];
@@ -501,11 +516,7 @@ export const TransactionsPage: React.FC = () => {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => {
-                              if (window.confirm('Excluir este lançamento?')) {
-                                deleteTransaction(t.id);
-                              }
-                            }}
+                            onClick={() => handleDeleteTransaction(t)}
                             className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -585,11 +596,7 @@ export const TransactionsPage: React.FC = () => {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (window.confirm('Excluir este lançamento?')) {
-                              deleteTransaction(t.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteTransaction(t)}
                           className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

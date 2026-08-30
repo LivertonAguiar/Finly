@@ -4,7 +4,7 @@
       "id": "acc-carteira-padrao",
       "name": "Carteira",
       "type": "cash",
-      "balance": -1333.34,
+      "balance": -666.67,
       "initialBalance": 0,
       "institution": "Carteira",
       "color": "#10b981",
@@ -413,24 +413,6 @@
   "investments": [],
   "transactions": [
     {
-      "id": "tx-pay-1788095904896",
-      "description": "Pagamento Fatura Nubank Crédito (2026-08)",
-      "amount": 666.67,
-      "type": "expense",
-      "date": "2026-08-30",
-      "categoryId": "cat-financas-desp",
-      "subcategoryId": "sub-tarifas",
-      "accountId": "acc-carteira-padrao",
-      "status": "completed",
-      "recurring": false,
-      "tags": [
-        "fatura",
-        "cartao"
-      ],
-      "notes": "Pagamento de fatura referente a 2026-08",
-      "createdAt": "2026-08-30T13:18:24.896Z"
-    },
-    {
       "id": "tx-pay-1788095517022",
       "description": "Pagamento Fatura Nubank Crédito (08/2026)",
       "amount": 666.67,
@@ -691,7 +673,7 @@
       "categoryId": "cat-moradia",
       "subcategoryId": "sub-manutencao",
       "cardId": "card-1788094641945-bzt",
-      "status": "completed",
+      "status": "pending",
       "recurring": false,
       "installments": {
         "current": 1,
@@ -771,7 +753,7 @@
       "categoryId": "cat-educacao",
       "subcategoryId": "sub-mensalidade",
       "cardId": "card-1788094641945-bzt",
-      "status": "completed",
+      "status": "pending",
       "recurring": false,
       "installments": {
         "current": 1,
@@ -804,5 +786,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-30T13:24:35.035Z"
+  "_serverTimestamp": "2026-08-30T13:29:18.091Z"
 }

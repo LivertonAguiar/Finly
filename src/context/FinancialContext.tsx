@@ -621,25 +621,45 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => prev.map(t => (t.id === id ? { ...t, ...data } : t)));
   };
 
+
   const deleteTransaction = (id: string) => {
     const tx = transactions.find(t => t.id === id);
-    if (tx && tx.status === 'completed') {
-      if (tx.type === 'income' && tx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
-      } else if (tx.type === 'expense' && tx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
-      } else if (tx.type === 'transfer' && tx.accountId && tx.targetAccountId) {
-        setAccounts(prev =>
-          prev.map(a => {
-            if (a.id === tx.accountId) return { ...a, balance: round2(a.balance + tx.amount) };
-            if (a.id === tx.targetAccountId) return { ...a, balance: round2(a.balance - tx.amount) };
-            return a;
-          })
-        );
+    if (tx) {
+      if (tx.status === 'completed') {
+        if (tx.type === 'income' && tx.accountId) {
+          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
+        } else if (tx.type === 'expense' && tx.accountId) {
+          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
+        } else if (tx.type === 'transfer' && tx.accountId && tx.targetAccountId) {
+          setAccounts(prev =>
+            prev.map(a => {
+              if (a.id === tx.accountId) return { ...a, balance: round2(a.balance + tx.amount) };
+              if (a.id === tx.targetAccountId) return { ...a, balance: round2(a.balance - tx.amount) };
+              return a;
+            })
+          );
+        }
+      }
+
+      // If it was an invoice payment, also mark the card's expense transactions of that month back to pending
+      if (tx.tags?.includes('fatura') || tx.description.toLowerCase().includes('pagamento fatura')) {
+        const card = cards.find(c => tx.description.includes(c.name));
+        if (card) {
+          setTransactions(prev =>
+            prev.filter(t => t.id !== id).map(t => {
+              if (t.cardId === card.id && t.type === 'expense') {
+                return { ...t, status: 'pending' };
+              }
+              return t;
+            })
+          );
+          return;
+        }
       }
     }
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
+
 
   const deleteMultipleTransactions = (ids: string[]) => {
     const idSet = new Set(ids);
