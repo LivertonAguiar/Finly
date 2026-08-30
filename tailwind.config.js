@@ -56,6 +56,11 @@ export default {
           dark: "#0f172a",
         }
       },
+      fontFamily: {
+        sans: ['"Maven Pro"', '"Noto Sans"', '"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        heading: ['"Maven Pro"', 'sans-serif'],
+        body: ['"Noto Sans"', 'sans-serif'],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
