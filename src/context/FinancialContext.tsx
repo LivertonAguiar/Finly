@@ -204,20 +204,22 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Helper to merge default categories with any existing user categories
   const mergeCategories = (savedCats: any[]): Category[] => {
-    // Standard default categories are authoritative
+    // If the saved list is old format (contains cat-academia or missing cat-desp-alimentacao), force reset to DEFAULT_CATEGORIES
+    if (!Array.isArray(savedCats) || savedCats.length === 0 || !savedCats.some(c => c && c.id === 'cat-desp-alimentacao')) {
+      return DEFAULT_CATEGORIES;
+    }
+
     const standardIds = new Set(DEFAULT_CATEGORIES.map(c => c.id));
     const userCustomCats: Category[] = [];
 
-    if (Array.isArray(savedCats)) {
-      savedCats.forEach(c => {
-        if (c && c.id && !standardIds.has(c.id) && c.id.startsWith('cat-custom-')) {
-          userCustomCats.push({
-            ...c,
-            subcategories: Array.isArray(c.subcategories) ? c.subcategories : []
-          });
-        }
-      });
-    }
+    savedCats.forEach(c => {
+      if (c && c.id && !standardIds.has(c.id) && c.id.startsWith('cat-custom-')) {
+        userCustomCats.push({
+          ...c,
+          subcategories: Array.isArray(c.subcategories) ? c.subcategories : []
+        });
+      }
+    });
 
     return [...DEFAULT_CATEGORIES, ...userCustomCats];
   };
