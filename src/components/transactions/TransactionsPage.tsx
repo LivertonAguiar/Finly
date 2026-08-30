@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
+  TrendingDown,
+  TrendingUp,
+  CreditCard,
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
@@ -58,6 +61,8 @@ export const TransactionsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [modalInitialType, setModalInitialType] = useState<TransactionType>('expense');
+  const [initialPaymentMethod, setInitialPaymentMethod] = useState<'account' | 'card'>('account');
+  const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
 
   // Month navigation
   const viewDate = useMemo(() => {
@@ -264,18 +269,93 @@ export const TransactionsPage: React.FC = () => {
             </div>
           )}
 
-          {/* + NOVA RECEITA / DESPESA Button */}
-          <button
-            onClick={() => {
-              setEditingTransaction(null);
-              setModalInitialType(filterType === 'income' ? 'income' : 'expense');
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-1 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider shadow-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>{filterType === 'income' ? 'NOVA RECEITA' : 'NOVA DESPESA'}</span>
-          </button>
+
+          {/* Unified + Novo Dropdown Popover (Mobills Exact Replica) */}
+          <div className="relative">
+            <button
+              onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
+              className="flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/25 transition-all cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Novo</span>
+            </button>
+
+            {isNovoMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsNovoMenuOpen(false)}
+                />
+                <div
+                  onClick={e => e.stopPropagation()}
+                  className="absolute right-0 top-11 z-40 w-56 rounded-[22px] bg-[#1e222d] border border-slate-700 shadow-2xl py-2 animate-in fade-in zoom-in-95 divide-y divide-slate-800"
+                >
+                  <div className="py-1">
+                    {/* 1. Despesa */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setEditingTransaction(null);
+                        setModalInitialType('expense');
+                        setInitialPaymentMethod('account');
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <TrendingDown className="w-4 h-4 text-[#ef5350]" />
+                      <span>Despesa</span>
+                    </button>
+
+                    {/* 2. Receita */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setEditingTransaction(null);
+                        setModalInitialType('income');
+                        setInitialPaymentMethod('account');
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <TrendingUp className="w-4 h-4 text-[#66bb6a]" />
+                      <span>Receita</span>
+                    </button>
+
+                    {/* 3. Despesa cartão */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setEditingTransaction(null);
+                        setModalInitialType('expense');
+                        setInitialPaymentMethod('card');
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#26a69a]" />
+                      <span>Despesa cartão</span>
+                    </button>
+
+                    {/* 4. Transferência */}
+                    <button
+                      onClick={() => {
+                        setIsNovoMenuOpen(false);
+                        setEditingTransaction(null);
+                        setModalInitialType('transfer');
+                        setInitialPaymentMethod('account');
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                    >
+                      <ArrowLeftRight className="w-4 h-4 text-[#42a5f5]" />
+                      <span>Transferência</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
 
           {/* Search Icon Button */}
           <button
@@ -620,6 +700,7 @@ export const TransactionsPage: React.FC = () => {
             setEditingTransaction(null);
           }}
           initialType={modalInitialType}
+          initialPaymentMethod={initialPaymentMethod}
           editingTransaction={editingTransaction}
         />
       )}
