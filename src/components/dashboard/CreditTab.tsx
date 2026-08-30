@@ -55,6 +55,78 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
   // Month calculation
+  
+  const getStatusBadge = (t: Transaction) => {
+    const isIncome = t.type === 'income';
+    const isTransfer = t.type === 'transfer';
+    const isCard = !!t.cardId;
+    const isCompleted = t.status === 'completed';
+
+    let label = '';
+    let styleClass = '';
+    let icon = null;
+
+    if (isIncome) {
+      if (isCompleted) {
+        label = 'Recebida';
+        styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
+        icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+      } else {
+        label = 'A receber';
+        styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
+        icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+      }
+    } else if (isTransfer) {
+      if (isCompleted) {
+        label = 'Efetivada';
+        styleClass = 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/25';
+        icon = <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+      } else {
+        label = 'Pendente';
+        styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
+        icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+      }
+    } else {
+      // Expense
+      if (isCard) {
+        if (isCompleted) {
+          label = 'Fatura Paga';
+          styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
+          icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+        } else {
+          label = 'Fatura Aberta';
+          styleClass = 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30 hover:bg-teal-500/25';
+          icon = <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />;
+        }
+      } else {
+        if (isCompleted) {
+          label = 'Paga';
+          styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
+          icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+        } else {
+          label = 'A pagar';
+          styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
+          icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+        }
+      }
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleTransactionStatus(t.id);
+        }}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs shrink-0 ${styleClass}`}
+        title={`Situação: ${label} (Clique para alternar)`}
+      >
+        {icon}
+        <span>{label}</span>
+      </button>
+    );
+  };
+
   const viewDate = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + selectedMonthOffset);
@@ -407,17 +479,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
 
                     <div key={t.id} className="py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50/50 dark:hover:bg-[#343437]/30 px-2 rounded-2xl transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        <button
-                          onClick={() => toggleTransactionStatus(t.id)}
-                          className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer shrink-0"
-                          title={t.status === 'completed' ? 'Marcar como pendente' : 'Marcar como pago'}
-                        >
-                          {t.status === 'completed' ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Clock className="w-4 h-4 text-amber-500" />
-                          )}
-                        </button>
+{getStatusBadge(t)}
                         <div
                           className="w-9 h-9 rounded-xl flex items-center justify-center text-xs shrink-0 shadow-xs"
                           style={{
