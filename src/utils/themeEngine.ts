@@ -1,4 +1,4 @@
-export type ThemePreset = 'mobills-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light';
+export type ThemePreset = 'planner-dark' | 'plannerfin-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light';
 export type CardRadius = 'rounded' | 'medium' | 'sharp';
 
 export interface ThemeConfig {
@@ -8,7 +8,13 @@ export interface ThemeConfig {
 }
 
 const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: string; mode: 'dark' | 'light' }> = {
-  'mobills-dark': {
+  'planner-dark': {
+    bg: '#1C1C1E',
+    cardBg: '#2C2C2E',
+    text: '#FFFFFF',
+    mode: 'dark',
+  },
+  'plannerfin-dark': {
     bg: '#1C1C1E',
     cardBg: '#2C2C2E',
     text: '#FFFFFF',
@@ -44,7 +50,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
-  const savedPreset = (localStorage.getItem('plannerfin_theme_preset') as ThemePreset) || 'mobills-dark';
+  const savedPreset = (localStorage.getItem('plannerfin_theme_preset') as ThemePreset) || 'planner-dark';
   const savedAccent = localStorage.getItem('plannerfin_accent_color') || '#7C4DFF';
   const savedRadius = (localStorage.getItem('plannerfin_card_radius') as CardRadius) || 'rounded';
 
@@ -52,7 +58,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   const accent = config.accentColor || savedAccent;
   const radius = config.cardRadius || savedRadius;
 
-  const presetData = PRESET_COLORS[preset] || PRESET_COLORS['mobills-dark'];
+  const presetData = PRESET_COLORS[preset] || PRESET_COLORS['planner-dark'];
 
   // Save to localStorage
   if (config.preset) localStorage.setItem('plannerfin_theme_preset', config.preset);
@@ -112,7 +118,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
 
 export const initThemeEngine = () => {
   if (typeof window === 'undefined') return;
-  const preset = (localStorage.getItem('plannerfin_theme_preset') as ThemePreset) || 'mobills-dark';
+  const preset = (localStorage.getItem('plannerfin_theme_preset') as ThemePreset) || 'planner-dark';
   const accent = localStorage.getItem('plannerfin_accent_color') || '#7C4DFF';
   const radius = (localStorage.getItem('plannerfin_card_radius') as CardRadius) || 'rounded';
   applyTheme({ preset, accentColor: accent, cardRadius: radius });

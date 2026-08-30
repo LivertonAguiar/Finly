@@ -205,7 +205,7 @@ export const TransactionsPage: React.FC = () => {
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
-          {/* Floating Dropdown Popover (Mobills Exact Style) */}
+          {/* Floating Dropdown Popover (PlannerFin Exact Style) */}
           {isTypeDropdownOpen && (
             <div
               onClick={e => e.stopPropagation()}

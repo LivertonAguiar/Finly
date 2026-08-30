@@ -65,7 +65,7 @@ html:not(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
 }
 
 /* ========================================================================= */
-/* DARK MODE: HIGH CONTRAST SURFACES (Mobills Dark, Midnight, Emerald)      */
+/* DARK MODE: HIGH CONTRAST SURFACES (Planner Dark, Midnight, Emerald)      */
 /* ========================================================================= */
 html.dark body {
   background-color: var(--app-bg, #1C1C1E) !important;

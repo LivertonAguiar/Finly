@@ -28,7 +28,7 @@ export const SettingsPage: React.FC = () => {
   // Preference fields
   const [selectedLang, setSelectedLang] = useState<SupportedLanguage>((user.language as SupportedLanguage) || 'pt-BR');
   const [selectedCurrency, setSelectedCurrency] = useState(user.currency || 'BRL');
-  const [selectedThemePreset, setSelectedThemePreset] = useState<ThemePreset>((user.themePreset as ThemePreset) || 'mobills-dark');
+  const [selectedThemePreset, setSelectedThemePreset] = useState<ThemePreset>((user.themePreset as ThemePreset) || 'planner-dark');
   const [selectedAccentColor, setSelectedAccentColor] = useState(user.accentColor || '#7C4DFF');
   const [selectedCardRadius, setSelectedCardRadius] = useState<CardRadius>((user.cardRadius as CardRadius) || 'rounded');
   const [hideValues, setHideValues] = useState(!user.showValues);
@@ -143,7 +143,7 @@ export const SettingsPage: React.FC = () => {
   };
 
   const accentOptions = [
-    { color: '#7C4DFF', label: 'Mobills Roxo / Indigo' },
+    { color: '#7C4DFF', label: 'Púrpura / Indigo' },
     { color: '#00A884', label: 'Verde Esmeralda' },
     { color: '#0091FF', label: 'Azul Elétrico' },
     { color: '#FF8A00', label: 'Laranja Solar' },
@@ -152,7 +152,7 @@ export const SettingsPage: React.FC = () => {
   ];
 
   const themePresets = [
-    { id: 'mobills-dark', label: 'Mobills Dark (Oficial)', desc: 'Preto suave #1C1C1E e cartões #2C2C2E', bg: 'bg-[#1C1C1E]' },
+    { id: 'planner-dark', label: 'Planner Dark (Elegance)', desc: 'Preto suave #1C1C1E e cartões #2C2C2E', bg: 'bg-[#1C1C1E]' },
     { id: 'midnight-oled', label: 'Midnight OLED', desc: 'Preto absoluto #000000 para economia máxima', bg: 'bg-black' },
     { id: 'emerald-slate', label: 'Emerald Slate', desc: 'Azul petróleo marinho #0F172A', bg: 'bg-[#0F172A]' },
     { id: 'clean-light', label: 'Clean Light', desc: 'Branco puro e minimalista', bg: 'bg-slate-100' },
@@ -394,7 +394,7 @@ export const SettingsPage: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { id: 'rounded', label: 'Ultra-Redondo (25px)', desc: 'Estilo oficial Mobills' },
+                { id: 'rounded', label: 'Ultra-Redondo (25px)', desc: 'Estilo oficial PlannerFin' },
                 { id: 'medium', label: 'Moderno (16px)', desc: 'Bordas suaves' },
                 { id: 'sharp', label: 'Reto (8px)', desc: 'Estilo sóbrio' },
               ].map(r => (

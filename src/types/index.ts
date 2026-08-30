@@ -140,7 +140,7 @@ export interface InvestmentAsset {
 
 export interface UserProfile {
   language?: 'pt-BR' | 'en-US' | 'es-ES';
-  themePreset?: 'mobills-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light' | 'warm-sand';
+  themePreset?: 'planner-dark' | 'plannerfin-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light' | 'warm-sand';
   accentColor?: string;
   cardRadius?: 'sharp' | 'medium' | 'rounded';
   name: string;

@@ -385,7 +385,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
             </div>
           </div>
 
-          {/* Consolidated KPI Summary Cards (Mobills Top Row) */}
+          {/* Consolidated KPI Summary Cards (PlannerFin Top Row) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Card 1: Total das Faturas */}
             <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">

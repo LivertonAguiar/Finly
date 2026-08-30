@@ -502,7 +502,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
         {/* RIGHT COLUMN: CARTÕES DE CRÉDITO & CONTAS */}
         <div className="space-y-6">
-          {/* Widget 4: Cartões de Crédito (Mobills Full Cards Breakdown) */}
+          {/* Widget 4: Cartões de Crédito (PlannerFin Full Cards Breakdown) */}
           {visibleWidgets.cartoes && (
             <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
               <div className="flex items-center justify-between">

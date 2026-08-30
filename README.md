@@ -1,6 +1,6 @@
-# 🚀 PlannerFin Web (Mobills Edition)
+# 🚀 PlannerFin Web (Pro Edition)
 
-> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade ao ecossistema Mobills Web.
+> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade ao ecossistema PlannerFin Web.
 
 ---
 
@@ -121,13 +121,13 @@ mysterious-mendeleev/
 O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o DOM instantaneamente:
 
 ### 1. Presets de Temas
-* **`mobills-dark`**: Fundo `#1C1C1E` com cartões em `#2C2C2E` (Oficial).
+* **`plannerfin-dark`**: Fundo `#1C1C1E` com cartões em `#2C2C2E` (Oficial).
 * **`midnight-oled`**: Preto absoluto `#000000` com cartões `#121212`.
 * **`emerald-slate`**: Azul petróleo marinho `#0F172A`.
 * **`clean-light`**: Branco minimalista `#F8FAFC`.
 
 ### 2. Paleta de Cores de Acento (`--primary-accent`)
-* 🟣 **Mobills Roxo / Indigo** (`#7C4DFF`)
+* 🟣 **Púrpura / Indigo** (`#7C4DFF`)
 * 🟢 **Verde Esmeralda** (`#00A884`)
 * 🔵 **Azul Elétrico** (`#0091FF`)
 * 🟠 **Laranja Solar** (`#FF8A00`)
@@ -135,7 +135,7 @@ O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o
 * 🔴 **Vermelho Carmim** (`#EF4444`)
 
 ### 3. Geometria das Bordas (`--card-radius`)
-* **Ultra-Redondo**: `25px` (Padrão Mobills)
+* **Ultra-Redondo**: `25px` (Padrão PlannerFin)
 * **Moderno**: `16px`
 * **Reto**: `8px`
 
