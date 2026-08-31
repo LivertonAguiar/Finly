@@ -201,7 +201,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const { currentUser } = useAuth();
   const userId = currentUser ? currentUser.id : 'guest';
-  const userStoreKey = `plannerfin_user_${userId}_store`;
+  const userStoreKey = `finly_user_${userId}_store`;
 
   // Helper to merge default categories with any existing user categories
   const mergeCategories = (savedCats: any[]): Category[] => {
@@ -945,7 +945,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `plannerfin-backup-${user.name.toLowerCase().replace(/\s+/g, '-')}-${getTodayString()}.json`;
+    a.download = `finly-backup-${user.name.toLowerCase().replace(/\s+/g, '-')}-${getTodayString()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

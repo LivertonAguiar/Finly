@@ -1,7 +1,7 @@
 {
-  "short_name": "PlannerFin",
-  "name": "PlannerFin - Finanças Pessoais",
-  "description": "Controle financeiro inteligente, contas, cartões e orçamentos.",
+  "short_name": "Finly",
+  "name": "Finly - Finanças Inteligentes",
+  "description": "Controle financeiro inteligente, contas, cartões e orçamentos com o Finly.",
   "icons": [
     {
       "src": "/icon-192.png",

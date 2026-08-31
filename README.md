@@ -1,6 +1,6 @@
-# 🚀 PlannerFin Web (Pro Edition)
+# 🚀 Finly Web (Pro Edition)
 
-> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade ao ecossistema PlannerFin Web.
+> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade ao ecossistema Finly Web.
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 🌟 Visão Geral
 
-O **PlannerFin Web** é um sistema financeiro moderno construído para alta performance e responsividade. Ele combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito e assistente financeiro inteligente.
+O **Finly Web** é um sistema financeiro moderno construído para alta performance e responsividade. Ele combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito e assistente financeiro inteligente.
 
 ---
 
@@ -49,7 +49,7 @@ mysterious-mendeleev/
 │       ├── financial-analytics/  # Análises financeiras e projeções
 │       ├── i18n-locale-engine/   # Internacionalização e moedas
 │       ├── ofx-parser/           # Parser de extratos bancários
-│       ├── plannerfin-deploy/    # Runbook de compilação e deploy
+│       ├── finly-deploy/    # Runbook de compilação e deploy
 │       └── ui-theme-customizer/  # Presets de temas e geometrias
 ├── dist/                         # Build de produção otimizado
 ├── public/                       # Favicons, manifests e assets estáticos
@@ -121,7 +121,7 @@ mysterious-mendeleev/
 O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o DOM instantaneamente:
 
 ### 1. Presets de Temas
-* **`plannerfin-dark`**: Fundo `#1C1C1E` com cartões em `#2C2C2E` (Oficial).
+* **`finly-dark`**: Fundo `#1C1C1E` com cartões em `#2C2C2E` (Oficial).
 * **`midnight-oled`**: Preto absoluto `#000000` com cartões `#121212`.
 * **`emerald-slate`**: Azul petróleo marinho `#0F172A`.
 * **`clean-light`**: Branco minimalista `#F8FAFC`.
@@ -135,7 +135,7 @@ O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o
 * 🔴 **Vermelho Carmim** (`#EF4444`)
 
 ### 3. Geometria das Bordas (`--card-radius`)
-* **Ultra-Redondo**: `25px` (Padrão PlannerFin)
+* **Ultra-Redondo**: `25px` (Padrão Finly)
 * **Moderno**: `16px`
 * **Reto**: `8px`
 

@@ -1,6 +1,6 @@
-# 💻 Guia do Desenvolvedor & Extensões - PlannerFin
+# 💻 Guia do Desenvolvedor & Extensões - Finly
 
-Guia prático para estender o PlannerFin em novos portais, adicionar integrações e conectar com bancos de dados relacionais.
+Guia prático para estender o Finly em novos portais, adicionar integrações e conectar com bancos de dados relacionais.
 
 ---
 
@@ -20,7 +20,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('plannerfin_auth_token');
+  const token = localStorage.getItem('finly_auth_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -49,4 +49,4 @@ Para sincronização automática de contas via Open Finance:
 
 1. Instale o SDK do provedor de agregação bancária (`@pluggy/react-connect`).
 2. Capture o `itemId` da instituição conectada.
-3. No webhook de transações, converte os dados do extrato para a interface `Transaction` do PlannerFin.
+3. No webhook de transações, converte os dados do extrato para a interface `Transaction` do Finly.

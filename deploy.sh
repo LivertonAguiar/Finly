@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ==========================================
-# PlannerFin - Script de Deploy na VPS
+# Finly - Script de Deploy na VPS
 # ==========================================
 
-echo "🚀 Iniciando Deploy do PlannerFin na VPS..."
+echo "🚀 Iniciando Deploy do Finly na VPS..."
 
 # Atualizar pacotes
 sudo apt update -y && sudo apt upgrade -y
@@ -36,6 +36,6 @@ pm2 save
 
 echo ""
 echo "=========================================="
-echo "✅ PlannerFin está online com sucesso!"
+echo "✅ Finly está online com sucesso!"
 echo "🌐 Acesse: http://SEU_IP_VPS:3000"
 echo "=========================================="

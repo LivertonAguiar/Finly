@@ -127,12 +127,9 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 z-10 space-y-6">
         {/* Top Brand Header */}
         <div className="flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#007a4d] flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-[#007a4d]/30 mb-3.5">
-            P
-          </div>
+          <div className="w-14 h-14 rounded-2xl bg-[#007a4d] flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-[#007a4d]/30 mb-3.5">F</div>
           <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-            <span>Planner</span>
-            <span className="text-emerald-400">Fin</span>
+            <span>Fin</span><span className="text-emerald-400">ly</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {mode === 'login' && 'Acesse sua conta para gerenciar seu patrimônio'}

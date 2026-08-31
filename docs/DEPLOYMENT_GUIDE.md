@@ -1,6 +1,6 @@
-# 🚀 PlannerFin — Guia de Deploy em Produção (VPS)
+# 🚀 Finly — Guia de Deploy em Produção (VPS)
 
-Este guia cobre a instalação do PlannerFin em servidores **Linux (Ubuntu 22.04 / 24.04 LTS ou Debian 11/12)**.
+Este guia cobre a instalação do Finly em servidores **Linux (Ubuntu 22.04 / 24.04 LTS ou Debian 11/12)**.
 
 ---
 
@@ -47,7 +47,7 @@ docker compose up -d --build
 sudo apt install -y nginx certbot python3-certbot-nginx
 ```
 
-### Criar Configuração do Nginx (`/etc/nginx/sites-available/plannerfin`):
+### Criar Configuração do Nginx (`/etc/nginx/sites-available/finly`):
 ```nginx
 server {
     server_name app.seudominio.com;
@@ -65,7 +65,7 @@ server {
 
 ### Ativar e Gerar Certificado SSL Gratuito:
 ```bash
-sudo ln -s /etc/nginx/sites-available/plannerfin /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/finly /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl restart nginx
 sudo certbot --nginx -d app.seudominio.com
 ```

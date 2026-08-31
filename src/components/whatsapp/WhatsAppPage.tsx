@@ -26,7 +26,7 @@ export const WhatsAppPage: React.FC = () => {
     {
       id: '1',
       sender: 'agent',
-      text: 'Olá! Sou o seu Agente de IA do PlannerFin no WhatsApp 🤖💚\\n\\nVocê pode me mandar qualquer mensagem em linguagem natural, áudios ou fotos de comprovantes. Como posso te ajudar hoje?',
+      text: 'Olá! Sou o seu Agente de IA do Finly no WhatsApp 🤖💚\\n\\nVocê pode me mandar qualquer mensagem em linguagem natural, áudios ou fotos de comprovantes. Como posso te ajudar hoje?',
       time: '10:00',
     },
   ]);
@@ -93,7 +93,7 @@ export const WhatsAppPage: React.FC = () => {
         };
 
         addTransaction(createdTx);
-        agentReply = '✅ Despesa registrada com sucesso!\\n\\n💸 Valor: R$ ' + amount.toFixed(2).replace('.', ',') + '\\n📝 Descrição: ' + desc + '\\n📁 Categoria: ' + (categories.find(c => c.id === catId)?.name || 'Geral') + '\\n🏦 Conta: ' + (accounts[0]?.name || 'Conta Principal') + '\\n\\nSeu saldo já foi atualizado no PlannerFin!';
+        agentReply = '✅ Despesa registrada com sucesso!\\n\\n💸 Valor: R$ ' + amount.toFixed(2).replace('.', ',') + '\\n📝 Descrição: ' + desc + '\\n📁 Categoria: ' + (categories.find(c => c.id === catId)?.name || 'Geral') + '\\n🏦 Conta: ' + (accounts[0]?.name || 'Conta Principal') + '\\n\\nSeu saldo já foi atualizado no Finly!';
       } else if (incomeMatch) {
         const amtStr = incomeMatch[1].replace(',', '.');
         const amount = parseFloat(amtStr) || 500.00;
@@ -153,7 +153,7 @@ export const WhatsAppPage: React.FC = () => {
         </div>
 
         <a
-          href="https://wa.me/5535984595502?text=Ol%C3%A1%2C%20gostaria%20de%20ativar%20meu%20PlannerFin%20no%20WhatsApp!"
+          href="https://wa.me/5535984595502?text=Ol%C3%A1%2C%20gostaria%20de%20ativar%20meu%20Finly%20no%20WhatsApp!"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 self-start transition-all"
@@ -279,7 +279,7 @@ export const WhatsAppPage: React.FC = () => {
                   🤖
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold">PlannerFin AI Assistant</h4>
+                  <h4 className="text-xs font-bold">Finly AI Assistant</h4>
                   <p className="text-[10px] text-emerald-100 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
                     Online • Responde instantaneamente

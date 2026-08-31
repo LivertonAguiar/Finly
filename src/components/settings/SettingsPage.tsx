@@ -394,7 +394,7 @@ export const SettingsPage: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { id: 'rounded', label: 'Ultra-Redondo (25px)', desc: 'Estilo oficial PlannerFin' },
+                { id: 'rounded', label: 'Ultra-Redondo (25px)', desc: 'Estilo oficial Finly' },
                 { id: 'medium', label: 'Moderno (16px)', desc: 'Bordas suaves' },
                 { id: 'sharp', label: 'Reto (8px)', desc: 'Estilo sóbrio' },
               ].map(r => (

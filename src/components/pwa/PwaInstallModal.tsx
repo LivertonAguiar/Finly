@@ -16,14 +16,12 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
   canInstallPrompt,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Instalar Aplicativo PlannerFin" maxWidth="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Instalar Aplicativo Finly" maxWidth="lg">
       <div className="space-y-6">
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/20">
-          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-black shrink-0">
-            P
-          </div>
+          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-black shrink-0">F</div>
           <div>
-            <h4 className="text-sm font-black">PlannerFin no seu Celular ou Computador</h4>
+            <h4 className="text-sm font-black">Finly no seu Celular ou Computador</h4>
             <p className="text-xs text-emerald-100 mt-0.5">
               Acesso rápido sem precisar digitar endereço, funciona offline e carrega instantaneamente!
             </p>
@@ -55,7 +53,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <span>Android (Chrome)</span>
             </div>
             <ol className="list-decimal list-inside space-y-1 text-slate-500 dark:text-slate-400 text-[11px]">
-              <li>Abra o PlannerFin no Chrome</li>
+              <li>Abra o Finly no Chrome</li>
               <li>Toque no menu <strong>(3 pontinhos)</strong></li>
               <li>Selecione <strong>"Instalar aplicativo"</strong> ou "Adicionar à tela inicial"</li>
             </ol>

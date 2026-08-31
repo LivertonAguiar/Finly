@@ -1,6 +1,6 @@
-# 🏛️ PlannerFin — Documentação de Arquitetura do Sistema
+# 🏛️ Finly — Documentação de Arquitetura do Sistema
 
-O **PlannerFin** é uma plataforma completa de planejamento e inteligência financeira pessoal e familiar, desenvolvida com tecnologia moderna em **React 18 + TypeScript + Tailwind CSS** no frontend e **Node.js (Express + Nodemailer)** no backend.
+O **Finly** é uma plataforma completa de planejamento e inteligência financeira pessoal e familiar, desenvolvida com tecnologia moderna em **React 18 + TypeScript + Tailwind CSS** no frontend e **Node.js (Express + Nodemailer)** no backend.
 
 ---
 

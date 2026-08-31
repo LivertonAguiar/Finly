@@ -10,8 +10,8 @@ interface ExtendedAuthContextType extends AuthContextType {
 
 const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
 
-const AUTH_USERS_KEY = 'plannerfin_auth_users_db';
-const ACTIVE_SESSION_KEY = 'plannerfin_active_session_id';
+const AUTH_USERS_KEY = 'finly_auth_users_db';
+const ACTIVE_SESSION_KEY = 'finly_active_session_id';
 
 const DEFAULT_ADMIN_USER: AuthUser = {
   id: 'usr-default-liverton',
@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteUserAccount = (id: string) => {
     setAllUsers(prev => prev.filter(u => u.id !== id));
-    localStorage.removeItem(`plannerfin_user_${id}_store`);
+    localStorage.removeItem(`finly_user_${id}_store`);
     if (currentUser?.id === id) {
       logout();
     }

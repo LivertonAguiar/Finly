@@ -1,6 +1,6 @@
-# 🔌 PlannerFin — Referência Completa da API REST
+# 🔌 Finly — Referência Completa da API REST
 
-A API do PlannerFin opera via protocolo **HTTP/REST** com payloads em formato JSON e suporte a CORS.
+A API do Finly opera via protocolo **HTTP/REST** com payloads em formato JSON e suporte a CORS.
 
 **Base URL Local**: `http://localhost:3001` (ou `http://localhost:3000` em modo unificado).
 

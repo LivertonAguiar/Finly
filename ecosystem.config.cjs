@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'plannerfin-server',
+      name: 'finly-server',
       script: 'server/apiServer.js',
       env: {
         PORT: 3000,

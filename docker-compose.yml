@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  plannerfin:
+  finly:
     build: .
-    container_name: plannerfin-app
+    container_name: finly-app
     restart: always
     ports:
       - "3000:3000"

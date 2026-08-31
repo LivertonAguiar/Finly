@@ -260,9 +260,9 @@ app.post('/api/send-recovery-code', async (req, res) => {
   });
 
   const mailOptions = {
-    from: '"PlannerFin - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
+    from: '"Finly - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
     to: email,
-    subject: `Seu código de recuperação PlannerFin: ${code}`,
+    subject: `Seu código de recuperação Finly: ${code}`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0f172a; border-radius: 24px; color: #f8fafc; border: 1px solid #1e293b;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -317,5 +317,5 @@ if (fs.existsSync(DIST_DIR)) {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 PlannerFin API & Web Server rodando na porta ${PORT} (http://localhost:${PORT})`);
+  console.log(`🚀 Finly API & Web Server rodando na porta ${PORT} (http://localhost:${PORT})`);
 });

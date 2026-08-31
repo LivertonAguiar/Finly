@@ -220,7 +220,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, onOpenPwaModal
                 P
               </div>
               <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">PlannerFin Web</h4>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">Finly Web</h4>
                 <p>Versão 2.174.0 (Pro Edition)</p>
               </div>
             </div>

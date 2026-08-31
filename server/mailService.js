@@ -44,10 +44,10 @@ app.post('/api/send-recovery-code', async (req, res) => {
   });
 
   const mailOptions = {
-    // Custom Sender Display Name: "PlannerFin - Suporte & Segurança"
-    from: '"PlannerFin - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
+    // Custom Sender Display Name: "Finly - Suporte & Segurança"
+    from: '"Finly - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
     to: email,
-    subject: `Seu código de recuperação PlannerFin: ${code}`,
+    subject: `Seu código de recuperação Finly: ${code}`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0f172a; border-radius: 24px; color: #f8fafc; border: 1px solid #1e293b;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -63,7 +63,7 @@ app.post('/api/send-recovery-code', async (req, res) => {
         </div>
 
         <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 0 0 20px 0;">
-          Olá! Você solicitou a alteração ou recuperação da senha da sua conta no <strong>PlannerFin</strong>. Digite o código de 6 dígitos no aplicativo para continuar.
+          Olá! Você solicitou a alteração ou recuperação da senha da sua conta no <strong>Finly</strong>. Digite o código de 6 dígitos no aplicativo para continuar.
         </p>
 
         <div style="border-top: 1px solid #1e293b; padding-top: 16px; text-align: center;">
@@ -111,5 +111,5 @@ app.post('/api/verify-code', (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor de E-mail PlannerFin rodando em http://localhost:${PORT}`);
+  console.log(`🚀 Servidor de E-mail Finly rodando em http://localhost:${PORT}`);
 });

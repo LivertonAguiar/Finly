@@ -86,10 +86,10 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-full bg-[#007a4d] flex items-center justify-center text-white text-[10px] font-black shadow-xs">
-            🟢
+            F
           </div>
           <span className="font-extrabold text-base tracking-tight text-[#007a4d] dark:text-emerald-400 flex items-center">
-            Planner<span className="text-slate-800 dark:text-slate-100 font-bold">Fin</span>
+            Fin<span className="text-emerald-500 font-bold">ly</span>
           </span>
         </div>
       </div>

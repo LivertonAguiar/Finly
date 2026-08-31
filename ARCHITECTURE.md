@@ -1,6 +1,6 @@
-# 🏗️ Guia de Arquitetura e Estrutura Técnica - PlannerFin
+# 🏗️ Guia de Arquitetura e Estrutura Técnica - Finly
 
-Este documento descreve o fluxo de dados, ciclo de vida de componentes e contratos de tipagem do PlannerFin Web.
+Este documento descreve o fluxo de dados, ciclo de vida de componentes e contratos de tipagem do Finly Web.
 
 ---
 
@@ -81,7 +81,7 @@ export interface Transaction {
 
 ## 3. Motor de Roteamento (`App.tsx`)
 
-O PlannerFin utiliza o **HTML5 History API (`pushState` e `popstate`)** com mapeamento bidirecional:
+O Finly utiliza o **HTML5 History API (`pushState` e `popstate`)** com mapeamento bidirecional:
 - Rota para Tab: `/dashboard` -> `activeTab = 'dashboard'`
 - Tab para Rota: Clicar em uma aba dispara `window.history.pushState(..., '', '/transacoes')`
 - Suporte a navegação por histórico do navegador (botões Voltar/Avançar).

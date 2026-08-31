@@ -373,7 +373,7 @@ export const CadastrosPage: React.FC = () => {
                 onClick={async () => {
                   const ok = await confirm({
                     title: 'Restaurar Categorias',
-                    message: 'Deseja restaurar as categorias padrão do PlannerFin?',
+                    message: 'Deseja restaurar as categorias padrão do Finly?',
                     confirmText: 'Restaurar',
                     type: 'warning'
                   });

@@ -7,7 +7,7 @@ Accepted
 2026-08-31
 
 ## Contexto
-O PlannerFin precisa garantir:
+O Finly precisa garantir:
 1. **Velocidade Extrema (Zero-Latency)**: O usuário não pode esperar requisições de rede para alternar abas, filtrar meses ou cadastrar transações.
 2. **Resiliência Offline (PWA)**: O app deve funcionar mesmo com instabilidades de internet.
 3. **Persistência Centralizada Multi-Device**: Os dados precisam ser preservados em servidor para acesso simultâneo em computador e smartphone.

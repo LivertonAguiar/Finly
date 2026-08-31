@@ -1,6 +1,6 @@
-# 💎 PlannerFin — Regras de Negócio e Funcionalidades
+# 💎 Finly — Regras de Negócio e Funcionalidades
 
-O PlannerFin foi arquitetado com base no padrão de experiência de usuário e excelência contábil de plataformas líderes (como **Mobills** e **DrFinance**), adaptado para máxima produtividade.
+O Finly foi arquitetado com base no padrão de experiência de usuário e excelência contábil de plataformas líderes (como **Mobills** e **DrFinance**), adaptado para máxima produtividade.
 
 ---
 

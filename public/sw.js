@@ -1,4 +1,4 @@
-const CACHE_NAME = 'plannerfin-v2-' + Date.now();
+const CACHE_NAME = 'finly-v2-' + Date.now();
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

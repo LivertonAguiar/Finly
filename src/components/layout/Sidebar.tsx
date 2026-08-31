@@ -69,12 +69,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-lg shadow-md shadow-emerald-500/20 shrink-0">
-                P
-              </div>
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-lg shadow-md shadow-emerald-500/20 shrink-0">F</div>
               {!collapsed && (
                 <span className="font-black text-base text-slate-900 dark:text-white tracking-tight truncate">
-                  Planner<span className="text-emerald-500">Fin</span>
+                  Fin<span className="text-emerald-500">ly</span>
                 </span>
               )}
             </div>
