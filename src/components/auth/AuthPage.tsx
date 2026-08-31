@@ -26,8 +26,10 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
     }
     return 'login';
   });
-  const [email, setEmail] = useState('liverton.aguiar@hotmail.com');
-  const [password, setPassword] = useState('123');
+  const [email, setEmail] = useState(() => {
+    return (typeof window !== 'undefined' && localStorage.getItem('finly_remembered_email')) || '';
+  });
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
@@ -56,6 +58,11 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
 
     // 1. LOGIN
     if (mode === 'login') {
+      if (rememberMe) {
+        localStorage.setItem('finly_remembered_email', email);
+      } else {
+        localStorage.removeItem('finly_remembered_email');
+      }
       const res = login(email, password, rememberMe);
       if (res.success) {
         if (onLoginSuccess) onLoginSuccess();
@@ -93,10 +100,10 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
         setErrorMessage(res.message);
       }
     }
-    // 4. VERIFY CODE & SET NEW PASSWORD
+    // 4. VERIFY CODE & RESET PASSWORD
     else if (mode === 'verify') {
       if (!recoveryCode.trim()) {
-        setErrorMessage('Por favor, informe o código de 6 dígitos recebido por e-mail.');
+        setErrorMessage('Digite o código de verificação recebido.');
         return;
       }
       if (newPassword.length < 3) {
@@ -119,15 +126,6 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
       } else {
         setErrorMessage(res.message);
       }
-    }
-  };
-
-  const handleQuickLogin = (uEmail: string) => {
-    setEmail(uEmail);
-    setPassword('123');
-    const res = login(uEmail, '123', true);
-    if (res.success && onLoginSuccess) {
-      onLoginSuccess();
     }
   };
 
@@ -409,34 +407,6 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
             )}
           </button>
         </form>
-
-        {/* Quick Account Switcher for convenience */}
-        {allUsers.length > 0 && (mode === 'login' || mode === 'register') && (
-          <div className="pt-4 border-t border-slate-800 space-y-2">
-            <p className="text-[11px] font-bold text-slate-400">Contas no dispositivo:</p>
-            <div className="space-y-1 max-h-32 overflow-y-auto">
-              {allUsers.map(u => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(u.email)}
-                  className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-xs transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#007a4d] text-white font-bold text-[10px] flex items-center justify-center">
-                      {u.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-white text-xs">{u.name}</p>
-                      <p className="text-[10px] text-slate-400">{u.email}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-emerald-400 font-bold">Entrar ➔</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
