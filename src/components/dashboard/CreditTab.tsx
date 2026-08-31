@@ -948,14 +948,25 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                       )}
                     </div>
 
-                    <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                      <span>Disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.available, user.currency, !user.showValues)}</strong></span>
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                      <span>
+                        Disp: <strong className={card.available > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}>
+                          {formatCurrency(card.available, user.currency, !user.showValues)}
+                        </strong> de {formatCurrency(card.limit, user.currency, !user.showValues)}
+                      </span>
                       {card.futureInstallmentsTotal > 0 ? (
                         <span className="text-amber-500">Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}</span>
                       ) : (
                         <span>{card.usedPercentage.toFixed(1).replace('.', ',')}% usado</span>
                       )}
                     </div>
+
+                    {card.isOverLimit && (
+                      <div className="text-[10px] font-extrabold text-rose-500 flex items-center justify-between bg-rose-500/10 dark:bg-rose-950/30 px-2 py-0.5 rounded-md border border-rose-500/20">
+                        <span>⚠️ Limite ultrapassado</span>
+                        <span>+{formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Dates Row */}
