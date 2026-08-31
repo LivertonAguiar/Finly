@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { Modal } from '../ui/Modal';
 
 type TabType = 'donut' | 'line' | 'bar';
@@ -84,18 +85,26 @@ export const ReportsPage: React.FC = () => {
   const yearNum = viewDate.getFullYear();
   const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
 
+  const [viewRegime, setViewRegime] = useState<'due_date' | 'purchase_date'>('due_date');
+
   // Filtered Transactions
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      // Status filter
-      if (filterStatus !== 'all' && t.status !== filterStatus) return false;
-      // Account filter
-      if (filterAccountId !== 'all' && t.accountId !== filterAccountId && t.cardId !== filterAccountId) {
-        return false;
-      }
-      return true;
-    });
-  }, [transactions, filterStatus, filterAccountId]);
+    return transactions
+      .map(t => {
+        const card = cards.find(c => c.id === t.cardId);
+        const effectiveDate = getEffectiveTransactionDate(t, card, viewRegime);
+        return effectiveDate === t.date ? t : { ...t, date: effectiveDate };
+      })
+      .filter(t => {
+        // Status filter
+        if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+        // Account filter
+        if (filterAccountId !== 'all' && t.accountId !== filterAccountId && t.cardId !== filterAccountId) {
+          return false;
+        }
+        return true;
+      });
+  }, [transactions, filterStatus, filterAccountId, viewRegime, cards]);
 
   // Palette of colors
   const palette = [
@@ -515,8 +524,36 @@ export const ReportsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. EXPANDABLE PERIOD SELECTOR PILL (MOBILLS SPEC) */}
-      <div className="flex flex-col items-center justify-center gap-2">
+      {/* 2. EXPANDABLE PERIOD SELECTOR PILL & REGIME TOGGLE */}
+      <div className="flex flex-col items-center justify-center gap-3">
+        {/* Regime Toggle */}
+        <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-[11px] font-bold shadow-xs">
+          <button
+            type="button"
+            onClick={() => setViewRegime('due_date')}
+            className={`px-3 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+              viewRegime === 'due_date'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Relatórios por data de vencimento da fatura (Fluxo de Caixa)"
+          >
+            <span>Por Vencimento (Caixa)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewRegime('purchase_date')}
+            className={`px-3 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+              viewRegime === 'purchase_date'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Relatórios por data em que a compra ocorreu (Competência)"
+          >
+            <span>Por Data da Compra</span>
+          </button>
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSelectedMonthOffset(prev => prev - 1)}

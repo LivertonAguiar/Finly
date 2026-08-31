@@ -33,6 +33,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction, TransactionType } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { BankLogo } from '../../utils/bankLogos';
 import { TransactionModal } from './TransactionModal';
 
@@ -63,6 +64,7 @@ export const TransactionsPage: React.FC = () => {
   const [modalInitialType, setModalInitialType] = useState<TransactionType>('expense');
   const [initialPaymentMethod, setInitialPaymentMethod] = useState<'account' | 'card'>('account');
   const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
+  const [viewRegime, setViewRegime] = useState<'due_date' | 'purchase_date'>('due_date');
 
   // Month navigation
   const viewDate = useMemo(() => {
@@ -76,10 +78,14 @@ export const TransactionsPage: React.FC = () => {
   const yearNum = viewDate.getFullYear();
   const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
 
-  // Filtered transactions for this month
+  // Filtered transactions for this month (projected by due_date or purchase_date)
   const monthTransactions = useMemo(() => {
-    return transactions.filter(t => t.date.startsWith(currentMonthPrefix));
-  }, [transactions, currentMonthPrefix]);
+    return transactions.filter(t => {
+      const card = cards.find(c => c.id === t.cardId);
+      const effectiveDate = getEffectiveTransactionDate(t, card, viewRegime);
+      return effectiveDate.startsWith(currentMonthPrefix);
+    });
+  }, [transactions, currentMonthPrefix, viewRegime, cards]);
 
   const monthlyIncome = useMemo(() => {
     return monthTransactions
@@ -197,8 +203,14 @@ export const TransactionsPage: React.FC = () => {
         }
         return true;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [monthTransactions, filterType, filterStatus, searchTerm, categories]);
+      .sort((a, b) => {
+        const cardA = cards.find(c => c.id === a.cardId);
+        const cardB = cards.find(c => c.id === b.cardId);
+        const dateA = getEffectiveTransactionDate(a, cardA, viewRegime);
+        const dateB = getEffectiveTransactionDate(b, cardB, viewRegime);
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+  }, [monthTransactions, filterType, filterStatus, searchTerm, categories, viewRegime, cards]);
 
   // Group by date for timeline view
   const groupedTransactions = useMemo(() => {
@@ -206,8 +218,10 @@ export const TransactionsPage: React.FC = () => {
     const map: Record<string, Transaction[]> = {};
 
     displayTransactions.forEach(t => {
-      if (!map[t.date]) map[t.date] = [];
-      map[t.date].push(t);
+      const card = cards.find(c => c.id === t.cardId);
+      const effectiveDate = getEffectiveTransactionDate(t, card, viewRegime);
+      if (!map[effectiveDate]) map[effectiveDate] = [];
+      map[effectiveDate].push(t);
     });
 
     Object.keys(map)
@@ -234,7 +248,7 @@ export const TransactionsPage: React.FC = () => {
       });
 
     return groups;
-  }, [displayTransactions]);
+  }, [displayTransactions, viewRegime, cards]);
 
   
   const handleDeleteTransaction = async (tx: Transaction) => {
@@ -590,6 +604,39 @@ export const TransactionsPage: React.FC = () => {
             </p>
           </div>
         </button>
+      </div>
+
+      {/* 2.5 VIEW REGIME TOGGLE (MOBILLS CAIXA VS COMPETÊNCIA) */}
+      <div className="flex items-center justify-center">
+        <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-xs font-bold shadow-xs">
+          <button
+            type="button"
+            onClick={() => setViewRegime('due_date')}
+            className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewRegime === 'due_date'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Exibe compras de cartão no dia do vencimento da fatura (Fluxo de Caixa Real)"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Por Vencimento (Caixa)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewRegime('purchase_date')}
+            className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewRegime === 'purchase_date'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Exibe compras de cartão no dia exato em que a compra ocorreu (Competência)"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>Por Data da Compra</span>
+          </button>
+        </div>
       </div>
 
       {/* 3. MONTH NAVIGATOR (PILL BAR) */}

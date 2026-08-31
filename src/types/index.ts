@@ -65,6 +65,8 @@ export interface Transaction {
   notes?: string;
   attachmentUrl?: string;
   invoiceMonth?: string; // e.g. "2026-08"
+  dueDate?: string; // Data de vencimento da fatura (Regime de Caixa)
+  purchaseDate?: string; // Data em que a compra ocorreu (Regime de Competência)
   createdAt: string;
 }
 

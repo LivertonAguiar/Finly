@@ -20,6 +20,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { Transaction, TransactionType, TransactionStatus } from '../../types';
 import { formatCurrency, getTodayString, round2 } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
+import { allocateCardTransaction } from '../../utils/invoiceCalculator';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -179,19 +180,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     if (isNaN(numAmount) || numAmount <= 0) return;
 
     const roundedAmount = round2(numAmount);
-    const finalDate = paymentMethod === 'card' && targetInvoiceMonth ? `${targetInvoiceMonth}-15` : date;
+    const selectedCard = cards.find(c => c.id === cardId) || cards[0];
+    const allocation = (paymentMethod === 'card' && selectedCard)
+      ? allocateCardTransaction(date, selectedCard.closingDay, selectedCard.dueDay)
+      : null;
+
     const finalStatus: TransactionStatus = isPaid ? 'completed' : 'pending';
 
     const txData: Omit<Transaction, 'id' | 'createdAt'> = {
       description: description.trim() || (type === 'transfer' ? 'Transferência entre contas' : 'Lançamento'),
       amount: roundedAmount,
       type,
-      date: finalDate,
+      date: date,
+      purchaseDate: date,
+      dueDate: allocation?.dueDate,
+      invoiceMonth: targetInvoiceMonth || allocation?.invoiceMonth,
       categoryId: type === 'transfer' ? 'cat-transferencia' : categoryId,
       subcategoryId: type === 'transfer' ? undefined : subcategoryId || undefined,
       accountId: paymentMethod === 'account' ? (accountId || accounts[0]?.id || 'acc-carteira-padrao') : undefined,
       targetAccountId: type === 'transfer' ? targetAccountId : undefined,
-      cardId: paymentMethod === 'card' ? cardId : undefined,
+      cardId: paymentMethod === 'card' ? (cardId || cards[0]?.id) : undefined,
       status: paymentMethod === 'card' ? 'pending' : finalStatus,
       recurring,
       notes: notes.trim() || undefined,
@@ -208,14 +216,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           // Installments on card
           const installmentVal = round2(roundedAmount / repeatCount);
           for (let i = 0; i < repeatCount; i++) {
-            const d = new Date(finalDate);
+            const d = new Date(date);
             d.setMonth(d.getMonth() + i);
             const installmentDate = d.toISOString().substring(0, 10);
+            const instAlloc = selectedCard ? allocateCardTransaction(installmentDate, selectedCard.closingDay, selectedCard.dueDay) : null;
             addTransaction({
               ...txData,
               description: `${txData.description} (${i + 1}/${repeatCount})`,
               amount: installmentVal,
               date: installmentDate,
+              purchaseDate: date,
+              invoiceMonth: instAlloc?.invoiceMonth,
+              dueDate: instAlloc?.dueDate,
               installments: {
                 current: i + 1,
                 total: repeatCount,
@@ -482,37 +494,52 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           </div>
         ) : paymentMethod === 'card' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cartão de Crédito *</label>
-              <select
-                value={cardId}
-                onChange={e => setCardId(e.target.value)}
-                required
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
-              >
-                {cards.map(c => (
-                  <option key={c.id} value={c.id}>
-                    💳 {c.name} ({c.brand})
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cartão de Crédito *</label>
+                <select
+                  value={cardId}
+                  onChange={e => setCardId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+                >
+                  {cards.map(c => (
+                    <option key={c.id} value={c.id}>
+                      💳 {c.name} ({c.brand})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Fatura de Destino</label>
+                <select
+                  value={targetInvoiceMonth}
+                  onChange={e => setTargetInvoiceMonth(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+                >
+                  {invoiceMonths.map(m => (
+                    <option key={m.key} value={m.key}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Fatura de Destino</label>
-              <select
-                value={targetInvoiceMonth}
-                onChange={e => setTargetInvoiceMonth(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
-              >
-                {invoiceMonths.map(m => (
-                  <option key={m.key} value={m.key}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Live Cycle Information Banner */}
+            {(() => {
+              const selCard = cards.find(c => c.id === cardId) || cards[0];
+              if (!selCard) return null;
+              const alloc = allocateCardTransaction(date, selCard.closingDay, selCard.dueDay);
+              return (
+                <div className="p-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-800/40 text-[11px] text-purple-800 dark:text-purple-300 flex items-center justify-between flex-wrap gap-1">
+                  <span>📅 Alocada na fatura: <strong>{targetInvoiceMonth || alloc.invoiceMonth}</strong> (Vencimento dia {selCard.dueDay})</span>
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Fechamento: dia {selCard.closingDay}</span>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div>

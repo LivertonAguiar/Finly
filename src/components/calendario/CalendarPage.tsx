@@ -21,6 +21,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { TransactionModal } from '../transactions/TransactionModal';
 
 export const CalendarPage: React.FC = () => {
@@ -111,26 +112,31 @@ export const CalendarPage: React.FC = () => {
     return days;
   }, [year, month]);
 
-  // Aggregate transactions by date
+  const [viewRegime, setViewRegime] = useState<'due_date' | 'purchase_date'>('due_date');
+
+  // Aggregate transactions by date (projected by due_date or purchase_date)
   const transactionsByDate = useMemo(() => {
     const map: Record<string, { income: number; expense: number; transactions: Transaction[] }> = {};
 
     transactions.forEach(t => {
       if (onlyPending && t.status !== 'pending') return;
 
-      if (!map[t.date]) {
-        map[t.date] = { income: 0, expense: 0, transactions: [] };
+      const card = cards.find(c => c.id === t.cardId);
+      const effectiveDate = getEffectiveTransactionDate(t, card, viewRegime);
+
+      if (!map[effectiveDate]) {
+        map[effectiveDate] = { income: 0, expense: 0, transactions: [] };
       }
-      map[t.date].transactions.push(t);
+      map[effectiveDate].transactions.push(t);
       if (t.type === 'income') {
-        map[t.date].income += t.amount;
+        map[effectiveDate].income += t.amount;
       } else if (t.type === 'expense') {
-        map[t.date].expense += t.amount;
+        map[effectiveDate].expense += t.amount;
       }
     });
 
     return map;
-  }, [transactions, onlyPending]);
+  }, [transactions, onlyPending, viewRegime, cards]);
 
   // Selected Day Details
   const selectedDayData = useMemo(() => {
@@ -174,23 +180,53 @@ export const CalendarPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Month Navigator */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-            className="p-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-xs cursor-pointer"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-4 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 shadow-xs">
-            {capitalizedMonth} {year}
-          </span>
-          <button
-            onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-            className="p-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-xs cursor-pointer"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        {/* Month Navigator & Regime Toggle */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Regime Toggle */}
+          <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-[11px] font-bold shadow-xs">
+            <button
+              type="button"
+              onClick={() => setViewRegime('due_date')}
+              className={`px-3 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+                viewRegime === 'due_date'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Exibe compras de cartão no dia do vencimento da fatura (Fluxo de Caixa Real)"
+            >
+              <span>Vencimento</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewRegime('purchase_date')}
+              className={`px-3 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+                viewRegime === 'purchase_date'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Exibe compras de cartão no dia da compra"
+            >
+              <span>Compra</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedMonthOffset(prev => prev - 1)}
+              className="p-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-xs cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-4 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 shadow-xs">
+              {capitalizedMonth} {year}
+            </span>
+            <button
+              onClick={() => setSelectedMonthOffset(prev => prev + 1)}
+              className="p-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-xs cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

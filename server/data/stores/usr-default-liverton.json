@@ -4,7 +4,7 @@
       "id": "acc-carteira-padrao",
       "name": "Carteira",
       "type": "cash",
-      "balance": 0,
+      "balance": 9333.33,
       "initialBalance": 0,
       "institution": "Carteira",
       "color": "#10b981",
@@ -878,22 +878,21 @@
   "investments": [],
   "transactions": [
     {
-      "id": "tx-pay-1788098685041",
+      "id": "tx-pay-1788192301466",
       "description": "Pagamento Fatura Nubank Crédito (2026-08)",
       "amount": 666.67,
       "type": "expense",
-      "date": "2026-08-30",
-      "categoryId": "cat-mov-transferencias",
+      "date": "2026-08-31",
+      "categoryId": "cat-fatura-cartao",
       "accountId": "acc-carteira-padrao",
-      "status": "pending",
+      "status": "completed",
       "recurring": false,
       "tags": [
         "fatura",
         "cartao"
       ],
       "notes": "Pagamento de fatura referente a 2026-08",
-      "createdAt": "2026-08-30T14:04:45.041Z",
-      "subcategoryId": "sub-mov-pagamento-cartao"
+      "createdAt": "2026-08-31T16:05:01.467Z"
     },
     {
       "description": "Salário",
@@ -903,7 +902,7 @@
       "categoryId": "cat-rec-trabalho",
       "subcategoryId": "sub-rec-salario",
       "accountId": "acc-carteira-padrao",
-      "status": "pending",
+      "status": "completed",
       "recurring": false,
       "tags": [],
       "id": "tx-1788095170268-ynrd",
@@ -1250,5 +1249,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-31T15:59:50.872Z"
+  "_serverTimestamp": "2026-08-31T16:09:15.458Z"
 }
