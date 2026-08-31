@@ -903,7 +903,7 @@
       "categoryId": "cat-rec-trabalho",
       "subcategoryId": "sub-rec-salario",
       "accountId": "acc-carteira-padrao",
-      "status": "completed",
+      "status": "pending",
       "recurring": false,
       "tags": [],
       "id": "tx-1788095170268-ynrd",
@@ -1250,5 +1250,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-31T15:50:09.882Z"
+  "_serverTimestamp": "2026-08-31T15:59:50.872Z"
 }

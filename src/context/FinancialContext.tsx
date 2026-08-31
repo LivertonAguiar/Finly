@@ -1010,7 +1010,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const totalDebts = debts.reduce((sum, d) => sum + d.remainingAmount, 0);
 
     const totalCreditLimit = cards.reduce((sum, c) => sum + c.limit, 0);
-    const totalCreditUsed = transactions.filter(t => t.cardId && t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const totalCreditUsed = transactions.filter(t => t.cardId && t.type === 'expense' && t.status !== 'completed').reduce((sum, t) => sum + t.amount, 0);
     const totalCreditAvailable = Math.max(0, totalCreditLimit - totalCreditUsed);
 
     return {

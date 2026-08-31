@@ -170,13 +170,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // Card items breakdown
   const cardSummaries = useMemo(() => {
     return cards.map(c => {
-      const cardTxs = transactions.filter(t => t.cardId === c.id && t.type === 'expense' && t.date.startsWith(currentMonthPrefix));
-      const invoiceTotal = cardTxs.reduce((sum, t) => sum + t.amount, 0);
-      const totalAccumulatedSpent = transactions.filter(t => t.cardId === c.id && t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-      const availableLimit = Math.max(0, c.limit - totalAccumulatedSpent);
-      const limitUsedPercent = c.limit > 0 ? (invoiceTotal / c.limit) * 100 : 0;
+      const cardTxs = transactions.filter(t => t.cardId === c.id && t.type === 'expense');
+      const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
+      const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+      
+      // Total active committed limit = sum of all unpaid/pending card expenses
+      const totalCommittedLimit = Math.round(cardTxs.filter(t => t.status !== 'completed').reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+      const availableLimit = Math.max(0, Math.round((c.limit - totalCommittedLimit) * 100) / 100);
+      const limitUsedPercent = c.limit > 0 ? Math.min(100, (totalCommittedLimit / c.limit) * 100) : 0;
 
-      const isPaid = cardTxs.length > 0 && cardTxs.every(t => t.status === 'completed');
+      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
       const viewMonthNum = viewDate.getMonth() + 1;
       const viewYearNum = viewDate.getFullYear();
 
@@ -189,6 +192,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       return {
         ...c,
         invoiceTotal,
+        totalCommittedLimit,
         availableLimit,
         limitUsedPercent,
         statusLabel,
@@ -198,7 +202,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         isZero,
       };
     });
-  }, [cards, transactions, currentMonthPrefix, todayDay]);
+  }, [cards, transactions, currentMonthPrefix, todayDay, viewDate]);
 
   const totalCardInvoicesSum = useMemo(() => {
     return cardSummaries.reduce((sum, c) => sum + c.invoiceTotal, 0);
@@ -518,14 +522,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                             {card.name}
                           </h4>
-                          <span className={`text-[11px] ${card.statusColor}`}>{card.statusLabel}</span>
+                          <span className={`text-[11px] font-bold ${card.statusColor}`}>{card.statusLabel}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-black text-[#ef5350] block">
+                          <span className={`text-xs font-black block ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
                             {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                           </span>
                           <span className="text-[10px] text-slate-400 font-bold">
-                            {card.limitUsedPercent.toFixed(2).replace('.', ',')}%
+                            {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
                           </span>
                         </div>
                       </div>
@@ -533,15 +537,18 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                       {/* Progress Bar */}
                       <div className="w-full bg-slate-100 dark:bg-[#11141b] h-2 rounded-full overflow-hidden">
                         <div
-                          style={{ width: `${Math.max(2, card.limitUsedPercent)}%` }}
-                          className="h-full bg-[#00a884] rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min(100, Math.max(card.limitUsedPercent > 0 ? 3 : 0, card.limitUsedPercent))}%`,
+                            backgroundColor: card.limitUsedPercent > 85 ? '#ef5350' : card.limitUsedPercent > 60 ? '#f59e0b' : card.color || '#7c4dff'
+                          }}
+                          className="h-full rounded-full transition-all duration-500"
                         />
                       </div>
 
                       {/* Available Limit + Action Button */}
                       <div className="flex items-center justify-between pt-1">
                         <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
-                          Limite Disponível {formatCurrency(card.availableLimit, user.currency, !user.showValues)}
+                          Disp: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong> de {formatCurrency(card.limit, user.currency, !user.showValues)}
                         </span>
 
                         {card.isPaid ? (
