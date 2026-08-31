@@ -46,6 +46,7 @@ export const TransactionsPage: React.FC = () => {
     cards,
     deleteTransaction,
     toggleTransactionStatus,
+    reimburseThirdPartyTransaction,
     user,
   } = useFinancial();
 
@@ -89,13 +90,13 @@ export const TransactionsPage: React.FC = () => {
 
   const monthlyIncome = useMemo(() => {
     return monthTransactions
-      .filter(t => t.type === 'income' && t.status === 'completed')
+      .filter(t => t.type === 'income' && t.status === 'completed' && !t.ignored)
       .reduce((sum, t) => sum + t.amount, 0);
   }, [monthTransactions]);
 
   const monthlyExpense = useMemo(() => {
     return monthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed')
+      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
       .reduce((sum, t) => sum + t.amount, 0);
   }, [monthTransactions]);
 
@@ -116,7 +117,21 @@ export const TransactionsPage: React.FC = () => {
     let styleClass = '';
     let icon = null;
 
-    if (isIncome) {
+    if (t.isThirdParty) {
+      if (t.reimbursed) {
+        label = `${t.thirdPartyName || 'Terceiro'} (Reembolsado)`;
+        styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
+        icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+      } else {
+        label = `${t.thirdPartyName || 'Terceiro'} (A Reembolsar)`;
+        styleClass = 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/25';
+        icon = <Clock className="w-3.5 h-3.5 text-purple-500 shrink-0" />;
+      }
+    } else if (t.ignored) {
+      label = 'Ignorada';
+      styleClass = 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30 hover:bg-slate-500/25';
+      icon = <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
+    } else if (isIncome) {
       if (isCompleted) {
         label = 'Recebida';
         styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
@@ -721,7 +736,29 @@ export const TransactionsPage: React.FC = () => {
                       </div>
 
                       {/* Right: Amount + Action buttons */}
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        {t.isThirdParty && !t.reimbursed && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const ok = await confirm({
+                                title: 'Registrar Reembolso',
+                                message: `Confirmar que ${t.thirdPartyName || 'a pessoa'} reembolsou o valor de ${formatCurrency(t.amount, user.currency)}? Será criada uma receita na sua conta bancária.`,
+                                confirmText: 'Receber Reembolso',
+                                type: 'info'
+                              });
+                              if (ok) {
+                                reimburseThirdPartyTransaction(t.id, accounts[0]?.id || 'acc-carteira-padrao');
+                              }
+                            }}
+                            className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                            title="Registrar recebimento do valor emprestado"
+                          >
+                            + Receber
+                          </button>
+                        )}
+
                         <span
                           className={`text-xs font-black ${
                             isIncome ? 'text-[#66bb6a]' : isExpense ? 'text-[#ef5350]' : 'text-slate-700 dark:text-slate-300'

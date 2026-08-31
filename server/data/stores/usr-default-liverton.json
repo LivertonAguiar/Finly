@@ -4,7 +4,7 @@
       "id": "acc-carteira-padrao",
       "name": "Carteira",
       "type": "cash",
-      "balance": 10000,
+      "balance": 9333.33,
       "initialBalance": 0,
       "institution": "Carteira",
       "color": "#10b981",
@@ -15,7 +15,7 @@
     {
       "name": "Nubank Crédito",
       "brand": "Mastercard",
-      "limit": 5000,
+      "limit": 8000,
       "closingDay": 27,
       "dueDay": 1,
       "color": "#820ad1",
@@ -878,6 +878,23 @@
   "investments": [],
   "transactions": [
     {
+      "id": "tx-pay-1788193846930",
+      "description": "Pagamento Fatura Nubank Crédito (2026-08)",
+      "amount": 666.67,
+      "type": "expense",
+      "date": "2026-08-31",
+      "categoryId": "cat-fatura-cartao",
+      "accountId": "acc-carteira-padrao",
+      "status": "completed",
+      "recurring": false,
+      "tags": [
+        "fatura",
+        "cartao"
+      ],
+      "notes": "Pagamento de fatura referente a 2026-08",
+      "createdAt": "2026-08-31T16:30:46.930Z"
+    },
+    {
       "description": "Salário",
       "amount": 10000,
       "type": "income",
@@ -1119,7 +1136,7 @@
       "categoryId": "cat-desp-moradia",
       "subcategoryId": "sub-mor-eletro",
       "cardId": "card-1788094641945-bzt",
-      "status": "pending",
+      "status": "completed",
       "recurring": false,
       "installments": {
         "current": 1,
@@ -1199,7 +1216,7 @@
       "categoryId": "cat-desp-educacao",
       "subcategoryId": "sub-educ-escola",
       "cardId": "card-1788094641945-bzt",
-      "status": "pending",
+      "status": "completed",
       "recurring": false,
       "installments": {
         "current": 1,
@@ -1232,5 +1249,5 @@
     "themePreset": "midnight-oled",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-31T16:25:40.606Z"
+  "_serverTimestamp": "2026-08-31T16:43:28.600Z"
 }

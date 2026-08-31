@@ -59,6 +59,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [repeatAmount, setRepeatAmount] = useState('2');
   const [repeatPeriod, setRepeatPeriod] = useState<'days' | 'weeks' | 'months' | 'years'>('months');
   const [ignoreTransaction, setIgnoreTransaction] = useState(false);
+  const [isThirdParty, setIsThirdParty] = useState(false);
+  const [thirdPartyName, setThirdPartyName] = useState('');
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [saveAndNew, setSaveAndNew] = useState(false);
   const [notes, setNotes] = useState('');
@@ -78,7 +80,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       const k = d.toISOString().substring(0, 7);
       const mName = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
       const cap = mName.charAt(0).toUpperCase() + mName.slice(1);
-      list.push({ key: k, label: i === 0 ? `${cap} (Atual)` : cap });
+      list.push({ key: k, label: cap });
     }
     return list;
   }, []);
@@ -86,7 +88,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   // Initialize ONLY when opening modal or switching editing transaction
   useEffect(() => {
     const isOpening = isOpen && !prevIsOpenRef.current;
-    const isSwitchingTx = editingTransaction?.id !== prevEditingIdRef.current;
+    const isSwitchingTx = isOpen && editingTransaction?.id !== prevEditingIdRef.current;
 
     prevIsOpenRef.current = isOpen;
     prevEditingIdRef.current = editingTransaction?.id || null;
@@ -110,6 +112,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setPaymentMethod(editingTransaction.cardId ? 'card' : 'account');
         setIsPaid(editingTransaction.status === 'completed');
         setRecurring(editingTransaction.recurring || false);
+        setIgnoreTransaction(!!editingTransaction.ignored);
+        setIsThirdParty(!!editingTransaction.isThirdParty);
+        setThirdPartyName(editingTransaction.thirdPartyName || '');
         setNotes(editingTransaction.notes || '');
         setTags(editingTransaction.tags || []);
         setTargetInvoiceMonth(editingTransaction.date ? editingTransaction.date.substring(0, 7) : invoiceMonths[1]?.key || '');
@@ -131,6 +136,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setRepeatAmount('2');
         setRepeatPeriod('months');
         setIgnoreTransaction(false);
+        setIsThirdParty(false);
+        setThirdPartyName('');
         setShowMoreDetails(false);
         setNotes('');
         setTags([]);
@@ -202,8 +209,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       cardId: paymentMethod === 'card' ? (cardId || cards[0]?.id) : undefined,
       status: paymentMethod === 'card' ? 'pending' : finalStatus,
       recurring,
+      ignored: ignoreTransaction || isThirdParty,
+      isThirdParty,
+      thirdPartyName: isThirdParty ? thirdPartyName.trim() : undefined,
+      reimbursed: editingTransaction?.reimbursed || false,
       notes: notes.trim() || undefined,
-      tags: tags.length > 0 ? tags : [],
+      tags: isThirdParty && !tags.includes('Terceiros') ? [...tags, 'Terceiros'] : tags,
     };
 
     if (editingTransaction) {
@@ -559,15 +570,68 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
         )}
 
-        {/* Switch: Ignorar transação */}
-        <div className="flex items-center justify-between py-1">
-          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Ignorar transação no planejamento</span>
-          <input
-            type="checkbox"
-            checked={ignoreTransaction}
-            onChange={e => setIgnoreTransaction(e.target.checked)}
-            className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
-          />
+        {/* ========================================================================= */}
+        {/* COMPRA DE TERCEIROS (CARTÃO EMPRESTADO) & IGNORAR TRANSAÇÃO (MOBILLS SPEC) */}
+        {/* ========================================================================= */}
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-3">
+          {/* Switch: Compra de Terceiro */}
+          {paymentMethod === 'card' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <span>👤</span> Compra de terceiro (Cartão emprestado)
+                  </span>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Consta na fatura do cartão, mas não afeta seus relatórios e orçamentos
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isThirdParty}
+                  onChange={e => {
+                    setIsThirdParty(e.target.checked);
+                    if (e.target.checked) setIgnoreTransaction(true);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                />
+              </div>
+
+              {isThirdParty && (
+                <div className="pt-1 animate-in fade-in space-y-1">
+                  <label className="block text-[11px] font-bold text-purple-600 dark:text-purple-400">
+                    Nome da pessoa *
+                  </label>
+                  <input
+                    type="text"
+                    required={isThirdParty}
+                    placeholder="Ex: Carlos (Amigo), Mãe, João..."
+                    value={thirdPartyName}
+                    onChange={e => setThirdPartyName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-purple-300 dark:border-purple-800 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Switch: Ignorar transação */}
+          <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+            <div>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                🚫 Ignorar no planejamento e relatórios
+              </span>
+              <p className="text-[10px] text-slate-400">
+                Mantém o registro na fatura sem impactar suas despesas e gráficos
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={ignoreTransaction}
+              onChange={e => setIgnoreTransaction(e.target.checked)}
+              className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+            />
+          </div>
         </div>
 
         {/* ========================================================================= */}

@@ -96,6 +96,8 @@ export const ReportsPage: React.FC = () => {
         return effectiveDate === t.date ? t : { ...t, date: effectiveDate };
       })
       .filter(t => {
+        // Exclude ignored / third-party transactions from personal spending reports
+        if (t.ignored) return false;
         // Status filter
         if (filterStatus !== 'all' && t.status !== filterStatus) return false;
         // Account filter

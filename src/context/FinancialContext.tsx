@@ -110,6 +110,7 @@ interface FinancialContextType {
   deleteTransaction: (id: string) => void;
   deleteMultipleTransactions: (ids: string[]) => void;
   toggleTransactionStatus: (id: string) => void;
+  reimburseThirdPartyTransaction: (transactionId: string, targetAccountId: string) => void;
   importTransactions: (txs: Omit<Transaction, 'id' | 'createdAt'>[]) => void;
 
   // Budgets
@@ -691,6 +692,36 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   };
 
+  const reimburseThirdPartyTransaction = (transactionId: string, targetAccountId: string) => {
+    const tx = transactions.find(t => t.id === transactionId);
+    if (!tx) return;
+
+    const personName = tx.thirdPartyName || 'Terceiro';
+    const acc = accounts.find(a => a.id === targetAccountId) || accounts[0];
+
+    // 1. Mark original transaction as reimbursed
+    setTransactions(prev => prev.map(t => (t.id === transactionId ? { ...t, reimbursed: true } : t)));
+
+    // 2. Add reimbursement Income transaction in account
+    const reimbursementTx: Transaction = {
+      id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      description: `Reembolso de ${personName}: ${tx.description}`,
+      amount: tx.amount,
+      type: 'income',
+      date: getTodayString(),
+      purchaseDate: getTodayString(),
+      categoryId: 'cat-outras-receitas',
+      accountId: acc?.id || 'acc-carteira-padrao',
+      status: 'completed',
+      recurring: false,
+      tags: ['Reembolso', 'Terceiros'],
+      notes: `Reembolso referente à compra no cartão "${tx.description}" (${personName})`,
+      createdAt: new Date().toISOString(),
+    };
+
+    setTransactions(prev => [reimbursementTx, ...prev]);
+  };
+
   const importTransactions = (txs: Omit<Transaction, 'id' | 'createdAt'>[]) => {
     const formatted = txs.map((tx, idx) => ({
       ...tx,
@@ -1063,6 +1094,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         deleteTransaction,
         deleteMultipleTransactions,
         toggleTransactionStatus,
+        reimburseThirdPartyTransaction,
         importTransactions,
         budgets,
         setCategoryBudget,

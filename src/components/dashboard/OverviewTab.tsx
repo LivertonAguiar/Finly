@@ -108,13 +108,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
   const monthlyIncome = useMemo(() => {
     return monthTransactions
-      .filter(t => t.type === 'income' && t.status === 'completed')
+      .filter(t => t.type === 'income' && t.status === 'completed' && !t.ignored)
       .reduce((sum, t) => sum + t.amount, 0);
   }, [monthTransactions]);
 
   const monthlyExpense = useMemo(() => {
     return monthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed')
+      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
       .reduce((sum, t) => sum + t.amount, 0);
   }, [monthTransactions]);
 
@@ -135,7 +135,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const categoryChartData = useMemo(() => {
     const map: Record<string, { name: string; icon: string; amount: number; color?: string }> = {};
     monthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed')
+      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
       .forEach(t => {
         const cat = findCategory(t.categoryId, t.subcategoryId);
         const name = (cat ? cat.name : (t.categoryId || 'OUTROS')).toUpperCase();
