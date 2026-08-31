@@ -301,13 +301,18 @@ app.post('/api/verify-code', (req, res) => {
     return res.status(400).json({ success: false, message: 'Código inválido ou expirado.' });
   }
 
+  return res.json({ success: true, message: 'Código validado com sucesso!' });
+});
+
 // Serve static frontend in production if dist exists
 const DIST_DIR = path.join(__dirname, '../dist');
 if (fs.existsSync(DIST_DIR)) {
   app.use(express.static(DIST_DIR));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(DIST_DIR, 'index.html'));
+    }
+    next();
   });
 }
 
