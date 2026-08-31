@@ -18,8 +18,14 @@ import { useAuth } from '../../context/AuthContext';
 
 export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuccess }) => {
   const { login, register, allUsers, requestPasswordReset, resetPassword } = useAuth();
-
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.replace(/^\/+/, '').toLowerCase();
+      if (p === 'cadastro' || p === 'register' || p === 'signup') return 'register';
+      if (p === 'recuperar-senha' || p === 'forgot') return 'forgot';
+    }
+    return 'login';
+  });
   const [email, setEmail] = useState('liverton.aguiar@hotmail.com');
   const [password, setPassword] = useState('123');
   const [name, setName] = useState('');
@@ -34,6 +40,13 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [debugCodeHint, setDebugCodeHint] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const target = mode === 'register' ? '/cadastro' : mode === 'forgot' ? '/recuperar-senha' : '/login';
+    if (window.location.pathname !== target) {
+      window.history.replaceState({ mode }, '', target);
+    }
+  }, [mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

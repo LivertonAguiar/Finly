@@ -94,14 +94,21 @@ const AppContent: React.FC = () => {
       setActiveTab(tab);
     };
     window.addEventListener('popstate', handlePopState);
-
-    // If starting at root '/', update URL to '/dashboard'
-    if (window.location.pathname === '/' || window.location.pathname === '') {
-      window.history.replaceState({ tab: 'dashboard' }, '', '/dashboard');
-    }
-
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Ensure /login URL when unauthenticated, and /dashboard when authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/cadastro') {
+        window.history.replaceState({ tab: 'login' }, '', '/login');
+      }
+    } else {
+      if (window.location.pathname === '/login' || window.location.pathname === '/' || window.location.pathname === '') {
+        handleSelectTab('dashboard');
+      }
+    }
+  }, [currentUser, handleSelectTab]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

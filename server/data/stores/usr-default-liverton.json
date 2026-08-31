@@ -4,7 +4,7 @@
       "id": "acc-carteira-padrao",
       "name": "Carteira",
       "type": "cash",
-      "balance": 9333.33,
+      "balance": 8583.33,
       "initialBalance": 0,
       "institution": "Carteira",
       "color": "#10b981",
@@ -86,6 +86,42 @@
       "color": "#3b82f6",
       "type": "expense",
       "subcategories": [
+        {
+          "id": "sub-mor-itbi-registro",
+          "name": "ITBI & Escritura / Registro",
+          "icon": "🏛️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-taxa-obra",
+          "name": "Taxa de Evolução de Obra",
+          "icon": "📄",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-seguro-habitacional",
+          "name": "Seguro Habitacional (MIP/DFI)",
+          "icon": "🛡️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-parcela-construtora",
+          "name": "Parcela da Construtora / Entrada / Balão",
+          "icon": "🏗️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-amortizacao-imovel",
+          "name": "Amortização do Financiamento",
+          "icon": "💸",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-financiamento-apto",
+          "name": "Financiamento do Apartamento / Imóvel",
+          "icon": "🏢",
+          "categoryId": "cat-desp-moradia"
+        },
         {
           "id": "sub-mor-aluguel",
           "name": "Aluguel",
@@ -555,6 +591,18 @@
       "type": "expense",
       "subcategories": [
         {
+          "id": "sub-fin-amortizacao-extra",
+          "name": "Amortização Extraordinária",
+          "icon": "💸",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-financiamento-imob",
+          "name": "Financiamento Imobiliário",
+          "icon": "🏢",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
           "id": "sub-fin-juros",
           "name": "Juros",
           "icon": "📈",
@@ -877,6 +925,33 @@
   "debts": [],
   "investments": [],
   "transactions": [
+    {
+      "description": "Financiamento Apto",
+      "amount": 750,
+      "type": "expense",
+      "date": "2026-08-21",
+      "purchaseDate": "2026-08-21",
+      "invoiceMonth": "2026-08",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-financiamento-apto",
+      "accountId": "acc-carteira-padrao",
+      "status": "completed",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "reminder": {
+        "enabled": true,
+        "daysBefore": 0,
+        "reminderTime": "09:00"
+      },
+      "ignored": false,
+      "isThirdParty": false,
+      "reimbursed": false,
+      "tags": [
+        "Aluguel"
+      ],
+      "id": "tx-1788210473714-u1kd",
+      "createdAt": "2026-08-31T21:07:53.714Z"
+    },
     {
       "id": "tx-pay-1788193846930",
       "description": "Pagamento Fatura Nubank Crédito (2026-08)",
@@ -1246,8 +1321,8 @@
     "showValues": true,
     "theme": "dark",
     "accentColor": "#7C4DFF",
-    "themePreset": "midnight-oled",
+    "themePreset": "emerald-slate",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-08-31T20:57:42.853Z"
+  "_serverTimestamp": "2026-08-31T21:45:42.858Z"
 }
