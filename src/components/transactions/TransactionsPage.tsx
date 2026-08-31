@@ -82,11 +82,15 @@ export const TransactionsPage: React.FC = () => {
   }, [transactions, currentMonthPrefix]);
 
   const monthlyIncome = useMemo(() => {
-    return monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    return monthTransactions
+      .filter(t => t.type === 'income' && t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0);
   }, [monthTransactions]);
 
   const monthlyExpense = useMemo(() => {
-    return monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    return monthTransactions
+      .filter(t => t.type === 'expense' && t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0);
   }, [monthTransactions]);
 
   const monthlyBalance = monthlyIncome - monthlyExpense;

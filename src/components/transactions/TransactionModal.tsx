@@ -189,7 +189,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       date: finalDate,
       categoryId: type === 'transfer' ? 'cat-transferencia' : categoryId,
       subcategoryId: type === 'transfer' ? undefined : subcategoryId || undefined,
-      accountId: paymentMethod === 'account' ? accountId : undefined,
+      accountId: paymentMethod === 'account' ? (accountId || accounts[0]?.id || 'acc-carteira-padrao') : undefined,
       targetAccountId: type === 'transfer' ? targetAccountId : undefined,
       cardId: paymentMethod === 'card' ? cardId : undefined,
       status: paymentMethod === 'card' ? 'pending' : finalStatus,
@@ -266,12 +266,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div className="flex items-center gap-2 flex-1">
             <span className="text-xl font-black text-slate-400">R$</span>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               required
               placeholder="0,00"
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={e => {
+                const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                setAmount(val);
+              }}
               autoFocus
               className={`w-full text-2xl font-black bg-transparent border-none focus:outline-none tracking-tight ${
                 type === 'income'

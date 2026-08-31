@@ -427,6 +427,36 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [user.theme]);
 
+  // =========================================================================
+  // DERIVED BALANCE RECALCULATION
+  // Recompute every account balance = initialBalance + Σ completed transactions
+  // This is the single source of truth and self-heals any desync.
+  // =========================================================================
+  useEffect(() => {
+    setAccounts(prevAccounts => {
+      const defaultAccId = prevAccounts[0]?.id || 'acc-carteira-padrao';
+      const updated = prevAccounts.map(account => {
+        let balance = account.initialBalance ?? 0;
+        for (const tx of transactions) {
+          if (tx.status !== 'completed') continue;
+          const isThisAccount = tx.accountId === account.id || (!tx.cardId && !tx.accountId && account.id === defaultAccId);
+
+          if (tx.type === 'income' && isThisAccount) {
+            balance += tx.amount;
+          } else if (tx.type === 'expense' && isThisAccount) {
+            balance -= tx.amount;
+          } else if (tx.type === 'transfer') {
+            if (tx.accountId === account.id) balance -= tx.amount;
+            if (tx.targetAccountId === account.id) balance += tx.amount;
+          }
+        }
+        balance = round2(balance);
+        return balance !== account.balance ? { ...account, balance } : account;
+      });
+      return updated.some((a, i) => a !== prevAccounts[i]) ? updated : prevAccounts;
+    });
+  }, [transactions]);
+
   // User Actions
   const updateUser = (data: Partial<UserProfile>) => setUser(prev => ({ ...prev, ...data }));
   const toggleHideValues = () => setUser(prev => ({ ...prev, showValues: !prev.showValues }));
@@ -489,10 +519,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const roundedAmount = round2(amount);
 
-    // Deduct from paying account
-    setAccounts(prev =>
-      prev.map(a => (a.id === accountId ? { ...a, balance: round2(a.balance - roundedAmount) } : a))
-    );
+    // Balance is auto-recalculated by the derived balance effect via the payment transaction below
 
     // Mark card transactions of that month as completed/paid
     setTransactions(prev =>
@@ -539,22 +566,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         t.description.includes(month)
     );
 
-    // Refund each payment transaction to its account
-    payTxs.forEach(payTx => {
-      if (payTx.accountId) {
-        setAccounts(prev =>
-          prev.map(a => (a.id === payTx.accountId ? { ...a, balance: round2(a.balance + payTx.amount) } : a))
-        );
-      }
-    });
-
+    // Remove payment transactions (balance auto-recalculated by effect)
     const payTxIds = new Set(payTxs.map(t => t.id));
-    setTransactions(prev => prev.filter(t => !payTxIds.has(t.id)));
 
-    // Set all card expense transactions for this month back to pending
+    // Set all card expense transactions for this month back to pending and remove payment txs
     const normalizedMonth = month.replace('/', '-');
     setTransactions(prev =>
-      prev.map(t => {
+      prev.filter(t => !payTxIds.has(t.id)).map(t => {
         if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(normalizedMonth)) {
           return { ...t, status: 'pending' };
         }
@@ -611,22 +629,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       createdAt: new Date().toISOString(),
     };
 
-    if (newTx.status === 'completed') {
-      if (newTx.type === 'income' && newTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance + newTx.amount) } : a)));
-      } else if (newTx.type === 'expense' && newTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance - newTx.amount) } : a)));
-      } else if (newTx.type === 'transfer' && newTx.accountId && newTx.targetAccountId) {
-        setAccounts(prev =>
-          prev.map(a => {
-            if (a.id === newTx.accountId) return { ...a, balance: round2(a.balance - newTx.amount) };
-            if (a.id === newTx.targetAccountId) return { ...a, balance: round2(a.balance + newTx.amount) };
-            return a;
-          })
-        );
-      }
-    }
-
+    // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => [newTx, ...prev]);
   };
 
@@ -641,40 +644,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       amount: data.amount !== undefined ? round2(data.amount) : oldTx.amount,
     };
 
-    // 1. Revert old transaction balance effect if completed
-    if (oldTx.status === 'completed') {
-      if (oldTx.type === 'income' && oldTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === oldTx.accountId ? { ...a, balance: round2(a.balance - oldTx.amount) } : a)));
-      } else if (oldTx.type === 'expense' && oldTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === oldTx.accountId ? { ...a, balance: round2(a.balance + oldTx.amount) } : a)));
-      } else if (oldTx.type === 'transfer' && oldTx.accountId && oldTx.targetAccountId) {
-        setAccounts(prev =>
-          prev.map(a => {
-            if (a.id === oldTx.accountId) return { ...a, balance: round2(a.balance + oldTx.amount) };
-            if (a.id === oldTx.targetAccountId) return { ...a, balance: round2(a.balance - oldTx.amount) };
-            return a;
-          })
-        );
-      }
-    }
-
-    // 2. Apply new transaction balance effect if completed
-    if (newTx.status === 'completed') {
-      if (newTx.type === 'income' && newTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance + newTx.amount) } : a)));
-      } else if (newTx.type === 'expense' && newTx.accountId) {
-        setAccounts(prev => prev.map(a => (a.id === newTx.accountId ? { ...a, balance: round2(a.balance - newTx.amount) } : a)));
-      } else if (newTx.type === 'transfer' && newTx.accountId && newTx.targetAccountId) {
-        setAccounts(prev =>
-          prev.map(a => {
-            if (a.id === newTx.accountId) return { ...a, balance: round2(a.balance - newTx.amount) };
-            if (a.id === newTx.targetAccountId) return { ...a, balance: round2(a.balance + newTx.amount) };
-            return a;
-          })
-        );
-      }
-    }
-
+    // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.map(t => (t.id === id ? newTx : t)));
   };
 
@@ -683,22 +653,6 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const deleteTransaction = (id: string) => {
     const tx = transactions.find(t => t.id === id);
     if (tx) {
-      if (tx.status === 'completed') {
-        if (tx.type === 'income' && tx.accountId) {
-          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
-        } else if (tx.type === 'expense' && tx.accountId) {
-          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
-        } else if (tx.type === 'transfer' && tx.accountId && tx.targetAccountId) {
-          setAccounts(prev =>
-            prev.map(a => {
-              if (a.id === tx.accountId) return { ...a, balance: round2(a.balance + tx.amount) };
-              if (a.id === tx.targetAccountId) return { ...a, balance: round2(a.balance - tx.amount) };
-              return a;
-            })
-          );
-        }
-      }
-
       // If it was an invoice payment, also mark the card's expense transactions of that month back to pending
       if (tx.tags?.includes('fatura') || tx.description.toLowerCase().includes('pagamento fatura')) {
         const card = cards.find(c => tx.description.includes(c.name));
@@ -715,38 +669,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
     }
+    // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
 
   const deleteMultipleTransactions = (ids: string[]) => {
     const idSet = new Set(ids);
-    const txsToDelete = transactions.filter(t => idSet.has(t.id));
-    txsToDelete.forEach(tx => {
-      if (tx.status === 'completed') {
-        if (tx.type === 'income' && tx.accountId) {
-          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
-        } else if (tx.type === 'expense' && tx.accountId) {
-          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
-        }
-      }
-    });
+    // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.filter(t => !idSet.has(t.id)));
   };
 
   const toggleTransactionStatus = (id: string) => {
+    // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev =>
       prev.map(t => {
         if (t.id !== id) return t;
         const nextStatus = t.status === 'completed' ? 'pending' : 'completed';
-        if (t.accountId) {
-          const delta = nextStatus === 'completed' ? 1 : -1;
-          if (t.type === 'income') {
-            setAccounts(accs => accs.map(a => a.id === t.accountId ? { ...a, balance: round2(a.balance + delta * t.amount) } : a));
-          } else if (t.type === 'expense') {
-            setAccounts(accs => accs.map(a => a.id === t.accountId ? { ...a, balance: round2(a.balance - delta * t.amount) } : a));
-          }
-        }
         return { ...t, status: nextStatus };
       })
     );
@@ -760,17 +699,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       createdAt: new Date().toISOString(),
     }));
 
-    // Update balances for completed imports
-    formatted.forEach(tx => {
-      if (tx.status === 'completed') {
-        if (tx.type === 'income' && tx.accountId) {
-          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance + tx.amount) } : a)));
-        } else if (tx.type === 'expense' && tx.accountId) {
-          setAccounts(prev => prev.map(a => (a.id === tx.accountId ? { ...a, balance: round2(a.balance - tx.amount) } : a)));
-        }
-      }
-    });
-
+    // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => [...formatted, ...prev]);
   };
 
@@ -822,7 +751,21 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 
     if (accountId) {
-      setAccounts(prev => prev.map(a => (a.id === accountId ? { ...a, balance: a.balance - amount } : a)));
+      // Create an expense transaction so balance is auto-recalculated by derived effect
+      const goal = goals.find(g => g.id === goalId);
+      setTransactions(prev => [{
+        id: `tx-goal-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+        description: `Aporte Meta: ${goal?.title || 'Meta'}`,
+        amount: round2(amount),
+        type: 'expense' as const,
+        date: getTodayString(),
+        categoryId: 'cat-desp-investimentos',
+        accountId,
+        status: 'completed' as const,
+        recurring: false,
+        tags: ['meta', 'aporte'],
+        createdAt: new Date().toISOString(),
+      }, ...prev]);
     }
   };
 
@@ -859,7 +802,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const d = debts.find(item => item.id === debtId);
     if (d && accountId) {
-      setAccounts(prev => prev.map(a => (a.id === accountId ? { ...a, balance: a.balance - d.installmentAmount } : a)));
+      // Create an expense transaction so balance is auto-recalculated by derived effect
+      setTransactions(prev => [{
+        id: `tx-debt-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+        description: `Pagamento Dívida: ${d.title}`,
+        amount: round2(d.installmentAmount),
+        type: 'expense' as const,
+        date: getTodayString(),
+        categoryId: 'cat-desp-dividas',
+        accountId,
+        status: 'completed' as const,
+        recurring: false,
+        tags: ['divida', 'parcela'],
+        createdAt: new Date().toISOString(),
+      }, ...prev]);
     }
   };
 
