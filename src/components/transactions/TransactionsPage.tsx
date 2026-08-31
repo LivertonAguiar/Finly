@@ -36,6 +36,7 @@ import { formatCurrency, formatDate, getTodayString } from '../../utils/formatte
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { BankLogo } from '../../utils/bankLogos';
 import { TransactionModal } from './TransactionModal';
+import { TransactionDetailModal } from './TransactionDetailModal';
 
 export const TransactionsPage: React.FC = () => {
   const { confirm } = useConfirm();
@@ -62,6 +63,7 @@ export const TransactionsPage: React.FC = () => {
   // Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
   const [modalInitialType, setModalInitialType] = useState<TransactionType>('expense');
   const [initialPaymentMethod, setInitialPaymentMethod] = useState<'account' | 'card'>('account');
   const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
@@ -707,7 +709,8 @@ export const TransactionsPage: React.FC = () => {
                   return (
                     <div
                       key={t.id}
-                      className="py-3 first:pt-1 last:pb-0 flex items-center justify-between gap-3 group hover:bg-slate-50/50 dark:hover:bg-[#343437]/40 px-2 rounded-2xl transition-colors"
+                      onClick={() => setSelectedDetailTx(t)}
+                      className="py-3 first:pt-1 last:pb-0 flex items-center justify-between gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/50 px-2.5 rounded-2xl transition-colors cursor-pointer"
                     >
                       {/* Left: Status check + Category Icon + Info */}
                       <div className="flex items-center gap-3 min-w-0">
@@ -817,8 +820,12 @@ export const TransactionsPage: React.FC = () => {
                 const isExpense = t.type === 'expense';
 
                 return (
-                  <tr key={t.id} className="hover:bg-slate-50/50 dark:hover:bg-[#343437]/40">
-                    <td className="py-3 px-3">{getStatusBadge(t)}</td>
+                  <tr
+                    key={t.id}
+                    onClick={() => setSelectedDetailTx(t)}
+                    className="hover:bg-slate-50/80 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer"
+                  >
+                    <td className="py-3 px-3" onClick={e => e.stopPropagation()}>{getStatusBadge(t)}</td>
                     <td className="py-3 px-3 text-slate-500 dark:text-slate-400">{formatDate(t.date)}</td>
                     <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">{t.description}</td>
                     <td className="py-3 px-3">
@@ -836,7 +843,7 @@ export const TransactionsPage: React.FC = () => {
                     >
                       {formatCurrency(t.amount, user.currency, !user.showValues)}
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-3 px-3 text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => {
@@ -863,7 +870,7 @@ export const TransactionsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Transaction Modal */}
+      {/* Transaction Modal for Add/Edit */}
       {isModalOpen && (
         <TransactionModal
           isOpen={isModalOpen}
@@ -874,6 +881,27 @@ export const TransactionsPage: React.FC = () => {
           initialType={modalInitialType}
           initialPaymentMethod={initialPaymentMethod}
           editingTransaction={editingTransaction}
+        />
+      )}
+
+      {/* Transaction Detail Modal */}
+      {selectedDetailTx && (
+        <TransactionDetailModal
+          isOpen={!!selectedDetailTx}
+          onClose={() => setSelectedDetailTx(null)}
+          transaction={selectedDetailTx}
+          onEdit={(tx) => {
+            setEditingTransaction(tx);
+            setIsModalOpen(true);
+          }}
+          onDuplicate={(tx) => {
+            setEditingTransaction({
+              ...tx,
+              id: '',
+              description: `${tx.description} (Cópia)`,
+            });
+            setIsModalOpen(true);
+          }}
         />
       )}
     </div>

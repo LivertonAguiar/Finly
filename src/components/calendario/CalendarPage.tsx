@@ -23,6 +23,7 @@ import { Transaction } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { TransactionModal } from '../transactions/TransactionModal';
+import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
 
 export const CalendarPage: React.FC = () => {
   const { confirm } = useConfirm();
@@ -43,6 +44,7 @@ export const CalendarPage: React.FC = () => {
   // Transaction Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
 
   // Month navigation
   const viewDate = useMemo(() => {
@@ -365,10 +367,11 @@ export const CalendarPage: React.FC = () => {
                       return (
                         <div
                           key={t.id}
-                          className="p-3 rounded-2xl bg-slate-50 dark:bg-[#343437]/50 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-3 group hover:border-purple-500/40 transition-colors"
+                          onClick={() => setSelectedDetailTx(t)}
+                          className="p-3 rounded-2xl bg-slate-50 dark:bg-[#343437]/50 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-3 group hover:border-purple-500/40 transition-colors cursor-pointer"
                         >
                           {/* Left: Status + Icon + Title */}
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex items-center gap-2.5 min-w-0" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => toggleTransactionStatus(t.id)}
                               className="shrink-0 cursor-pointer text-slate-400 hover:text-purple-600"
@@ -473,6 +476,27 @@ export const CalendarPage: React.FC = () => {
             setEditingTransaction(null);
           }}
           editingTransaction={editingTransaction}
+        />
+      )}
+
+      {/* Transaction Detail Modal */}
+      {selectedDetailTx && (
+        <TransactionDetailModal
+          isOpen={!!selectedDetailTx}
+          onClose={() => setSelectedDetailTx(null)}
+          transaction={selectedDetailTx}
+          onEdit={(tx) => {
+            setEditingTransaction(tx);
+            setIsModalOpen(true);
+          }}
+          onDuplicate={(tx) => {
+            setEditingTransaction({
+              ...tx,
+              id: '',
+              description: `${tx.description} (Cópia)`,
+            });
+            setIsModalOpen(true);
+          }}
         />
       )}
     </div>

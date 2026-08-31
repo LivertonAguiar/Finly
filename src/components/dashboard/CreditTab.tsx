@@ -28,6 +28,7 @@ import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus 
 import { CardBrandLogo } from '../../utils/bankLogos';
 import { CardModal } from '../cadastros/CardModal';
 import { TransactionModal } from '../transactions/TransactionModal';
+import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
 import { Modal } from '../ui/Modal';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 
@@ -37,6 +38,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [activeCardDetailId, setActiveCardDetailId] = useState<string | null>(null);
+  const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
 
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -567,11 +569,13 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {activeCardDetail.monthTxs.map(t => {
                   const cat = categories.find(c => c.id === t.categoryId);
-
                   return (
-
-                    <div key={t.id} className="py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50/50 dark:hover:bg-[#343437]/30 px-2 rounded-2xl transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      key={t.id}
+                      onClick={() => setSelectedDetailTx(t)}
+                      className="py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/40 px-2 rounded-2xl transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0" onClick={e => e.stopPropagation()}>
 {getStatusBadge(t)}
                         <div
                           className="w-9 h-9 rounded-xl flex items-center justify-center text-xs shrink-0 shadow-xs"
@@ -1139,9 +1143,34 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
           onClose={() => {
             setIsAddExpenseModalOpen(false);
             setSelectedCardForExpense(null);
+            setEditingInvoiceTx(null);
           }}
           initialType="expense"
           initialCardId={selectedCardForExpense || undefined}
+          editingTransaction={editingInvoiceTx}
+        />
+      )}
+
+      {/* Transaction Detail Modal */}
+      {selectedDetailTx && (
+        <TransactionDetailModal
+          isOpen={!!selectedDetailTx}
+          onClose={() => setSelectedDetailTx(null)}
+          transaction={selectedDetailTx}
+          onEdit={(tx) => {
+            setEditingInvoiceTx(tx);
+            setSelectedCardForExpense(tx.cardId || null);
+            setIsAddExpenseModalOpen(true);
+          }}
+          onDuplicate={(tx) => {
+            setEditingInvoiceTx({
+              ...tx,
+              id: '',
+              description: `${tx.description} (Cópia)`,
+            });
+            setSelectedCardForExpense(tx.cardId || null);
+            setIsAddExpenseModalOpen(true);
+          }}
         />
       )}
     </div>
