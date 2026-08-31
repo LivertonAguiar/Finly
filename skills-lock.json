@@ -7,6 +7,12 @@
       "skillPath": "skills/agent-browser/SKILL.md",
       "computedHash": "a674b7d81066e3cc471a7512ddb4ae724418cbfefa75cbb050b0dc430e4d57a0"
     },
+    "browser-use": {
+      "source": "browser-use/browser-use",
+      "sourceType": "github",
+      "skillPath": "skills/browser-use/SKILL.md",
+      "computedHash": "9310ba64585fb500094c686bd203fc7598e4dee5dfa1e597573b730ed36c5ac1"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",
