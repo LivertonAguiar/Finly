@@ -174,12 +174,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       
+      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
+      
+      // Open current month invoice amount
+      const currentOpenInvoice = isPaid ? 0 : invoiceTotal;
+      const currentInvoicePercent = c.limit > 0 ? (currentOpenInvoice / c.limit) * 100 : 0;
+
+      // Future unpaid installments in subsequent months
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && !t.date.startsWith(currentMonthPrefix));
+      const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+      const futureInstallmentsPercent = c.limit > 0 ? (futureInstallmentsTotal / c.limit) * 100 : 0;
+
       // Total active committed limit = sum of all unpaid/pending card expenses
       const totalCommittedLimit = Math.round(cardTxs.filter(t => t.status !== 'completed').reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const availableLimit = Math.max(0, Math.round((c.limit - totalCommittedLimit) * 100) / 100);
       const limitUsedPercent = c.limit > 0 ? Math.min(100, (totalCommittedLimit / c.limit) * 100) : 0;
+      const isOverLimit = totalCommittedLimit > c.limit;
+      const overLimitAmount = Math.max(0, totalCommittedLimit - c.limit);
 
-      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
       const viewMonthNum = viewDate.getMonth() + 1;
       const viewYearNum = viewDate.getFullYear();
 
@@ -192,9 +204,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       return {
         ...c,
         invoiceTotal,
+        currentOpenInvoice,
+        currentInvoicePercent,
+        futureInstallmentsTotal,
+        futureInstallmentsPercent,
         totalCommittedLimit,
         availableLimit,
         limitUsedPercent,
+        isOverLimit,
+        overLimitAmount,
         statusLabel,
         statusColor,
         isPaid,
@@ -534,55 +552,86 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                         </div>
                       </div>
 
-                      {/* Progress Bar */}
-                      <div className="w-full bg-slate-100 dark:bg-[#11141b] h-2 rounded-full overflow-hidden">
-                        <div
-                          style={{
-                            width: `${Math.min(100, Math.max(card.limitUsedPercent > 0 ? 3 : 0, card.limitUsedPercent))}%`,
-                            backgroundColor: card.limitUsedPercent > 85 ? '#ef5350' : card.limitUsedPercent > 60 ? '#f59e0b' : card.color || '#7c4dff'
-                          }}
-                          className="h-full rounded-full transition-all duration-500"
-                        />
-                      </div>
-
-                      {/* Available Limit + Action Button */}
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
-                          Disp: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong> de {formatCurrency(card.limit, user.currency, !user.showValues)}
-                        </span>
-
-                        {card.isPaid ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
-                            </span>
-                            <button
-                              onClick={() => setActiveTab('cartoes')}
-                              className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
-                            >
-                              Ver Detalhes
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              if (card.invoiceTotal > 0) {
-                                setSelectedCardForPay(card.id);
-                                setIsInvoiceModalOpen(true);
-                              } else {
-                                setActiveTab('cartoes');
-                              }
-                            }}
-                            className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
-                          >
-                            {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
-                          </button>
+                      {/* Multi-segment Progress Bar */}
+                      <div className="w-full bg-slate-100 dark:bg-[#11141b] h-3 rounded-full overflow-hidden flex shadow-inner">
+                        {/* Segment 1: Fatura Atual Aberta */}
+                        {card.currentInvoicePercent > 0 && (
+                          <div
+                            style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
+                            className="h-full bg-[#7c4dff] transition-all duration-500"
+                            title={`Fatura deste mês: ${formatCurrency(card.currentOpenInvoice, user.currency)}`}
+                          />
+                        )}
+                        {/* Segment 2: Parcelas Futuras */}
+                        {card.futureInstallmentsPercent > 0 && (
+                          <div
+                            style={{ width: `${Math.min(100 - Math.min(100, card.currentInvoicePercent), card.futureInstallmentsPercent)}%` }}
+                            className="h-full bg-[#ff8a00] transition-all duration-500"
+                            title={`Parcelas futuras: ${formatCurrency(card.futureInstallmentsTotal, user.currency)}`}
+                          />
                         )}
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+
+                      {/* Limit Breakdown Legend */}
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-1">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex items-center gap-1 text-[#7c4dff]">
+                            <span className="w-2 h-2 rounded-full bg-[#7c4dff]" />
+                            Mês: {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
+                          </span>
+                          {card.futureInstallmentsTotal > 0 && (
+                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                              <span className="w-2 h-2 rounded-full bg-[#ff8a00]" />
+                              Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
+                            </span>
+                          )}
+                        </div>
+
+                        {card.isOverLimit ? (
+                          <span className="text-rose-600 dark:text-rose-400 font-extrabold">
+                            Excedeu: {formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}
+                          </span>
+                        ) : (
+                          <span>
+                            Disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong>
+                          </span>
+                        )}
+                      </div>
+
+                        {/* Actions Row */}
+                        <div className="pt-1 flex items-center justify-between">
+                          {card.isPaid ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
+                              </span>
+                              <button
+                                onClick={() => setActiveTab('cartoes')}
+                                className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
+                              >
+                                Ver Detalhes
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                if (card.invoiceTotal > 0) {
+                                  setSelectedCardForPay(card.id);
+                                  setIsInvoiceModalOpen(true);
+                                } else {
+                                  setActiveTab('cartoes');
+                                }
+                              }}
+                              className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+                            >
+                              {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
 
               {/* Total Card Invoices + VER MAIS */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">

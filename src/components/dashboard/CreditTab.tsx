@@ -145,12 +145,24 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
       const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
+      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
+      
+      // Open current month invoice amount
+      const currentOpenInvoice = isPaid ? 0 : invoiceTotal;
+      const currentInvoicePercent = card.limit > 0 ? (currentOpenInvoice / card.limit) * 100 : 0;
+
+      // Future unpaid installments in subsequent months
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && !t.date.startsWith(currentMonthPrefix));
+      const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+      const futureInstallmentsPercent = card.limit > 0 ? (futureInstallmentsTotal / card.limit) * 100 : 0;
+
       // Active committed limit = all unpaid/open card expense transactions
       const totalCommitted = Math.round(cardTxs.filter(t => t.status !== 'completed').reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const available = Math.max(0, Math.round((card.limit - totalCommitted) * 100) / 100);
       const usedPercentage = card.limit > 0 ? Math.min(100, (totalCommitted / card.limit) * 100) : 0;
+      const isOverLimit = totalCommitted > card.limit;
+      const overLimitAmount = Math.max(0, totalCommitted - card.limit);
 
-      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
       const viewMonthNum = viewDate.getMonth() + 1;
       const viewYearNum = viewDate.getFullYear();
 
@@ -161,9 +173,15 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
       return {
         ...card,
         invoiceTotal,
+        currentOpenInvoice,
+        currentInvoicePercent,
+        futureInstallmentsTotal,
+        futureInstallmentsPercent,
         totalCommitted,
         available,
         usedPercentage,
+        isOverLimit,
+        overLimitAmount,
         monthTxs,
         cardTxs,
         statusLabel,
@@ -222,9 +240,19 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
     return cardsData.reduce((sum, c) => sum + c.invoiceTotal, 0);
   }, [cardsData]);
 
+  const totalCreditLimitSum = useMemo(() => {
+    return cards.reduce((sum, c) => sum + c.limit, 0);
+  }, [cards]);
+
+  const totalCommittedLimitSum = useMemo(() => {
+    return cardsData.reduce((sum, c) => sum + c.totalCommitted, 0);
+  }, [cardsData]);
+
   const totalAvailableLimitSum = useMemo(() => {
     return cardsData.reduce((sum, c) => sum + c.available, 0);
   }, [cardsData]);
+
+  const totalCommittedPercent = totalCreditLimitSum > 0 ? Math.min(100, (totalCommittedLimitSum / totalCreditLimitSum) * 100) : 0;
 
   // Selected Card for Detail View
   const activeCardDetail = useMemo(() => {
@@ -443,7 +471,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
             {/* Sub-info: Closing & Due dates + Dynamic Limit Progress Bar */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
               {/* Dynamic Limit Progress Bar */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between text-xs font-bold gap-2">
                   <span className="text-slate-600 dark:text-slate-300">
                     Limite Utilizado: <strong className="text-rose-600 dark:text-rose-400">{formatCurrency(activeCardDetail.totalCommitted, user.currency, !user.showValues)}</strong> ({activeCardDetail.usedPercentage.toFixed(1).replace('.', ',')}%)
@@ -453,14 +481,46 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   </span>
                 </div>
 
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                  <div
-                    style={{
-                      width: `${Math.min(100, Math.max(activeCardDetail.usedPercentage > 0 ? 3 : 0, activeCardDetail.usedPercentage))}%`,
-                      backgroundColor: activeCardDetail.usedPercentage > 85 ? '#ef5350' : activeCardDetail.usedPercentage > 60 ? '#f59e0b' : activeCardDetail.color || '#7c4dff',
-                    }}
-                    className="h-full rounded-full transition-all duration-500"
-                  />
+                {/* Multi-segment Progress Bar */}
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex shadow-inner">
+                  {/* Segment 1: Fatura Atual Aberta */}
+                  {activeCardDetail.currentInvoicePercent > 0 && (
+                    <div
+                      style={{ width: `${Math.min(100, activeCardDetail.currentInvoicePercent)}%` }}
+                      className="h-full bg-[#7c4dff] transition-all duration-500"
+                      title={`Fatura deste mês: ${formatCurrency(activeCardDetail.currentOpenInvoice, user.currency)}`}
+                    />
+                  )}
+                  {/* Segment 2: Parcelas Futuras */}
+                  {activeCardDetail.futureInstallmentsPercent > 0 && (
+                    <div
+                      style={{ width: `${Math.min(100 - Math.min(100, activeCardDetail.currentInvoicePercent), activeCardDetail.futureInstallmentsPercent)}%` }}
+                      className="h-full bg-[#ff8a00] transition-all duration-500"
+                      title={`Parcelas futuras: ${formatCurrency(activeCardDetail.futureInstallmentsTotal, user.currency)}`}
+                    />
+                  )}
+                </div>
+
+                {/* Limit Breakdown Chips */}
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-2 pt-0.5">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 text-[#7c4dff]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#7c4dff]" />
+                      Fatura de {capitalizedMonth}: {formatCurrency(activeCardDetail.invoiceTotal, user.currency, !user.showValues)}
+                    </span>
+                    {activeCardDetail.futureInstallmentsTotal > 0 && (
+                      <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#ff8a00]" />
+                        Parcelas Futuras: {formatCurrency(activeCardDetail.futureInstallmentsTotal, user.currency, !user.showValues)}
+                      </span>
+                    )}
+                  </div>
+
+                  {activeCardDetail.isOverLimit && (
+                    <span className="text-rose-600 dark:text-rose-400 font-black">
+                      ⚠️ Limite Excedido em {formatCurrency(activeCardDetail.overLimitAmount, user.currency, !user.showValues)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -670,12 +730,12 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
           </div>
 
           {/* Consolidated KPI Summary Cards (PlannerFin Top Row) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1: Total das Faturas */}
             <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
-                  <span>Total das faturas</span>
+                  <span>Total das faturas ({capitalizedMonth})</span>
                   <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                 </div>
                 <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -688,7 +748,35 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
               </div>
             </div>
 
-            {/* Card 2: Limite Disponível Consolidado */}
+            {/* Card 2: Limite Total Comprometido (Consolidado) */}
+            <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+                  <span>Limite comprometido</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                </div>
+                <span className="text-xs font-black text-rose-500">
+                  {totalCommittedPercent.toFixed(1).replace('.', ',')}%
+                </span>
+              </div>
+
+              <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                {formatCurrency(totalCommittedLimitSum, user.currency, !user.showValues)}
+                <span className="text-xs text-slate-400 font-bold ml-1.5">de {formatCurrency(totalCreditLimitSum, user.currency, !user.showValues)}</span>
+              </p>
+
+              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div
+                  style={{
+                    width: `${Math.min(100, Math.max(totalCommittedPercent > 0 ? 3 : 0, totalCommittedPercent))}%`,
+                    backgroundColor: totalCommittedPercent > 85 ? '#ef5350' : totalCommittedPercent > 60 ? '#f59e0b' : '#7c4dff',
+                  }}
+                  className="h-full rounded-full transition-all duration-500"
+                />
+              </div>
+            </div>
+
+            {/* Card 3: Limite Disponível Consolidado */}
             <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
@@ -700,7 +788,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                 </p>
               </div>
 
-              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-600/30 shrink-0">
+              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black shadow-md shadow-emerald-600/30 shrink-0">
                 <CardIcon className="w-5 h-5 stroke-[2.5]" />
               </div>
             </div>
@@ -839,20 +927,34 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   </div>
 
                   {/* Limit Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                      <span>Limite disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.available, user.currency, !user.showValues)}</strong></span>
-                      <span>{card.usedPercentage.toFixed(1).replace('.', ',')}% usado</span>
+                  <div className="space-y-1.5">
+                    {/* Multi-segment Progress Bar */}
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden flex shadow-inner">
+                      {/* Segment 1: Fatura Atual Aberta */}
+                      {card.currentInvoicePercent > 0 && (
+                        <div
+                          style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
+                          className="h-full bg-[#7c4dff] transition-all duration-500"
+                          title={`Fatura deste mês: ${formatCurrency(card.currentOpenInvoice, user.currency)}`}
+                        />
+                      )}
+                      {/* Segment 2: Parcelas Futuras */}
+                      {card.futureInstallmentsPercent > 0 && (
+                        <div
+                          style={{ width: `${Math.min(100 - Math.min(100, card.currentInvoicePercent), card.futureInstallmentsPercent)}%` }}
+                          className="h-full bg-[#ff8a00] transition-all duration-500"
+                          title={`Parcelas futuras: ${formatCurrency(card.futureInstallmentsTotal, user.currency)}`}
+                        />
+                      )}
                     </div>
 
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                      <div
-                        style={{
-                          width: `${Math.min(100, Math.max(card.usedPercentage > 0 ? 3 : 0, card.usedPercentage))}%`,
-                          backgroundColor: card.usedPercentage > 85 ? '#ef5350' : card.usedPercentage > 60 ? '#f59e0b' : card.color || '#7c4dff',
-                        }}
-                        className="h-full rounded-full transition-all duration-500"
-                      />
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                      <span>Disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.available, user.currency, !user.showValues)}</strong></span>
+                      {card.futureInstallmentsTotal > 0 ? (
+                        <span className="text-amber-500">Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}</span>
+                      ) : (
+                        <span>{card.usedPercentage.toFixed(1).replace('.', ',')}% usado</span>
+                      )}
                     </div>
                   </div>
 

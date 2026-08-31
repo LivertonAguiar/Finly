@@ -1,4 +1,4 @@
-const CACHE_NAME = 'plannerfin-v1788052898416';
+const CACHE_NAME = 'plannerfin-v2-' + Date.now();
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -13,7 +13,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first, falling back to cache
+  // Always fetch fresh from network for app bundles and API
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );
