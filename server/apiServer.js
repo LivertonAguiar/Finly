@@ -301,9 +301,16 @@ app.post('/api/verify-code', (req, res) => {
     return res.status(400).json({ success: false, message: 'Código inválido ou expirado.' });
   }
 
-  return res.json({ success: true, message: 'Código validado com sucesso!' });
-});
+// Serve static frontend in production if dist exists
+const DIST_DIR = path.join(__dirname, '../dist');
+if (fs.existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 PlannerFin API Server rodando na porta ${PORT} (http://localhost:${PORT})`);
+  console.log(`🚀 PlannerFin API & Web Server rodando na porta ${PORT} (http://localhost:${PORT})`);
 });
