@@ -10,7 +10,7 @@ export const EMOJI_GROUPS: EmojiGroup[] = [
   {
     name: 'Essenciais',
     icon: '⭐',
-    emojis: ['🍽️', '🛒', '🏠', '🚗', '🩺', '💊', '⚡', '🚰', '🌐', '📱', '🎓', '💼', '💰', '💵', '💳', '🔄', '📈', '🤝']
+    emojis: ['🍽️', '🛒', '🏠', '🏢', '🚗', '🩺', '💊', '⚡', '🚰', '🌐', '📱', '🎓', '💼', '💰', '💵', '💳', '🔄', '📈', '🤝']
   },
   {
     name: 'Alimentação',
@@ -20,7 +20,7 @@ export const EMOJI_GROUPS: EmojiGroup[] = [
   {
     name: 'Casa & Contas',
     icon: '🏠',
-    emojis: ['🏠', '🏢', '⚡', '🚰', '🌐', '📱', '🧹', '🔧', '🛋️', '🧊', '📺', '🔑', '🚪', '🛏️', '🚿', '🪴']
+    emojis: ['🏠', '🏢', '🏗️', '🔑', '🚪', '⚡', '🚰', '🌐', '📱', '🧹', '🔧', '🛋️', '🧊', '📺', '🛏️', '🚿', '🪴']
   },
   {
     name: 'Transporte',
@@ -97,6 +97,42 @@ export const DEFAULT_CATEGORIES: Category[] = [
     "color": "#3b82f6",
     "type": "expense",
     "subcategories": [
+      {
+        "id": "sub-mor-itbi-registro",
+        "name": "ITBI & Escritura / Registro",
+        "icon": "🏛️",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
+        "id": "sub-mor-taxa-obra",
+        "name": "Taxa de Evolução de Obra",
+        "icon": "📄",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
+        "id": "sub-mor-seguro-habitacional",
+        "name": "Seguro Habitacional (MIP/DFI)",
+        "icon": "🛡️",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
+        "id": "sub-mor-parcela-construtora",
+        "name": "Parcela da Construtora / Entrada / Balão",
+        "icon": "🏗️",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
+        "id": "sub-mor-amortizacao-imovel",
+        "name": "Amortização do Financiamento",
+        "icon": "💸",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
+        "id": "sub-mor-financiamento-apto",
+        "name": "Financiamento do Apartamento / Imóvel",
+        "icon": "🏢",
+        "categoryId": "cat-desp-moradia"
+      },
       {
         "id": "sub-mor-aluguel",
         "name": "Aluguel",
@@ -565,6 +601,18 @@ export const DEFAULT_CATEGORIES: Category[] = [
     "color": "#64748b",
     "type": "expense",
     "subcategories": [
+      {
+        "id": "sub-fin-amortizacao-extra",
+        "name": "Amortização Extraordinária",
+        "icon": "💸",
+        "categoryId": "cat-desp-financeiro"
+      },
+      {
+        "id": "sub-fin-financiamento-imob",
+        "name": "Financiamento Imobiliário",
+        "icon": "🏢",
+        "categoryId": "cat-desp-financeiro"
+      },
       {
         "id": "sub-fin-juros",
         "name": "Juros",
