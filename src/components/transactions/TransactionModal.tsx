@@ -14,6 +14,10 @@ import {
   Layers,
   Repeat,
   Paperclip,
+  Bell,
+  Upload,
+  Trash2,
+  FileText,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { useFinancial } from '../../context/FinancialContext';
@@ -67,6 +71,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [targetInvoiceMonth, setTargetInvoiceMonth] = useState('');
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'monthly' | 'weekly' | 'daily' | 'yearly'>('monthly');
+  const [repeatCalculationMode, setRepeatCalculationMode] = useState<'split' | 'full'>('full');
+  const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>(undefined);
+  const [attachmentName, setAttachmentName] = useState<string | undefined>(undefined);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderDaysBefore, setReminderDaysBefore] = useState<number>(0);
+  const [reminderTime, setReminderTime] = useState<string>('09:00');
 
   const prevIsOpenRef = React.useRef(false);
   const prevEditingIdRef = React.useRef<string | null>(null);
@@ -117,6 +128,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setThirdPartyName(editingTransaction.thirdPartyName || '');
         setNotes(editingTransaction.notes || '');
         setTags(editingTransaction.tags || []);
+        setRecurrenceFrequency(editingTransaction.recurrenceFrequency || 'monthly');
+        setAttachmentUrl(editingTransaction.attachmentUrl);
+        setAttachmentName(editingTransaction.attachmentName);
+        setReminderEnabled(!!editingTransaction.reminder?.enabled);
+        setReminderDaysBefore(editingTransaction.reminder?.daysBefore ?? 0);
+        setReminderTime(editingTransaction.reminder?.reminderTime || '09:00');
         setTargetInvoiceMonth(editingTransaction.date ? editingTransaction.date.substring(0, 7) : invoiceMonths[1]?.key || '');
       } else {
         setType(initialType);
@@ -132,12 +149,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setPaymentMethod(initialPaymentMethod || (initialCardId ? 'card' : 'account'));
         setIsPaid(true);
         setRecurring(false);
+        setRecurrenceFrequency('monthly');
         setIsRepeat(false);
         setRepeatAmount('2');
         setRepeatPeriod('months');
+        setRepeatCalculationMode('full');
         setIgnoreTransaction(false);
         setIsThirdParty(false);
         setThirdPartyName('');
+        setAttachmentUrl(undefined);
+        setAttachmentName(undefined);
+        setReminderEnabled(false);
+        setReminderDaysBefore(0);
+        setReminderTime('09:00');
         setShowMoreDetails(false);
         setNotes('');
         setTags([]);
@@ -209,6 +233,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       cardId: paymentMethod === 'card' ? (cardId || cards[0]?.id) : undefined,
       status: paymentMethod === 'card' ? 'pending' : finalStatus,
       recurring,
+      recurrenceFrequency: recurring ? recurrenceFrequency : undefined,
+      attachmentUrl: attachmentUrl || undefined,
+      attachmentName: attachmentName || undefined,
+      reminder: reminderEnabled ? {
+        enabled: true,
+        daysBefore: reminderDaysBefore,
+        reminderTime: reminderTime || '09:00',
+      } : undefined,
       ignored: ignoreTransaction || isThirdParty,
       isThirdParty,
       thirdPartyName: isThirdParty ? thirdPartyName.trim() : undefined,
@@ -246,7 +278,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             });
           }
         } else {
-          // Normal recurring repeat
+          // Normal recurring repeat (split vs full)
+          const finalVal = repeatCalculationMode === 'split' ? round2(roundedAmount / repeatCount) : roundedAmount;
           for (let i = 0; i < repeatCount; i++) {
             const d = new Date(date);
             if (repeatPeriod === 'days') d.setDate(d.getDate() + i);
@@ -257,7 +290,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             addTransaction({
               ...txData,
               description: repeatCount > 1 ? `${txData.description} (${i + 1}/${repeatCount})` : txData.description,
+              amount: finalVal,
               date: d.toISOString().substring(0, 10),
+              installments: {
+                current: i + 1,
+                total: repeatCount,
+              },
             });
           }
         }
@@ -649,18 +687,43 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         </div>
 
         {showMoreDetails && (
-          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
-            {/* Tags Field */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tags</label>
-              <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 min-h-[42px] items-center">
+          <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
+            {/* 1. TAGS COM SUGESTÕES RÁPIDAS (MOBILLS SPEC) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  🏷️ Tags Personalizadas
+                </label>
+                <span className="text-[10px] text-slate-400 font-semibold">Agrupe para filtros e relatórios</span>
+              </div>
+
+              {/* Sugestões rápidas de Tags */}
+              <div className="flex flex-wrap gap-1 items-center pb-1">
+                <span className="text-[10px] font-bold text-slate-400">Sugestões:</span>
+                {['Aluguel', 'Mercado', 'Trabalho', 'Viagem', 'Lazer', 'Assinatura', 'Saúde', 'Educação'].map(sugg => (
+                  <button
+                    key={sugg}
+                    type="button"
+                    onClick={() => {
+                      if (!tags.includes(sugg)) {
+                        setTags([...tags, sugg]);
+                      }
+                    }}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-100 hover:text-purple-600 transition-colors cursor-pointer"
+                  >
+                    +{sugg}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 min-h-[42px] items-center">
                 {tags.map(tag => (
                   <span
                     key={tag}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 text-xs font-bold"
                   >
                     #{tag}
-                    <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-rose-500">
+                    <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-rose-500 cursor-pointer">
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -676,41 +739,196 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
             </div>
 
-            {/* Notes Field */}
+            {/* 2. OBSERVAÇÃO DETALHADA */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Observação</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                📝 Observação
+              </label>
               <textarea
-                placeholder="Anotações adicionais sobre este lançamento..."
+                placeholder="Anotações adicionais, detalhes da compra ou notas fiscais..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 rows={2}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100 shadow-xs"
               />
             </div>
 
-            {/* Fixed switch */}
-            <div className="flex items-center justify-between py-1">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {type === 'income' ? 'Receita fixa' : 'Despesa fixa'}
-              </span>
-              <input
-                type="checkbox"
-                checked={recurring}
-                onChange={e => {
-                  setRecurring(e.target.checked);
-                  if (e.target.checked) setIsRepeat(false);
-                }}
-                className="w-4 h-4 text-purple-600 rounded border-slate-300 cursor-pointer"
-              />
-            </div>
-
-            {/* Repeat / Installment switch */}
-            {!recurring && (
-              <>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {paymentMethod === 'card' ? 'Parcelado' : 'Repetir'}
+            {/* 3. ANEXAR COMPROVANTE / RECIBO / NOTA FISCAL (MOBILLS SPEC) */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    Anexar Comprovante ou Recibo
                   </span>
+                  <p className="text-[10px] text-slate-400">
+                    Guarde fotos de notas fiscais, recibos ou comprovantes PDF
+                  </p>
+                </div>
+
+                <label className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{attachmentName ? 'Alterar Arquivo' : 'Escolher Arquivo'}</span>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setAttachmentName(file.name);
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setAttachmentUrl(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {attachmentName && (
+                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-900/50 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {attachmentUrl && attachmentUrl.startsWith('data:image') ? (
+                      <img src={attachmentUrl} alt="Preview" className="w-8 h-8 rounded-lg object-cover border border-purple-300 shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 shrink-0">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{attachmentName}</p>
+                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold block">✓ Comprovante anexado</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttachmentUrl(undefined);
+                      setAttachmentName(undefined);
+                    }}
+                    className="p-1 rounded-lg text-slate-400 hover:text-rose-500 cursor-pointer"
+                    title="Remover anexo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 4. LEMBRETE DE NOTIFICAÇÃO (MOBILLS SPEC) */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-amber-500" />
+                    Lembrete de Pagamento
+                  </span>
+                  <p className="text-[10px] text-slate-400">
+                    Receba notificações para não esquecer de efetivar o pagamento
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={reminderEnabled}
+                  onChange={e => setReminderEnabled(e.target.checked)}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 cursor-pointer"
+                />
+              </div>
+
+              {reminderEnabled && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 animate-in fade-in">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                      Quando lembrar
+                    </label>
+                    <select
+                      value={reminderDaysBefore}
+                      onChange={e => setReminderDaysBefore(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+                    >
+                      <option value="0">No dia do vencimento</option>
+                      <option value="1">1 dia antes</option>
+                      <option value="2">2 dias antes</option>
+                      <option value="3">3 dias antes</option>
+                      <option value="7">1 semana antes</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                      Horário do lembrete
+                    </label>
+                    <input
+                      type="time"
+                      value={reminderTime}
+                      onChange={e => setReminderTime(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. LANÇAMENTO FIXO (RECORRÊNCIA CONTÍNUA) */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Repeat className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    {type === 'income' ? 'Receita Fixa' : 'Despesa Fixa'}
+                  </span>
+                  <p className="text-[10px] text-slate-400">
+                    Lançamento que se repete continuamente todos os períodos
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={recurring}
+                  onChange={e => {
+                    setRecurring(e.target.checked);
+                    if (e.target.checked) setIsRepeat(false);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 cursor-pointer"
+                />
+              </div>
+
+              {recurring && (
+                <div className="pt-1 animate-in fade-in">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                    Frequência de Repetição
+                  </label>
+                  <select
+                    value={recurrenceFrequency}
+                    onChange={e => setRecurrenceFrequency(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+                  >
+                    <option value="monthly">Mensal (Todo mês)</option>
+                    <option value="weekly">Semanal (Toda semana)</option>
+                    <option value="daily">Diária (Todo dia)</option>
+                    <option value="yearly">Anual (Todo ano)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* 6. REPETIR / PARCELADO (RECORRÊNCIA LIMITADA) */}
+            {!recurring && (
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#ff8a00]" />
+                      {paymentMethod === 'card' ? 'Parcelado no Cartão' : 'Repetir por período limitado'}
+                    </span>
+                    <p className="text-[10px] text-slate-400">
+                      {paymentMethod === 'card'
+                        ? 'Cria parcelas automáticas nas faturas mensais'
+                        : 'Repete o lançamento por uma quantidade definida de vezes'}
+                    </p>
+                  </div>
                   <input
                     type="checkbox"
                     checked={isRepeat}
@@ -720,37 +938,70 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 </div>
 
                 {isRepeat && (
-                  <div className="p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/60 flex items-center justify-between gap-3 text-xs flex-wrap">
-                    <span className="font-bold text-purple-900 dark:text-purple-300">
-                      {paymentMethod === 'card' ? 'Quantidade de parcelas:' : 'Repetir por:'}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="2"
-                        max="72"
-                        value={repeatAmount}
-                        onChange={e => setRepeatAmount(e.target.value)}
-                        className="w-16 px-2.5 py-1 rounded-lg border border-purple-300 bg-white dark:bg-slate-800 text-center font-black"
-                      />
-                      <span className="font-bold text-slate-500">vezes</span>
+                  <div className="space-y-3 pt-1 animate-in fade-in">
+                    <div className="flex items-center justify-between gap-3 text-xs flex-wrap">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {paymentMethod === 'card' ? 'Quantidade de parcelas:' : 'Repetir por:'}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="2"
+                          max="72"
+                          value={repeatAmount}
+                          onChange={e => setRepeatAmount(e.target.value)}
+                          className="w-16 px-2.5 py-1 rounded-xl border border-purple-300 bg-white dark:bg-slate-800 text-center font-black text-xs"
+                        />
+                        <span className="font-bold text-slate-500 text-xs">vezes</span>
 
-                      {paymentMethod !== 'card' && (
-                        <select
-                          value={repeatPeriod}
-                          onChange={e => setRepeatPeriod(e.target.value as any)}
-                          className="px-2.5 py-1 rounded-lg border border-purple-300 bg-white dark:bg-slate-800 font-bold"
-                        >
-                          <option value="months">Meses</option>
-                          <option value="days">Dias</option>
-                          <option value="weeks">Semanas</option>
-                          <option value="years">Anos</option>
-                        </select>
-                      )}
+                        {paymentMethod !== 'card' && (
+                          <select
+                            value={repeatPeriod}
+                            onChange={e => setRepeatPeriod(e.target.value as any)}
+                            className="px-2.5 py-1 rounded-xl border border-purple-300 bg-white dark:bg-slate-800 font-bold text-xs"
+                          >
+                            <option value="months">Meses</option>
+                            <option value="days">Dias</option>
+                            <option value="weeks">Semanas</option>
+                            <option value="years">Anos</option>
+                          </select>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Modo de cálculo (se conta bancária) */}
+                    {paymentMethod !== 'card' && (
+                      <div className="p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-800/40 text-xs space-y-1.5">
+                        <span className="block font-bold text-purple-900 dark:text-purple-300 text-[11px]">
+                          Como calcular o valor de cada lançamento:
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                            <input
+                              type="radio"
+                              name="repeatCalc"
+                              checked={repeatCalculationMode === 'full'}
+                              onChange={() => setRepeatCalculationMode('full')}
+                              className="text-purple-600"
+                            />
+                            <span>Repetir valor cheio ({formatCurrency(parseFloat(amount) || 0, user.currency)} cada)</span>
+                          </label>
+                          <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                            <input
+                              type="radio"
+                              name="repeatCalc"
+                              checked={repeatCalculationMode === 'split'}
+                              onChange={() => setRepeatCalculationMode('split')}
+                              className="text-purple-600"
+                            />
+                            <span>Dividir total ({formatCurrency(round2((parseFloat(amount) || 0) / (parseInt(repeatAmount) || 1)), user.currency)} cada)</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}

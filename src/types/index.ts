@@ -64,6 +64,12 @@ export interface Transaction {
   tags: string[];
   notes?: string;
   attachmentUrl?: string;
+  attachmentName?: string;
+  reminder?: {
+    enabled: boolean;
+    reminderTime?: string; // e.g. "09:00"
+    daysBefore?: number; // 0 = no dia do vencimento, 1 = 1 dia antes, 2 = 2 dias antes, 7 = 1 semana antes
+  };
   invoiceMonth?: string; // e.g. "2026-08"
   dueDate?: string; // Data de vencimento da fatura (Regime de Caixa)
   purchaseDate?: string; // Data em que a compra ocorreu (Regime de Competência)

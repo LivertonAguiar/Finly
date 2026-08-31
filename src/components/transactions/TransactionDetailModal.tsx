@@ -18,6 +18,11 @@ import {
   ChevronRight,
   AlertCircle,
   Copy,
+  Paperclip,
+  Bell,
+  Download,
+  ExternalLink,
+  Repeat,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -549,8 +554,88 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 6. TAGS & NOTES */}
+        {/* 6. LEMBRETE, RECORRÊNCIA, ANEXO & TAGS/NOTAS (MOBILLS SPEC) */}
         {/* ========================================================================= */}
+        {/* Lembrete Ativo */}
+        {transaction.reminder?.enabled && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-amber-500 shrink-0" />
+              <div>
+                <span className="font-bold text-amber-900 dark:text-amber-300 block">
+                  Lembrete de Pagamento Ativo
+                </span>
+                <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                  {transaction.reminder.daysBefore === 0
+                    ? 'No dia do vencimento'
+                    : `${transaction.reminder.daysBefore} dia(s) antes`} às {transaction.reminder.reminderTime || '09:00'}
+                </span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase">
+              Programado
+            </span>
+          </div>
+        )}
+
+        {/* Lançamento Fixo */}
+        {transaction.recurring && (
+          <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center gap-2 text-xs">
+            <Repeat className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <span className="font-bold text-purple-900 dark:text-purple-300">
+              Lançamento Fixo ({transaction.recurrenceFrequency === 'yearly' ? 'Anual' : transaction.recurrenceFrequency === 'weekly' ? 'Semanal' : transaction.recurrenceFrequency === 'daily' ? 'Diário' : 'Mensal'})
+            </span>
+          </div>
+        )}
+
+        {/* Anexo de Comprovante / Recibo */}
+        {(transaction.attachmentUrl || transaction.attachmentName) && (
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800 space-y-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              📎 Comprovante / Documento Anexado
+            </span>
+            <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {transaction.attachmentUrl && transaction.attachmentUrl.startsWith('data:image') ? (
+                  <img
+                    src={transaction.attachmentUrl}
+                    alt="Comprovante"
+                    className="w-10 h-10 rounded-lg object-cover border border-purple-300 shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => {
+                      const w = window.open('');
+                      w?.document.write(`<img src="${transaction.attachmentUrl}" style="max-width:100%; height:auto;" />`);
+                    }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {transaction.attachmentName || 'Comprovante anexado'}
+                  </p>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+                    ✓ Arquivo salvo
+                  </span>
+                </div>
+              </div>
+
+              {transaction.attachmentUrl && (
+                <a
+                  href={transaction.attachmentUrl}
+                  download={transaction.attachmentName || 'comprovante'}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tags & Notes */}
         {(transaction.tags?.length > 0 || transaction.notes) && (
           <div className="p-3.5 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800 space-y-2">
             {transaction.tags?.length > 0 && (
