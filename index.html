@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>PlannerFin - Sistema Completo de Gestão Financeira Pessoal</title>
     <link rel="icon" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     
     <!-- Mobile App Colors & Capabilities -->
@@ -25,10 +26,15 @@
     <script type="module" src="/src/main.tsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          for (let reg of regs) {
-            reg.update();
-          }
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(reg => {
+              console.log('PlannerFin ServiceWorker registered with scope:', reg.scope);
+              reg.update();
+            })
+            .catch(err => {
+              console.warn('PlannerFin ServiceWorker registration failed:', err);
+            });
         });
       }
     </script>
