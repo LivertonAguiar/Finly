@@ -21,6 +21,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { Modal } from '../ui/Modal';
+import { DatePicker } from '../ui/DatePicker';
 import { Goal } from '../../types';
 
 export const GoalsPage: React.FC = () => {
@@ -445,19 +446,14 @@ export const GoalsPage: React.FC = () => {
               )}
             </div>
 
-            {/* Data Limite Desejada */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Data Limite Desejada</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={deadline}
-                  onChange={e => setDeadline(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
-                />
-              </div>
-            </div>
+            {/* Data Limite Desejada (Custom Dark DatePicker) */}
+            <DatePicker
+              label="Data Limite Desejada"
+              value={deadline}
+              onChange={setDeadline}
+              required
+              showPresets={true}
+            />
 
             {/* Action Buttons */}
             <div className="pt-4 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">

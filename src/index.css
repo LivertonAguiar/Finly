@@ -20,6 +20,22 @@ input[type="number"] {
   --card-radius: 25px;
 }
 
+/* Dark Mode Form & Calendar Theming */
+html.dark, html.dark body, html.dark input, html.dark select, html.dark textarea {
+  color-scheme: dark;
+}
+
+html.dark input[type="date"],
+.dark input[type="date"] {
+  color-scheme: dark;
+}
+
+html.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) hue-rotate(180deg);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
 /* ========================================================================= */
 /* MOBILE RESPONSIVE AUTO PIXEL & SIZE ENGINE                               */
 /* ========================================================================= */

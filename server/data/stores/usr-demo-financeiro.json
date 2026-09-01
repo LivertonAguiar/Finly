@@ -4,7 +4,7 @@
       "id": "acc-demo-nubank",
       "name": "Nubank Conta",
       "type": "checking",
-      "balance": 4850,
+      "balance": 3317.4,
       "initialBalance": 2000,
       "institution": "Nubank",
       "color": "#820ad1",
@@ -14,7 +14,7 @@
       "id": "acc-demo-itau",
       "name": "Itaú Personnalité",
       "type": "checking",
-      "balance": 8920.5,
+      "balance": 11540,
       "initialBalance": 5000,
       "institution": "Itaú",
       "color": "#ec7000",
@@ -24,7 +24,7 @@
       "id": "acc-demo-xp",
       "name": "XP Investimentos",
       "type": "investment",
-      "balance": 15400,
+      "balance": 10485,
       "initialBalance": 10000,
       "institution": "XP Investimentos",
       "color": "#000000",
@@ -34,7 +34,7 @@
       "id": "acc-demo-c6",
       "name": "C6 Bank",
       "type": "checking",
-      "balance": 1650,
+      "balance": 1000,
       "initialBalance": 1000,
       "institution": "C6 Bank",
       "color": "#242424",
@@ -44,7 +44,7 @@
       "id": "acc-demo-carteira",
       "name": "Carteira (Dinheiro)",
       "type": "cash",
-      "balance": 380,
+      "balance": 95.5,
       "initialBalance": 200,
       "institution": "Carteira",
       "color": "#10b981",
@@ -978,6 +978,218 @@
           "categoryId": "cat-mov-emprestimos"
         }
       ]
+    }
+  ],
+  "budgets": [
+    {
+      "id": "bud-alim",
+      "categoryId": "cat-desp-alimentacao",
+      "limit": 1800,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-moradia",
+      "categoryId": "cat-desp-moradia",
+      "limit": 3400,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-transporte",
+      "categoryId": "cat-desp-transporte",
+      "limit": 1200,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-lazer",
+      "categoryId": "cat-desp-lazer",
+      "limit": 800,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-saude",
+      "categoryId": "cat-desp-saude",
+      "limit": 900,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-tecnologia",
+      "categoryId": "cat-desp-tecnologia",
+      "limit": 2000,
+      "month": "2026-09"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal-reserva-emergencia",
+      "title": "Reserva de Emergência (6 Meses)",
+      "targetAmount": 35000,
+      "currentAmount": 21000,
+      "deadline": "2026-12-31",
+      "icon": "🛡️",
+      "color": "#10b981",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-1",
+          "amount": 15000,
+          "date": "2026-01-15",
+          "note": "Aporte Inicial de Poupança"
+        },
+        {
+          "id": "dep-2",
+          "amount": 3000,
+          "date": "2026-02-10",
+          "note": "Sobra do 13º"
+        },
+        {
+          "id": "dep-3",
+          "amount": 3000,
+          "date": "2026-09-05",
+          "note": "Aporte Mensal Recorrente"
+        }
+      ]
+    },
+    {
+      "id": "goal-viagem-europa",
+      "title": "Férias Europa 2027",
+      "targetAmount": 20000,
+      "currentAmount": 8500,
+      "deadline": "2027-07-31",
+      "icon": "✈️",
+      "color": "#3b82f6",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-v1",
+          "amount": 5000,
+          "date": "2026-01-20",
+          "note": "Início do Planejamento"
+        },
+        {
+          "id": "dep-v2",
+          "amount": 3500,
+          "date": "2026-09-10",
+          "note": "Freelance Design"
+        }
+      ]
+    },
+    {
+      "id": "goal-troca-carro",
+      "title": "Troca de Carro (SUV Novo)",
+      "targetAmount": 50000,
+      "currentAmount": 16000,
+      "deadline": "2028-06-30",
+      "icon": "🚗",
+      "color": "#7c4dff",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-c1",
+          "amount": 16000,
+          "date": "2026-02-01",
+          "note": "Entrada reservada"
+        }
+      ]
+    },
+    {
+      "id": "goal-imovel-proprio",
+      "title": "Entrada Apartamento Próprio",
+      "targetAmount": 80000,
+      "currentAmount": 32000,
+      "deadline": "2028-12-31",
+      "icon": "🏠",
+      "color": "#f59e0b",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-i1",
+          "amount": 32000,
+          "date": "2026-01-05",
+          "note": "Reserva FGTS + Investimentos"
+        }
+      ]
+    }
+  ],
+  "debts": [
+    {
+      "id": "debt-financiamento-caixa",
+      "title": "Financiamento Imobiliário Caixa",
+      "creditor": "Caixa Econômica Federal",
+      "totalAmount": 180000,
+      "remainingAmount": 164000,
+      "interestRate": 9.5,
+      "totalInstallments": 360,
+      "paidInstallments": 24,
+      "installmentAmount": 1480,
+      "dueDay": 15,
+      "nextDueDate": "2026-09-15",
+      "payments": [
+        {
+          "id": "pay-d1",
+          "amount": 1480,
+          "date": "2026-09-15",
+          "installmentNumber": 24
+        }
+      ]
+    },
+    {
+      "id": "debt-consorcio-auto",
+      "title": "Consórcio Veículo Porto Seguro",
+      "creditor": "Porto Seguro Consórcios",
+      "totalAmount": 40000,
+      "remainingAmount": 22000,
+      "interestRate": 0,
+      "totalInstallments": 60,
+      "paidInstallments": 27,
+      "installmentAmount": 780,
+      "dueDay": 20,
+      "nextDueDate": "2026-09-20",
+      "payments": [
+        {
+          "id": "pay-d2",
+          "amount": 780,
+          "date": "2026-09-20",
+          "installmentNumber": 27
+        }
+      ]
+    }
+  ],
+  "investments": [
+    {
+      "id": "inv-tesouro-ipca",
+      "name": "Tesouro IPCA+ 2035",
+      "ticker": "IPCA2035",
+      "type": "fixed",
+      "institution": "XP Investimentos",
+      "investedAmount": 12500,
+      "currentBalance": 13850,
+      "monthlyYield": 112.5,
+      "yieldPercentage": 10.8,
+      "updatedAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "inv-fii-hglg",
+      "name": "CSHG Logística FII",
+      "ticker": "HGLG11",
+      "type": "fiis",
+      "institution": "XP Investimentos",
+      "investedAmount": 8000,
+      "currentBalance": 8620,
+      "monthlyYield": 78.4,
+      "yieldPercentage": 7.75,
+      "updatedAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "inv-cdb-cdi",
+      "name": "CDB 110% do CDI Liquidez Diária",
+      "ticker": "CDB-NUBANK",
+      "type": "fixed",
+      "institution": "Nubank",
+      "investedAmount": 9900,
+      "currentBalance": 10450,
+      "monthlyYield": 98.2,
+      "yieldPercentage": 5.55,
+      "updatedAt": "2026-09-01T03:28:48.373Z"
     }
   ],
   "transactions": [
@@ -2001,218 +2213,6 @@
       "createdAt": "2026-09-01T03:28:48.373Z"
     }
   ],
-  "budgets": [
-    {
-      "id": "bud-alim",
-      "categoryId": "cat-desp-alimentacao",
-      "limit": 1800,
-      "month": "2026-09"
-    },
-    {
-      "id": "bud-moradia",
-      "categoryId": "cat-desp-moradia",
-      "limit": 3400,
-      "month": "2026-09"
-    },
-    {
-      "id": "bud-transporte",
-      "categoryId": "cat-desp-transporte",
-      "limit": 1200,
-      "month": "2026-09"
-    },
-    {
-      "id": "bud-lazer",
-      "categoryId": "cat-desp-lazer",
-      "limit": 800,
-      "month": "2026-09"
-    },
-    {
-      "id": "bud-saude",
-      "categoryId": "cat-desp-saude",
-      "limit": 900,
-      "month": "2026-09"
-    },
-    {
-      "id": "bud-tecnologia",
-      "categoryId": "cat-desp-tecnologia",
-      "limit": 2000,
-      "month": "2026-09"
-    }
-  ],
-  "goals": [
-    {
-      "id": "goal-reserva-emergencia",
-      "title": "Reserva de Emergência (6 Meses)",
-      "targetAmount": 35000,
-      "currentAmount": 21000,
-      "deadline": "2026-12-31",
-      "icon": "🛡️",
-      "color": "#10b981",
-      "completed": false,
-      "deposits": [
-        {
-          "id": "dep-1",
-          "amount": 15000,
-          "date": "2026-01-15",
-          "note": "Aporte Inicial de Poupança"
-        },
-        {
-          "id": "dep-2",
-          "amount": 3000,
-          "date": "2026-02-10",
-          "note": "Sobra do 13º"
-        },
-        {
-          "id": "dep-3",
-          "amount": 3000,
-          "date": "2026-09-05",
-          "note": "Aporte Mensal Recorrente"
-        }
-      ]
-    },
-    {
-      "id": "goal-viagem-europa",
-      "title": "Férias Europa 2027",
-      "targetAmount": 20000,
-      "currentAmount": 8500,
-      "deadline": "2027-07-31",
-      "icon": "✈️",
-      "color": "#3b82f6",
-      "completed": false,
-      "deposits": [
-        {
-          "id": "dep-v1",
-          "amount": 5000,
-          "date": "2026-01-20",
-          "note": "Início do Planejamento"
-        },
-        {
-          "id": "dep-v2",
-          "amount": 3500,
-          "date": "2026-09-10",
-          "note": "Freelance Design"
-        }
-      ]
-    },
-    {
-      "id": "goal-troca-carro",
-      "title": "Troca de Carro (SUV Novo)",
-      "targetAmount": 50000,
-      "currentAmount": 16000,
-      "deadline": "2028-06-30",
-      "icon": "🚗",
-      "color": "#7c4dff",
-      "completed": false,
-      "deposits": [
-        {
-          "id": "dep-c1",
-          "amount": 16000,
-          "date": "2026-02-01",
-          "note": "Entrada reservada"
-        }
-      ]
-    },
-    {
-      "id": "goal-imovel-proprio",
-      "title": "Entrada Apartamento Próprio",
-      "targetAmount": 80000,
-      "currentAmount": 32000,
-      "deadline": "2028-12-31",
-      "icon": "🏠",
-      "color": "#f59e0b",
-      "completed": false,
-      "deposits": [
-        {
-          "id": "dep-i1",
-          "amount": 32000,
-          "date": "2026-01-05",
-          "note": "Reserva FGTS + Investimentos"
-        }
-      ]
-    }
-  ],
-  "debts": [
-    {
-      "id": "debt-financiamento-caixa",
-      "title": "Financiamento Imobiliário Caixa",
-      "creditor": "Caixa Econômica Federal",
-      "totalAmount": 180000,
-      "remainingAmount": 164000,
-      "interestRate": 9.5,
-      "totalInstallments": 360,
-      "paidInstallments": 24,
-      "installmentAmount": 1480,
-      "dueDay": 15,
-      "nextDueDate": "2026-09-15",
-      "payments": [
-        {
-          "id": "pay-d1",
-          "amount": 1480,
-          "date": "2026-09-15",
-          "installmentNumber": 24
-        }
-      ]
-    },
-    {
-      "id": "debt-consorcio-auto",
-      "title": "Consórcio Veículo Porto Seguro",
-      "creditor": "Porto Seguro Consórcios",
-      "totalAmount": 40000,
-      "remainingAmount": 22000,
-      "interestRate": 0,
-      "totalInstallments": 60,
-      "paidInstallments": 27,
-      "installmentAmount": 780,
-      "dueDay": 20,
-      "nextDueDate": "2026-09-20",
-      "payments": [
-        {
-          "id": "pay-d2",
-          "amount": 780,
-          "date": "2026-09-20",
-          "installmentNumber": 27
-        }
-      ]
-    }
-  ],
-  "investments": [
-    {
-      "id": "inv-tesouro-ipca",
-      "name": "Tesouro IPCA+ 2035",
-      "ticker": "IPCA2035",
-      "type": "fixed",
-      "institution": "XP Investimentos",
-      "investedAmount": 12500,
-      "currentBalance": 13850,
-      "monthlyYield": 112.5,
-      "yieldPercentage": 10.8,
-      "updatedAt": "2026-09-01T03:28:48.373Z"
-    },
-    {
-      "id": "inv-fii-hglg",
-      "name": "CSHG Logística FII",
-      "ticker": "HGLG11",
-      "type": "fiis",
-      "institution": "XP Investimentos",
-      "investedAmount": 8000,
-      "currentBalance": 8620,
-      "monthlyYield": 78.4,
-      "yieldPercentage": 7.75,
-      "updatedAt": "2026-09-01T03:28:48.373Z"
-    },
-    {
-      "id": "inv-cdb-cdi",
-      "name": "CDB 110% do CDI Liquidez Diária",
-      "ticker": "CDB-NUBANK",
-      "type": "fixed",
-      "institution": "Nubank",
-      "investedAmount": 9900,
-      "currentBalance": 10450,
-      "monthlyYield": 98.2,
-      "yieldPercentage": 5.55,
-      "updatedAt": "2026-09-01T03:28:48.373Z"
-    }
-  ],
   "familyMembers": [
     {
       "id": "mem-demo-owner",
@@ -2237,11 +2237,14 @@
       "joinedAt": "15/01/2026"
     }
   ],
+  "notifications": [],
   "userProfile": {
     "name": "Conta Demonstração",
     "email": "demo@finly.com",
     "phone": "(11) 99999-8888",
-    "currency": "BRL"
+    "currency": "BRL",
+    "showValues": true,
+    "theme": "dark"
   },
-  "_serverTimestamp": "2026-09-01T03:28:48.373Z"
+  "_serverTimestamp": "2026-09-01T03:33:38.561Z"
 }
