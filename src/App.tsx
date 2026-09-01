@@ -131,7 +131,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-row">
       {/* Sidebar with Mobile Drawer & Unified Top-Right Toggle */}
       <Sidebar
         activeTab={activeTab}
@@ -144,22 +144,20 @@ const AppContent: React.FC = () => {
         onOpenPwaModal={() => setIsPwaModalOpen(true)}
       />
 
-      {/* Main Top Header with Mobile Hamburger */}
-      <Header
-        activeTab={activeTab}
-        setActiveTab={handleSelectTab}
-        collapsed={sidebarCollapsed}
-        onOpenNewTransaction={() => setIsNewTxOpen(true)}
-        onOpenMobileMenu={() => setMobileMenuOpen(true)}
-      />
+      {/* Main Column (Header + Content) */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* Main Top Header with Mobile Hamburger */}
+        <Header
+          activeTab={activeTab}
+          setActiveTab={handleSelectTab}
+          collapsed={sidebarCollapsed}
+          onOpenNewTransaction={() => setIsNewTxOpen(true)}
+          onOpenMobileMenu={() => setMobileMenuOpen(true)}
+        />
 
-      {/* Main Content Area */}
-      <main
-        className={'flex-1 p-4 sm:p-6 pb-24 md:pb-8 transition-all duration-300 ' + (
-          sidebarCollapsed ? 'md:pl-24' : 'md:pl-64'
-        )}
-      >
-        <div className="max-w-7xl mx-auto">
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 w-full">
+          <div className="w-full max-w-[1600px] mx-auto">
           {activeTab === 'dashboard' && (
             <DashboardPage
               onOpenNewTransaction={() => setIsNewTxOpen(true)}
@@ -185,6 +183,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'perfil' && <ProfilePage />}
         </div>
       </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <BottomNav

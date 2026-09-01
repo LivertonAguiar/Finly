@@ -26,6 +26,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  activeTab,
   onOpenNewTransaction,
   onOpenMobileMenu,
   setActiveTab,
@@ -69,12 +70,8 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header
-      className={'sticky top-0 z-30 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between transition-all duration-300 ' + (
-        collapsed ? 'md:pl-24' : 'md:pl-64'
-      )}
-    >
-      {/* Left: Hamburger (Mobile) + Green PlannerFin Brand */}
+    <header className="sticky top-0 z-30 h-16 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between">
+      {/* Left: Mobile Hamburger + Current Title/Brand */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
@@ -84,13 +81,21 @@ export const Header: React.FC<HeaderProps> = ({
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-[#007a4d] flex items-center justify-center text-white text-[10px] font-black shadow-xs">
+        {/* Mobile Brand */}
+        <div className="flex md:hidden items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-[#007a4d] flex items-center justify-center text-white text-[11px] font-black shadow-xs">
             F
           </div>
-          <span className="font-extrabold text-base tracking-tight text-[#007a4d] dark:text-emerald-400 flex items-center">
+          <span className="font-extrabold text-base tracking-tight text-[#007a4d] dark:text-emerald-400">
             Fin<span className="text-emerald-500 font-bold">ly</span>
           </span>
+        </div>
+
+        {/* Desktop Active Section Title */}
+        <div className="hidden md:flex items-center gap-2">
+          <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100 capitalize">
+            {activeTab === 'settings' ? 'Configurações' : activeTab === 'orcamento' || activeTab === 'planejamento' ? 'Planejamento' : activeTab === 'cartoes' ? 'Cartões de Crédito' : activeTab === 'transacoes' ? 'Transações' : activeTab === 'contas' ? 'Contas' : activeTab === 'relatorios' ? 'Relatórios' : activeTab === 'calendario' ? 'Calendário' : activeTab === 'mais' ? 'Mais Opções' : activeTab || 'Dashboard'}
+          </h2>
         </div>
       </div>
 

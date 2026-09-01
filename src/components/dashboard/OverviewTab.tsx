@@ -32,6 +32,7 @@ import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus 
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
+import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 
 interface OverviewTabProps {
   onOpenNewTransaction: () => void;
@@ -230,36 +231,27 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const savingsRate = monthlyIncome > 0 ? Math.max(0, ((monthlyIncome - monthlyExpense) / monthlyIncome) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOPBAR HEADER (MOBILLS REPLICA: MONTH NAVIGATOR + USER INFO) */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-2 py-1 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 shadow-xs">
-              {capitalizedMonth} {yearNum}
-            </span>
-            <button
-              onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+    <div className="w-full space-y-6 animate-in fade-in pb-16">
+      {/* 1. TOPBAR HEADER (CENTERED MONTH PICKER + CUSTOMIZE ACTION) */}
+      <div className="relative flex items-center justify-center px-1 py-1">
+        {/* Centered Month Picker Popover */}
+        <MonthPickerPopover
+          selectedDate={viewDate}
+          onChangeMonth={(newDate) => {
+            const now = new Date();
+            const diffMonths = (newDate.getFullYear() - now.getFullYear()) * 12 + (newDate.getMonth() - now.getMonth());
+            setSelectedMonthOffset(diffMonths);
+          }}
+        />
 
-        <div className="flex items-center gap-2">
+        {/* Right Action: Personalizar Widgets */}
+        <div className="absolute right-1 flex items-center gap-2">
           <button
             onClick={() => setIsManageWidgetsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-600 shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-500 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span>Personalizar</span>
+            <span className="hidden sm:inline">Personalizar</span>
           </button>
         </div>
       </div>
