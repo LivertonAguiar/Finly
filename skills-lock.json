@@ -31,6 +31,12 @@
       "skillPath": "skills/find-skills/SKILL.md",
       "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
     },
+    "nano-banana-2": {
+      "source": "agentspace-so/runcomfy-skills",
+      "sourceType": "github",
+      "skillPath": "nano-banana-2/SKILL.md",
+      "computedHash": "bd54876d7d58a56eb64c3279dedc9894d0266ffa4cbf1c110fbfc91597abbb3c"
+    },
     "proxmox-admin": {
       "source": "bastos/skills",
       "sourceType": "github",
