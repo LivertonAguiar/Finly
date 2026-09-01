@@ -24,7 +24,6 @@ interface SidebarProps {
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
   onOpenNewTransaction: () => void;
-  onOpenPwaModal: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({

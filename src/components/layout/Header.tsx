@@ -13,13 +13,14 @@ import {
   ShieldCheck,
   Gift,
   Crown,
-  Maximize2,
-  Minimize2,
+  Cloud,
+  CheckCircle2,
+  RefreshCw,
+  CloudOff,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { apiSync, SyncStatus } from '../../utils/apiSync';
-import { Cloud, CheckCircle2, RefreshCw, CloudOff } from 'lucide-react';
 import { FinlyLogo } from '../ui/FinlyLogo';
 
 interface HeaderProps {
@@ -28,7 +29,6 @@ interface HeaderProps {
   onOpenMobileMenu?: () => void;
   setActiveTab: (tab: string) => void;
   collapsed: boolean;
-  onOpenPwaModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,7 +37,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   setActiveTab,
   collapsed,
-  onOpenPwaModal,
 }) => {
   const {
     user,
@@ -53,39 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement));
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-    };
-  }, []);
-
-  const toggleFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
-        } else if ((document.documentElement as any).webkitRequestFullscreen) {
-          await (document.documentElement as any).webkitRequestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen();
-        }
-      }
-    } catch (err) {
-      console.warn('Fullscreen toggle failed:', err);
-    }
-  };
 
   useEffect(() => {
     return apiSync.subscribeStatus(setSyncStatus);
@@ -134,33 +100,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Install App, Fullscreen, Rewards, Hide Values, Theme, Notifications, Settings, User Avatar */}
+      {/* Right: Rewards, Hide Values, Theme, Notifications, Settings, User Avatar */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* PWA Install Quick Button */}
-        {onOpenPwaModal && (
-          <button
-            onClick={onOpenPwaModal}
-            title="Instalar Finly no Celular ou Computador"
-            className="px-2.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center gap-1 text-xs font-black hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all cursor-pointer shadow-2xs active:scale-95"
-          >
-            <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span className="hidden sm:inline">Instalar App</span>
-            <span className="sm:hidden">App</span>
-          </button>
-        )}
-
-        {/* Fullscreen Mode Toggle */}
-        <button
-          onClick={toggleFullscreen}
-          title={isFullscreen ? 'Sair do Modo Tela Cheia' : 'Entrar no Modo Tela Cheia (App)'}
-          className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer hover:text-purple-500"
-        >
-          {isFullscreen ? (
-            <Minimize2 className="w-4 h-4 text-purple-500" />
-          ) : (
-            <Maximize2 className="w-4 h-4" />
-          )}
-        </button>
 
         {/* Mobills Rewards Gift Button */}
         <button

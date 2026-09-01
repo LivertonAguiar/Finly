@@ -25,8 +25,6 @@ import { FinancialSkillsPage } from './components/skills/FinancialSkillsPage';
 import { AuthPage } from './components/auth/AuthPage';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
-import { PwaInstallModal } from './components/pwa/PwaInstallModal';
-import { MobileInstallBanner } from './components/pwa/MobileInstallBanner';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -149,15 +147,6 @@ const AppContent: React.FC = () => {
     setIsNewTxOpen(true);
   };
 
-  useEffect(() => {
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-  }, []);
-
   if (!currentUser) {
     return <AuthPage onLoginSuccess={() => handleSelectTab('dashboard')} />;
   }
@@ -173,7 +162,6 @@ const AppContent: React.FC = () => {
         mobileOpen={mobileMenuOpen}
         setMobileOpen={setMobileMenuOpen}
         onOpenNewTransaction={() => setIsNewTxOpen(true)}
-        onOpenPwaModal={() => setIsPwaModalOpen(true)}
       />
 
       {/* Main Column (Header + Content) */}
@@ -185,7 +173,6 @@ const AppContent: React.FC = () => {
           collapsed={sidebarCollapsed}
           onOpenNewTransaction={() => setIsNewTxOpen(true)}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
-          onOpenPwaModal={() => setIsPwaModalOpen(true)}
         />
 
         {/* Main Content Area */}
@@ -212,7 +199,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'relatorios' && <ReportsPage />}
           {activeTab === 'calendario' && <CalendarPage />}
           {activeTab === 'settings' && <SettingsPage />}
-          {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} onOpenPwaModal={() => setIsPwaModalOpen(true)} />}
+          {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} />}
           {activeTab === 'metas' && <GoalsPage />}
           {activeTab === 'dividas' && <DebtsPage />}
           {activeTab === 'investimentos' && <InvestmentsTab />}
@@ -245,23 +232,6 @@ const AppContent: React.FC = () => {
       <CardModal
         isOpen={isNewCardOpen}
         onClose={() => setIsNewCardOpen(false)}
-      />
-
-      <PwaInstallModal
-        isOpen={isPwaModalOpen}
-        onClose={() => setIsPwaModalOpen(false)}
-        canInstallPrompt={Boolean(deferredPrompt)}
-        onInstall={() => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-          }
-        }}
-      />
-
-      {/* Floating Mobile/Tablet App Install Banner */}
-      <MobileInstallBanner
-        deferredPrompt={deferredPrompt}
-        onOpenFullModal={() => setIsPwaModalOpen(true)}
       />
     </div>
   );

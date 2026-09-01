@@ -1,9 +1,11 @@
 {
   "short_name": "Finly",
   "name": "Finly - Finanças Inteligentes",
+  "id": "/",
   "description": "Controle financeiro inteligente, contas bancárias, cartões de crédito e planejamento com o Finly.",
   "start_url": "/?source=pwa",
   "scope": "/",
+  "prefer_related_applications": false,
   "display": "fullscreen",
   "display_override": [
     "fullscreen",

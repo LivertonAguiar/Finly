@@ -32,12 +32,13 @@ html {
   touch-action: manipulation;
 }
 
-/* Base Body Styles */
-body {
+/* Base Body Styles (Samsung Browser, Chrome, iOS Safari) */
+html, body, #root {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: -webkit-fill-available;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
