@@ -130,15 +130,15 @@ export const GoalsPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOP HEADER & CREATE CTA (MOBILLS OBJETIVOS SPEC) */}
+      {/* 1. TOP HEADER & CREATE CTA */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            <span>Objetivos</span>
+            <span>Metas</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Definindo objetivos você alcança seus sonhos mais rápido!
+            Definindo metas você alcança seus objetivos financeiros mais rápido!
           </p>
         </div>
 
@@ -147,7 +147,7 @@ export const GoalsPage: React.FC = () => {
           className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
-          <span>Criar Novo Objetivo</span>
+          <span>Criar Nova Meta</span>
         </button>
       </div>
 
@@ -342,16 +342,16 @@ export const GoalsPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL: CRIAR / EDITAR OBJETIVO */}
+      {/* MODAL: CRIAR / EDITAR META */}
       {isGoalModalOpen && (
         <Modal
           isOpen={isGoalModalOpen}
           onClose={() => setIsGoalModalOpen(false)}
-          title={editingGoal ? 'Editar Objetivo' : 'Criar Novo Objetivo'}
+          title={editingGoal ? 'Editar Meta' : 'Criar Nova Meta'}
         >
           <form onSubmit={handleSaveGoal} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título do Objetivo</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título da Meta</label>
               <input
                 type="text"
                 placeholder="Ex: Reserva de Emergência, Viagem, Carro Novo"
@@ -407,7 +407,7 @@ export const GoalsPage: React.FC = () => {
                 type="submit"
                 className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
               >
-                Salvar Objetivo
+                Salvar Meta
               </button>
             </div>
           </form>

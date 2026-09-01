@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Desktop Active Section Title */}
         <div className="hidden md:flex items-center gap-2">
           <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100 capitalize">
-            {activeTab === 'settings' ? 'Configurações' : activeTab === 'orcamento' || activeTab === 'planejamento' ? 'Planejamento' : activeTab === 'cartoes' ? 'Cartões de Crédito' : activeTab === 'transacoes' ? 'Transações' : activeTab === 'contas' ? 'Contas' : activeTab === 'relatorios' ? 'Relatórios' : activeTab === 'calendario' ? 'Calendário' : activeTab === 'mais' ? 'Mais Opções' : activeTab || 'Dashboard'}
+            {activeTab === 'settings' ? 'Configurações' : activeTab === 'orcamento' || activeTab === 'planejamento' ? 'Planejamento' : activeTab === 'metas' ? 'Metas' : activeTab === 'cartoes' ? 'Cartões de Crédito' : activeTab === 'transacoes' ? 'Transações' : activeTab === 'contas' ? 'Contas' : activeTab === 'relatorios' ? 'Relatórios' : activeTab === 'calendario' ? 'Calendário' : activeTab === 'mais' ? 'Mais Opções' : activeTab || 'Dashboard'}
           </h2>
         </div>
       </div>
