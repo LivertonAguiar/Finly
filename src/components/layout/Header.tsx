@@ -179,18 +179,14 @@ export const Header: React.FC<HeaderProps> = ({
           <Settings className="w-4.5 h-4.5" />
         </button>
 
-        {/* User Profile Avatar with VIP Crown Badge */}
+        {/* User Profile Avatar */}
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform shrink-0 font-black text-xs cursor-pointer relative"
+            className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform shrink-0 font-black text-xs cursor-pointer"
             title={currentUser?.name || user.name}
           >
             {(currentUser?.name || user.name || 'U').charAt(0).toUpperCase()}
-            {/* VIP Crown Icon Badge */}
-            <span className="absolute -top-1.5 -right-1 text-[10px] drop-shadow-sm select-none">
-              👑
-            </span>
           </button>
 
           {showUserMenu && (
@@ -203,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {currentUser?.email || user.email}
                 </p>
                 <span className="inline-block mt-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  {currentUser?.role === 'admin' ? '👑 Administrador' : 'Membro'}
+                  {currentUser?.role === 'admin' ? 'Administrador' : 'Membro'}
                 </span>
               </div>
 

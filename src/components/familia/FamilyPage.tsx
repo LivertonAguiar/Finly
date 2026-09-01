@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   ShieldCheck,
   Heart,
-  Crown,
   Lock,
   Plus,
   MessageSquare,
@@ -162,11 +161,6 @@ export const FamilyPage: React.FC = () => {
                     <div className="w-12 h-12 rounded-full bg-[#7c4dff] text-white flex items-center justify-center font-black text-lg shadow-sm">
                       {initial}
                     </div>
-                    {member.isOwner && (
-                      <span className="absolute -top-1 -right-1 text-base leading-none drop-shadow" title="Titular">
-                        👑
-                      </span>
-                    )}
                   </div>
 
                   {/* Name, Email, Phone, Badges */}

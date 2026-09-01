@@ -200,8 +200,8 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab }) => {
             <div className="flex items-center gap-3">
               <FinlyLogo size="lg" />
               <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">Finly Web</h4>
-                <p>Versão 2.174.0 (Pro Edition)</p>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">Finly</h4>
+                <p>Versão 2.174.0</p>
               </div>
             </div>
 
@@ -210,10 +210,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab }) => {
             </p>
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <div className="flex justify-between font-semibold">
-                <span>Central de Ajuda:</span>
-                <span className="text-purple-600 dark:text-purple-400">help.plannerfin.com</span>
-              </div>
               <div className="flex justify-between font-semibold">
                 <span>Criptografia:</span>
                 <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">

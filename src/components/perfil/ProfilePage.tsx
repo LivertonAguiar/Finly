@@ -121,7 +121,7 @@ export const ProfilePage: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{name}</h3>
             <p className="text-xs text-slate-400">{email}</p>
             <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-              {currentUser?.role === 'admin' ? '👑 Titular Administrador' : 'Membro da Família'}
+              {currentUser?.role === 'admin' ? 'Titular Administrador' : 'Membro da Família'}
             </span>
           </div>
         </div>
