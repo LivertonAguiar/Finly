@@ -10,6 +10,9 @@ import {
   Target,
   ChevronRight,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
+  RotateCcw,
   DollarSign,
   PieChart as PieIcon,
   SlidersHorizontal,
@@ -47,47 +50,65 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const [selectedCardForPay, setSelectedCardForPay] = useState<string | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string } | null>(null);
 
-  // Manage Home Screen (Gerenciar Tela Inicial)
-  const [isManageWidgetsOpen, setIsManageWidgetsOpen] = useState(false);
-  const [visibleWidgets, setVisibleWidgets] = useState({
-    kpis: true,
-    desempenho: true,
-    despesasCategoria: true,
-    balancoMensal: true,
-    planejamento: true,
-    cartoes: true,
-    contas: true,
-  });
+interface WidgetItem {
+  id: 'kpis' | 'desempenho' | 'despesasCategoria' | 'cartoes' | 'balancoMensal' | 'planejamento' | 'contas';
+  label: string;
+  description: string;
+  icon: string;
+  visible: boolean;
+}
 
-  // Load custom widget preferences from localStorage
-  useEffect(() => {
+const DEFAULT_WIDGETS_LIST: WidgetItem[] = [
+  { id: 'kpis', label: 'Resumo dos 4 KPIs', description: 'Saldo atual, receitas, despesas e cartão de crédito', icon: '📊', visible: true },
+  { id: 'desempenho', label: 'Meu Desempenho', description: 'Taxa de economia e atalho para planejamento', icon: '🎯', visible: true },
+  { id: 'despesasCategoria', label: 'Despesas por Categoria', description: 'Gráfico interativo donut e ranking', icon: '🍩', visible: true },
+  { id: 'cartoes', label: 'Cartões de Crédito', description: 'Faturas abertas, fechadas, parcelas e limites', icon: '💳', visible: true },
+  { id: 'balancoMensal', label: 'Balanço Mensal', description: 'Resumo de receitas, despesas e saldo líquido', icon: '⚖️', visible: true },
+  { id: 'contas', label: 'Minhas Contas', description: 'Saldos de contas bancárias e carteiras', icon: '🏦', visible: true },
+  { id: 'planejamento', label: 'Planejamento Mensal', description: 'Definição e acompanhamento do teto de gastos', icon: '📑', visible: true },
+];
+
+const WIDGETS_STORAGE_KEY = 'plannerfin_dashboard_widgets_order_v3';
+
+  const [isManageWidgetsOpen, setIsManageWidgetsOpen] = useState(false);
+  const [widgets, setWidgets] = useState<WidgetItem[]>(() => {
     try {
-      const detailed = localStorage.getItem('plannerfin_dashboard_widgets_detailed');
-      if (detailed) {
-        const parsed = JSON.parse(detailed);
-        setVisibleWidgets({
-          kpis: true,
-          desempenho: parsed.economiaMes !== false,
-          despesasCategoria: parsed.despesasCategoria !== false,
-          balancoMensal: parsed.balancoMensal !== false,
-          planejamento: parsed.resumoOrcamento !== false,
-          cartoes: parsed.cartoes !== false,
-          contas: parsed.contas !== false,
-        });
-      } else {
-        const saved = localStorage.getItem('plannerfin_dashboard_widgets');
-        if (saved) {
-          setVisibleWidgets(JSON.parse(saved));
+      const saved = localStorage.getItem(WIDGETS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const loadedIds = new Set(parsed.map((p: WidgetItem) => p.id));
+          const missing = DEFAULT_WIDGETS_LIST.filter(d => !loadedIds.has(d.id));
+          return [...parsed, ...missing];
         }
       }
     } catch (e) {}
-  }, []);
+    return DEFAULT_WIDGETS_LIST;
+  });
 
-  const saveWidgetSettings = (updated: typeof visibleWidgets) => {
-    setVisibleWidgets(updated);
+  const saveWidgets = (newWidgets: WidgetItem[]) => {
+    setWidgets(newWidgets);
     try {
-      localStorage.setItem('plannerfin_dashboard_widgets', JSON.stringify(updated));
+      localStorage.setItem(WIDGETS_STORAGE_KEY, JSON.stringify(newWidgets));
     } catch (e) {}
+  };
+
+  const moveWidget = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= widgets.length) return;
+    const copy = [...widgets];
+    const [removed] = copy.splice(index, 1);
+    copy.splice(targetIndex, 0, removed);
+    saveWidgets(copy);
+  };
+
+  const toggleWidget = (id: string) => {
+    const updated = widgets.map(w => (w.id === id ? { ...w, visible: !w.visible } : w));
+    saveWidgets(updated);
+  };
+
+  const resetWidgets = () => {
+    saveWidgets(DEFAULT_WIDGETS_LIST);
   };
 
   // Month calculations
@@ -230,6 +251,435 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // Financial health score
   const savingsRate = monthlyIncome > 0 ? Math.max(0, ((monthlyIncome - monthlyExpense) / monthlyIncome) * 100) : 0;
 
+  // Render Widget Helper Functions
+  const renderKpis = () => (
+    <div key="kpis" className="lg:col-span-2">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* KPI 1: Saldo atual */}
+        <div
+          onClick={() => setActiveTab('contas')}
+          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#42a5f5] shrink-0 shadow-xs" />
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Saldo atual</span>
+          </div>
+          <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+            {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
+          </p>
+        </div>
+
+        {/* KPI 2: Receitas */}
+        <div
+          onClick={() => setActiveTab('transacoes')}
+          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#66bb6a] shrink-0 shadow-xs" />
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Receitas</span>
+          </div>
+          <p className="text-base sm:text-lg font-black text-[#66bb6a] tracking-tight">
+            {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
+          </p>
+        </div>
+
+        {/* KPI 3: Despesas */}
+        <div
+          onClick={() => setActiveTab('transacoes')}
+          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ef5350] shrink-0 shadow-xs" />
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Despesas</span>
+          </div>
+          <p className="text-base sm:text-lg font-black text-[#ef5350] tracking-tight">
+            {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
+          </p>
+        </div>
+
+        {/* KPI 4: Cartão de crédito */}
+        <div
+          onClick={() => setActiveTab('cartoes')}
+          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#26a69a] shrink-0 shadow-xs" />
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Cartão de crédito</span>
+          </div>
+          <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+            {formatCurrency(totalCardInvoicesSum, user.currency, !user.showValues)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDesempenho = () => (
+    <div key="desempenho" className="lg:col-span-2">
+      <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-lg shrink-0">
+            🎯
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-black text-slate-900 dark:text-white">Meu Desempenho</h4>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-extrabold">
+                {savingsRate > 20 ? 'Excelente' : savingsRate > 0 ? 'Bom' : 'Atenção'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Taxa de poupança atual: <span className="font-bold text-purple-600 dark:text-purple-400">{savingsRate.toFixed(1)}%</span> da renda poupada neste mês.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setActiveTab('orcamento')}
+          className="px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all cursor-pointer"
+        >
+          VER METAS & PLANEJAMENTO
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderDespesasCategoria = () => (
+    <div key="despesasCategoria" className="col-span-1 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+      </div>
+
+      {categoryChartData.length === 0 ? (
+        <div className="py-12 text-center text-slate-400 text-xs">
+          Nenhuma despesa registrada neste mês.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="relative h-48 w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={52}
+                  outerRadius={72}
+                  paddingAngle={3}
+                  dataKey="value"
+                  stroke="transparent"
+                  onMouseEnter={(_, index) => setHoveredCategory(categoryChartData[index])}
+                  onMouseLeave={() => setHoveredCategory(null)}
+                >
+                  {categoryChartData.map((entry, index) => (
+                    <Cell
+                      key={`cell-overview-cat-${index}`}
+                      fill={entry.color}
+                      className="cursor-pointer transition-all hover:opacity-90"
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+              {hoveredCategory ? (
+                <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
+                  <span className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[120px]">
+                    {hoveredCategory.icon} {hoveredCategory.name}
+                  </span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                    {formatCurrency(hoveredCategory.value, user.currency, !user.showValues)}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                    {hoveredCategory.percentage.toFixed(1)}%
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                    {formatCurrency(totalExpenseCategorySum, user.currency, !user.showValues)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    Total
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-40 overflow-y-auto scrollbar-thin pr-1">
+            {categoryChartData.slice(0, 5).map((c, i) => (
+              <div key={i} className="flex items-center justify-between text-xs py-1">
+                <div className="flex items-center gap-2 truncate min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                  <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
+                    {c.icon} {c.name}
+                  </span>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
+                  <span className="text-[10px] text-slate-400 block font-semibold">{c.percentage.toFixed(1)}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+            <button
+              onClick={() => setActiveTab('relatorios')}
+              className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+            >
+              VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderBalancoMensal = () => (
+    <div key="balancoMensal" className="col-span-1 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço mensal</h3>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-slate-600 dark:text-slate-400 font-semibold">Receitas</span>
+          <span className="font-black text-[#66bb6a]">{formatCurrency(monthlyIncome, user.currency, !user.showValues)}</span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-slate-600 dark:text-slate-400 font-semibold">Despesas</span>
+          <span className="font-black text-[#ef5350]">{formatCurrency(monthlyExpense, user.currency, !user.showValues)}</span>
+        </div>
+
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+          <span className="text-slate-900 dark:text-white font-black uppercase">Balanço</span>
+          <span className={`font-black text-sm ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
+            {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
+          </span>
+        </div>
+      </div>
+
+      <div className="pt-2 flex justify-end">
+        <button
+          onClick={() => setActiveTab('relatorios')}
+          className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+        >
+          VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderPlanejamento = () => (
+    <div key="planejamento" className="col-span-1 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white">Planejamento mensal</h3>
+      </div>
+
+      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 text-center space-y-3">
+        <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+          Defina o teto de gastos por categoria e economize mais neste mês.
+        </p>
+        <button
+          onClick={() => setActiveTab('orcamento')}
+          className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+        >
+          DEFINIR MEU PLANEJAMENTO
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderCartoes = () => (
+    <div key="cartoes" className="col-span-1 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white">Cartões de crédito</h3>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+      </div>
+
+      <div className="space-y-4 max-h-[480px] overflow-y-auto scrollbar-thin pr-1 divide-y divide-slate-100 dark:divide-slate-800/60">
+        {cardSummaries.length === 0 ? (
+          <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
+        ) : (
+          cardSummaries.map(card => (
+            <div key={card.id} className="pt-3.5 first:pt-0 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                    {card.name}
+                  </h4>
+                  <span className={`text-[11px] font-bold ${card.statusColor}`}>{card.statusLabel}</span>
+                </div>
+                <div className="text-right">
+                  <span className={`text-xs font-black block ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
+                    {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-full bg-slate-100 dark:bg-[#11141b] h-3 rounded-full overflow-hidden flex shadow-inner">
+                {card.currentInvoicePercent > 0 && (
+                  <div
+                    style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
+                    className="h-full bg-[#7c4dff] transition-all duration-500"
+                    title={`Fatura deste mês: ${formatCurrency(card.currentOpenInvoice, user.currency)}`}
+                  />
+                )}
+                {card.futureInstallmentsPercent > 0 && (
+                  <div
+                    style={{ width: `${Math.min(100 - Math.min(100, card.currentInvoicePercent), card.futureInstallmentsPercent)}%` }}
+                    className="h-full bg-[#ff8a00] transition-all duration-500"
+                    title={`Parcelas futuras: ${formatCurrency(card.futureInstallmentsTotal, user.currency)}`}
+                  />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-1">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex items-center gap-1 text-[#7c4dff]">
+                    <span className="w-2 h-2 rounded-full bg-[#7c4dff]" />
+                    Mês: {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
+                  </span>
+                  {card.futureInstallmentsTotal > 0 && (
+                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <span className="w-2 h-2 rounded-full bg-[#ff8a00]" />
+                      Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
+                    </span>
+                  )}
+                </div>
+
+                {card.isOverLimit ? (
+                  <span className="text-rose-600 dark:text-rose-400 font-extrabold">
+                    Excedeu: {formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}
+                  </span>
+                ) : (
+                  <span>
+                    Disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong>
+                  </span>
+                )}
+              </div>
+
+              <div className="pt-1 flex items-center justify-between">
+                {card.isPaid ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
+                    </span>
+                    <button
+                      onClick={() => setActiveTab('cartoes')}
+                      className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
+                    >
+                      Ver Detalhes
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (card.invoiceTotal > 0) {
+                        setSelectedCardForPay(card.id);
+                        setIsInvoiceModalOpen(true);
+                      } else {
+                        setActiveTab('cartoes');
+                      }
+                    }}
+                    className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+                  >
+                    {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+        <div>
+          <span className="text-[11px] text-slate-400 font-bold uppercase block">TOTAL</span>
+          <span className="text-sm font-black text-[#ef5350]">
+            {formatCurrency(totalCardInvoicesSum, user.currency, !user.showValues)}
+          </span>
+        </div>
+
+        <button
+          onClick={() => setActiveTab('cartoes')}
+          className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+        >
+          VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderContas = () => (
+    <div key="contas" className="col-span-1 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white">Contas</h3>
+        <button
+          onClick={() => setActiveTab('contas')}
+          className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+        >
+          Gerenciar
+        </button>
+      </div>
+
+      <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+        {accounts.length === 0 ? (
+          <p className="text-xs text-slate-400 py-3 text-center">Nenhuma conta cadastrada.</p>
+        ) : (
+          accounts.map(acc => (
+            <div key={acc.id} className="py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-[#1E1E20] flex items-center justify-center p-1 shrink-0 border border-slate-200 dark:border-slate-800">
+                  <BankLogo nameOrId={acc.institution || acc.name} size={18} className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-white">{acc.name}</p>
+                  <span className="text-[10px] text-slate-400">
+                    {acc.type === 'cash' ? 'Carteira' : 'Conta Corrente'}
+                  </span>
+                </div>
+              </div>
+
+              <span className="text-xs font-black text-[#66bb6a]">
+                {formatCurrency(acc.balance, user.currency, !user.showValues)}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-black text-slate-900 dark:text-white">
+        <span>Total em contas</span>
+        <span className="text-[#66bb6a]">
+          {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderWidget = (id: string) => {
+    switch (id) {
+      case 'kpis': return renderKpis();
+      case 'desempenho': return renderDesempenho();
+      case 'despesasCategoria': return renderDespesasCategoria();
+      case 'cartoes': return renderCartoes();
+      case 'balancoMensal': return renderBalancoMensal();
+      case 'contas': return renderContas();
+      case 'planejamento': return renderPlanejamento();
+      default: return null;
+    }
+  };
+
   return (
     <div className="w-full space-y-6 animate-in fade-in pb-16">
       {/* 1. TOPBAR HEADER (CENTERED MONTH PICKER + CUSTOMIZE ACTION) */}
@@ -248,7 +698,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         <div className="absolute right-1 flex items-center gap-2">
           <button
             onClick={() => setIsManageWidgetsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-500 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-500 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             <span className="hidden sm:inline">Personalizar</span>
@@ -256,455 +706,23 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 2. TOP 4 METRIC KPIS (MOBILLS SPEC: 4 PILL CARDS IN A ROW) */}
-      {visibleWidgets.kpis && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* KPI 1: Saldo atual (Blue Dot #42a5f5) */}
-          <div
-            onClick={() => setActiveTab('contas')}
-            className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#42a5f5] shrink-0 shadow-xs" />
-              <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Saldo atual</span>
-            </div>
-            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-              {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
-            </p>
-          </div>
-
-          {/* KPI 2: Receitas (Green Dot #66bb6a) */}
-          <div
-            onClick={() => setActiveTab('transacoes')}
-            className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#66bb6a] shrink-0 shadow-xs" />
-              <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Receitas</span>
-            </div>
-            <p className="text-base sm:text-lg font-black text-[#66bb6a] tracking-tight">
-              {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
-            </p>
-          </div>
-
-          {/* KPI 3: Despesas (Red Dot #ef5350) */}
-          <div
-            onClick={() => setActiveTab('transacoes')}
-            className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#ef5350] shrink-0 shadow-xs" />
-              <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Despesas</span>
-            </div>
-            <p className="text-base sm:text-lg font-black text-[#ef5350] tracking-tight">
-              {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
-            </p>
-          </div>
-
-          {/* KPI 4: Cartão de crédito (Teal Dot #26a69a) */}
-          <div
-            onClick={() => setActiveTab('cartoes')}
-            className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#26a69a] shrink-0 shadow-xs" />
-              <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Cartão de crédito</span>
-            </div>
-            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-              {formatCurrency(totalCardInvoicesSum, user.currency, !user.showValues)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* 3. "MEU DESEMPENHO" BANNER WIDGET */}
-      {visibleWidgets.desempenho && (
-        <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-lg shrink-0">
-              🎯
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">Meu Desempenho</h4>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-extrabold">
-                  {savingsRate > 20 ? 'Excelente' : savingsRate > 0 ? 'Bom' : 'Atenção'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Taxa de poupança atual: <span className="font-bold text-purple-600 dark:text-purple-400">{savingsRate.toFixed(1)}%</span> da renda poupada neste mês.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setActiveTab('orcamento')}
-            className="px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all cursor-pointer"
-          >
-            VER METAS & PLANEJAMENTO
-          </button>
-        </div>
-      )}
-
-      {/* 4. TWO-COLUMN RESPONSIVE LAYOUT (MOBILLS MODULAR GRID) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT COLUMN: DESPESAS POR CATEGORIA & BALANÇO MENSAL */}
-        <div className="space-y-6">
-          {/* Widget 1: Despesas por Categoria (Donut + Ranking + "VER MAIS") */}
-          {visibleWidgets.despesasCategoria && (
-            <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
-              </div>
-
-              {categoryChartData.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-xs">
-                  Nenhuma despesa registrada neste mês.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Donut with Interactive Hover & High Contrast in Dark Mode */}
-                  <div className="relative h-48 w-full flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryChartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={52}
-                          outerRadius={72}
-                          paddingAngle={3}
-                          dataKey="value"
-                          stroke="transparent"
-                          onMouseEnter={(_, index) => setHoveredCategory(categoryChartData[index])}
-                          onMouseLeave={() => setHoveredCategory(null)}
-                        >
-                          {categoryChartData.map((entry, index) => (
-                            <Cell
-                              key={`cell-overview-cat-${index}`}
-                              fill={entry.color}
-                              className="cursor-pointer transition-all hover:opacity-90"
-                            />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-
-                    {/* Interactive Center (No Overlapping Tooltip) */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-                      {hoveredCategory ? (
-                        <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
-                          <span className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[120px]">
-                            {hoveredCategory.icon} {hoveredCategory.name}
-                          </span>
-                          <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
-                            {formatCurrency(hoveredCategory.value, user.currency, !user.showValues)}
-                          </span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                            {hoveredCategory.percentage.toFixed(1)}%
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center">
-                          <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
-                            {formatCurrency(totalExpenseCategorySum, user.currency, !user.showValues)}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                            Total
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Ranked List */}
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-40 overflow-y-auto scrollbar-thin pr-1">
-                    {categoryChartData.slice(0, 5).map((c, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs py-1">
-                        <div className="flex items-center gap-2 truncate min-w-0">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                          <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
-                            {c.icon} {c.name}
-                          </span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
-                          <span className="text-[10px] text-slate-400 block font-semibold">{c.percentage.toFixed(1)}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* "VER MAIS" Button */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
-                    <button
-                      onClick={() => setActiveTab('relatorios')}
-                      className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
-                    >
-                      VER MAIS <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Widget 2: Balanço Mensal (Receitas x Despesas x Balanço) */}
-          {visibleWidgets.balancoMensal && (
-            <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço mensal</h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600 dark:text-slate-400 font-semibold">Receitas</span>
-                  <span className="font-black text-[#66bb6a]">{formatCurrency(monthlyIncome, user.currency, !user.showValues)}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600 dark:text-slate-400 font-semibold">Despesas</span>
-                  <span className="font-black text-[#ef5350]">{formatCurrency(monthlyExpense, user.currency, !user.showValues)}</span>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-900 dark:text-white font-black uppercase">Balanço</span>
-                  <span className={`font-black text-sm ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
-                    {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  onClick={() => setActiveTab('relatorios')}
-                  className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
-                >
-                  VER MAIS <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Widget 3: Planejamento Mensal */}
-          {visibleWidgets.planejamento && (
-            <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">Planejamento mensal</h3>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 text-center space-y-3">
-                <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
-                  Defina o teto de gastos por categoria e economize mais neste mês.
-                </p>
-                <button
-                  onClick={() => setActiveTab('orcamento')}
-                  className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 transition-all cursor-pointer"
-                >
-                  DEFINIR MEU PLANEJAMENTO
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: CARTÕES DE CRÉDITO & CONTAS */}
-        <div className="space-y-6">
-          {/* Widget 4: Cartões de Crédito (PlannerFin Full Cards Breakdown) */}
-          {visibleWidgets.cartoes && (
-            <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">Cartões de crédito</h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
-              </div>
-
-              <div className="space-y-4 max-h-[480px] overflow-y-auto scrollbar-thin pr-1 divide-y divide-slate-100 dark:divide-slate-800/60">
-                {cardSummaries.length === 0 ? (
-                  <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
-                ) : (
-                  cardSummaries.map(card => (
-                    <div key={card.id} className="pt-3.5 first:pt-0 space-y-2">
-                      {/* Name + Status + Amount */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                            {card.name}
-                          </h4>
-                          <span className={`text-[11px] font-bold ${card.statusColor}`}>{card.statusLabel}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className={`text-xs font-black block ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
-                            {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-bold">
-                            {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Multi-segment Progress Bar */}
-                      <div className="w-full bg-slate-100 dark:bg-[#11141b] h-3 rounded-full overflow-hidden flex shadow-inner">
-                        {/* Segment 1: Fatura Atual Aberta */}
-                        {card.currentInvoicePercent > 0 && (
-                          <div
-                            style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
-                            className="h-full bg-[#7c4dff] transition-all duration-500"
-                            title={`Fatura deste mês: ${formatCurrency(card.currentOpenInvoice, user.currency)}`}
-                          />
-                        )}
-                        {/* Segment 2: Parcelas Futuras */}
-                        {card.futureInstallmentsPercent > 0 && (
-                          <div
-                            style={{ width: `${Math.min(100 - Math.min(100, card.currentInvoicePercent), card.futureInstallmentsPercent)}%` }}
-                            className="h-full bg-[#ff8a00] transition-all duration-500"
-                            title={`Parcelas futuras: ${formatCurrency(card.futureInstallmentsTotal, user.currency)}`}
-                          />
-                        )}
-                      </div>
-
-                      {/* Limit Breakdown Legend */}
-                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-1">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex items-center gap-1 text-[#7c4dff]">
-                            <span className="w-2 h-2 rounded-full bg-[#7c4dff]" />
-                            Mês: {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
-                          </span>
-                          {card.futureInstallmentsTotal > 0 && (
-                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                              <span className="w-2 h-2 rounded-full bg-[#ff8a00]" />
-                              Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
-                            </span>
-                          )}
-                        </div>
-
-                        {card.isOverLimit ? (
-                          <span className="text-rose-600 dark:text-rose-400 font-extrabold">
-                            Excedeu: {formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}
-                          </span>
-                        ) : (
-                          <span>
-                            Disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong>
-                          </span>
-                        )}
-                      </div>
-
-                        {/* Actions Row */}
-                        <div className="pt-1 flex items-center justify-between">
-                          {card.isPaid ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
-                              </span>
-                              <button
-                                onClick={() => setActiveTab('cartoes')}
-                                className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
-                              >
-                                Ver Detalhes
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                if (card.invoiceTotal > 0) {
-                                  setSelectedCardForPay(card.id);
-                                  setIsInvoiceModalOpen(true);
-                                } else {
-                                  setActiveTab('cartoes');
-                                }
-                              }}
-                              className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
-                            >
-                              {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-              {/* Total Card Invoices + VER MAIS */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] text-slate-400 font-bold uppercase block">TOTAL</span>
-                  <span className="text-sm font-black text-[#ef5350]">
-                    {formatCurrency(totalCardInvoicesSum, user.currency, !user.showValues)}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => setActiveTab('cartoes')}
-                  className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
-                >
-                  VER MAIS <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Widget 5: Contas Bancárias */}
-          {visibleWidgets.contas && (
-            <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">Contas</h3>
-                <button
-                  onClick={() => setActiveTab('contas')}
-                  className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
-                >
-                  Gerenciar
-                </button>
-              </div>
-
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {accounts.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-3 text-center">Nenhuma conta cadastrada.</p>
-                ) : (
-                  accounts.map(acc => (
-                    <div key={acc.id} className="py-2.5 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-[#1E1E20] flex items-center justify-center p-1 shrink-0 border border-slate-200 dark:border-slate-800">
-                          <BankLogo nameOrId={acc.institution || acc.name} size={18} className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-800 dark:text-white">{acc.name}</p>
-                          <span className="text-[10px] text-slate-400">
-                            {acc.type === 'cash' ? 'Carteira' : 'Conta Corrente'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className="text-xs font-black text-[#66bb6a]">
-                        {formatCurrency(acc.balance, user.currency, !user.showValues)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-black text-slate-900 dark:text-white">
-                <span>Total em contas</span>
-                <span className="text-[#66bb6a]">
-                  {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
+      {/* 2. DYNAMICALLY REORDERED DASHBOARD WIDGETS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {widgets.filter(w => w.visible).map(w => renderWidget(w.id))}
       </div>
 
-      {/* 5. BOTTOM BUTTON: "GERENCIAR TELA INICIAL" (MOBILLS SPEC) */}
-      <div className="pt-6 flex justify-center">
+      {/* 3. BOTTOM BUTTON: "GERENCIAR TELA INICIAL" */}
+      <div className="pt-8 flex justify-center">
         <button
-          onClick={() => setActiveTab('settings')}
-          className="px-6 py-3 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:border-purple-500 hover:text-purple-600 shadow-md transition-all cursor-pointer"
+          onClick={() => setIsManageWidgetsOpen(true)}
+          className="px-8 py-3.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:border-purple-500 hover:text-purple-600 shadow-md transition-all cursor-pointer active:scale-95 flex items-center gap-2.5"
         >
-          GERENCIAR TELA INICIAL
+          <SlidersHorizontal className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          <span>GERENCIAR TELA INICIAL</span>
         </button>
       </div>
 
-      {/* 6. MODAL: "GERENCIAR TELA INICIAL" */}
+      {/* 4. MODAL: "GERENCIAR TELA INICIAL" (REORDER & TOGGLE VISIBILITY) */}
       {isManageWidgetsOpen && (
         <Modal
           isOpen={isManageWidgetsOpen}
@@ -713,41 +731,87 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         >
           <div className="space-y-4">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Escolha quais cartões e widgets deseja exibir na sua tela inicial:
+              Personalize seu Dashboard: use as setas para <strong>reordenar</strong> os cartões ou o botão para <strong>exibir/ocultar</strong>:
             </p>
 
-            <div className="space-y-2.5">
-              {[
-                { key: 'kpis', label: 'Resumo dos 4 KPIs (Saldo, Receitas, Despesas, Cartão)' },
-                { key: 'desempenho', label: 'Meu Desempenho & Saúde Financeira' },
-                { key: 'despesasCategoria', label: 'Despesas por Categoria (Donut)' },
-                { key: 'balancoMensal', label: 'Balanço Mensal' },
-                { key: 'planejamento', label: 'Planejamento Mensal (Orçamento)' },
-                { key: 'cartoes', label: 'Cartões de Crédito' },
-                { key: 'contas', label: 'Contas Bancárias' },
-              ].map(w => (
-                <label
-                  key={w.key}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors"
+            <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+              {widgets.map((w, index) => (
+                <div
+                  key={w.id}
+                  className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
+                    w.visible
+                      ? 'bg-slate-50 dark:bg-[#2C2C2E] border-slate-200 dark:border-slate-700/80 shadow-xs'
+                      : 'bg-slate-100/50 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-60'
+                  }`}
                 >
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{w.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={(visibleWidgets as any)[w.key]}
-                    onChange={e => {
-                      const updated = { ...visibleWidgets, [w.key]: e.target.checked };
-                      saveWidgetSettings(updated);
-                    }}
-                    className="w-4 h-4 text-purple-600 rounded cursor-pointer"
-                  />
-                </label>
+                  {/* Left: Reorder Up/Down buttons + Icon & Title */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => moveWidget(index, 'up')}
+                        title="Mover para cima"
+                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-20 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === widgets.length - 1}
+                        onClick={() => moveWidget(index, 'down')}
+                        title="Mover para baixo"
+                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-20 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center text-base shrink-0">
+                      {w.icon}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
+                        {w.label}
+                      </p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                        {w.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: Toggle Visibility Button */}
+                  <button
+                    type="button"
+                    onClick={() => toggleWidget(w.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                      w.visible
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm shadow-purple-600/30'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-300'
+                    }`}
+                  >
+                    {w.visible ? 'Visível' : 'Oculto'}
+                  </button>
+                </div>
               ))}
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            {/* Footer Buttons */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <button
+                type="button"
+                onClick={resetWidgets}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restaurar Padrão</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsManageWidgetsOpen(false)}
-                className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md cursor-pointer"
+                className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md transition-all cursor-pointer active:scale-95"
               >
                 Concluir
               </button>
