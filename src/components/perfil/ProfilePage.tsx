@@ -49,7 +49,7 @@ export const ProfilePage: React.FC = () => {
     setTimeout(() => setSavedAlert(false), 3000);
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassAlert(null);
 
@@ -58,7 +58,7 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
-    const res = changePassword(currentPass, newPass);
+    const res = await changePassword(currentPass, newPass);
     if (res.success) {
       setPassAlert({ type: 'success', message: res.message });
       setCurrentPass('');
@@ -294,15 +294,13 @@ export const ProfilePage: React.FC = () => {
             <>
               <button
                 type="button"
-                onClick={async () => {
-                  login('liverton.aguiar@hotmail.com', '123');
-                  setBackupAlert('Conectado à sua conta principal!');
-                  setTimeout(() => setBackupAlert(null), 3000);
+                onClick={() => {
+                  logout();
                 }}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-black transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Voltar para Minha Conta Principal</span>
+                <span>Entrar na Minha Conta Principal</span>
               </button>
 
               <button

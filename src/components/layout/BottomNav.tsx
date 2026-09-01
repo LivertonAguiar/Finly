@@ -105,6 +105,53 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Quick Entity Pills below Arc (Metas, Dívidas, Investimentos) */}
+          <div className="mt-6 flex items-center gap-2 flex-wrap justify-center max-w-xs px-2 animate-in fade-in duration-300">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSpeedDialOpen(false);
+                setActiveTab('metas');
+              }}
+              className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-purple-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>🎯</span> Meta
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSpeedDialOpen(false);
+                setActiveTab('dividas');
+              }}
+              className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-rose-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>📉</span> Dívida
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSpeedDialOpen(false);
+                setActiveTab('investimentos');
+              }}
+              className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-emerald-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>📈</span> Investimento
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSpeedDialOpen(false);
+                setActiveTab('cartoes');
+              }}
+              className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-teal-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>💳</span> Cartão
+            </button>
+          </div>
         </div>
       )}
 

@@ -67,8 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           collapsed ? 'w-20' : 'w-64'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
-        {/* Brand & Toggle */}
+        {/* Top Section */}
         <div>
+          {/* Brand & Toggle */}
           <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 h-16">
             <div className="flex items-center gap-2.5 min-w-0 overflow-hidden cursor-pointer" onClick={() => setActiveTab('dashboard')}>
               <FinlyLogo size="md" showText={!collapsed} />
@@ -83,8 +84,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
+          {/* Quick Action: Novo (Positioned above Dashboard) */}
+          <div className="p-3 pb-1.5">
+            <button
+              onClick={onOpenNewTransaction}
+              title={collapsed ? 'Novo' : undefined}
+              className={`w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
+                collapsed ? 'px-0' : 'px-3.5 gap-2'
+              }`}
+            >
+              <Plus className="w-4 h-4 stroke-[3] shrink-0" />
+              <span
+                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                  collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-xs opacity-100'
+                }`}
+              >
+                Novo
+              </span>
+            </button>
+          </div>
+
           {/* Nav Items */}
-          <nav className="p-3 space-y-1">
+          <nav className="p-3 pt-1 space-y-1">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -123,26 +144,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </nav>
-        </div>
-
-        {/* Bottom Quick Action */}
-        <div className="p-3 border-t border-slate-100 dark:border-slate-800/80">
-          <button
-            onClick={onOpenNewTransaction}
-            title={collapsed ? 'Novo Lançamento' : undefined}
-            className={`w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
-              collapsed ? 'px-0' : 'px-3 gap-2'
-            }`}
-          >
-            <Plus className="w-4 h-4 stroke-[3] shrink-0" />
-            <span
-              className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-xs opacity-100'
-              }`}
-            >
-              Novo Lançamento
-            </span>
-          </button>
         </div>
       </aside>
     </>

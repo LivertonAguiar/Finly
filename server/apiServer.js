@@ -4,15 +4,37 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
+import { hashPassword, verifyPassword, isHashed } from './security/crypto.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load Environment Variables (.env)
+const envPath = path.join(__dirname, '../.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  });
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Security & Parsing Middleware
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
+
+// Hide Server Information
+app.disable('x-powered-by');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const STORES_DIR = path.join(DATA_DIR, 'stores');
@@ -21,49 +43,76 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(STORES_DIR)) fs.mkdirSync(STORES_DIR, { recursive: true });
 
-// Initial Users Database Setup
-if (!fs.existsSync(USERS_FILE)) {
-  const initialUsers = [
-    {
-      id: 'usr-default-liverton',
-      name: 'Liverton',
-      email: 'liverton.aguiar@hotmail.com',
-      password: '123',
-      phone: '85985949115',
-      role: 'admin',
-      createdAt: '2026-01-01',
-    }
-  ];
-  fs.writeFileSync(USERS_FILE, JSON.stringify(initialUsers, null, 2), 'utf8');
-}
-
 // Helpers for User Store
 const getUserStorePath = (userId) => {
   const safeId = userId.replace(/[^a-zA-Z0-9_-]/g, '_');
   return path.join(STORES_DIR, `${safeId}.json`);
 };
 
+const saveUsers = (users) => {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+};
+
 const getUsers = () => {
   try {
     const raw = fs.readFileSync(USERS_FILE, 'utf8');
-    return JSON.parse(raw);
+    const users = JSON.parse(raw);
+    let upgraded = false;
+
+    // Automatic Cryptographic Migration: ensure all stored passwords are salted and hashed
+    const sanitized = users.map(u => {
+      if (u.password && !isHashed(u.password)) {
+        u.password = hashPassword(u.password);
+        upgraded = true;
+      }
+      return u;
+    });
+
+    if (upgraded) {
+      saveUsers(sanitized);
+    }
+    return sanitized;
   } catch (e) {
     return [];
   }
 };
 
-const saveUsers = (users) => {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
-};
+// Initial Users Database Setup (Securely Hashed)
+if (!fs.existsSync(USERS_FILE)) {
+  const initialUsers = [
+    {
+      id: 'usr-default-liverton',
+      name: 'Liverton',
+      email: 'liverton.aguiar@hotmail.com',
+      password: hashPassword('123'),
+      phone: '85985949115',
+      role: 'admin',
+      createdAt: '2026-01-01',
+    },
+    {
+      id: 'usr-demo-financeiro',
+      name: 'Conta Demonstração',
+      email: 'demo@finly.com',
+      password: hashPassword('demo'),
+      phone: '11999998888',
+      role: 'admin',
+      createdAt: '2026-01-01',
+    }
+  ];
+  saveUsers(initialUsers);
+} else {
+  // Ensure migration runs on startup
+  getUsers();
+}
 
-// Gmail SMTP Transporter
+// SMTP Transporter using Environment Variables
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '465', 10),
+  secure: process.env.SMTP_SECURE === 'true' || true,
   auth: {
-    user: 'liverton.aguiar.sup@gmail.com',
-    pass: 'egrfpnplrnbuykev',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
   },
 });
 
@@ -86,40 +135,24 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', serverTime: new Date().toISOString() });
 });
 
-// 1. AUTH: LOGIN
+// 1. AUTH: LOGIN (Cryptographic Verification)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
-  if (!email) {
-    return res.status(400).json({ success: false, message: 'E-mail é obrigatório.' });
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'E-mail e senha são obrigatórios.' });
   }
 
   const cleanEmail = email.trim().toLowerCase();
   const users = getUsers();
-  let user = users.find(u => u.email.toLowerCase() === cleanEmail);
-
-  // If user does not exist but is liverton, initialize it
-  if (!user && (cleanEmail === 'liverton.aguiar@hotmail.com' || cleanEmail.includes('liverton'))) {
-    user = {
-      id: 'usr-default-liverton',
-      name: 'Liverton',
-      email: cleanEmail,
-      password: password || '123',
-      role: 'admin',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    users.unshift(user);
-    saveUsers(users);
-  }
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
 
   if (!user) {
-    return res.status(404).json({ success: false, message: 'Usuário não encontrado. Cadastre-se para continuar.' });
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado. Verifique seu e-mail ou cadastre-se.' });
   }
 
-  // Update password if initial '123'
-  if (password && user.password === '123' && password !== '123') {
-    user.password = password;
-    saveUsers(users);
-  } else if (password && user.password && user.password !== password) {
+  // Cryptographic timing-safe password verification
+  const isValid = verifyPassword(password, user.password);
+  if (!isValid) {
     return res.status(401).json({ success: false, message: 'Senha incorreta.' });
   }
 
@@ -132,6 +165,7 @@ app.post('/api/auth/login', (req, res) => {
     } catch (e) {}
   }
 
+  // Sanitize user object (never expose password hash)
   return res.json({
     success: true,
     user: {
@@ -146,11 +180,11 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-// 2. AUTH: REGISTER
+// 2. AUTH: REGISTER (Hashed Salted Storage)
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password, phone } = req.body;
-  if (!name || !email) {
-    return res.status(400).json({ success: false, message: 'Nome e e-mail são obrigatórios.' });
+  if (!name || !email || !password) {
+    return res.status(400).json({ success: false, message: 'Nome, e-mail e senha são obrigatórios.' });
   }
 
   const cleanEmail = email.trim().toLowerCase();
@@ -165,7 +199,7 @@ app.post('/api/auth/register', (req, res) => {
     id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     name: name.trim(),
     email: cleanEmail,
-    password: password || '123',
+    password: hashPassword(password),
     phone: phone ? phone.trim() : undefined,
     role: 'admin',
     createdAt: new Date().toISOString().split('T')[0],
@@ -185,6 +219,31 @@ app.post('/api/auth/register', (req, res) => {
       createdAt: newUser.createdAt,
     },
   });
+});
+
+// 2.1 AUTH: CHANGE PASSWORD (Hashed)
+app.post('/api/auth/change-password', (req, res) => {
+  const { email, oldPassword, newPassword } = req.body;
+  if (!email || !newPassword) {
+    return res.status(400).json({ success: false, message: 'E-mail e nova senha são obrigatórios.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const users = getUsers();
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+  }
+
+  if (oldPassword && !verifyPassword(oldPassword, user.password)) {
+    return res.status(401).json({ success: false, message: 'A senha atual informada está incorreta.' });
+  }
+
+  user.password = hashPassword(newPassword);
+  saveUsers(users);
+
+  return res.json({ success: true, message: 'Senha alterada com sucesso no servidor!' });
 });
 
 // 3. CONTINUOUS AUTO-SYNC: GET USER STORE
@@ -259,8 +318,9 @@ app.post('/api/send-recovery-code', async (req, res) => {
     expiresAt: Date.now() + 15 * 60 * 1000,
   });
 
+  const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
-    from: '"Finly - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
+    from: `"Finly - Suporte & Segurança" <${senderEmail}>`,
     to: email,
     subject: `Seu código de recuperação Finly: ${code}`,
     html: `
@@ -286,6 +346,7 @@ app.post('/api/send-recovery-code', async (req, res) => {
     await transporter.sendMail(mailOptions);
     return res.json({ success: true, message: 'Código de verificação enviado para o seu e-mail!' });
   } catch (error) {
+    console.error('Erro ao enviar e-mail:', error);
     return res.status(500).json({ success: false, message: 'Erro ao enviar e-mail via servidor SMTP.' });
   }
 });
@@ -302,6 +363,31 @@ app.post('/api/verify-code', (req, res) => {
   }
 
   return res.json({ success: true, message: 'Código validado com sucesso!' });
+});
+
+app.post('/api/reset-password', (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ success: false, message: 'E-mail, código e nova senha são obrigatórios.' });
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const record = verificationCodes.get(cleanEmail);
+  if (!record || Date.now() > record.expiresAt || record.code !== code.trim()) {
+    return res.status(400).json({ success: false, message: 'Código de verificação inválido ou expirado.' });
+  }
+
+  const users = getUsers();
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+  }
+
+  user.password = hashPassword(newPassword);
+  saveUsers(users);
+  verificationCodes.delete(cleanEmail);
+
+  return res.json({ success: true, message: 'Senha redefinida com sucesso!' });
 });
 
 // Serve static frontend in production if dist exists

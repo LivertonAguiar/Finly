@@ -1,47 +1,55 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'liverton.aguiar.sup@gmail.com',
-    pass: 'egrfpnplrnbuykev',
-  },
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function runTest() {
-  console.log('Testing SMTP connection with Gmail...');
+// Load Environment Variables (.env)
+const envPath = path.join(__dirname, '../.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  });
+}
+
+async function testSMTP() {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    secure: process.env.SMTP_SECURE === 'true' || true,
+    auth: {
+      user: process.env.SMTP_USER || '',
+      pass: process.env.SMTP_PASS || '',
+    },
+  });
+
   try {
+    console.log('Verificando conexão SMTP...');
     await transporter.verify();
-    console.log('✅ Conexão SMTP autenticada com sucesso no Gmail!');
+    console.log('✅ Conexão SMTP autenticada com sucesso!');
 
-    const res = await transporter.sendMail({
-      from: '"PlannerFin - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
-      to: 'liverton.aguiar.sup@gmail.com',
-      subject: 'Teste de Recuperação de Senha - PlannerFin (Código: 849201)',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; background: #0f172a; border-radius: 16px; color: #ffffff; border: 1px solid #1e293b;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="display: inline-block; background: #007a4d; color: white; width: 44px; height: 44px; border-radius: 12px; font-size: 24px; font-weight: bold; line-height: 44px; text-align: center;">P</div>
-            <h2 style="color: #ffffff; margin: 10px 0 4px 0;">PlannerFin</h2>
-            <p style="color: #94a3b8; font-size: 13px; margin: 0;">Recuperação e Alteração de Senha</p>
-          </div>
-          <div style="background: rgba(0,122,77,0.2); border: 1px solid #10b981; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px;">
-            <p style="font-size: 12px; color: #34d399; font-weight: bold; margin: 0 0 8px 0;">SEU CÓDIGO DE RECUPERAÇÃO:</p>
-            <span style="font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #ffffff;">849201</span>
-          </div>
-          <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin: 0 0 16px 0;">
-            Você solicitou a alteração de senha da sua conta no <strong>PlannerFin</strong>.
-          </p>
-        </div>
-      `,
+    const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
+    const info = await transporter.sendMail({
+      from: `"PlannerFin - Suporte & Segurança" <${senderEmail}>`,
+      to: senderEmail,
+      subject: 'Teste de Disparo de E-mail Finly',
+      text: 'Se você recebeu este e-mail, o envio via SMTP está funcionando 100%!',
     });
-
-    console.log('✅ E-mail de teste enviado com sucesso! Message ID:', res.messageId);
-  } catch (err) {
-    console.error('❌ Falha no teste SMTP:', err);
+    console.log('✅ E-mail de teste disparado com sucesso! ID:', info.messageId);
+  } catch (error) {
+    console.error('❌ Erro no teste SMTP:', error);
   }
 }
 
-runTest();
+testSMTP();

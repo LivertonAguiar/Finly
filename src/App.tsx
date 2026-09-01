@@ -227,6 +227,8 @@ const AppContent: React.FC = () => {
         onClose={() => setIsNewTxOpen(false)}
         initialType={newTxInitialType}
         initialPaymentMethod={newTxPaymentMethod}
+        onNavigateToTab={handleSelectTab}
+        onOpenNewCard={() => setIsNewCardOpen(true)}
       />
 
       <CardModal

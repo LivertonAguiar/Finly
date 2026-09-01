@@ -2,7 +2,6 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  password?: string;
   phone?: string;
   role: 'admin' | 'consultor' | 'member';
   avatarUrl?: string;
@@ -12,9 +11,9 @@ export interface AuthUser {
 export interface AuthContextType {
   currentUser: AuthUser | null;
   allUsers: AuthUser[];
-  login: (email: string, password?: string, remember?: boolean) => { success: boolean; message?: string };
+  login: (email: string, password?: string, remember?: boolean) => Promise<{ success: boolean; message?: string }>;
   loginAsDemo: () => void;
-  register: (name: string, email: string, password?: string, phone?: string) => { success: boolean; message?: string };
+  register: (name: string, email: string, password?: string, phone?: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateUserAccount: (data: Partial<AuthUser>) => void;
   deleteUserAccount: (id: string) => void;

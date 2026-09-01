@@ -1,19 +1,42 @@
 import express from 'express';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load Environment Variables (.env)
+const envPath = path.join(__dirname, '../.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  });
+}
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Transporter configuration with provided Gmail credentials
+// Transporter configuration with Environment Variables
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '465', 10),
+  secure: process.env.SMTP_SECURE === 'true' || true,
   auth: {
-    user: 'liverton.aguiar.sup@gmail.com',
-    pass: 'egrfpnplrnbuykev',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
   },
 });
 
@@ -43,9 +66,9 @@ app.post('/api/send-recovery-code', async (req, res) => {
     expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
   });
 
+  const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
-    // Custom Sender Display Name: "Finly - Suporte & Segurança"
-    from: '"Finly - Suporte & Segurança" <liverton.aguiar.sup@gmail.com>',
+    from: `"Finly - Suporte & Segurança" <${senderEmail}>`,
     to: email,
     subject: `Seu código de recuperação Finly: ${code}`,
     html: `
@@ -58,17 +81,17 @@ app.post('/api/send-recovery-code', async (req, res) => {
 
         <div style="background: linear-gradient(135deg, rgba(0,122,77,0.15), rgba(16,185,129,0.05)); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
           <p style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 0;">SEU CÓDIGO DE SEGURANÇA:</p>
-          <div style="font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #ffffff; font-family: monospace; text-shadow: 0 0 20px rgba(52,211,153,0.4);">${code}</div>
+          <div style="font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #ffffff; font-family: monospace;">${code}</div>
           <p style="font-size: 11px; color: #64748b; margin: 10px 0 0 0;">Válido por 15 minutos</p>
         </div>
 
-        <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 0 0 20px 0;">
-          Olá! Você solicitou a alteração ou recuperação da senha da sua conta no <strong>Finly</strong>. Digite o código de 6 dígitos no aplicativo para continuar.
+        <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;">
+          Você solicitou a alteração de senha da sua conta Finly. Digite o código de 6 dígitos no aplicativo para continuar.
         </p>
 
         <div style="border-top: 1px solid #1e293b; padding-top: 16px; text-align: center;">
           <p style="font-size: 11px; color: #64748b; margin: 0;">
-            Se você não solicitou essa alteração, nenhuma ação é necessária. Sua conta continua segura.
+            Se você não solicitou esta alteração, ignore este e-mail com segurança.
           </p>
         </div>
       </div>
@@ -76,12 +99,12 @@ app.post('/api/send-recovery-code', async (req, res) => {
   };
 
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ E-mail enviado com sucesso para ${email}! ID: ${info.messageId}`);
-    return res.json({ success: true, message: 'Código de verificação enviado para o seu e-mail!' });
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Código de recuperação enviado para: ${email}`);
+    return res.json({ success: true, message: 'Código de verificação enviado com sucesso!' });
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail:', error);
-    return res.status(500).json({ success: false, message: 'Erro ao enviar e-mail via servidor SMTP.' });
+    return res.status(500).json({ success: false, message: 'Erro ao enviar e-mail de recuperação.' });
   }
 });
 
@@ -94,7 +117,7 @@ app.post('/api/verify-code', (req, res) => {
 
   const record = verificationCodes.get(email.toLowerCase().trim());
   if (!record) {
-    return res.status(400).json({ success: false, message: 'Código expirado ou não solicitado.' });
+    return res.status(400).json({ success: false, message: 'Nenhum código solicitado para este e-mail.' });
   }
 
   if (Date.now() > record.expiresAt) {
@@ -103,13 +126,13 @@ app.post('/api/verify-code', (req, res) => {
   }
 
   if (record.code !== code.trim()) {
-    return res.status(400).json({ success: false, message: 'Código incorreto. Tente novamente.' });
+    return res.status(400).json({ success: false, message: 'Código incorreto.' });
   }
 
   return res.json({ success: true, message: 'Código validado com sucesso!' });
 });
 
 const PORT = 3001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor de E-mail Finly rodando em http://localhost:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Mail Service rodando na porta ${PORT}`);
 });

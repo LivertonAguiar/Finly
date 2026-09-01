@@ -34,6 +34,8 @@ interface TransactionModalProps {
   initialCardId?: string;
   initialPaymentMethod?: 'account' | 'card';
   editingTransaction?: Transaction | null;
+  onNavigateToTab?: (tab: string) => void;
+  onOpenNewCard?: () => void;
 }
 
 export const TransactionModal: React.FC<TransactionModalProps> = ({
@@ -44,6 +46,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   initialCardId,
   initialPaymentMethod,
   editingTransaction = null,
+  onNavigateToTab,
+  onOpenNewCard,
 }) => {
   const { categories, accounts, cards, addTransaction, updateTransaction, user } = useFinancial();
 
@@ -321,6 +325,81 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* ========================================================================= */}
+        {/* 0. PRIMARY TRANSACTION TYPE SELECTOR (DESPESA | RECEITA | CARTÃO | TRANSFERÊNCIA) */}
+        {/* ========================================================================= */}
+        {!editingTransaction && (
+          <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 shadow-xs">
+            {/* 1. Despesa */}
+            <button
+              type="button"
+              onClick={() => {
+                setType('expense');
+                setPaymentMethod('account');
+              }}
+              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                type === 'expense' && paymentMethod === 'account'
+                  ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30 scale-[1.02]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-rose-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <TrendingDown className="w-4 h-4 shrink-0" />
+              <span className="truncate">Despesa</span>
+            </button>
+
+            {/* 2. Receita */}
+            <button
+              type="button"
+              onClick={() => {
+                setType('income');
+                setPaymentMethod('account');
+              }}
+              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                type === 'income'
+                  ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 scale-[1.02]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-emerald-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 shrink-0" />
+              <span className="truncate">Receita</span>
+            </button>
+
+            {/* 3. Despesa Cartão */}
+            <button
+              type="button"
+              onClick={() => {
+                setType('expense');
+                setPaymentMethod('card');
+              }}
+              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                type === 'expense' && paymentMethod === 'card'
+                  ? 'bg-teal-500 text-white shadow-sm shadow-teal-500/30 scale-[1.02]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-teal-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <CardIcon className="w-4 h-4 shrink-0" />
+              <span className="truncate">Cartão</span>
+            </button>
+
+            {/* 4. Transferência */}
+            <button
+              type="button"
+              onClick={() => {
+                setType('transfer');
+                setPaymentMethod('account');
+              }}
+              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                type === 'transfer'
+                  ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30 scale-[1.02]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-purple-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <ArrowLeftRight className="w-4 h-4 shrink-0" />
+              <span className="truncate">Transf.</span>
+            </button>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
         {/* 1. TOP CURRENCY VALUE BOX (MOBILLS EXACT SPEC: R$ | 0,00 | BRL + SWITCH) */}
         {/* ========================================================================= */}
         <div className="p-4 rounded-[22px] bg-slate-50 dark:bg-[#1e222d] border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3">
@@ -340,6 +419,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               className={`w-full text-2xl font-black bg-transparent border-none focus:outline-none tracking-tight ${
                 type === 'income'
                   ? 'text-[#66bb6a]'
+                  : type === 'expense' && paymentMethod === 'card'
+                  ? 'text-teal-500'
                   : type === 'expense'
                   ? 'text-[#ef5350]'
                   : 'text-[#42a5f5]'
@@ -368,37 +449,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         {!isAmountValid && amount !== '' && (
           <p className="text-[11px] font-bold text-rose-500 px-1 -mt-2">Deve ter um valor diferente de 0</p>
-        )}
-
-        {/* Payment Method Switcher (Conta Bancária vs Cartão de Crédito) */}
-        {type === 'expense' && (
-          <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('account')}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                paymentMethod === 'account'
-                  ? 'bg-white dark:bg-[#2C2C2E] text-purple-600 dark:text-purple-400 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              <Wallet className="w-3.5 h-3.5" />
-              <span>Conta Bancária</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('card')}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                paymentMethod === 'card'
-                  ? 'bg-white dark:bg-[#2C2C2E] text-teal-600 dark:text-teal-400 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              <CardIcon className="w-3.5 h-3.5" />
-              <span>Cartão de Crédito</span>
-            </button>
-          </div>
         )}
 
 
@@ -1003,6 +1053,74 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 6.5 QUICK ENTITY CREATION SHORTCUTS (METAS, DÍVIDAS, INVESTIMENTOS, ETC.) */}
+        {/* ========================================================================= */}
+        {!editingTransaction && onNavigateToTab && (
+          <div className="pt-2.5 pb-0.5 border-t border-slate-100 dark:border-slate-800/80">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+              Criar outros registros:
+            </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onNavigateToTab('metas');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>🎯</span> Meta
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onNavigateToTab('dividas');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>📉</span> Dívida
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onNavigateToTab('investimentos');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>📈</span> Investimento
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onNavigateToTab('contas');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>🏦</span> Conta
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenNewCard) onOpenNewCard();
+                  else onNavigateToTab('cartoes');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>💳</span> Cartão
+              </button>
+            </div>
           </div>
         )}
 

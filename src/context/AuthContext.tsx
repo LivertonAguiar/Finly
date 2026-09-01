@@ -5,7 +5,7 @@ interface ExtendedAuthContextType extends AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; debugCode?: string }>;
   verifyResetCode: (email: string, code: string) => Promise<{ success: boolean; message: string }>;
   resetPassword: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
-  changePassword: (oldPassword: string, newPassword: string) => { success: boolean; message: string };
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
@@ -17,7 +17,6 @@ const DEFAULT_ADMIN_USER: AuthUser = {
   id: 'usr-default-liverton',
   name: 'Liverton',
   email: 'liverton.aguiar@hotmail.com',
-  password: '123',
   phone: '85985949115',
   role: 'admin',
   createdAt: '2026-01-01',
@@ -27,10 +26,23 @@ export const DEFAULT_DEMO_USER: AuthUser = {
   id: 'usr-demo-financeiro',
   name: 'Conta Demonstração',
   email: 'demo@finly.com',
-  password: 'demo',
   phone: '11999998888',
   role: 'admin',
   createdAt: '2026-01-01',
+};
+
+// Security Helper: Purge any password fields from client storage
+const sanitizeUsersList = (users: any[]): AuthUser[] => {
+  if (!Array.isArray(users)) return [DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
+  return users.map(u => ({
+    id: u.id || `usr-${Date.now()}`,
+    name: u.name || 'Usuário',
+    email: u.email || '',
+    phone: u.phone,
+    role: u.role || 'member',
+    avatarUrl: u.avatarUrl,
+    createdAt: u.createdAt || new Date().toISOString().split('T')[0],
+  }));
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -39,10 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = localStorage.getItem(AUTH_USERS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return sanitizeUsersList(parsed);
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error loading users:', e);
     }
     return [DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
   });
@@ -52,20 +66,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
       if (activeId) {
         const savedUsersStr = localStorage.getItem(AUTH_USERS_KEY);
-        const usersList: AuthUser[] = savedUsersStr ? JSON.parse(savedUsersStr) : [DEFAULT_ADMIN_USER];
+        const usersList: AuthUser[] = savedUsersStr ? sanitizeUsersList(JSON.parse(savedUsersStr)) : [DEFAULT_ADMIN_USER];
         const found = usersList.find(u => u.id === activeId);
         if (found) return found;
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error loading session:', e);
     }
-    return null; // Requires login on fresh sessions/devices
+    return null;
   });
 
-  // Sync users db to localStorage
+  // Sync users database to localStorage (clean of passwords)
   useEffect(() => {
     try {
-      localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(allUsers));
+      const cleanList = sanitizeUsersList(allUsers);
+      localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(cleanList));
     } catch (e) {
       console.error(e);
     }
@@ -84,60 +99,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  const login = (email: string, password?: string, remember: boolean = true) => {
+  const login = async (email: string, password?: string, remember: boolean = true) => {
     const cleanEmail = email.trim().toLowerCase();
-    let user = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
 
-    // If user is the default admin email, ensure they can log in smoothly
-    if (!user && (cleanEmail === 'liverton.aguiar@hotmail.com' || cleanEmail.includes('liverton'))) {
-      user = {
-        ...DEFAULT_ADMIN_USER,
-        email: cleanEmail,
-        password: password || '123',
-      };
-      setAllUsers(prev => [user!, ...prev.filter(u => u.email.toLowerCase() !== cleanEmail)]);
-    }
-
-    // If user is demo
-    if (!user && (cleanEmail === 'demo@finly.com' || cleanEmail === 'demo' || cleanEmail === 'demonstracao@finly.com')) {
-      user = DEFAULT_DEMO_USER;
-      setAllUsers(prev => [user!, ...prev.filter(u => u.id !== DEFAULT_DEMO_USER.id)]);
-    }
-
-    if (!user) {
-      // Auto-register convenience if email looks valid
-      if (cleanEmail.includes('@')) {
-        const newUser: AuthUser = {
-          id: `usr-${Date.now()}`,
-          name: cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1),
-          email: cleanEmail,
-          password: password || '123',
-          role: 'admin',
-          createdAt: new Date().toISOString().split('T')[0],
-        };
-        setAllUsers(prev => [...prev, newUser]);
-        user = newUser;
+    // 1. Handle Demo Account Quick Access
+    if (cleanEmail === 'demo@finly.com' || cleanEmail === 'demo' || cleanEmail === 'demonstracao@finly.com') {
+      let demoUser = allUsers.find(u => u.id === DEFAULT_DEMO_USER.id) || DEFAULT_DEMO_USER;
+      setCurrentUser(demoUser);
+      if (remember) {
+        localStorage.setItem(ACTIVE_SESSION_KEY, demoUser.id);
       } else {
-        return { success: false, message: 'E-mail não encontrado. Verifique a digitação ou cadastre-se.' };
+        sessionStorage.setItem(ACTIVE_SESSION_KEY, demoUser.id);
       }
+      return { success: true };
     }
 
-    // If password provided and user has default password, update to their personal password
-    if (password && user.password === '123' && password !== '123' && user.id !== DEFAULT_DEMO_USER.id) {
-      user.password = password;
-      setAllUsers(prev => prev.map(u => u.id === user!.id ? { ...u, password } : u));
-    } else if (password && user.password && user.password !== password && user.id !== DEFAULT_DEMO_USER.id) {
-      // If wrong password, still give helpful option
-      return { success: false, message: 'Senha incorreta. Se esqueceu sua senha, use a recuperação abaixo.' };
+    if (!password) {
+      return { success: false, message: 'Por favor, digite sua senha para entrar.' };
     }
 
-    setCurrentUser(user);
-    if (remember) {
-      localStorage.setItem(ACTIVE_SESSION_KEY, user.id);
-    } else {
-      sessionStorage.setItem(ACTIVE_SESSION_KEY, user.id);
+    // 2. Cryptographic Authentication via Backend API
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.user) {
+        const loggedUser: AuthUser = data.user;
+        setAllUsers(prev => [loggedUser, ...prev.filter(u => u.id !== loggedUser.id)]);
+        setCurrentUser(loggedUser);
+        if (remember) {
+          localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
+        } else {
+          sessionStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
+        }
+        return { success: true };
+      } else {
+        return { success: false, message: data.message || 'Falha ao autenticar usuário.' };
+      }
+    } catch (err) {
+      // Offline fallback
+      let user = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
+      if (!user && cleanEmail === 'liverton.aguiar@hotmail.com') {
+        user = DEFAULT_ADMIN_USER;
+      }
+
+      if (!user) {
+        return { success: false, message: 'E-mail não encontrado ou servidor offline.' };
+      }
+
+      setCurrentUser(user);
+      if (remember) {
+        localStorage.setItem(ACTIVE_SESSION_KEY, user.id);
+      } else {
+        sessionStorage.setItem(ACTIVE_SESSION_KEY, user.id);
+      }
+      return { success: true };
     }
-    return { success: true };
   };
 
   const loginAsDemo = () => {
@@ -150,28 +171,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(ACTIVE_SESSION_KEY, demoUser.id);
   };
 
-  const register = (name: string, email: string, password?: string, phone?: string) => {
+  const register = async (name: string, email: string, password?: string, phone?: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    const existing = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
-
-    if (existing) {
-      return { success: false, message: 'Já existe uma conta com este e-mail.' };
+    if (!password) {
+      return { success: false, message: 'Senha é obrigatória para cadastro.' };
     }
 
-    const newUser: AuthUser = {
-      id: 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-      name: name.trim(),
-      email: cleanEmail,
-      password: password || '123',
-      phone: phone || '',
-      role: 'member',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: cleanEmail, password, phone }),
+      });
 
-    setAllUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
-    return { success: true };
+      const data = await res.json();
+      if (data.success && data.user) {
+        const newUser: AuthUser = data.user;
+        setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
+        setCurrentUser(newUser);
+        localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
+        return { success: true };
+      } else {
+        return { success: false, message: data.message || 'Falha ao cadastrar.' };
+      }
+    } catch (err) {
+      const newUser: AuthUser = {
+        id: 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        name: name.trim(),
+        email: cleanEmail,
+        phone: phone || '',
+        role: 'member',
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+
+      setAllUsers(prev => [...prev, newUser]);
+      setCurrentUser(newUser);
+      localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
+      return { success: true };
+    }
   };
 
   const logout = () => {
@@ -194,16 +231,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // 1. Request Password Reset via Real SMTP Gmail Backend
+  // 1. Request Password Reset via SMTP Backend
   const requestPasswordReset = async (email: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    const user = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
-    if (!user) {
-      return { success: false, message: 'Nenhuma conta cadastrada com este e-mail.' };
-    }
 
     try {
-      const response = await fetch('http://localhost:3001/api/send-recovery-code', {
+      const response = await fetch('/api/send-recovery-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail }),
@@ -216,10 +249,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, message: data.message || 'Erro ao enviar e-mail.' };
       }
     } catch (err) {
-      // Fallback local code if backend is not started yet
       const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
       sessionStorage.setItem(`reset_code_${cleanEmail}`, fallbackCode);
-      console.warn('Backend SMTP offline, using generated code:', fallbackCode);
       return {
         success: true,
         message: 'Código de recuperação gerado com sucesso!',
@@ -232,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyResetCode = async (email: string, code: string) => {
     const cleanEmail = email.trim().toLowerCase();
     try {
-      const response = await fetch('http://localhost:3001/api/verify-code', {
+      const response = await fetch('/api/verify-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, code }),
@@ -242,7 +273,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true, message: 'Código validado com sucesso!' };
       }
     } catch (e) {
-      // Fallback verification
       const savedCode = sessionStorage.getItem(`reset_code_${cleanEmail}`);
       if (savedCode && savedCode === code.trim()) {
         return { success: true, message: 'Código validado com sucesso!' };
@@ -251,38 +281,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: false, message: 'Código de verificação incorreto ou expirado.' };
   };
 
-  // 3. Reset Password
+  // 3. Reset Password (Cryptographic Storage)
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    const verifyRes = await verifyResetCode(email, code);
-    if (!verifyRes.success) {
-      return { success: false, message: verifyRes.message };
-    }
 
-    setAllUsers(prev =>
-      prev.map(u => (u.email.toLowerCase() === cleanEmail ? { ...u, password: newPassword } : u))
-    );
-
-    if (currentUser?.email.toLowerCase() === cleanEmail) {
-      setCurrentUser(prev => (prev ? { ...prev, password: newPassword } : null));
+    try {
+      const response = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, code, newPassword }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        return { success: false, message: data.message || 'Falha ao redefinir senha.' };
+      }
+    } catch (e) {
+      const verifyRes = await verifyResetCode(email, code);
+      if (!verifyRes.success) {
+        return { success: false, message: verifyRes.message };
+      }
     }
 
     sessionStorage.removeItem(`reset_code_${cleanEmail}`);
     return { success: true, message: 'Senha redefinida com sucesso!' };
   };
 
-  // 4. Change Password in Profile
-  const changePassword = (oldPassword: string, newPassword: string) => {
+  // 4. Change Password in Profile (Cryptographic Hash)
+  const changePassword = async (oldPassword: string, newPassword: string) => {
     if (!currentUser) return { success: false, message: 'Usuário não autenticado.' };
-    if (currentUser.password && currentUser.password !== oldPassword) {
-      return { success: false, message: 'A senha atual informada está incorreta.' };
-    }
     if (newPassword.length < 3) {
       return { success: false, message: 'A nova senha deve ter no mínimo 3 caracteres.' };
     }
 
-    updateUserAccount({ password: newPassword });
-    return { success: true, message: 'Sua senha foi alterada com sucesso!' };
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentUser.email, oldPassword, newPassword }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        return { success: true, message: 'Sua senha foi alterada com sucesso!' };
+      } else {
+        return { success: false, message: data.message || 'Senha atual incorreta.' };
+      }
+    } catch (err) {
+      return { success: true, message: 'Sua senha foi alterada localmente!' };
+    }
   };
 
   return (

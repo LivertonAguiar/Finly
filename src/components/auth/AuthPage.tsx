@@ -64,7 +64,9 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
       } else {
         localStorage.removeItem('finly_remembered_email');
       }
-      const res = login(email, password, rememberMe);
+      setLoading(true);
+      const res = await login(email, password, rememberMe);
+      setLoading(false);
       if (res.success) {
         if (onLoginSuccess) onLoginSuccess();
       } else {
@@ -77,7 +79,9 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
         setErrorMessage('Por favor, informe seu nome.');
         return;
       }
-      const res = register(name, email, password, phone);
+      setLoading(true);
+      const res = await register(name, email, password, phone);
+      setLoading(false);
       if (res.success) {
         setSuccessMessage('Conta criada com sucesso!');
         if (onLoginSuccess) onLoginSuccess();

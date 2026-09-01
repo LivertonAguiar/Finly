@@ -4,7 +4,7 @@
       "id": "acc-demo-nubank",
       "name": "Nubank Conta",
       "type": "checking",
-      "balance": 3317.4,
+      "balance": 1098.8,
       "initialBalance": 2000,
       "institution": "Nubank",
       "color": "#820ad1",
@@ -1194,6 +1194,23 @@
   ],
   "transactions": [
     {
+      "id": "tx-pay-1788306565144",
+      "description": "Pagamento Fatura Nubank Ultravioleta (2026-09)",
+      "amount": 2218.6,
+      "type": "expense",
+      "date": "2026-09-01",
+      "categoryId": "cat-fatura-cartao",
+      "accountId": "acc-demo-nubank",
+      "status": "completed",
+      "recurring": false,
+      "tags": [
+        "fatura",
+        "cartao"
+      ],
+      "notes": "Pagamento de fatura referente a 2026-09",
+      "createdAt": "2026-09-01T23:49:25.144Z"
+    },
+    {
       "id": "tx-rec-salario",
       "description": "Salário Mensal Líquido",
       "amount": 9800,
@@ -2272,7 +2289,9 @@
     "phone": "(11) 99999-8888",
     "currency": "BRL",
     "showValues": true,
-    "theme": "dark"
+    "theme": "dark",
+    "themePreset": "planner-dark",
+    "cardRadius": "rounded"
   },
-  "_serverTimestamp": "2026-09-01T04:13:52.598Z"
+  "_serverTimestamp": "2026-09-01T23:53:25.578Z"
 }
