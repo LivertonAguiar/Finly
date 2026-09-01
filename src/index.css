@@ -14,17 +14,49 @@ input[type="number"] {
 }
 
 :root {
-  --app-bg: #1C1C1E;
-  --app-card-bg: #2C2C2E;
+  --app-bg: #121214;
+  --app-card-bg: #18181B;
   --primary-accent: #7C4DFF;
   --card-radius: 25px;
+}
+
+/* ========================================================================= */
+/* MOBILE RESPONSIVE AUTO PIXEL & SIZE ENGINE                               */
+/* ========================================================================= */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  touch-action: manipulation;
 }
 
 /* Base Body Styles */
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+  min-height: 100dvh;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Prevent iOS Safari unwanted auto-zoom on form inputs */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  button, a, input, select {
+    touch-action: manipulation;
+  }
+}
+
+/* Crisp rendering on High-DPI / Retina Displays (DPR >= 2) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  img, svg {
+    image-rendering: -webkit-optimize-contrast;
+  }
 }
 
 /* ========================================================================= */

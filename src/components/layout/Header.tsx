@@ -28,6 +28,7 @@ interface HeaderProps {
   onOpenMobileMenu?: () => void;
   setActiveTab: (tab: string) => void;
   collapsed: boolean;
+  onOpenPwaModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   setActiveTab,
   collapsed,
+  onOpenPwaModal,
 }) => {
   const {
     user,
@@ -132,8 +134,21 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Fullscreen, Rewards, Hide Values, Theme, Notifications, Settings, User Avatar */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5">
+      {/* Right: Install App, Fullscreen, Rewards, Hide Values, Theme, Notifications, Settings, User Avatar */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* PWA Install Quick Button */}
+        {onOpenPwaModal && (
+          <button
+            onClick={onOpenPwaModal}
+            title="Instalar Finly no Celular ou Computador"
+            className="px-2.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center gap-1 text-xs font-black hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all cursor-pointer shadow-2xs active:scale-95"
+          >
+            <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span className="hidden sm:inline">Instalar App</span>
+            <span className="sm:hidden">App</span>
+          </button>
+        )}
+
         {/* Fullscreen Mode Toggle */}
         <button
           onClick={toggleFullscreen}

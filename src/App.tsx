@@ -26,6 +26,7 @@ import { AuthPage } from './components/auth/AuthPage';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
 import { PwaInstallModal } from './components/pwa/PwaInstallModal';
+import { MobileInstallBanner } from './components/pwa/MobileInstallBanner';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -184,6 +185,7 @@ const AppContent: React.FC = () => {
           collapsed={sidebarCollapsed}
           onOpenNewTransaction={() => setIsNewTxOpen(true)}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
+          onOpenPwaModal={() => setIsPwaModalOpen(true)}
         />
 
         {/* Main Content Area */}
@@ -248,6 +250,18 @@ const AppContent: React.FC = () => {
       <PwaInstallModal
         isOpen={isPwaModalOpen}
         onClose={() => setIsPwaModalOpen(false)}
+        canInstallPrompt={Boolean(deferredPrompt)}
+        onInstall={() => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+          }
+        }}
+      />
+
+      {/* Floating Mobile/Tablet App Install Banner */}
+      <MobileInstallBanner
+        deferredPrompt={deferredPrompt}
+        onOpenFullModal={() => setIsPwaModalOpen(true)}
       />
     </div>
   );
