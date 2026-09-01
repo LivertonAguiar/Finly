@@ -259,6 +259,34 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error('Error loading user store:', e);
     }
 
+    // If this is the Demo Account and no local storage exists yet, initialize with full realistic demo dataset!
+    if (userId === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com') {
+      const demo = generateRealisticDemoStore();
+      try {
+        localStorage.setItem(userStoreKey, JSON.stringify(demo));
+      } catch (e) {}
+      return sanitizeStoredData({
+        accounts: demo.accounts,
+        cards: demo.cards,
+        categories: demo.categories,
+        budgets: demo.budgets,
+        goals: demo.goals,
+        debts: demo.debts,
+        investments: demo.investments,
+        transactions: demo.transactions,
+        familyMembers: demo.familyMembers,
+        notifications: [],
+        userProfile: {
+          name: demo.userProfile?.name || 'Conta Demonstração',
+          email: demo.userProfile?.email || 'demo@finly.com',
+          currency: 'BRL',
+          role: 'admin',
+          theme: 'dark',
+          showValues: true,
+        },
+      });
+    }
+
     // Default clean initial store for REAL users with standard Carteira
     return {
       accounts: [DEFAULT_WALLET_ACCOUNT],
@@ -298,6 +326,22 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [transactions, setTransactions] = useState<Transaction[]>(initialStore.transactions);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialStore.familyMembers);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialStore.notifications);
+
+  // Sync state whenever the active user changes (e.g. switching to demo mode)
+  useEffect(() => {
+    const store = loadUserStore();
+    setUser(store.userProfile);
+    setAccounts(store.accounts);
+    setCards(store.cards);
+    setCategories(store.categories);
+    setBudgets(store.budgets);
+    setGoals(store.goals);
+    setDebts(store.debts);
+    setInvestments(store.investments);
+    setTransactions(store.transactions);
+    setFamilyMembers(store.familyMembers);
+    setNotifications(store.notifications);
+  }, [userId]);
 
   const [period, setPeriod] = useState<string>('this_month');
   const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string }>({

@@ -24,7 +24,7 @@ import { Trash2, Sparkles, RefreshCw } from 'lucide-react';
 export const ProfilePage: React.FC = () => {
   const { user, updateUser, toggleTheme, exportBackupJSON, importBackupJSON, resetToCleanState, loadDemoData } = useFinancial();
   const { confirm } = useConfirm();
-  const { currentUser, updateUserAccount, logout, changePassword } = useAuth();
+  const { currentUser, updateUserAccount, logout, changePassword, login, loginAsDemo } = useAuth();
 
   const [name, setName] = useState(currentUser?.name || user.name);
   const [email, setEmail] = useState(currentUser?.email || user.email);
@@ -290,26 +290,62 @@ export const ProfilePage: React.FC = () => {
             <span>Restaurar Backup</span>
           </button>
 
-          <button
-            type="button"
-            onClick={async () => {
-              const ok = await confirm({
-                title: 'Gerar Dados Fictícios Completos?',
-                message: 'Isso irá carregar um conjunto completo e realista com contas bancárias, cartões de crédito, parcelamentos, despesas fixas, receitas, orçamentos, metas e investimentos.',
-                confirmText: 'Sim, Gerar Dados Demo',
-                type: 'info'
-              });
-              if (ok) {
-                loadDemoData();
-                setBackupAlert('Dados fictícios realistas gerados com sucesso!');
-                setTimeout(() => setBackupAlert(null), 4000);
-              }
-            }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-purple-300 dark:border-purple-800/80 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-black transition-all cursor-pointer"
-          >
-            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span>Gerar Dados Fictícios Completos</span>
-          </button>
+          {currentUser?.id === 'usr-demo-financeiro' ? (
+            <>
+              <button
+                type="button"
+                onClick={async () => {
+                  login('liverton.aguiar@hotmail.com', '123');
+                  setBackupAlert('Conectado à sua conta principal!');
+                  setTimeout(() => setBackupAlert(null), 3000);
+                }}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-black transition-all cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Voltar para Minha Conta Principal</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: 'Restaurar Dados da Demo?',
+                    message: 'Isso irá restaurar o conjunto completo de dados fictícios originais da Conta Demonstração.',
+                    confirmText: 'Restaurar Demo',
+                    type: 'info'
+                  });
+                  if (ok) {
+                    loadDemoData();
+                    setBackupAlert('Dados da conta demo restaurados com sucesso!');
+                    setTimeout(() => setBackupAlert(null), 4000);
+                  }
+                }}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-purple-300 dark:border-purple-800/80 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-black transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Restaurar Dados da Demo</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Acessar Modo Demonstração?',
+                  message: 'Você entrará na conta demo com dados fictícios completos para testes. Sua conta pessoal continuará totalmente salva e segura.',
+                  confirmText: 'Entrar na Demo',
+                  type: 'info'
+                });
+                if (ok) {
+                  loginAsDemo();
+                }
+              }}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-purple-300 dark:border-purple-800/80 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-black transition-all cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>Acessar Conta Demonstração (Demo)</span>
+            </button>
+          )}
         </div>
       </div>
 
