@@ -113,9 +113,28 @@ const AppContent: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
+  const [newTxInitialType, setNewTxInitialType] = useState<'income' | 'expense' | 'transfer'>('expense');
+  const [newTxPaymentMethod, setNewTxPaymentMethod] = useState<'account' | 'card'>('account');
   const [isNewCardOpen, setIsNewCardOpen] = useState(false);
   const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  const handleOpenSpeedDialAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {
+    if (actionType === 'income') {
+      setNewTxInitialType('income');
+      setNewTxPaymentMethod('account');
+    } else if (actionType === 'transfer') {
+      setNewTxInitialType('transfer');
+      setNewTxPaymentMethod('account');
+    } else if (actionType === 'card_expense') {
+      setNewTxInitialType('expense');
+      setNewTxPaymentMethod('card');
+    } else {
+      setNewTxInitialType('expense');
+      setNewTxPaymentMethod('account');
+    }
+    setIsNewTxOpen(true);
+  };
 
   useEffect(() => {
     const handleBeforeInstall = (e: Event) => {
@@ -185,17 +204,21 @@ const AppContent: React.FC = () => {
       </main>
       </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation with Speed Dial Arc FAB */}
       <BottomNav
         activeTab={activeTab}
         setActiveTab={handleSelectTab}
-        onOpenNewTransaction={() => setIsNewTxOpen(true)}
+        onOpenNewTransaction={() => handleOpenSpeedDialAction('expense')}
+        onOpenAction={handleOpenSpeedDialAction}
       />
 
       {/* Global Modals */}
       <TransactionModal
+        key={`tx-modal-${newTxInitialType}-${newTxPaymentMethod}-${isNewTxOpen}`}
         isOpen={isNewTxOpen}
         onClose={() => setIsNewTxOpen(false)}
+        initialType={newTxInitialType}
+        initialPaymentMethod={newTxPaymentMethod}
       />
 
       <CardModal

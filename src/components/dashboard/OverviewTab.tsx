@@ -4,9 +4,11 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowUpRight,
+  ArrowDownRight,
   ArrowDownLeft,
   Calendar,
   CreditCard as CardIcon,
+  CreditCard,
   Target,
   ChevronRight,
   ChevronLeft,
@@ -27,6 +29,9 @@ import {
   ShieldCheck,
   Award,
   Zap,
+  Eye,
+  EyeOff,
+  FileText,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -50,6 +55,7 @@ import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 
 interface OverviewTabProps {
   onOpenNewTransaction: () => void;
+  onOpenNewCard?: () => void;
   setActiveTab: (tab: string) => void;
 }
 
@@ -74,9 +80,9 @@ export interface DashboardCardsState {
   perfil: boolean;
 }
 
-export const DEFAULT_CARDS_STATE: DashboardCardsState = {
+const DEFAULT_CARDS_STATE: DashboardCardsState = {
   despesasCategoria: true,
-  frequenciaGastos: false,
+  frequenciaGastos: true,
   balancoMensal: true,
   transacoesPendentes: false,
   planejamento: true,
@@ -96,7 +102,7 @@ export const DEFAULT_CARDS_STATE: DashboardCardsState = {
 const CARDS_STORAGE_KEY = 'plannerfin_dashboard_cards_v4';
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, setActiveTab }) => {
-  const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus } = useFinancial();
+  const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -375,6 +381,28 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const totalCardInvoicesSum = useMemo(() => {
     return cardSummaries.reduce((sum, c) => sum + c.invoiceTotal, 0);
   }, [cardSummaries]);
+
+  // Alerts & Pendencies Metrics
+  const pendingExpenses = useMemo(() => {
+    return monthTransactions.filter(t => t.type === 'expense' && t.status === 'pending');
+  }, [monthTransactions]);
+  const pendingExpensesTotal = useMemo(() => {
+    return pendingExpenses.reduce((s, t) => s + t.amount, 0);
+  }, [pendingExpenses]);
+
+  const overdueInvoices = useMemo(() => {
+    return cardSummaries.filter(c => c.isOverdue && !c.isPaid && c.invoiceTotal > 0);
+  }, [cardSummaries]);
+  const overdueInvoicesTotal = useMemo(() => {
+    return overdueInvoices.reduce((s, c) => s + c.invoiceTotal, 0);
+  }, [overdueInvoices]);
+
+  const openInvoices = useMemo(() => {
+    return cardSummaries.filter(c => !c.isPaid && !c.isOverdue && c.invoiceTotal > 0);
+  }, [cardSummaries]);
+  const openInvoicesTotal = useMemo(() => {
+    return openInvoices.reduce((s, c) => s + c.invoiceTotal, 0);
+  }, [openInvoices]);
 
   // Financial health & savings rate
   const savingsRate = monthlyIncome > 0 ? Math.max(0, ((monthlyIncome - monthlyExpense) / monthlyIncome) * 100) : 0;
@@ -968,19 +996,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     );
   };
 
-  // Left 8: Minhas Contas
+  // Left 8: Minhas Contas (Mobills Exact Style)
   const renderContas = () => (
-    <div key="contas" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="contas" className="p-6 rounded-[28px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">Contas</h3>
-          <p className="text-[11px] text-slate-400">Saldos bancários e carteiras</p>
-        </div>
+        <h3 className="text-base font-black text-slate-900 dark:text-white">Contas</h3>
         <button
           onClick={() => setActiveTab('contas')}
-          className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+          className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          title="Gerenciar Contas"
         >
-          Gerenciar
+          <SlidersHorizontal className="w-4 h-4" />
         </button>
       </div>
 
@@ -991,32 +1017,42 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           accounts.map(acc => (
             <div
               key={acc.id}
-              onClick={() => setActiveTab('contas')}
-              className="py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 px-1 rounded-xl transition-colors group"
+              className="py-3 flex items-center justify-between group"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-[#1E1E20] flex items-center justify-center p-1 shrink-0 border border-slate-200 dark:border-slate-800 group-hover:scale-105 transition-transform">
-                  <BankLogo nameOrId={acc.institution || acc.name} size={18} className="w-4 h-4" />
+              <div
+                onClick={() => setActiveTab('contas')}
+                className="flex items-center gap-3.5 cursor-pointer flex-1 min-w-0"
+              >
+                <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-[#2A2A2D] flex items-center justify-center p-1.5 shrink-0 border border-slate-200 dark:border-slate-800">
+                  <BankLogo nameOrId={acc.institution || acc.name} size={20} className="w-5 h-5" />
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-purple-600 transition-colors">{acc.name}</p>
-                  <span className="text-[10px] text-slate-400">
-                    {acc.type === 'cash' ? 'Carteira' : 'Conta Corrente'}
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-purple-400 transition-colors truncate">{acc.name}</p>
+                  <span className={`text-xs font-black block ${acc.balance < 0 ? 'text-[#ef5350]' : 'text-slate-400 dark:text-slate-400'}`}>
+                    {formatCurrency(acc.balance, user.currency, !user.showValues)}
                   </span>
                 </div>
               </div>
 
-              <span className="text-xs font-black text-[#66bb6a]">
-                {formatCurrency(acc.balance, user.currency, !user.showValues)}
-              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenNewTransaction();
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#2A2A2D] hover:bg-purple-600 hover:text-white text-slate-400 flex items-center justify-center transition-all cursor-pointer shrink-0 ml-2"
+                title={`Nova transação em ${acc.name}`}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
           ))
         )}
       </div>
 
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-black text-slate-900 dark:text-white">
-        <span>Total em contas</span>
-        <span className="text-[#66bb6a]">
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-black text-slate-900 dark:text-white">
+        <span className="text-slate-400 font-bold">Total</span>
+        <span className={metrics.totalBalance < 0 ? 'text-[#ef5350]' : 'text-[#66bb6a]'}>
           {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
         </span>
       </div>
@@ -1470,66 +1506,143 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* TOP 4 METRIC KPIS (PERSISTENT HEADER) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* KPI 1: Saldo atual */}
-        <div
-          onClick={() => setActiveTab('contas')}
-          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#42a5f5] shrink-0 shadow-xs" />
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Saldo atual</span>
+      {/* 2. MOBILLS EXACT HERO BALANCE CARD */}
+      <div className="p-6 rounded-[28px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 text-center">
+        <div className="space-y-1">
+          <span className="text-xs text-slate-400 dark:text-slate-400 font-semibold tracking-wide block">
+            Saldo em contas
+          </span>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+              {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
+            </h1>
           </div>
-          <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-            {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
-          </p>
+          <div className="flex justify-center pt-0.5">
+            <button
+              type="button"
+              onClick={toggleHideValues}
+              className="p-1.5 rounded-full text-slate-400 hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-[#2C2C2E] transition-colors cursor-pointer"
+              title={user.showValues ? 'Ocultar valores' : 'Mostrar valores'}
+            >
+              {user.showValues ? (
+                <Eye className="w-4.5 h-4.5 text-slate-400 hover:text-purple-400 transition-colors" />
+              ) : (
+                <EyeOff className="w-4.5 h-4.5 text-purple-400" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* KPI 2: Receitas */}
-        <div
-          onClick={() => setActiveTab('transacoes')}
-          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#66bb6a] shrink-0 shadow-xs" />
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Receitas</span>
+        {/* RECEITAS & DESPESAS CAPSULE CARDS */}
+        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+          {/* Receitas */}
+          <div
+            onClick={() => setActiveTab('transacoes')}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#2A2A2D] border border-slate-100 dark:border-slate-800 flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-transform text-left"
+          >
+            <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-black shrink-0">
+              <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[11px] text-slate-400 font-semibold block">Receitas</span>
+              <span className="text-xs sm:text-sm font-black text-[#66bb6a] block truncate">
+                {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
+              </span>
+            </div>
           </div>
-          <p className="text-base sm:text-lg font-black text-[#66bb6a] tracking-tight">
-            {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
-          </p>
-        </div>
 
-        {/* KPI 3: Despesas */}
-        <div
-          onClick={() => setActiveTab('transacoes')}
-          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ef5350] shrink-0 shadow-xs" />
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Despesas</span>
+          {/* Despesas */}
+          <div
+            onClick={() => setActiveTab('transacoes')}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#2A2A2D] border border-slate-100 dark:border-slate-800 flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-transform text-left"
+          >
+            <div className="w-9 h-9 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center font-black shrink-0">
+              <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[11px] text-slate-400 font-semibold block">Despesas</span>
+              <span className="text-xs sm:text-sm font-black text-[#ef5350] block truncate">
+                {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
+              </span>
+            </div>
           </div>
-          <p className="text-base sm:text-lg font-black text-[#ef5350] tracking-tight">
-            {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
-          </p>
-        </div>
-
-        {/* KPI 4: Cartão de crédito */}
-        <div
-          onClick={() => setActiveTab('cartoes')}
-          className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl hover:bg-slate-50 dark:hover:bg-[#343437] transition-all cursor-pointer space-y-1 group"
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#26a69a] shrink-0 shadow-xs" />
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate">Cartão de crédito</span>
-          </div>
-          <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-            {formatCurrency(totalCardInvoicesSum, user.currency, !user.showValues)}
-          </p>
         </div>
       </div>
 
-      {/* 2. TWO-COLUMN RESPONSIVE LAYOUT (MOBILLS MODULAR GRID) */}
+      {/* 3. PENDÊNCIAS E ALERTAS (MOBILLS STYLE HORIZONTAL CAROUSEL) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Pendências e alertas</h3>
+        </div>
+
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
+          {/* Alert 1: Despesas pendentes */}
+          <div
+            onClick={() => setActiveTab('transacoes')}
+            className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-[#2A2A2D] flex items-center justify-center text-slate-400">
+                <ArrowDownRight className="w-4 h-4 text-slate-300" />
+              </div>
+              {pendingExpenses.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 text-[10px] font-black">
+                  +{pendingExpenses.length}
+                </span>
+              )}
+            </div>
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block">Despesas pendentes</span>
+              <span className="text-xs sm:text-sm font-black text-[#ef5350]">
+                {formatCurrency(pendingExpensesTotal, user.currency, !user.showValues)}
+              </span>
+            </div>
+          </div>
+
+          {/* Alert 2: Faturas vencidas */}
+          <div
+            onClick={() => setActiveTab('cartoes')}
+            className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-[#2A2A2D] flex items-center justify-center text-slate-400">
+                <FileText className="w-4 h-4 text-slate-300" />
+              </div>
+              {overdueInvoices.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 text-[10px] font-black">
+                  +{overdueInvoices.length}
+                </span>
+              )}
+            </div>
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block">Faturas vencidas</span>
+              <span className="text-xs sm:text-sm font-black text-[#ef5350]">
+                {formatCurrency(overdueInvoicesTotal, user.currency, !user.showValues)}
+              </span>
+            </div>
+          </div>
+
+          {/* Alert 3: Faturas abertas */}
+          <div
+            onClick={() => setActiveTab('cartoes')}
+            className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-[#2A2A2D] flex items-center justify-center text-teal-400">
+                <CreditCard className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block">Faturas abertas</span>
+              <span className="text-xs sm:text-sm font-black text-[#26a69a]">
+                {formatCurrency(openInvoicesTotal, user.currency, !user.showValues)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. TWO-COLUMN RESPONSIVE LAYOUT (MOBILLS MODULAR GRID) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* LEFT COLUMN CARDS */}
         <div className="space-y-6">

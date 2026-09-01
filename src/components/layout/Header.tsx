@@ -11,6 +11,8 @@ import {
   LogOut,
   Download,
   ShieldCheck,
+  Gift,
+  Crown,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
@@ -71,8 +73,8 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between">
-      {/* Left: Mobile Hamburger + Current Title/Brand */}
+    <header className="sticky top-0 z-30 h-16 w-full bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between">
+      {/* Left: Mobile Hamburger + User Profile Badge / Brand */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
@@ -82,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Mobile Brand */}
+        {/* Mobile Brand / Avatar */}
         <div className="flex md:hidden items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
           <FinlyLogo size="sm" />
         </div>
@@ -95,15 +97,25 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Notifications, Settings, User Avatar */}
+      {/* Right: Gift Rewards, Notifications, Settings, User Avatar */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobills Rewards Gift Button */}
+        <button
+          onClick={() => setActiveTab('mais')}
+          className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center relative hover:scale-105 transition-transform cursor-pointer border border-purple-200 dark:border-purple-800/60"
+          title="Benefícios & Recompensas"
+        >
+          <Gift className="w-4 h-4" />
+          <span className="absolute top-0 right-0 w-2 h-2 bg-purple-500 rounded-full ring-1 ring-white dark:ring-[#1C1C1E]" />
+        </button>
+
         {/* Hide Values Toggle */}
         <button
           onClick={toggleHideValues}
           title={user.showValues ? 'Ocultar valores' : 'Mostrar valores'}
           className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
-          {user.showValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 text-emerald-500" />}
+          {user.showValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 text-purple-500" />}
         </button>
 
         {/* Theme Toggle */}
@@ -163,14 +175,18 @@ export const Header: React.FC<HeaderProps> = ({
           <Settings className="w-4.5 h-4.5" />
         </button>
 
-        {/* User Profile Avatar with Dropdown */}
+        {/* User Profile Avatar with VIP Crown Badge */}
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-8 h-8 rounded-full bg-[#3b82f6] text-white flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform shrink-0 font-black text-xs cursor-pointer"
+            className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform shrink-0 font-black text-xs cursor-pointer relative"
             title={currentUser?.name || user.name}
           >
             {(currentUser?.name || user.name || 'U').charAt(0).toUpperCase()}
+            {/* VIP Crown Icon Badge */}
+            <span className="absolute -top-1.5 -right-1 text-[10px] drop-shadow-sm select-none">
+              👑
+            </span>
           </button>
 
           {showUserMenu && (
