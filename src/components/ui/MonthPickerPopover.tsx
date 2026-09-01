@@ -114,7 +114,7 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
           </div>
 
           {/* Month Grid (4 columns x 3 rows) */}
-          <div className="p-6 bg-white dark:bg-[#2C2C2E] grid grid-cols-4 gap-y-5 gap-x-2">
+          <div className="p-6 pb-3 grid grid-cols-4 gap-y-5 gap-x-2">
             {MONTH_ABBRS.map((abbr, index) => {
               const active = isSelected(index);
               return (
@@ -134,8 +134,8 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
             })}
           </div>
 
-          {/* Footer with Actions */}
-          <div className="px-6 py-4 bg-slate-50 dark:bg-[#242426] border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between select-none">
+          {/* Seamless Unified Footer with Actions */}
+          <div className="px-6 pt-2 pb-5 flex items-center justify-between select-none">
             <button
               type="button"
               onClick={() => setIsOpen(false)}

@@ -1319,10 +1319,10 @@
     "name": "Liverton",
     "email": "liverton.aguiar@hotmail.com",
     "showValues": true,
-    "theme": "dark",
+    "theme": "light",
     "accentColor": "#7C4DFF",
     "themePreset": "emerald-slate",
     "cardRadius": "sharp"
   },
-  "_serverTimestamp": "2026-09-01T01:49:24.795Z"
+  "_serverTimestamp": "2026-09-01T01:51:01.079Z"
 }
