@@ -1240,7 +1240,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
       </div>
 
-      <div className="space-y-4 max-h-[480px] overflow-y-auto scrollbar-thin pr-1 divide-y divide-slate-100 dark:divide-slate-800/60">
+      <div className="space-y-3 max-h-[480px] overflow-y-auto scrollbar-thin pr-1">
         {cardSummaries.length === 0 ? (
           <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
         ) : (
@@ -1248,28 +1248,30 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             <div
               key={card.id}
               onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-              className="pt-3.5 first:pt-0 space-y-2 p-2.5 -mx-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-[#222226] transition-all cursor-pointer group/card border border-transparent hover:border-purple-500/30"
+              className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-[#141416] hover:bg-slate-100/90 dark:hover:bg-[#1E1E22] border border-slate-200/60 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
               title="Clique para ver extrato e composição da fatura"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider group-hover/card:text-purple-600 dark:group-hover/card:text-purple-400 transition-colors flex items-center gap-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1">
                     {card.name}
-                    <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover/card:opacity-100 transition-opacity text-purple-500" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all" />
                   </h4>
-                  <span className={`text-[11px] font-bold ${card.statusColor}`}>{card.statusLabel}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-[#18181B] border border-slate-200/60 dark:border-slate-800/80 ${card.statusColor}`}>
+                    {card.statusLabel}
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className={`text-xs font-black block ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
                     {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-bold">
+                  <span className="text-[10px] text-slate-400 font-medium">
                     {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
                   </span>
                 </div>
               </div>
 
-              <div className="w-full bg-slate-100 dark:bg-[#18181B] h-3 rounded-full overflow-hidden flex shadow-inner">
+              <div className="w-full bg-slate-200/80 dark:bg-[#18181B] h-2.5 rounded-full overflow-hidden flex shadow-inner">
                 {card.currentInvoicePercent > 0 && (
                   <div
                     style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
@@ -1289,12 +1291,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-1">
                 <div className="flex items-center gap-2.5">
                   <span className="flex items-center gap-1 text-[#7c4dff]">
-                    <span className="w-2 h-2 rounded-full bg-[#7c4dff]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff]" />
                     Mês: {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
                   {card.futureInstallmentsTotal > 0 && (
                     <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                      <span className="w-2 h-2 rounded-full bg-[#ff8a00]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00]" />
                       Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
                     </span>
                   )}
@@ -1319,7 +1321,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                     </span>
                     <button
                       onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-                      className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
+                      className="text-[11px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                     >
                       Ver Composição
                     </button>
@@ -1328,7 +1330,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   <div className="flex items-center justify-between w-full">
                     <button
                       onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-                      className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400 group-hover/card:text-purple-600 dark:group-hover/card:text-purple-400 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
                     >
                       Ver Composição <ChevronRight className="w-3 h-3" />
                     </button>
@@ -1342,7 +1344,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           else setActiveTab('cartoes');
                         }
                       }}
-                      className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-wider cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[10px] font-black uppercase tracking-wider cursor-pointer transition-colors"
                     >
                       {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
                     </button>
