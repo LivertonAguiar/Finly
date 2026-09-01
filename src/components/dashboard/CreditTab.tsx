@@ -850,12 +850,12 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             {/* + Novo Cartão Card */}
             <div
               onClick={onOpenNewCard}
-              className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[220px] group hover:border-purple-500/60 transition-all"
+              className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-md dark:hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-200 flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[220px] group"
             >
-              <div className="w-11 h-11 rounded-full border-2 border-purple-500 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+              <div className="w-11 h-11 rounded-full border-2 border-purple-500/80 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
                 <Plus className="w-5 h-5 stroke-[2.5]" />
               </div>
-              <span className="text-xs font-black text-purple-500 uppercase tracking-wider">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
                 Novo cartão
               </span>
             </div>
@@ -865,7 +865,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               <div
                 key={card.id}
                 onClick={() => setActiveCardDetailId(card.id)}
-                className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 relative group flex flex-col justify-between cursor-pointer hover:border-purple-500/60 transition-all"
+                className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 space-y-4 relative group flex flex-col justify-between cursor-pointer"
               >
                 {/* Header: Brand + Name + 3-dots Menu */}
                 <div className="flex items-center justify-between">
@@ -877,7 +877,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       <CardBrandLogo brand={card.brand} size={20} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                         {card.name}
                       </h4>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${card.statusColor}`}>

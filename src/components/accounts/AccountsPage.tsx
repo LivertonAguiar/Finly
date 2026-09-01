@@ -341,12 +341,12 @@ export const AccountsPage: React.FC = () => {
               setEditingAccount(null);
               setIsAccountModalOpen(true);
             }}
-            className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[148px] group hover:border-purple-500/60 transition-all"
+            className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-md dark:hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-200 flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[148px] group"
           >
-            <div className="w-11 h-11 rounded-full border-2 border-purple-500 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+            <div className="w-11 h-11 rounded-full border-2 border-purple-500/80 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
               <Plus className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span className="text-xs font-black text-purple-500 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
               Nova conta
             </span>
           </div>
@@ -355,7 +355,7 @@ export const AccountsPage: React.FC = () => {
           {accountCards.map(acc => (
             <div
               key={acc.id}
-              className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-3.5 relative group flex flex-col justify-between"
+              className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 space-y-3.5 relative group flex flex-col justify-between"
             >
               {/* Header: Bank Logo/Emblem + Name + 3-dots */}
               <div className="flex items-center justify-between">
@@ -495,7 +495,7 @@ export const AccountsPage: React.FC = () => {
         {/* RIGHT COLUMN: STACKED CONSOLIDATED SUMMARY CARDS (COL-SPAN-4) */}
         <div className="lg:col-span-4 space-y-4">
           {/* Card 1: Saldo atual */}
-          <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
+          <div className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
                 <span>Saldo atual</span>
@@ -506,13 +506,13 @@ export const AccountsPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-600/30 shrink-0">
+            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
               <DollarSign className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
 
           {/* Card 2: Saldo previsto */}
-          <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
+          <div className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
                 <span>Saldo previsto</span>
@@ -523,7 +523,7 @@ export const AccountsPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-600/30 shrink-0">
+            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
               <Banknote className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
