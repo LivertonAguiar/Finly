@@ -458,7 +458,7 @@ export const CalendarPage: React.FC = () => {
                 setEditingTransaction(null);
                 setIsModalOpen(true);
               }}
-              className="w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>Novo Lançamento</span>

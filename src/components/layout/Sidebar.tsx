@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onOpenNewTransaction}
             title={collapsed ? 'Novo Lançamento' : undefined}
-            className={`w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-purple-600/25 flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
+            className={`w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
               collapsed ? 'px-0' : 'px-3 gap-2'
             }`}
           >

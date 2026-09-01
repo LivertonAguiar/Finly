@@ -324,7 +324,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             {editingCard ? 'Salvar Alterações' : 'Criar Cartão'}
           </button>

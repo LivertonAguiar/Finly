@@ -144,7 +144,7 @@ export const GoalsPage: React.FC = () => {
 
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
           <span>Criar Novo Objetivo</span>
@@ -152,7 +152,7 @@ export const GoalsPage: React.FC = () => {
       </div>
 
       {/* 2. OVERALL GOALS SUMMARY CARD */}
-      <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
             <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Total Planejado</span>

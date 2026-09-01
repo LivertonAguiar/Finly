@@ -204,7 +204,7 @@ export const AccountsPage: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer"
               title="Novo Lançamento"
             >
               <Plus className="w-4 h-4 stroke-[3]" />

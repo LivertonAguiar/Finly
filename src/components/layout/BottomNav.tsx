@@ -110,7 +110,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
       {/* Main Bottom Navigation Bar */}
       <nav
-        className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-around px-2 z-50 md:hidden shadow-2xl transition-all select-none"
+        className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-around px-2 z-50 md:hidden shadow-2xl transition-all select-none"
         style={{
           paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
           height: 'calc(3.8rem + env(safe-area-inset-bottom, 0px))',
@@ -149,8 +149,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <button
             type="button"
             onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
-            className={`w-14 h-14 rounded-full bg-[#9333ea] hover:bg-[#8b5cf6] text-white flex items-center justify-center shadow-lg shadow-purple-600/40 active:scale-90 transition-all cursor-pointer border-4 border-white dark:border-[#1C1C1E] ${
-              isSpeedDialOpen ? 'rotate-90 bg-purple-500 shadow-purple-500/60' : ''
+            className={`w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer border-4 border-white dark:border-[#121214] ${
+              isSpeedDialOpen ? 'rotate-90 bg-purple-700' : ''
             }`}
             title="Ações Rápidas"
           >

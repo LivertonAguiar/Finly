@@ -238,7 +238,7 @@ export const BudgetPage: React.FC = () => {
           {/* Create / Redefine Wizard CTA */}
           <button
             onClick={handleOpenWizard}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Sparkles className="w-4 h-4" />
             <span>{totalBudgetLimit > 0 ? 'Redefinir Planejamento' : 'Criar Planejamento'}</span>

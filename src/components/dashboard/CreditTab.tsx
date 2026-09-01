@@ -328,7 +328,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   setSelectedCardForExpense(activeCardDetail.id);
                   setIsAddExpenseModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nova Despesa</span>
@@ -337,7 +337,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               <div className="relative">
                 <button
                   onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
-                  className="w-10 h-10 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  className="w-10 h-10 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                   title="Mais opções"
                 >
                   <MoreVertical className="w-4 h-4" />
@@ -468,7 +468,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       setPayAmount(activeCardDetail.invoiceTotal.toFixed(2));
                       setIsPayModalOpen(true);
                     }}
-                    className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Pagar Fatura
                   </button>

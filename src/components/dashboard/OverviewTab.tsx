@@ -849,7 +849,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             </p>
             <button
               onClick={() => setActiveTab('orcamento')}
-              className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+              className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer"
             >
               DEFINIR MEU PLANEJAMENTO
             </button>
@@ -1456,7 +1456,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       <div className="pt-2 flex justify-end">
         <button
           onClick={() => setActiveTab('orcamento')}
-          className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 transition-all cursor-pointer text-center"
+          className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer text-center"
         >
           VER METAS & PLANEJAMENTO
         </button>

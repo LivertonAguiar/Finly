@@ -381,7 +381,7 @@ export const TransactionsPage: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
-              className="flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/25 transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>Novo</span>

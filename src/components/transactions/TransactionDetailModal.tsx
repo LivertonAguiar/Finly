@@ -709,7 +709,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 onClose();
                 onEdit(transaction);
               }}
-              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/25 flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
               <Edit2 className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Editar</span>

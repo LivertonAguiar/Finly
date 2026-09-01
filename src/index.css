@@ -144,11 +144,6 @@ html.dark .dark\:bg-slate-900 {
   --tw-ring-color: var(--primary-accent, #7C4DFF) !important;
 }
 
-.shadow-purple-600\/25,
-.shadow-purple-600\/30 {
-  --tw-shadow-color: var(--primary-accent, #7C4DFF) !important;
-}
-
 /* Dynamic tint backgrounds */
 .bg-purple-50,
 .dark\:bg-purple-950\/20,
