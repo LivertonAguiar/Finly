@@ -57,6 +57,7 @@ interface OverviewTabProps {
   onOpenNewTransaction: () => void;
   onOpenNewCard?: () => void;
   setActiveTab: (tab: string) => void;
+  onOpenCardDetail?: (cardId: string) => void;
 }
 
 export interface DashboardCardsState {
@@ -101,7 +102,7 @@ const DEFAULT_CARDS_STATE: DashboardCardsState = {
 
 const CARDS_STORAGE_KEY = 'plannerfin_dashboard_cards_v4';
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, setActiveTab }) => {
+export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, onOpenNewCard, setActiveTab, onOpenCardDetail }) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
@@ -1244,11 +1245,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
         ) : (
           cardSummaries.map(card => (
-            <div key={card.id} className="pt-3.5 first:pt-0 space-y-2">
+            <div
+              key={card.id}
+              onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
+              className="pt-3.5 first:pt-0 space-y-2 p-2.5 -mx-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-[#222226] transition-all cursor-pointer group/card border border-transparent hover:border-purple-500/30"
+              title="Clique para ver extrato e composição da fatura"
+            >
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider group-hover/card:text-purple-600 dark:group-hover/card:text-purple-400 transition-colors flex items-center gap-1">
                     {card.name}
+                    <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover/card:opacity-100 transition-opacity text-purple-500" />
                   </h4>
                   <span className={`text-[11px] font-bold ${card.statusColor}`}>{card.statusLabel}</span>
                 </div>
@@ -1262,7 +1269,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 </div>
               </div>
 
-              <div className="w-full bg-slate-100 dark:bg-[#222226] h-3 rounded-full overflow-hidden flex shadow-inner">
+              <div className="w-full bg-slate-100 dark:bg-[#18181B] h-3 rounded-full overflow-hidden flex shadow-inner">
                 {card.currentInvoicePercent > 0 && (
                   <div
                     style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
@@ -1304,33 +1311,42 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 )}
               </div>
 
-              <div className="pt-1 flex items-center justify-between">
+              <div className="pt-1 flex items-center justify-between" onClick={e => e.stopPropagation()}>
                 {card.isPaid ? (
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
                     </span>
                     <button
-                      onClick={() => setActiveTab('cartoes')}
+                      onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
                       className="text-[11px] font-bold text-slate-400 hover:text-purple-600 hover:underline cursor-pointer"
                     >
-                      Ver Detalhes
+                      Ver Composição
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => {
-                      if (card.invoiceTotal > 0) {
-                        setSelectedCardForPay(card.id);
-                        setIsInvoiceModalOpen(true);
-                      } else {
-                        setActiveTab('cartoes');
-                      }
-                    }}
-                    className="text-[11px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
-                  >
-                    {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
-                  </button>
+                  <div className="flex items-center justify-between w-full">
+                    <button
+                      onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
+                      className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      Ver Composição <ChevronRight className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (card.invoiceTotal > 0) {
+                          setSelectedCardForPay(card.id);
+                          setIsInvoiceModalOpen(true);
+                        } else {
+                          if (onOpenCardDetail) onOpenCardDetail(card.id);
+                          else setActiveTab('cartoes');
+                        }
+                      }}
+                      className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-wider cursor-pointer"
+                    >
+                      {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1601,7 +1617,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
           {/* Alert 2: Faturas vencidas */}
           <div
-            onClick={() => setActiveTab('cartoes')}
+            onClick={() => {
+              if (overdueInvoices.length > 0 && onOpenCardDetail) {
+                onOpenCardDetail(overdueInvoices[0].id);
+              } else {
+                setActiveTab('cartoes');
+              }
+            }}
             className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
           >
             <div className="flex items-center justify-between">
@@ -1624,7 +1646,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
           {/* Alert 3: Faturas abertas */}
           <div
-            onClick={() => setActiveTab('cartoes')}
+            onClick={() => {
+              if (openInvoices.length > 0 && onOpenCardDetail) {
+                onOpenCardDetail(openInvoices[0].id);
+              } else {
+                setActiveTab('cartoes');
+              }
+            }}
             className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
           >
             <div className="flex items-center justify-between">

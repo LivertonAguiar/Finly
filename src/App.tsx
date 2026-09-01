@@ -75,15 +75,27 @@ const AppContent: React.FC = () => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(getInitialTabFromPath);
   const [cardsNavKey, setCardsNavKey] = useState<number>(0);
+  const [selectedCardIdForDetail, setSelectedCardIdForDetail] = useState<string | null>(null);
 
   const handleSelectTab = useCallback((tab: string) => {
     if (tab === 'cartoes') {
+      setSelectedCardIdForDetail(null);
       setCardsNavKey(prev => prev + 1);
     }
     setActiveTab(tab);
     const targetPath = TAB_TO_PATH[tab] || `/${tab}`;
     if (window.location.pathname !== targetPath) {
       window.history.pushState({ tab }, '', targetPath);
+    }
+  }, []);
+
+  const handleOpenCardDetail = useCallback((cardId: string) => {
+    setSelectedCardIdForDetail(cardId);
+    setCardsNavKey(prev => prev + 1);
+    setActiveTab('cartoes');
+    const targetPath = TAB_TO_PATH['cartoes'] || '/cartoes';
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ tab: 'cartoes' }, '', targetPath);
     }
   }, []);
 
@@ -182,10 +194,17 @@ const AppContent: React.FC = () => {
               onOpenNewTransaction={() => setIsNewTxOpen(true)}
               onOpenNewCard={() => setIsNewCardOpen(true)}
               setActiveTab={handleSelectTab}
+              onOpenCardDetail={handleOpenCardDetail}
             />
           )}
           {activeTab === 'transacoes' && <TransactionsPage />}
-          {activeTab === 'cartoes' && <CreditTab key={cardsNavKey} onOpenNewCard={() => setIsNewCardOpen(true)} />}
+          {activeTab === 'cartoes' && (
+            <CreditTab
+              key={cardsNavKey}
+              initialCardDetailId={selectedCardIdForDetail}
+              onOpenNewCard={() => setIsNewCardOpen(true)}
+            />
+          )}
           {activeTab === 'contas' && <AccountsPage />}
           {(activeTab === 'planejamento' || activeTab === 'orcamento') && <BudgetPage />}
           {activeTab === 'relatorios' && <ReportsPage />}

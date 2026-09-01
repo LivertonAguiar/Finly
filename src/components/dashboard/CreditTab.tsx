@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   CreditCard as CardIcon,
   Plus,
@@ -32,13 +32,24 @@ import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
 import { Modal } from '../ui/Modal';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 
-export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCard }) => {
+interface CreditTabProps {
+  onOpenNewCard: () => void;
+  initialCardDetailId?: string | null;
+}
+
+export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCardDetailId }) => {
   const { cards, user, transactions, accounts, categories, payCardInvoice, unpayCardInvoice, toggleTransactionStatus, reimburseThirdPartyTransaction, deleteCard, addTransaction, deleteTransaction } = useFinancial();
   const { confirm } = useConfirm();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
-  const [activeCardDetailId, setActiveCardDetailId] = useState<string | null>(null);
+  const [activeCardDetailId, setActiveCardDetailId] = useState<string | null>(initialCardDetailId || null);
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
+
+  useEffect(() => {
+    if (initialCardDetailId !== undefined) {
+      setActiveCardDetailId(initialCardDetailId);
+    }
+  }, [initialCardDetailId]);
 
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -853,7 +864,8 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
             {cardsData.map(card => (
               <div
                 key={card.id}
-                className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 relative group flex flex-col justify-between"
+                onClick={() => setActiveCardDetailId(card.id)}
+                className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 relative group flex flex-col justify-between cursor-pointer hover:border-purple-500/60 transition-all"
               >
                 {/* Header: Brand + Name + 3-dots Menu */}
                 <div className="flex items-center justify-between">
@@ -865,7 +877,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                       <CardBrandLogo brand={card.brand} size={20} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                         {card.name}
                       </h4>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${card.statusColor}`}>
@@ -875,7 +887,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                   </div>
 
                   {/* 3-dots Menu */}
-                  <div className="relative">
+                  <div className="relative" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => setOpenMenuCardId(openMenuCardId === card.id ? null : card.id)}
                       className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
@@ -886,7 +898,7 @@ export const CreditTab: React.FC<{ onOpenNewCard: () => void }> = ({ onOpenNewCa
                     {openMenuCardId === card.id && (
                       <div
                         onClick={e => e.stopPropagation()}
-                        className="absolute right-0 top-7 z-30 w-48 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold"
+                        className="absolute right-0 top-7 z-30 w-48 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold"
                       >
                         <button
                           onClick={async () => {
