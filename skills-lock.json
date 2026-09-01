@@ -19,6 +19,12 @@
       "skillPath": "skills/capacitor-best-practices/SKILL.md",
       "computedHash": "4b5ba5caae080d8e2be86fa2c35f77025ed46835ed1f39f3129e06325813737b"
     },
+    "card": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/components/layout/card/SKILL.md",
+      "computedHash": "50690ef34d6d4f334756f749fcf2f5e4b949d1b58f57ddd57e890b8a4963b7a2"
+    },
     "documentation-and-adrs": {
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
@@ -43,6 +49,18 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
     },
+    "layout-grid": {
+      "source": "owl-listener/designer-skills",
+      "sourceType": "github",
+      "skillPath": "ui-design/skills/layout-grid/SKILL.md",
+      "computedHash": "fcf8cdea7486a05f931672b4086c19ce1c3eb0150165bb91261426bba1abf9bf"
+    },
+    "lists-grids": {
+      "source": "dylantarre/animation-principles",
+      "sourceType": "github",
+      "skillPath": "skills/07-by-ui-element/lists-grids/SKILL.md",
+      "computedHash": "773e8d535439c3a2bad47dc6e8b2c0176d44f805c886c0a479af0542aaa9353d"
+    },
     "mobile-android-design": {
       "source": "wshobson/agents",
       "sourceType": "github",
@@ -66,6 +84,12 @@
       "sourceType": "github",
       "skillPath": "skills/pwa-development/SKILL.md",
       "computedHash": "2219041ce92f6361ba77eb06c9a927dc7a1ba48f40ff5132321a29c4154ebc7a"
+    },
+    "typeui-fundamentals": {
+      "source": "bergside/typeui",
+      "sourceType": "github",
+      "skillPath": "skills/fundamentals/SKILL.md",
+      "computedHash": "37d3df14b03932ef4a3950332acbc6104d93a17595dbdebe63b5c16c4cc67a43"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",

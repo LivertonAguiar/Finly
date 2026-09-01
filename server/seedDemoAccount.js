@@ -341,7 +341,8 @@ const transactions = [
       date: `${pMonth}-15`,
       type: 'expense',
       status: isPastOrCurrent ? 'completed' : 'pending',
-      categoryId: 'cat-desp-tecnologia',
+      categoryId: 'cat-desp-compras-pessoal',
+      subcategoryId: 'sub-comp-informatica',
       cardId: 'card-demo-nubank',
       recurring: false,
       installments: { current: pNum, total: 10 },
@@ -363,7 +364,8 @@ const transactions = [
       date: `${pMonth}-10`,
       type: 'expense',
       status: isPastOrCurrent ? 'completed' : 'pending',
-      categoryId: 'cat-desp-tecnologia',
+      categoryId: 'cat-desp-compras-pessoal',
+      subcategoryId: 'sub-comp-celular',
       cardId: 'card-demo-itau',
       recurring: false,
       installments: { current: pNum, total: 12 },
@@ -385,7 +387,8 @@ const transactions = [
       date: `${pMonth}-08`,
       type: 'expense',
       status: isPastOrCurrent ? 'completed' : 'pending',
-      categoryId: 'cat-desp-viagens',
+      categoryId: 'cat-desp-lazer',
+      subcategoryId: 'sub-lazer-viagens',
       cardId: 'card-demo-c6',
       recurring: false,
       installments: { current: pNum, total: 6 },
@@ -565,7 +568,7 @@ const budgets = [
   { id: 'bud-transporte', categoryId: 'cat-desp-transporte', limit: 1200.00, month: currentMonthPrefix },
   { id: 'bud-lazer', categoryId: 'cat-desp-lazer', limit: 800.00, month: currentMonthPrefix },
   { id: 'bud-saude', categoryId: 'cat-desp-saude', limit: 900.00, month: currentMonthPrefix },
-  { id: 'bud-tecnologia', categoryId: 'cat-desp-tecnologia', limit: 2000.00, month: currentMonthPrefix },
+  { id: 'bud-compras-pessoal', categoryId: 'cat-desp-compras-pessoal', limit: 2000.00, month: currentMonthPrefix },
 ];
 
 const goals = [

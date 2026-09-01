@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency } from '../../utils/formatters';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { Modal } from '../ui/Modal';
 
 export const BudgetPage: React.FC = () => {
@@ -73,13 +74,7 @@ export const BudgetPage: React.FC = () => {
 
   // Robust category lookup
   const findCategory = (catId?: string, subId?: string) => {
-    if (!catId && !subId) return null;
-    return categories.find(
-      c =>
-        c.id === catId ||
-        c.name.toLowerCase() === catId?.toLowerCase() ||
-        (subId && c.subcategories?.some(s => s.id === subId || s.name.toLowerCase() === subId.toLowerCase()))
-    );
+    return resolveCategory(categories, catId, subId, 'expense');
   };
 
   // Month transactions

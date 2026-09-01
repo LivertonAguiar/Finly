@@ -1012,8 +1012,8 @@
       "month": "2026-09"
     },
     {
-      "id": "bud-tecnologia",
-      "categoryId": "cat-desp-tecnologia",
+      "id": "bud-compras-pessoal",
+      "categoryId": "cat-desp-compras-pessoal",
       "limit": 2000,
       "month": "2026-09"
     }
@@ -1165,7 +1165,7 @@
       "currentBalance": 13850,
       "monthlyYield": 112.5,
       "yieldPercentage": 10.8,
-      "updatedAt": "2026-09-01T03:28:48.373Z"
+      "updatedAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "inv-fii-hglg",
@@ -1177,7 +1177,7 @@
       "currentBalance": 8620,
       "monthlyYield": 78.4,
       "yieldPercentage": 7.75,
-      "updatedAt": "2026-09-01T03:28:48.373Z"
+      "updatedAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "inv-cdb-cdi",
@@ -1189,7 +1189,7 @@
       "currentBalance": 10450,
       "monthlyYield": 98.2,
       "yieldPercentage": 5.55,
-      "updatedAt": "2026-09-01T03:28:48.373Z"
+      "updatedAt": "2026-09-01T03:57:48.636Z"
     }
   ],
   "transactions": [
@@ -1209,7 +1209,7 @@
         "salario",
         "fixo"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-rec-fiis",
@@ -1226,7 +1226,7 @@
         "dividendos",
         "renda_passiva"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-rec-freelance",
@@ -1242,7 +1242,7 @@
         "extra",
         "freelance"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-rec-cashback",
@@ -1257,7 +1257,7 @@
       "tags": [
         "cashback"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-aluguel",
@@ -1275,7 +1275,7 @@
         "fixo",
         "moradia"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-condominio",
@@ -1293,7 +1293,7 @@
         "fixo",
         "moradia"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-energia",
@@ -1310,7 +1310,7 @@
       "tags": [
         "utilidades"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-internet",
@@ -1327,7 +1327,7 @@
       "tags": [
         "internet"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-saude",
@@ -1344,7 +1344,7 @@
       "tags": [
         "saude"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-academia",
@@ -1361,7 +1361,7 @@
       "tags": [
         "academia"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-desp-streamings",
@@ -1377,7 +1377,7 @@
       "tags": [
         "streaming"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.635Z"
     },
     {
       "id": "tx-parc-macbook-p1",
@@ -1386,7 +1386,8 @@
       "date": "2026-07-15",
       "type": "expense",
       "status": "completed",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1398,7 +1399,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p2",
@@ -1407,7 +1408,8 @@
       "date": "2026-08-15",
       "type": "expense",
       "status": "completed",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1419,7 +1421,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p3",
@@ -1428,7 +1430,8 @@
       "date": "2026-09-15",
       "type": "expense",
       "status": "completed",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1440,7 +1443,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p4",
@@ -1449,7 +1452,8 @@
       "date": "2026-10-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1461,7 +1465,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p5",
@@ -1470,7 +1474,8 @@
       "date": "2026-11-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1482,7 +1487,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p6",
@@ -1491,7 +1496,8 @@
       "date": "2026-12-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1503,7 +1509,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p7",
@@ -1512,7 +1518,8 @@
       "date": "2027-01-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1524,7 +1531,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p8",
@@ -1533,7 +1540,8 @@
       "date": "2027-02-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1545,7 +1553,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p9",
@@ -1554,7 +1562,8 @@
       "date": "2027-03-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1566,7 +1575,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-macbook-p10",
@@ -1575,7 +1584,8 @@
       "date": "2027-04-15",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-informatica",
       "cardId": "card-demo-nubank",
       "recurring": false,
       "installments": {
@@ -1587,7 +1597,7 @@
         "apple",
         "trabalho"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p1",
@@ -1596,7 +1606,8 @@
       "date": "2026-08-10",
       "type": "expense",
       "status": "completed",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1607,7 +1618,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p2",
@@ -1616,7 +1627,8 @@
       "date": "2026-09-10",
       "type": "expense",
       "status": "completed",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1627,7 +1639,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p3",
@@ -1636,7 +1648,8 @@
       "date": "2026-10-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1647,7 +1660,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p4",
@@ -1656,7 +1669,8 @@
       "date": "2026-11-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1667,7 +1681,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p5",
@@ -1676,7 +1690,8 @@
       "date": "2026-12-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1687,7 +1702,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p6",
@@ -1696,7 +1711,8 @@
       "date": "2027-01-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1707,7 +1723,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p7",
@@ -1716,7 +1732,8 @@
       "date": "2027-02-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1727,7 +1744,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p8",
@@ -1736,7 +1753,8 @@
       "date": "2027-03-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1747,7 +1765,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p9",
@@ -1756,7 +1774,8 @@
       "date": "2027-04-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1767,7 +1786,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p10",
@@ -1776,7 +1795,8 @@
       "date": "2027-05-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1787,7 +1807,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.372Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p11",
@@ -1796,7 +1816,8 @@
       "date": "2027-06-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1807,7 +1828,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-iphone-p12",
@@ -1816,7 +1837,8 @@
       "date": "2027-07-10",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-tecnologia",
+      "categoryId": "cat-desp-compras-pessoal",
+      "subcategoryId": "sub-comp-celular",
       "cardId": "card-demo-itau",
       "recurring": false,
       "installments": {
@@ -1827,7 +1849,7 @@
         "parcelado",
         "iphone"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-passagens-p1",
@@ -1836,7 +1858,8 @@
       "date": "2026-09-08",
       "type": "expense",
       "status": "completed",
-      "categoryId": "cat-desp-viagens",
+      "categoryId": "cat-desp-lazer",
+      "subcategoryId": "sub-lazer-viagens",
       "cardId": "card-demo-c6",
       "recurring": false,
       "installments": {
@@ -1847,7 +1870,7 @@
         "viagem",
         "ferias"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-passagens-p2",
@@ -1856,7 +1879,8 @@
       "date": "2026-10-08",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-viagens",
+      "categoryId": "cat-desp-lazer",
+      "subcategoryId": "sub-lazer-viagens",
       "cardId": "card-demo-c6",
       "recurring": false,
       "installments": {
@@ -1867,7 +1891,7 @@
         "viagem",
         "ferias"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-passagens-p3",
@@ -1876,7 +1900,8 @@
       "date": "2026-11-08",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-viagens",
+      "categoryId": "cat-desp-lazer",
+      "subcategoryId": "sub-lazer-viagens",
       "cardId": "card-demo-c6",
       "recurring": false,
       "installments": {
@@ -1887,7 +1912,7 @@
         "viagem",
         "ferias"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-passagens-p4",
@@ -1896,7 +1921,8 @@
       "date": "2026-12-08",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-viagens",
+      "categoryId": "cat-desp-lazer",
+      "subcategoryId": "sub-lazer-viagens",
       "cardId": "card-demo-c6",
       "recurring": false,
       "installments": {
@@ -1907,7 +1933,7 @@
         "viagem",
         "ferias"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-passagens-p5",
@@ -1916,7 +1942,8 @@
       "date": "2027-01-08",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-viagens",
+      "categoryId": "cat-desp-lazer",
+      "subcategoryId": "sub-lazer-viagens",
       "cardId": "card-demo-c6",
       "recurring": false,
       "installments": {
@@ -1927,7 +1954,7 @@
         "viagem",
         "ferias"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-passagens-p6",
@@ -1936,7 +1963,8 @@
       "date": "2027-02-08",
       "type": "expense",
       "status": "pending",
-      "categoryId": "cat-desp-viagens",
+      "categoryId": "cat-desp-lazer",
+      "subcategoryId": "sub-lazer-viagens",
       "cardId": "card-demo-c6",
       "recurring": false,
       "installments": {
@@ -1947,7 +1975,7 @@
         "viagem",
         "ferias"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-pneus-p1",
@@ -1967,7 +1995,7 @@
         "carro",
         "manutencao"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-pneus-p2",
@@ -1987,7 +2015,7 @@
         "carro",
         "manutencao"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-pneus-p3",
@@ -2007,7 +2035,7 @@
         "carro",
         "manutencao"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-pneus-p4",
@@ -2027,7 +2055,7 @@
         "carro",
         "manutencao"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-parc-pneus-p5",
@@ -2047,7 +2075,7 @@
         "carro",
         "manutencao"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-mercado-1",
@@ -2064,7 +2092,7 @@
         "mercado",
         "casa"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-mercado-2",
@@ -2080,7 +2108,7 @@
       "tags": [
         "mercado"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-posto-1",
@@ -2096,7 +2124,7 @@
       "tags": [
         "combustivel"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-posto-2",
@@ -2112,7 +2140,7 @@
       "tags": [
         "combustivel"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-restaurante",
@@ -2129,7 +2157,7 @@
         "lazer",
         "jantar"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-farmacia",
@@ -2145,7 +2173,7 @@
       "tags": [
         "farmacia"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-uber-1",
@@ -2162,7 +2190,7 @@
         "transporte",
         "uber"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-feira",
@@ -2178,7 +2206,7 @@
       "tags": [
         "feira"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-almoco",
@@ -2194,7 +2222,7 @@
       "tags": [
         "almoco"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     },
     {
       "id": "tx-desp-padaria",
@@ -2210,7 +2238,7 @@
       "tags": [
         "cafe"
       ],
-      "createdAt": "2026-09-01T03:28:48.373Z"
+      "createdAt": "2026-09-01T03:57:48.636Z"
     }
   ],
   "familyMembers": [
@@ -2246,5 +2274,5 @@
     "showValues": true,
     "theme": "dark"
   },
-  "_serverTimestamp": "2026-09-01T03:47:27.340Z"
+  "_serverTimestamp": "2026-09-01T03:59:05.819Z"
 }

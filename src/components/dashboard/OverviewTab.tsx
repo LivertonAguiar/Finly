@@ -48,6 +48,7 @@ import {
 } from 'recharts';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
@@ -175,24 +176,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
   // 1. Expense by Category Donut Data
   const categoryChartData = useMemo(() => {
-    const expensesByCategory: Record<string, number> = {};
+    const expensesByCategory: Record<string, { amount: number; categoryId: string }> = {};
     monthTransactions
       .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
       .forEach(t => {
-        expensesByCategory[t.categoryId] = (expensesByCategory[t.categoryId] || 0) + t.amount;
+        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
+        const key = resolved.id;
+        if (!expensesByCategory[key]) {
+          expensesByCategory[key] = { amount: 0, categoryId: resolved.id };
+        }
+        expensesByCategory[key].amount += t.amount;
       });
 
-    const total = Object.values(expensesByCategory).reduce((a, b) => a + b, 0);
+    const total = Object.values(expensesByCategory).reduce((a, b) => a + b.amount, 0);
     if (total === 0) return [];
 
     return Object.entries(expensesByCategory)
-      .map(([catId, amount]) => {
-        const cat = categories.find(c => c.id === catId);
-        const name = cat?.name || 'Outros';
-        const color = cat?.color || '#94a3b8';
-        const icon = cat?.icon || '📦';
-        const percentage = total > 0 ? (amount / total) * 100 : 0;
-        return { name, value: amount, color, icon, percentage, id: catId };
+      .map(([catId, item]) => {
+        const resolved = resolveCategory(categories, catId, undefined, 'expense');
+        const name = resolved.name;
+        const color = resolved.color;
+        const icon = resolved.icon;
+        const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+        return { name, value: item.amount, color, icon, percentage, id: catId };
       })
       .sort((a, b) => b.value - a.value);
   }, [monthTransactions, categories]);
@@ -203,26 +209,31 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
   // 2. Income by Category Donut Data
   const incomeCategoryChartData = useMemo(() => {
-    const incomeByCategory: Record<string, number> = {};
+    const incomeByCategory: Record<string, { amount: number; categoryId: string }> = {};
     monthTransactions
       .filter(t => t.type === 'income' && t.status === 'completed' && !t.ignored)
       .forEach(t => {
-        incomeByCategory[t.categoryId] = (incomeByCategory[t.categoryId] || 0) + t.amount;
+        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'income');
+        const key = resolved.id;
+        if (!incomeByCategory[key]) {
+          incomeByCategory[key] = { amount: 0, categoryId: resolved.id };
+        }
+        incomeByCategory[key].amount += t.amount;
       });
 
-    const total = Object.values(incomeByCategory).reduce((a, b) => a + b, 0);
+    const total = Object.values(incomeByCategory).reduce((a, b) => a + b.amount, 0);
     if (total === 0) return [];
 
     const greenTones = ['#10B981', '#059669', '#34D399', '#6EE7B7', '#047857', '#86EFAC'];
 
     return Object.entries(incomeByCategory)
-      .map(([catId, amount], idx) => {
-        const cat = categories.find(c => c.id === catId);
-        const name = cat?.name || 'Outras Receitas';
-        const color = cat?.color && cat.color.startsWith('#') ? cat.color : greenTones[idx % greenTones.length];
-        const icon = cat?.icon || '💰';
-        const percentage = total > 0 ? (amount / total) * 100 : 0;
-        return { name, value: amount, color, icon, percentage, id: catId };
+      .map(([catId, item], idx) => {
+        const resolved = resolveCategory(categories, catId, undefined, 'income');
+        const name = resolved.name;
+        const color = resolved.color && resolved.color.startsWith('#') ? resolved.color : greenTones[idx % greenTones.length];
+        const icon = resolved.icon;
+        const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+        return { name, value: item.amount, color, icon, percentage, id: catId };
       })
       .sort((a, b) => b.value - a.value);
   }, [monthTransactions, categories]);

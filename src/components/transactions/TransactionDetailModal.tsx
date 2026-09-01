@@ -28,6 +28,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { Modal } from '../ui/Modal';
 
@@ -67,16 +68,19 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const isCard = !!transaction.cardId;
 
   // Category lookup
-  const category = categories.find(
-    c =>
-      c.id === transaction.categoryId ||
-      c.name.toLowerCase() === transaction.categoryId?.toLowerCase()
-  );
-  const subcategory = category?.subcategories?.find(
-    s =>
-      s.id === transaction.subcategoryId ||
-      s.name.toLowerCase() === transaction.subcategoryId?.toLowerCase()
-  );
+  const resolved = resolveCategory(categories, transaction.categoryId, transaction.subcategoryId, transaction.type);
+  const category = {
+    id: resolved.id,
+    name: resolved.name,
+    icon: resolved.icon,
+    color: resolved.color,
+  };
+  const subcategory = resolved.subName ? {
+    id: transaction.subcategoryId || '',
+    name: resolved.subName,
+    icon: resolved.subIcon || '🏷️',
+    categoryId: resolved.id,
+  } : undefined;
 
   // Account / Card lookup
   const account = accounts.find(a => a.id === transaction.accountId);

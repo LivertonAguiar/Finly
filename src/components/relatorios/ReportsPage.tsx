@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { Modal } from '../ui/Modal';
 
@@ -127,16 +128,11 @@ export const ReportsPage: React.FC = () => {
       const map: Record<string, { id: string; name: string; icon: string; amount: number; color?: string }> = {};
 
       monthTxs.filter(t => t.type === targetType).forEach(t => {
-        const cat = categories.find(
-          c =>
-            c.id === t.categoryId ||
-            c.name.toLowerCase() === t.categoryId?.toLowerCase() ||
-            (t.subcategoryId && c.subcategories?.some(s => s.id === t.subcategoryId || s.name.toLowerCase() === t.subcategoryId?.toLowerCase()))
-        );
-        const id = cat ? cat.id : (t.categoryId || 'others');
-        const name = (cat ? cat.name : (t.categoryId || 'OUTROS')).toUpperCase();
-        const icon = cat?.icon || (isExpense ? '📁' : '💰');
-        const color = cat?.color;
+        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, targetType);
+        const id = resolved.id;
+        const name = resolved.name.toUpperCase();
+        const icon = resolved.icon;
+        const color = resolved.color;
 
         if (!map[id]) map[id] = { id, name, icon, amount: 0, color };
         map[id].amount += t.amount;

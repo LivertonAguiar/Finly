@@ -33,6 +33,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction, TransactionType } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { BankLogo } from '../../utils/bankLogos';
 import { TransactionModal } from './TransactionModal';
@@ -195,14 +196,8 @@ export const TransactionsPage: React.FC = () => {
   };
 
   // Robust category lookup
-  const findCategory = (catId?: string, subId?: string) => {
-    if (!catId && !subId) return null;
-    return categories.find(
-      c =>
-        c.id === catId ||
-        c.name.toLowerCase() === catId?.toLowerCase() ||
-        (subId && c.subcategories?.some(s => s.id === subId || s.name.toLowerCase() === subId.toLowerCase()))
-    );
+  const findCategory = (catId?: string, subId?: string, type?: TransactionType) => {
+    return resolveCategory(categories, catId, subId, type || 'expense');
   };
 
   // Filtered display transactions
