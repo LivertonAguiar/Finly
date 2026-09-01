@@ -75,21 +75,21 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-7 py-1.5 rounded-full bg-[#18181B] dark:bg-[#1E1E20] border border-white/40 dark:border-white/30 text-white font-bold text-sm flex items-center gap-2.5 shadow-md hover:border-white/70 hover:bg-[#27272A] transition-all cursor-pointer active:scale-95 group"
+        className="px-6 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2.5 shadow-sm dark:shadow-md hover:bg-slate-50 dark:hover:bg-[#343437] hover:border-purple-500/40 transition-all cursor-pointer active:scale-95 group"
       >
-        <span className="lowercase font-bold text-slate-100 tracking-wide">{currentMonthName}</span>
+        <span className="lowercase font-bold tracking-wide">{currentMonthName}</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-white/80 group-hover:text-white transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-purple-400' : ''
+          className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-purple-600 dark:text-purple-400' : ''
           }`}
         />
       </button>
 
       {/* Popover Content */}
       {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50 w-72 sm:w-80 rounded-[28px] overflow-hidden shadow-2xl shadow-black/80 border border-slate-700/60 bg-[#1E1E20] animate-in fade-in zoom-in-95 duration-150">
-          {/* Header with Solid Purple Background and Year Navigation */}
-          <div className="bg-[#7C3AED] px-6 py-3.5 flex items-center justify-between select-none">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50 w-72 sm:w-80 rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+          {/* Header with Purple Background and Year Navigation */}
+          <div className="bg-purple-600 px-6 py-3.5 flex items-center justify-between select-none">
             <button
               type="button"
               onClick={() => setPickerYear(prev => prev - 1)}
@@ -114,7 +114,7 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
           </div>
 
           {/* Month Grid (4 columns x 3 rows) */}
-          <div className="p-6 bg-[#1E1E20] grid grid-cols-4 gap-y-5 gap-x-2">
+          <div className="p-6 bg-white dark:bg-[#2C2C2E] grid grid-cols-4 gap-y-5 gap-x-2">
             {MONTH_ABBRS.map((abbr, index) => {
               const active = isSelected(index);
               return (
@@ -124,8 +124,8 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
                   onClick={() => handleSelectMonth(index)}
                   className={`py-2 rounded-xl text-xs font-black tracking-wider transition-all duration-150 cursor-pointer ${
                     active
-                      ? 'text-[#8B5CF6] font-black scale-105'
-                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                      ? 'text-purple-600 dark:text-purple-400 font-black scale-105'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
                 >
                   {abbr}
@@ -135,11 +135,11 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
           </div>
 
           {/* Footer with Actions */}
-          <div className="px-6 py-4 bg-[#1E1E20] border-t border-white/5 flex items-center justify-between select-none">
+          <div className="px-6 py-4 bg-slate-50 dark:bg-[#242426] border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between select-none">
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-[#8B5CF6] hover:text-[#A78BFA] text-xs font-black tracking-wider uppercase transition-colors cursor-pointer active:scale-95"
+              className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-xs font-black tracking-wider uppercase transition-colors cursor-pointer active:scale-95"
             >
               CANCELAR
             </button>
@@ -147,7 +147,7 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
             <button
               type="button"
               onClick={handleCurrentMonth}
-              className="text-[#8B5CF6] hover:text-[#A78BFA] text-xs font-black tracking-wider uppercase transition-colors cursor-pointer active:scale-95"
+              className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-xs font-black tracking-wider uppercase transition-colors cursor-pointer active:scale-95"
             >
               MÊS ATUAL
             </button>
