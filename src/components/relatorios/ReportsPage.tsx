@@ -26,9 +26,10 @@ import {
   Tooltip,
 } from 'recharts';
 import { useFinancial } from '../../context/FinancialContext';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
+import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { Modal } from '../ui/Modal';
 
 type TabType = 'donut' | 'line' | 'bar';
@@ -69,10 +70,18 @@ export const ReportsPage: React.FC = () => {
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-  // Filter Modal state
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
-  const [filterAccountId, setFilterAccountId] = useState<string>('all');
+  // Unified Filter State
+  const [filters, setFilters] = useState<FilterState>({
+    period: 'current_month',
+    customStartDate: '',
+    customEndDate: '',
+    selectedUserIds: [],
+    selectedAccountIds: [],
+    selectedCardIds: [],
+    selectedCategoryIds: [],
+    status: 'all',
+    type: 'all',
+  });
 
   // Base Date
   const viewDate = useMemo(() => {
@@ -90,6 +99,9 @@ export const ReportsPage: React.FC = () => {
 
   // Filtered Transactions
   const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    const todayStr = getTodayString();
+
     return transactions
       .map(t => {
         const card = cards.find(c => c.id === t.cardId);
@@ -99,15 +111,69 @@ export const ReportsPage: React.FC = () => {
       .filter(t => {
         // Exclude ignored / third-party transactions from personal spending reports
         if (t.ignored) return false;
-        // Status filter
-        if (filterStatus !== 'all' && t.status !== filterStatus) return false;
-        // Account filter
-        if (filterAccountId !== 'all' && t.accountId !== filterAccountId && t.cardId !== filterAccountId) {
-          return false;
+
+        // Period Matching
+        const period = filters.period || 'current_month';
+        if (period === 'current_month') {
+          if (!t.date.startsWith(currentMonthPrefix)) return false;
+        } else if (period === 'today') {
+          if (t.date !== todayStr) return false;
+        } else if (period === 'week') {
+          const d = new Date(t.date + 'T12:00:00');
+          const firstDayOfWeek = new Date(now);
+          firstDayOfWeek.setDate(now.getDate() - now.getDay());
+          const lastDayOfWeek = new Date(firstDayOfWeek);
+          lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
+          if (d < firstDayOfWeek || d > lastDayOfWeek) return false;
+        } else if (period === 'last_30_days') {
+          const d = new Date(t.date + 'T12:00:00');
+          const thirtyDaysAgo = new Date(now);
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          if (d < thirtyDaysAgo || d > now) return false;
+        } else if (period === 'prev_month') {
+          const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const prevPrefix = prev.toISOString().substring(0, 7);
+          if (!t.date.startsWith(prevPrefix)) return false;
+        } else if (period === 'next_month') {
+          const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const nextPrefix = next.toISOString().substring(0, 7);
+          if (!t.date.startsWith(nextPrefix)) return false;
+        } else if (period === 'current_year') {
+          if (!t.date.startsWith(String(now.getFullYear()))) return false;
+        } else if (period === 'custom') {
+          if (filters.customStartDate && t.date < filters.customStartDate) return false;
+          if (filters.customEndDate && t.date > filters.customEndDate) return false;
         }
+
+        // Status filter
+        if (filters.status && filters.status !== 'all' && t.status !== filters.status) return false;
+
+        // Account filter
+        if (filters.selectedAccountIds && filters.selectedAccountIds.length > 0) {
+          if (!t.accountId || !filters.selectedAccountIds.includes(t.accountId)) return false;
+        }
+
+        // Card filter
+        if (filters.selectedCardIds && filters.selectedCardIds.length > 0) {
+          if (!t.cardId || !filters.selectedCardIds.includes(t.cardId)) return false;
+        }
+
+        // Category filter
+        if (filters.selectedCategoryIds && filters.selectedCategoryIds.length > 0) {
+          const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, t.type);
+          if (!filters.selectedCategoryIds.includes(t.categoryId) && !filters.selectedCategoryIds.includes(resolved.id)) {
+            return false;
+          }
+        }
+
+        // User filter
+        if (filters.selectedUserIds && filters.selectedUserIds.length > 0) {
+          if ((t as any).userId && !filters.selectedUserIds.includes((t as any).userId)) return false;
+        }
+
         return true;
       });
-  }, [transactions, filterStatus, filterAccountId, viewRegime, cards]);
+  }, [transactions, filters, viewRegime, cards, currentMonthPrefix, categories]);
 
   // Palette of colors
   const palette = [
@@ -507,18 +573,22 @@ export const ReportsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Funnel Filter Button */}
-          <button
-            onClick={() => setIsFilterModalOpen(true)}
-            title="Filtro de relatórios"
-            className={`p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer shadow-xs ${
-              filterStatus !== 'all' || filterAccountId !== 'all'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white dark:bg-[#2C2C2E] text-slate-600 dark:text-slate-300 hover:text-purple-600'
-            }`}
-          >
-            <Filter className="w-4 h-4" />
-          </button>
+          {/* Unified Filter Popover */}
+          <FilterPopover
+            filters={filters}
+            onFilterChange={setFilters}
+            categories={categories}
+            accounts={accounts}
+            cards={cards}
+            currentUser={user}
+            showPeriod={true}
+            showUser={true}
+            showAccounts={true}
+            showCards={true}
+            showCategories={true}
+            showStatus={true}
+            customPeriodLabel={capitalizedMonth + ' ' + yearNum}
+          />
         </div>
       </div>
 
@@ -939,110 +1009,6 @@ export const ReportsPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* 4. FILTER MODAL (MOBILLS SPEC) */}
-      {isFilterModalOpen && (
-        <Modal
-          isOpen={isFilterModalOpen}
-          onClose={() => setIsFilterModalOpen(false)}
-          title="Filtro de relatórios"
-        >
-          <div className="space-y-5">
-            {/* Situações */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                Situações:
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'all', label: 'Todas as situações' },
-                  { id: 'completed', label: 'Efetuada / Paga' },
-                  { id: 'pending', label: 'Pendente' },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setFilterStatus(opt.id as any)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                      filterStatus === opt.id
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Contas */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                Contas e Cartões:
-              </label>
-              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                <button
-                  onClick={() => setFilterAccountId('all')}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                    filterAccountId === 'all'
-                      ? 'bg-purple-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                  }`}
-                >
-                  Todas as contas
-                </button>
-                {accounts.map(a => (
-                  <button
-                    key={a.id}
-                    onClick={() => setFilterAccountId(a.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                      filterAccountId === a.id
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                    }`}
-                  >
-                    {a.name}
-                  </button>
-                ))}
-                {cards.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setFilterAccountId(c.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                      filterAccountId === c.id
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                    }`}
-                  >
-                    💳 {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setFilterStatus('all');
-                  setFilterAccountId('all');
-                  setIsFilterModalOpen(false);
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200"
-              >
-                Limpar / Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsFilterModalOpen(false)}
-                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-lg"
-              >
-                Aplicar filtros
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };

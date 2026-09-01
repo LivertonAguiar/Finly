@@ -36,6 +36,7 @@ import { formatCurrency, formatDate, getTodayString } from '../../utils/formatte
 import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { BankLogo } from '../../utils/bankLogos';
+import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from './TransactionModal';
 import { TransactionDetailModal } from './TransactionDetailModal';
 
@@ -54,12 +55,24 @@ export const TransactionsPage: React.FC = () => {
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
   const [filterType, setFilterType] = useState<string>('all'); // 'all' | 'expense' | 'income' | 'transfer'
-  const [filterStatus, setFilterStatus] = useState<string>('all'); // 'all' | 'completed' | 'pending'
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline');
+
+  // Unified Filter State
+  const [filters, setFilters] = useState<FilterState>({
+    period: 'current_month',
+    customStartDate: '',
+    customEndDate: '',
+    selectedUserIds: [],
+    selectedAccountIds: [],
+    selectedCardIds: [],
+    selectedCategoryIds: [],
+    status: 'all',
+    type: 'all',
+  });
 
   // Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,14 +95,51 @@ export const TransactionsPage: React.FC = () => {
   const yearNum = viewDate.getFullYear();
   const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
 
-  // Filtered transactions for this month (projected by due_date or purchase_date)
+  // Filtered transactions based on unified filters period
   const monthTransactions = useMemo(() => {
+    const now = new Date();
+    const todayStr = getTodayString();
+
     return transactions.filter(t => {
       const card = cards.find(c => c.id === t.cardId);
       const effectiveDate = getEffectiveTransactionDate(t, card, viewRegime);
-      return effectiveDate.startsWith(currentMonthPrefix);
+
+      // Period Matching
+      const period = filters.period || 'current_month';
+      if (period === 'current_month') {
+        if (!effectiveDate.startsWith(currentMonthPrefix)) return false;
+      } else if (period === 'today') {
+        if (effectiveDate !== todayStr) return false;
+      } else if (period === 'week') {
+        const d = new Date(effectiveDate + 'T12:00:00');
+        const firstDayOfWeek = new Date(now);
+        firstDayOfWeek.setDate(now.getDate() - now.getDay());
+        const lastDayOfWeek = new Date(firstDayOfWeek);
+        lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
+        if (d < firstDayOfWeek || d > lastDayOfWeek) return false;
+      } else if (period === 'last_30_days') {
+        const d = new Date(effectiveDate + 'T12:00:00');
+        const thirtyDaysAgo = new Date(now);
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        if (d < thirtyDaysAgo || d > now) return false;
+      } else if (period === 'prev_month') {
+        const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevPrefix = prev.toISOString().substring(0, 7);
+        if (!effectiveDate.startsWith(prevPrefix)) return false;
+      } else if (period === 'next_month') {
+        const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const nextPrefix = next.toISOString().substring(0, 7);
+        if (!effectiveDate.startsWith(nextPrefix)) return false;
+      } else if (period === 'current_year') {
+        if (!effectiveDate.startsWith(String(now.getFullYear()))) return false;
+      } else if (period === 'custom') {
+        if (filters.customStartDate && effectiveDate < filters.customStartDate) return false;
+        if (filters.customEndDate && effectiveDate > filters.customEndDate) return false;
+      }
+
+      return true;
     });
-  }, [transactions, currentMonthPrefix, viewRegime, cards]);
+  }, [transactions, currentMonthPrefix, viewRegime, cards, filters.period, filters.customStartDate, filters.customEndDate]);
 
   const monthlyIncome = useMemo(() => {
     return monthTransactions
@@ -204,12 +254,41 @@ export const TransactionsPage: React.FC = () => {
   const displayTransactions = useMemo(() => {
     return monthTransactions
       .filter(t => {
-        if (filterType !== 'all' && t.type !== filterType) return false;
-        if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+        // Type filter (from topbar dropdown or popover)
+        const activeType = filters.type && filters.type !== 'all' ? filters.type : filterType;
+        if (activeType !== 'all' && t.type !== activeType) return false;
+
+        // Status filter
+        if (filters.status && filters.status !== 'all' && t.status !== filters.status) return false;
+
+        // Account filter
+        if (filters.selectedAccountIds && filters.selectedAccountIds.length > 0) {
+          if (!t.accountId || !filters.selectedAccountIds.includes(t.accountId)) return false;
+        }
+
+        // Card filter
+        if (filters.selectedCardIds && filters.selectedCardIds.length > 0) {
+          if (!t.cardId || !filters.selectedCardIds.includes(t.cardId)) return false;
+        }
+
+        // Category filter
+        if (filters.selectedCategoryIds && filters.selectedCategoryIds.length > 0) {
+          const resolved = findCategory(t.categoryId, t.subcategoryId, t.type);
+          if (!filters.selectedCategoryIds.includes(t.categoryId) && !filters.selectedCategoryIds.includes(resolved.id)) {
+            return false;
+          }
+        }
+
+        // User filter
+        if (filters.selectedUserIds && filters.selectedUserIds.length > 0) {
+          if ((t as any).userId && !filters.selectedUserIds.includes((t as any).userId)) return false;
+        }
+
+        // Search filter
         if (searchTerm.trim()) {
           const term = searchTerm.toLowerCase();
           const descMatch = t.description.toLowerCase().includes(term);
-          const cat = findCategory(t.categoryId, t.subcategoryId);
+          const cat = findCategory(t.categoryId, t.subcategoryId, t.type);
           const catMatch = cat ? cat.name.toLowerCase().includes(term) : false;
           return descMatch || catMatch;
         }
@@ -222,7 +301,7 @@ export const TransactionsPage: React.FC = () => {
         const dateB = getEffectiveTransactionDate(b, cardB, viewRegime);
         return new Date(dateB).getTime() - new Date(dateA).getTime();
       });
-  }, [monthTransactions, filterType, filterStatus, searchTerm, categories, viewRegime, cards]);
+  }, [monthTransactions, filterType, filters, searchTerm, categories, viewRegime, cards]);
 
   // Group by date for timeline view
   const groupedTransactions = useMemo(() => {
@@ -468,18 +547,23 @@ export const TransactionsPage: React.FC = () => {
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Filter Status Icon Button */}
-          <button
-            onClick={() => setFilterStatus(filterStatus === 'all' ? 'completed' : filterStatus === 'completed' ? 'pending' : 'all')}
-            className={`w-9 h-9 rounded-full border flex items-center justify-center shadow-xs cursor-pointer transition-colors ${
-              filterStatus !== 'all'
-                ? 'bg-purple-600 text-white border-purple-600'
-                : 'bg-white dark:bg-[#2C2C2E] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-purple-600'
-            }`}
-            title={`Filtrar por Status: ${filterStatus}`}
-          >
-            <Filter className="w-4 h-4" />
-          </button>
+          {/* Unified Filter Popover */}
+          <FilterPopover
+            filters={filters}
+            onFilterChange={setFilters}
+            categories={categories}
+            accounts={accounts}
+            cards={cards}
+            currentUser={user}
+            showPeriod={true}
+            showUser={true}
+            showAccounts={true}
+            showCards={true}
+            showCategories={true}
+            showStatus={true}
+            showType={true}
+            customPeriodLabel={capitalizedMonth + ' ' + yearNum}
+          />
 
           {/* More Options (3 Dots) */}
           <div className="relative">

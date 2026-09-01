@@ -21,7 +21,9 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction } from '../../types';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
+import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
 
@@ -39,7 +41,17 @@ export const CalendarPage: React.FC = () => {
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [selectedDate, setSelectedDate] = useState<string | null>(getTodayString());
-  const [onlyPending, setOnlyPending] = useState<boolean>(false);
+  const [filters, setFilters] = useState<FilterState>({
+    period: 'current_month',
+    customStartDate: '',
+    customEndDate: '',
+    selectedUserIds: [],
+    selectedAccountIds: [],
+    selectedCardIds: [],
+    selectedCategoryIds: [],
+    status: 'all',
+    type: 'all',
+  });
 
   // Transaction Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,7 +133,37 @@ export const CalendarPage: React.FC = () => {
     const map: Record<string, { income: number; expense: number; transactions: Transaction[] }> = {};
 
     transactions.forEach(t => {
-      if (onlyPending && t.status !== 'pending') return;
+      // Exclude ignored
+      if (t.ignored) return;
+
+      // Status filter
+      if (filters.status && filters.status !== 'all' && t.status !== filters.status) return;
+
+      // Type filter
+      if (filters.type && filters.type !== 'all' && t.type !== filters.type) return;
+
+      // Account filter
+      if (filters.selectedAccountIds && filters.selectedAccountIds.length > 0) {
+        if (!t.accountId || !filters.selectedAccountIds.includes(t.accountId)) return;
+      }
+
+      // Card filter
+      if (filters.selectedCardIds && filters.selectedCardIds.length > 0) {
+        if (!t.cardId || !filters.selectedCardIds.includes(t.cardId)) return;
+      }
+
+      // Category filter
+      if (filters.selectedCategoryIds && filters.selectedCategoryIds.length > 0) {
+        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, t.type);
+        if (!filters.selectedCategoryIds.includes(t.categoryId) && !filters.selectedCategoryIds.includes(resolved.id)) {
+          return;
+        }
+      }
+
+      // User filter
+      if (filters.selectedUserIds && filters.selectedUserIds.length > 0) {
+        if ((t as any).userId && !filters.selectedUserIds.includes((t as any).userId)) return;
+      }
 
       const card = cards.find(c => c.id === t.cardId);
       const effectiveDate = getEffectiveTransactionDate(t, card, viewRegime);
@@ -138,7 +180,7 @@ export const CalendarPage: React.FC = () => {
     });
 
     return map;
-  }, [transactions, onlyPending, viewRegime, cards]);
+  }, [transactions, filters, viewRegime, cards, categories]);
 
   // Selected Day Details
   const selectedDayData = useMemo(() => {
@@ -158,14 +200,8 @@ export const CalendarPage: React.FC = () => {
   }, [selectedDate]);
 
   // Robust category lookup
-  const findCategory = (catId?: string, subId?: string) => {
-    if (!catId && !subId) return null;
-    return categories.find(
-      c =>
-        c.id === catId ||
-        c.name.toLowerCase() === catId?.toLowerCase() ||
-        (subId && c.subcategories?.some(s => s.id === subId || s.name.toLowerCase() === subId.toLowerCase()))
-    );
+  const findCategory = (catId?: string, subId?: string, type?: any) => {
+    return resolveCategory(categories, catId, subId, type || 'expense');
   };
 
   return (
@@ -228,6 +264,22 @@ export const CalendarPage: React.FC = () => {
             >
               <ChevronRight className="w-4 h-4" />
             </button>
+
+            <FilterPopover
+              filters={filters}
+              onFilterChange={setFilters}
+              categories={categories}
+              accounts={accounts}
+              cards={cards}
+              currentUser={user}
+              showPeriod={false}
+              showUser={true}
+              showAccounts={true}
+              showCards={true}
+              showCategories={true}
+              showStatus={true}
+              showType={true}
+            />
           </div>
         </div>
       </div>
@@ -318,8 +370,8 @@ export const CalendarPage: React.FC = () => {
               <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 dark:text-slate-400">
                 <input
                   type="checkbox"
-                  checked={onlyPending}
-                  onChange={e => setOnlyPending(e.target.checked)}
+                  checked={filters.status === 'pending'}
+                  onChange={e => setFilters({ ...filters, status: e.target.checked ? 'pending' : 'all' })}
                   className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 dark:border-slate-700 cursor-pointer"
                 />
                 <span>Somente pendentes</span>

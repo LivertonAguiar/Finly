@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   Plus,
@@ -16,6 +16,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
 import { Modal } from '../ui/Modal';
 import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
+import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { InvestmentAsset, InvestmentType } from '../../types';
 
 export const InvestmentsTab: React.FC = () => {
@@ -27,6 +28,10 @@ export const InvestmentsTab: React.FC = () => {
     } catch (e) {
       return 'grid';
     }
+  });
+
+  const [filters, setFilters] = useState<FilterState>({
+    assetType: 'all',
   });
 
   const [showModal, setShowModal] = useState(false);
@@ -127,6 +132,15 @@ export const InvestmentsTab: React.FC = () => {
     return { name, value, color: colors[idx % colors.length] };
   });
 
+  const filteredInvestments: InvestmentAsset[] = useMemo(() => {
+    return investments.filter(i => {
+      if (filters.assetType && filters.assetType !== 'all' && i.type !== filters.assetType) {
+        return false;
+      }
+      return true;
+    });
+  }, [investments, filters]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top 3 KPI Cards */}
@@ -142,29 +156,34 @@ export const InvestmentsTab: React.FC = () => {
         </div>
 
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500">Rendimento Mensal Estimado</span>
-          <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
-            +{formatCurrency(totalYield, user.currency, !user.showValues)}
+          <span className="text-xs font-semibold text-slate-500">Total Aplicado</span>
+          <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+            {formatCurrency(totalInvested, user.currency, !user.showValues)}
           </p>
-          <span className="text-[11px] text-slate-400 mt-1 block">Proventos / Dividendos</span>
+          <span className="text-[11px] text-slate-400 font-medium mt-1 block">
+            Custo base de aquisição
+          </span>
         </div>
 
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500">Total de Ativos Cadastrados</span>
-          <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
-            {investments.length}
+          <span className="text-xs font-semibold text-slate-500">Proventos / Rendimentos do Mês</span>
+          <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
+            +{formatCurrency(totalYield, user.currency, !user.showValues)}
           </p>
-          <span className="text-[11px] text-slate-400 mt-1 block">Posições ativas</span>
+          <span className="text-[11px] text-slate-400 font-medium mt-1 block">
+            Dividendos, JCP e juros mensais
+          </span>
         </div>
       </div>
 
-      {/* Asset Allocation Chart & Diversification */}
-      {investments.length > 0 && (
+      {/* Allocation & Asset Distribution Chart */}
+      {allocationData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">Alocação por Classe de Ativo</h3>
-            <p className="text-xs text-slate-400 mb-4">Distribuição do seu capital entre Renda Fixa, Ações, FIIs e outros</p>
-
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <PieIcon className="w-4 h-4 text-emerald-600" />
+              Alocação por Classe de Ativos
+            </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -172,16 +191,25 @@ export const InvestmentsTab: React.FC = () => {
                     data={allocationData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={4}
+                    innerRadius={65}
+                    outerRadius={95}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {allocationData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => formatCurrency(Number(value), user.currency, !user.showValues)} />
+                  <Tooltip
+                    formatter={(value: any) => formatCurrency(Number(value), user.currency)}
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      borderRadius: '12px',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: '12px',
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -189,14 +217,14 @@ export const InvestmentsTab: React.FC = () => {
 
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4">Classes de Ativos</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4">Resumo da Carteira</h3>
               <div className="space-y-3">
                 {allocationData.map((item) => {
                   const pct = totalCurrent > 0 ? (item.value / totalCurrent) * 100 : 0;
                   return (
                     <div key={item.name} className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                         <span className="text-slate-600 dark:text-slate-300 font-medium">{item.name}</span>
                       </div>
                       <div className="text-right">
@@ -213,7 +241,7 @@ export const InvestmentsTab: React.FC = () => {
 
             <button
               onClick={handleOpenAdd}
-              className="mt-6 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5"
+              className="mt-6 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Adicionar Ativo
             </button>
@@ -230,6 +258,17 @@ export const InvestmentsTab: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <FilterPopover
+              filters={filters}
+              onFilterChange={setFilters}
+              showPeriod={false}
+              showUser={false}
+              showAccounts={false}
+              showCards={false}
+              showCategories={false}
+              showAssetType={true}
+            />
+
             <ViewModeToggle
               mode={viewMode}
               onChange={(m) => {
@@ -247,14 +286,16 @@ export const InvestmentsTab: React.FC = () => {
           </div>
         </div>
 
-        {investments.length === 0 ? (
+        {filteredInvestments.length === 0 ? (
           <div className="py-12 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center text-xl font-bold">
               📈
             </div>
-            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">Nenhum investimento cadastrado</h4>
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">Nenhum investimento encontrado</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Comece cadastrando suas aplicações em Renda Fixa, Ações, FIIs ou Cripto para acompanhar seu patrimônio.
+              {investments.length === 0
+                ? 'Comece cadastrando suas aplicações em Renda Fixa, Ações, FIIs ou Cripto para acompanhar seu patrimônio.'
+                : 'Nenhum ativo corresponde aos filtros selecionados. Tente ajustar a classe de ativo no filtro.'}
             </p>
             <button
               onClick={handleOpenAdd}
@@ -266,7 +307,7 @@ export const InvestmentsTab: React.FC = () => {
         ) : viewMode === 'grid' ? (
           /* GRID BLOCKS VIEW (||) */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {investments.map(i => (
+            {filteredInvestments.map(i => (
               <div
                 key={i.id}
                 className="p-5 rounded-2xl bg-slate-50/50 dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
@@ -333,8 +374,8 @@ export const InvestmentsTab: React.FC = () => {
                   <th className="py-3 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {investments.map((i) => (
+              <tbody className="divide-y border-slate-100 dark:border-slate-800/60">
+                {filteredInvestments.map((i) => (
                   <tr key={i.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="py-3.5 font-bold text-slate-800 dark:text-slate-100">
                       <div className="flex items-center gap-2">
