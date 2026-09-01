@@ -29,7 +29,11 @@ import { AccountModal } from '../cadastros/AccountModal';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { Modal } from '../ui/Modal';
 
-export const AccountsPage: React.FC = () => {
+interface AccountsPageProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
   const { accounts, transactions, addTransaction, deleteAccount, user } = useFinancial();
   const { confirm } = useConfirm();
 
@@ -493,37 +497,45 @@ export const AccountsPage: React.FC = () => {
         </div>
 
         {/* RIGHT COLUMN: STACKED CONSOLIDATED SUMMARY CARDS (COL-SPAN-4) */}
-        <div className="lg:col-span-4 space-y-4">
+        <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
           {/* Card 1: Saldo atual */}
-          <div className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
+          <div
+            onClick={() => setActiveTab && setActiveTab('transacoes')}
+            className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-between cursor-pointer group select-none"
+            title="Clique para ver todas as transações realizadas"
+          >
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+              <div className="flex items-center gap-1 text-slate-400 text-xs font-bold group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 <span>Saldo atual</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </div>
-              <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                 {formatCurrency(totalActualBalance, user.currency, !user.showValues)}
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-full bg-emerald-600 dark:bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0 group-hover:scale-105 transition-transform">
               <DollarSign className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
 
           {/* Card 2: Saldo previsto */}
-          <div className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
+          <div
+            onClick={() => setIsProjectionOpen(true)}
+            className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-between cursor-pointer group select-none"
+            title="Clique para ver a projeção detalhada de saldo"
+          >
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+              <div className="flex items-center gap-1 text-slate-400 text-xs font-bold group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 <span>Saldo previsto</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </div>
-              <p className={`text-xl font-black tracking-tight ${totalProjectedBalance >= 0 ? 'text-[#66bb6a] dark:text-white' : 'text-[#ef5350]'}`}>
+              <p className={`text-xl sm:text-2xl font-black tracking-tight ${totalProjectedBalance >= 0 ? 'text-[#66bb6a] dark:text-white' : 'text-[#ef5350]'}`}>
                 {formatCurrency(totalProjectedBalance, user.currency, !user.showValues)}
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-full bg-emerald-600 dark:bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0 group-hover:scale-105 transition-transform">
               <Banknote className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
@@ -674,6 +686,20 @@ export const AccountsPage: React.FC = () => {
                   {formatCurrency(totalProjectedBalance, user.currency)}
                 </span>
               </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProjectionOpen(false);
+                  if (setActiveTab) setActiveTab('transacoes');
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+              >
+                <span>Ver Transações do Mês</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </Modal>

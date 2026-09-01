@@ -194,7 +194,7 @@ const AppContent: React.FC = () => {
               onOpenNewCard={() => setIsNewCardOpen(true)}
             />
           )}
-          {activeTab === 'contas' && <AccountsPage />}
+          {activeTab === 'contas' && <AccountsPage setActiveTab={handleSelectTab} />}
           {(activeTab === 'planejamento' || activeTab === 'orcamento') && <BudgetPage />}
           {activeTab === 'relatorios' && <ReportsPage />}
           {activeTab === 'calendario' && <CalendarPage />}
