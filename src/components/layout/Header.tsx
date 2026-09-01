@@ -11,7 +11,6 @@ import {
   LogOut,
   Download,
   ShieldCheck,
-  Gift,
   Crown,
   Cloud,
   CheckCircle2,
@@ -100,18 +99,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Rewards, Hide Values, Theme, Notifications, Settings, User Avatar */}
+      {/* Right: Hide Values, Theme, Notifications, Settings, User Avatar */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-
-        {/* Mobills Rewards Gift Button */}
-        <button
-          onClick={() => setActiveTab('mais')}
-          className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center relative hover:scale-105 transition-transform cursor-pointer border border-purple-200 dark:border-purple-800/60"
-          title="Benefícios & Recompensas"
-        >
-          <Gift className="w-4 h-4" />
-          <span className="absolute top-0 right-0 w-2 h-2 bg-purple-500 rounded-full ring-1 ring-white dark:ring-[#1C1C1E]" />
-        </button>
 
         {/* Hide Values Toggle */}
         <button
