@@ -75,7 +75,7 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-6 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2.5 shadow-sm dark:shadow-md hover:bg-slate-50 dark:hover:bg-[#343437] hover:border-purple-500/40 transition-all cursor-pointer active:scale-95 group"
+        className="px-6 py-2 rounded-full bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 text-slate-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2.5 shadow-sm dark:shadow-md hover:bg-slate-50 dark:hover:bg-[#222226] hover:border-purple-500/40 transition-all cursor-pointer active:scale-95 group"
       >
         <span className="lowercase font-bold tracking-wide">{currentMonthName}</span>
         <ChevronDown
@@ -87,7 +87,7 @@ export const MonthPickerPopover: React.FC<MonthPickerPopoverProps> = ({
 
       {/* Popover Content */}
       {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50 w-72 sm:w-80 rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50 w-72 sm:w-80 rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 animate-in fade-in zoom-in-95 duration-150">
           {/* Header with Purple Background and Year Navigation */}
           <div className="bg-purple-600 px-6 py-3.5 flex items-center justify-between select-none">
             <button

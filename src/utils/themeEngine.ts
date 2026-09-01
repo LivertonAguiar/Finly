@@ -9,20 +9,20 @@ export interface ThemeConfig {
 
 const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: string; mode: 'dark' | 'light' }> = {
   'planner-dark': {
-    bg: '#1C1C1E',
-    cardBg: '#2C2C2E',
+    bg: '#121214',
+    cardBg: '#18181B',
     text: '#FFFFFF',
     mode: 'dark',
   },
   'plannerfin-dark': {
-    bg: '#1C1C1E',
-    cardBg: '#2C2C2E',
+    bg: '#121214',
+    cardBg: '#18181B',
     text: '#FFFFFF',
     mode: 'dark',
   },
   'midnight-oled': {
     bg: '#000000',
-    cardBg: '#121212',
+    cardBg: '#101012',
     text: '#FFFFFF',
     mode: 'dark',
   },
@@ -33,7 +33,7 @@ const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: str
     mode: 'dark',
   },
   'clean-light': {
-    bg: '#F1F5F9',
+    bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     text: '#0F172A',
     mode: 'light',
