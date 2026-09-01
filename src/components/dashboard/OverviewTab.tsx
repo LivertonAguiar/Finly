@@ -303,73 +303,52 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return semestralData.slice(-3);
   }, [semestralData]);
 
-  // 7. Credit Cards Breakdown Data
-  const todayDay = new Date().getDate();
+  // 7. Credit Cards Breakdown Data (Synchronized exactly with CreditTab logic)
   const cardSummaries = useMemo(() => {
     return cards.map(card => {
-      const cardTxs = transactions.filter(t => t.cardId === card.id && !t.ignored);
+      const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense' && !t.ignored);
+      const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
+      const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
-      const currentMonthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
+      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
 
-      const currentOpenInvoice = currentMonthTxs
-        .filter(t => t.type === 'expense' && t.status === 'completed')
-        .reduce((sum, t) => sum + t.amount, 0);
+      // Open current month invoice amount
+      const currentOpenInvoice = isPaid ? 0 : invoiceTotal;
+      const currentInvoicePercent = card.limit > 0 ? (currentOpenInvoice / card.limit) * 100 : 0;
 
-      const futureInstallmentsTotal = cardTxs
-        .filter(t => Boolean(t.installments) && t.date > currentMonthPrefix && t.status === 'completed')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const invoiceTotal = currentOpenInvoice;
-      const isOverLimit = invoiceTotal > card.limit;
-      const overLimitAmount = isOverLimit ? invoiceTotal - card.limit : 0;
-      const availableLimit = Math.max(0, card.limit - invoiceTotal);
-
-      const currentInvoicePercent = card.limit > 0 ? (invoiceTotal / card.limit) * 100 : 0;
+      // Future unpaid installments in subsequent months
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && !t.date.startsWith(currentMonthPrefix));
+      const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const futureInstallmentsPercent = card.limit > 0 ? (futureInstallmentsTotal / card.limit) * 100 : 0;
-      const limitUsedPercent = Math.min(100, currentInvoicePercent + futureInstallmentsPercent);
 
-      const isCurrentMonth = selectedMonthOffset === 0;
-      const isInvoiceClosed = isCurrentMonth
-        ? todayDay > card.closingDay
-        : viewDate < new Date();
+      // Active committed limit = all unpaid/open card expense transactions
+      const totalCommitted = Math.round(cardTxs.filter(t => t.status !== 'completed').reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+      const availableLimit = Math.max(0, Math.round((card.limit - totalCommitted) * 100) / 100);
+      const limitUsedPercent = card.limit > 0 ? Math.min(100, (totalCommitted / card.limit) * 100) : 0;
+      const isOverLimit = totalCommitted > card.limit;
+      const overLimitAmount = Math.max(0, totalCommitted - card.limit);
 
-      const invoicePayments = transactions.filter(
-        t => t.type === 'expense' &&
-             t.date.startsWith(currentMonthPrefix) &&
-             t.tags?.includes('fatura_cartao') &&
-             t.tags?.includes(`card_${card.id}`)
-      );
-      const isPaid = invoicePayments.length > 0 && invoicePayments.reduce((s, p) => s + p.amount, 0) >= invoiceTotal && invoiceTotal > 0;
-      const isOverdue = isInvoiceClosed && !isPaid && (isCurrentMonth ? todayDay > card.dueDay : true);
+      const viewMonthNum = viewDate.getMonth() + 1;
+      const viewYearNum = viewDate.getFullYear();
+
+      const statusInfo = calculateCardInvoiceStatus(card, viewYearNum, viewMonthNum, invoiceTotal, isPaid);
+      const statusLabel = statusInfo.statusLabel;
+      const statusColor = statusInfo.statusColor;
+      const isOverdue = statusLabel.toLowerCase().includes('vencid');
       const isZero = invoiceTotal === 0;
-
-      let statusLabel = 'Fatura Aberta';
-      let statusColor = 'text-purple-600 dark:text-purple-400';
-      if (isZero) {
-        statusLabel = 'Sem Gastos';
-        statusColor = 'text-slate-400';
-      } else if (isPaid) {
-        statusLabel = 'Fatura Paga';
-        statusColor = 'text-emerald-600 dark:text-emerald-400';
-      } else if (isOverdue) {
-        statusLabel = 'Fatura Vencida';
-        statusColor = 'text-rose-600 dark:text-rose-400';
-      } else if (isInvoiceClosed) {
-        statusLabel = 'Fatura Fechada';
-        statusColor = 'text-amber-500 dark:text-amber-400';
-      }
 
       return {
         ...card,
-        currentOpenInvoice,
-        futureInstallmentsTotal,
         invoiceTotal,
+        currentOpenInvoice,
+        currentInvoicePercent,
+        futureInstallmentsTotal,
+        futureInstallmentsPercent,
+        totalCommitted,
+        availableLimit,
+        limitUsedPercent,
         isOverLimit,
         overLimitAmount,
-        availableLimit,
-        currentInvoicePercent,
-        futureInstallmentsPercent,
-        limitUsedPercent,
         statusLabel,
         statusColor,
         isPaid,
@@ -377,7 +356,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         isZero,
       };
     });
-  }, [cards, transactions, currentMonthPrefix, todayDay, viewDate, selectedMonthOffset]);
+  }, [cards, transactions, currentMonthPrefix, viewDate]);
 
   const totalCardInvoicesSum = useMemo(() => {
     return cardSummaries.reduce((sum, c) => sum + c.invoiceTotal, 0);
