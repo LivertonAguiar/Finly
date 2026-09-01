@@ -15,6 +15,11 @@ import {
   TrendingUp,
   Clock,
   Layers,
+  Bookmark,
+  Palette,
+  Image as ImageIcon,
+  FileText,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useFinancial } from '../../context/FinancialContext';
@@ -56,6 +61,7 @@ export const GoalsPage: React.FC = () => {
   const [deadline, setDeadline] = useState('2026-12-31');
   const [icon, setIcon] = useState('🎯');
   const [color, setColor] = useState('#7c4dff');
+  const [description, setDescription] = useState('');
 
   const openCreateModal = () => {
     setEditingGoal(null);
@@ -65,6 +71,7 @@ export const GoalsPage: React.FC = () => {
     setDeadline('2026-12-31');
     setIcon('🎯');
     setColor('#7c4dff');
+    setDescription('');
     setIsGoalModalOpen(true);
   };
 
@@ -76,6 +83,7 @@ export const GoalsPage: React.FC = () => {
     setDeadline(g.deadline);
     setIcon(g.icon || '🎯');
     setColor(g.color || '#7c4dff');
+    setDescription(g.description || '');
     setIsGoalModalOpen(true);
   };
 
@@ -92,6 +100,7 @@ export const GoalsPage: React.FC = () => {
         deadline,
         icon,
         color,
+        description,
       });
     } else {
       addGoal({
@@ -101,6 +110,7 @@ export const GoalsPage: React.FC = () => {
         deadline,
         icon,
         color,
+        description,
       });
     }
 
@@ -441,55 +451,24 @@ export const GoalsPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL: CRIAR / EDITAR META */}
+      {/* MODAL: CRIAR / EDITAR META (MATCHING USER SCREENSHOT) */}
       {isGoalModalOpen && (
         <Modal
           isOpen={isGoalModalOpen}
           onClose={() => setIsGoalModalOpen(false)}
-          title={editingGoal ? 'Editar Meta' : 'Criar Nova Meta'}
-          maxWidth="lg"
+          title={editingGoal ? 'Editar objetivo' : 'Criar objetivo'}
+          maxWidth="md"
         >
-          <form onSubmit={handleSaveGoal} className="space-y-4">
-            {/* Ícone e Cor da Meta */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ícone da Meta</label>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {['🎯', '💰', '🏖️', '🚗', '🏠', '💍', '👶', '🎓', '💻', '✈️', '📱', '🛡️'].map(e => (
-                  <button
-                    key={e}
-                    type="button"
-                    onClick={() => setIcon(e)}
-                    className={`w-10 h-10 rounded-2xl text-lg flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                      icon === e
-                        ? 'bg-purple-600/20 border-2 border-purple-500 scale-105 shadow-sm'
-                        : 'bg-slate-100 dark:bg-[#121214] border border-slate-200 dark:border-slate-800 hover:border-slate-400'
-                    }`}
-                  >
-                    {e}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Título da Meta */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título da Meta</label>
-              <input
-                type="text"
-                placeholder="Ex: Reserva de Emergência, Viagem para Europa, Carro Novo"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
-              />
-            </div>
-
-            {/* Valores Alvo e Inicial */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Valor Alvo (Meta)</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+          <form onSubmit={handleSaveGoal} className="space-y-4 pt-1">
+            {/* 1. Valor do objetivo */}
+            <div className="space-y-1 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <label className="text-[11px] font-bold text-slate-400 block">
+                Valor do objetivo
+              </label>
+              <div className="flex items-center gap-3">
+                <Trophy className="w-5 h-5 text-purple-500 shrink-0" />
+                <div className="flex items-center gap-1.5 flex-1">
+                  <span className="text-lg font-black text-purple-600 dark:text-purple-400">
                     R$
                   </span>
                   <input
@@ -500,74 +479,165 @@ export const GoalsPage: React.FC = () => {
                     value={targetAmount}
                     onChange={e => setTargetAmount(e.target.value)}
                     required
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
+                    autoFocus
+                    className="w-full py-1 text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 bg-transparent border-none focus:outline-none placeholder:text-purple-300 dark:placeholder:text-purple-700"
                   />
                 </div>
               </div>
-
-              {!editingGoal ? (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Já Tenho Guardado (Opcional)</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
-                      R$
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0,00"
-                      value={initialAmount}
-                      onChange={e => setInitialAmount(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Valor Atual Guardado</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
-                      R$
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0,00"
-                      value={initialAmount}
-                      onChange={e => setInitialAmount(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Data Limite Desejada (Custom Dark DatePicker) */}
-            <DatePicker
-              label="Data Limite Desejada"
-              value={deadline}
-              onChange={setDeadline}
-              required
-              showPresets={true}
-            />
+            {/* 2. Valor inicial do objetivo */}
+            <div className="space-y-1 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <label className="text-[11px] font-bold text-slate-400 block">
+                Valor inicial do objetivo
+              </label>
+              <div className="flex items-center gap-3">
+                <Plus className="w-5 h-5 text-purple-400 shrink-0" />
+                <div className="flex items-center gap-1.5 flex-1">
+                  <span className="text-sm font-bold text-purple-400">
+                    R$
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={initialAmount}
+                    onChange={e => setInitialAmount(e.target.value)}
+                    className="w-full py-1 text-sm sm:text-base font-bold text-purple-500/90 dark:text-purple-300 bg-transparent border-none focus:outline-none placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+            </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsGoalModalOpen(false)}
-                className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
+            {/* 3. Nome do objetivo */}
+            <div className="space-y-1 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <label className="text-[11px] font-bold text-slate-400 block">
+                Nome do objetivo
+              </label>
+              <div className="flex items-center gap-3">
+                <Bookmark className="w-5 h-5 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Objetivo personalizado"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  required
+                  className="w-full py-1 text-sm font-bold text-slate-800 dark:text-white bg-transparent border-none focus:outline-none placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+
+            {/* 4. Data limite (Material Dialog DatePicker) */}
+            <div className="space-y-1 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <label className="text-[11px] font-bold text-slate-400 block">
+                Data
+              </label>
+              <DatePicker
+                value={deadline}
+                onChange={setDeadline}
+                required
+              />
+            </div>
+
+            {/* 5. Cor */}
+            <div className="space-y-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-slate-400" />
+                <span className="text-[11px] font-bold text-slate-400">Cor</span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {[
+                  '#1c1c1e',
+                  '#0284c7',
+                  '#7c4dff',
+                  '#10b981',
+                  '#f59e0b',
+                  '#ef4444',
+                  '#ec4899',
+                  '#06b6d4',
+                  '#6366f1',
+                ].map(c => {
+                  const isSelected = color === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setColor(c)}
+                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-xs border border-white/10 hover:scale-105"
+                      style={{ backgroundColor: c }}
+                    >
+                      {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
+                    </button>
+                  );
+                })}
+
+                {/* Custom Color Input */}
+                <label className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#252528] text-slate-400 hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-pointer shrink-0 transition-all">
+                  <Plus className="w-4 h-4" />
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={e => setColor(e.target.value)}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* 6. Ícone */}
+            <div className="space-y-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-slate-400" />
+                <span className="text-[11px] font-bold text-slate-400">Ícone</span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {['🎯', '🍽️', '🚗', '✈️', '🎁', '💻', '🏠', '🛡️', '💍', '🎓', '👶', '💰', '🏖️', '📱', '🏋️'].map(e => {
+                  const isSelected = icon === e;
+                  return (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => setIcon(e)}
+                      className={`w-9 h-9 rounded-full text-base flex items-center justify-center transition-all cursor-pointer shrink-0 border ${
+                        isSelected
+                          ? 'bg-purple-600/20 border-purple-500 scale-110 shadow-sm'
+                          : 'bg-slate-100 dark:bg-[#252528] border-slate-200 dark:border-slate-700 hover:scale-105'
+                      }`}
+                    >
+                      {e}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 7. Descrição */}
+            <div className="space-y-1 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <label className="text-[11px] font-bold text-slate-400 block">
+                Descrição
+              </label>
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Descrição do objetivo"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  className="w-full py-1 text-sm font-bold text-slate-800 dark:text-white bg-transparent border-none focus:outline-none placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-2">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-[#5b36d6] hover:bg-[#4d2bc2] active:scale-[0.99] text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-purple-600/25 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{editingGoal ? 'Salvar Alterações' : 'Criar Meta'}</span>
+                <span>{editingGoal ? 'SALVAR OBJETIVO' : 'CRIAR OBJETIVO'}</span>
               </button>
             </div>
           </form>

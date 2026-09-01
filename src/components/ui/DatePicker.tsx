@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 
 interface DatePickerProps {
   value: string; // YYYY-MM-DD
@@ -11,12 +11,21 @@ interface DatePickerProps {
   className?: string;
 }
 
-const MONTH_NAMES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+const MONTH_NAMES_FULL = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
 ];
 
-const WEEK_DAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+const MONTH_NAMES_SHORT = [
+  'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+  'jul', 'ago', 'set', 'out', 'nov', 'dez'
+];
+
+// Exact Portuguese Weekday headers matching the user's reference screenshot:
+// Do, 2ª, 3ª, 4ª, 5ª, 6ª, Sá
+const WEEK_DAYS_HEADER = ['Do', '2ª', '3ª', '4ª', '5ª', '6ª', 'Sá'];
+
+const WEEK_DAYS_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 export const DatePicker: React.FC<DatePickerProps> = ({
   value,
@@ -24,266 +33,326 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   label,
   required,
   min,
-  showPresets = true,
+  showPresets = false,
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [pickerMode, setPickerMode] = useState<'calendar' | 'month' | 'year'>('calendar');
 
-  // Parse initial or fallback date
+  // Initial parsed date
   const parsedDate = value ? new Date(value + 'T12:00:00') : new Date();
-  const [viewYear, setViewYear] = useState(parsedDate.getFullYear() || new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(parsedDate.getMonth() ?? new Date().getMonth());
+  const initialYear = !isNaN(parsedDate.getFullYear()) ? parsedDate.getFullYear() : new Date().getFullYear();
+  const initialMonth = !isNaN(parsedDate.getMonth()) ? parsedDate.getMonth() : new Date().getMonth();
+  const initialDay = !isNaN(parsedDate.getDate()) ? parsedDate.getDate() : new Date().getDate();
 
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+  // Temporary selection inside dialog
+  const [tempYear, setTempYear] = useState(initialYear);
+  const [tempMonth, setTempMonth] = useState(initialMonth);
+  const [tempDay, setTempDay] = useState(initialDay);
 
-  // Synchronize view state when value prop changes
+  // Sync with value prop
   useEffect(() => {
     if (value) {
       const d = new Date(value + 'T12:00:00');
       if (!isNaN(d.getTime())) {
-        setViewYear(d.getFullYear());
-        setViewMonth(d.getMonth());
+        setTempYear(d.getFullYear());
+        setTempMonth(d.getMonth());
+        setTempDay(d.getDate());
       }
     }
-  }, [value]);
+  }, [value, isOpen]);
 
-  // Format display text
-  const formatDisplayDate = (isoStr: string) => {
+  // Open modal handler
+  const handleOpen = () => {
+    const d = value ? new Date(value + 'T12:00:00') : new Date();
+    if (!isNaN(d.getTime())) {
+      setTempYear(d.getFullYear());
+      setTempMonth(d.getMonth());
+      setTempDay(d.getDate());
+    }
+    setPickerMode('calendar');
+    setIsOpen(true);
+  };
+
+  // Format header display: "qui, out 1"
+  const getHeaderDateText = () => {
+    const d = new Date(tempYear, tempMonth, tempDay, 12);
+    const dayOfWeek = WEEK_DAYS_SHORT[d.getDay()];
+    const monthShort = MONTH_NAMES_SHORT[tempMonth];
+    return `${dayOfWeek}, ${monthShort} ${tempDay}`;
+  };
+
+  // Format trigger input display: "01 outubro 2026"
+  const formatInputDisplay = (isoStr: string) => {
     if (!isoStr) return 'Selecione a data limite';
     const [y, m, d] = isoStr.split('-');
     if (!y || !m || !d) return isoStr;
-    const monthName = MONTH_NAMES[parseInt(m, 10) - 1];
-    return `${parseInt(d, 10)} de ${monthName} de ${y}`;
+    const monthIndex = parseInt(m, 10) - 1;
+    const monthName = MONTH_NAMES_FULL[monthIndex] || m;
+    const formattedDay = String(parseInt(d, 10)).padStart(2, '0');
+    return `${formattedDay} ${monthName} ${y}`;
   };
 
-  // Calendar Calculation
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay(); // 0 = Sun, 6 = Sat
+  // Calendar Calculation for tempYear and tempMonth
+  const daysInMonth = new Date(tempYear, tempMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(tempYear, tempMonth, 1).getDay(); // 0 = Sun, 6 = Sat
 
   const prevMonth = () => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(prev => prev - 1);
+    if (tempMonth === 0) {
+      setTempMonth(11);
+      setTempYear(prev => prev - 1);
     } else {
-      setViewMonth(prev => prev - 1);
+      setTempMonth(prev => prev - 1);
     }
   };
 
   const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(prev => prev + 1);
+    if (tempMonth === 11) {
+      setTempMonth(0);
+      setTempYear(prev => prev + 1);
     } else {
-      setViewMonth(prev => prev + 1);
+      setTempMonth(prev => prev + 1);
     }
   };
 
+  // When clicking a day in the calendar grid
   const handleSelectDay = (day: number) => {
-    const formattedMonth = String(viewMonth + 1).padStart(2, '0');
-    const formattedDay = String(day).padStart(2, '0');
-    const isoString = `${viewYear}-${formattedMonth}-${formattedDay}`;
+    setTempDay(day);
+  };
+
+  // Confirm dialog selection
+  const handleConfirm = () => {
+    const formattedMonth = String(tempMonth + 1).padStart(2, '0');
+    const formattedDay = String(tempDay).padStart(2, '0');
+    const isoString = `${tempYear}-${formattedMonth}-${formattedDay}`;
     onChange(isoString);
     setIsOpen(false);
   };
 
-  // Quick Preset Handlers
-  const currentYear = new Date().getFullYear();
-  const setPreset = (type: 'end_year' | '6_months' | '1_year' | '2_years' | 'today') => {
-    const today = new Date();
-    let target = new Date();
-
-    if (type === 'today') {
-      target = today;
-    } else if (type === 'end_year') {
-      target = new Date(currentYear, 11, 31);
-    } else if (type === '6_months') {
-      target.setMonth(today.getMonth() + 6);
-    } else if (type === '1_year') {
-      target.setFullYear(today.getFullYear() + 1);
-    } else if (type === '2_years') {
-      target.setFullYear(today.getFullYear() + 2);
-    }
-
-    const y = target.getFullYear();
-    const m = String(target.getMonth() + 1).padStart(2, '0');
-    const d = String(target.getDate()).padStart(2, '0');
-    const iso = `${y}-${m}-${d}`;
-    onChange(iso);
-    setViewYear(y);
-    setViewMonth(target.getMonth());
+  // Cancel dialog
+  const handleCancel = () => {
     setIsOpen(false);
   };
 
-  const isSelected = (day: number) => {
-    if (!value) return false;
-    const formattedMonth = String(viewMonth + 1).padStart(2, '0');
-    const formattedDay = String(day).padStart(2, '0');
-    return value === `${viewYear}-${formattedMonth}-${formattedDay}`;
-  };
-
-  const isToday = (day: number) => {
-    const now = new Date();
-    return (
-      now.getDate() === day &&
-      now.getMonth() === viewMonth &&
-      now.getFullYear() === viewYear
-    );
-  };
+  // Generate Year list for Year view (1990 - 2045)
+  const currentYear = new Date().getFullYear();
+  const yearsList = Array.from({ length: 45 }, (_, idx) => currentYear - 15 + idx);
 
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div className={`relative ${className}`}>
       {label && (
         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
           {label} {required && <span className="text-rose-500">*</span>}
         </label>
       )}
 
-      {/* Trigger Button */}
+      {/* TRIGGER BUTTON (Matching Reference Input Field) */}
       <button
         type="button"
-        onClick={() => setIsOpen(prev => !prev)}
-        className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all cursor-pointer group select-none shadow-xs"
+        onClick={handleOpen}
+        className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between hover:border-purple-500/60 focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all cursor-pointer group select-none shadow-xs"
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <CalendarIcon className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
-          <span className={value ? 'text-slate-900 dark:text-white' : 'text-slate-400'}>
-            {formatDisplayDate(value)}
+          <span className={value ? 'text-slate-900 dark:text-white capitalize' : 'text-slate-400'}>
+            {formatInputDisplay(value)}
           </span>
         </div>
-        <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-lg border border-purple-200 dark:border-purple-800/40">
+        <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2.5 py-1 rounded-xl border border-purple-200 dark:border-purple-800/40">
           Alterar
         </span>
       </button>
 
-      {/* Quick Presets Bar */}
-      {showPresets && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setPreset('end_year')}
-            className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-[#18181B] hover:bg-purple-100 dark:hover:bg-purple-950/60 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 transition-all shrink-0 cursor-pointer"
-          >
-            Fim de {currentYear}
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreset('6_months')}
-            className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-[#18181B] hover:bg-purple-100 dark:hover:bg-purple-950/60 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 transition-all shrink-0 cursor-pointer"
-          >
-            Em 6 Meses
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreset('1_year')}
-            className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-[#18181B] hover:bg-purple-100 dark:hover:bg-purple-950/60 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 transition-all shrink-0 cursor-pointer"
-          >
-            Em 1 Ano
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreset('2_years')}
-            className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-[#18181B] hover:bg-purple-100 dark:hover:bg-purple-950/60 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 transition-all shrink-0 cursor-pointer"
-          >
-            Em 2 Anos
-          </button>
-        </div>
-      )}
-
-      {/* Popover Custom Dark Calendar */}
+      {/* MATERIAL DESIGN DATEPICKER DIALOG MODAL */}
       {isOpen && (
-        <div className="absolute z-50 bottom-full mb-2 left-0 right-0 sm:right-auto sm:w-80 p-4 rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800 shadow-2xl animate-in zoom-in-95 duration-150 text-slate-900 dark:text-white">
-          {/* Header Month / Year Navigation */}
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={handleCancel}
+        >
+          <div
+            className="w-full max-w-[320px] rounded-3xl bg-[#1c1c1e] text-white shadow-2xl border border-white/10 overflow-hidden animate-in zoom-in-95 duration-200 select-none"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 1. TOP HEADER (Year + Weekday / Month / Day) */}
+            <div className="p-5 bg-[#252528] border-b border-white/5 space-y-1">
+              <button
+                type="button"
+                onClick={() => setPickerMode(pickerMode === 'year' ? 'calendar' : 'year')}
+                className={`text-xs font-bold transition-colors cursor-pointer block ${
+                  pickerMode === 'year' ? 'text-purple-400 font-black' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {tempYear}
+              </button>
 
-            <div className="text-center font-black text-xs sm:text-sm tracking-tight text-slate-900 dark:text-white">
-              {MONTH_NAMES[viewMonth]} {viewYear}
+              <button
+                type="button"
+                onClick={() => setPickerMode('calendar')}
+                className="text-2xl sm:text-3xl font-black text-white tracking-tight cursor-pointer block hover:text-purple-300 transition-colors capitalize"
+              >
+                {getHeaderDateText()}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+            {/* 2. BODY CONTENT DEPENDING ON MODE */}
+            <div className="p-4">
+              {/* --- MODE: YEAR PICKER --- */}
+              {pickerMode === 'year' && (
+                <div className="h-64 overflow-y-auto pr-1 space-y-1 scrollbar-thin">
+                  <div className="grid grid-cols-3 gap-2">
+                    {yearsList.map(yr => {
+                      const isCurrYear = yr === tempYear;
+                      return (
+                        <button
+                          key={yr}
+                          type="button"
+                          onClick={() => {
+                            setTempYear(yr);
+                            setPickerMode('calendar');
+                          }}
+                          className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            isCurrYear
+                              ? 'bg-purple-600 text-white font-black shadow-md scale-105'
+                              : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          {yr}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-          {/* Weekday Names Header */}
-          <div className="grid grid-cols-7 gap-1 text-center mb-1">
-            {WEEK_DAYS.map((wd, i) => (
-              <span key={i} className="text-[10px] font-bold text-slate-400 uppercase py-1">
-                {wd}
-              </span>
-            ))}
-          </div>
+              {/* --- MODE: MONTH PICKER --- */}
+              {pickerMode === 'month' && (
+                <div className="h-64 flex flex-col justify-center">
+                  <div className="grid grid-cols-3 gap-2">
+                    {MONTH_NAMES_FULL.map((mName, idx) => {
+                      const isCurrMonth = idx === tempMonth;
+                      return (
+                        <button
+                          key={mName}
+                          type="button"
+                          onClick={() => {
+                            setTempMonth(idx);
+                            setPickerMode('calendar');
+                          }}
+                          className={`py-2.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
+                            isCurrMonth
+                              ? 'bg-purple-600 text-white font-black shadow-md scale-105'
+                              : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          {MONTH_NAMES_SHORT[idx]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {/* Empty slots before day 1 */}
-            {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-              <div key={`empty-${i}`} className="h-8 w-8" />
-            ))}
+              {/* --- MODE: CALENDAR GRID --- */}
+              {pickerMode === 'calendar' && (
+                <div className="space-y-3">
+                  {/* Month Navigation Bar: < outubro 2026 > */}
+                  <div className="flex items-center justify-between px-1">
+                    <button
+                      type="button"
+                      onClick={prevMonth}
+                      className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Mês anterior"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
 
-            {/* Days of current month */}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const selected = isSelected(day);
-              const today = isToday(day);
+                    <button
+                      type="button"
+                      onClick={() => setPickerMode('month')}
+                      className="text-xs font-extrabold text-slate-200 hover:text-purple-400 transition-colors cursor-pointer capitalize flex items-center gap-1.5"
+                    >
+                      <span>{MONTH_NAMES_FULL[tempMonth]} {tempYear}</span>
+                    </button>
 
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => handleSelectDay(day)}
-                  className={`h-8 w-8 mx-auto rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer select-none ${
-                    selected
-                      ? 'bg-purple-600 text-white font-black shadow-md scale-105'
-                      : today
-                      ? 'border border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30'
-                      : 'hover:bg-slate-100 dark:hover:bg-[#202024] text-slate-700 dark:text-slate-200'
-                  }`}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
+                    <button
+                      type="button"
+                      onClick={nextMonth}
+                      className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Próximo mês"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
 
-          {/* Footer with Today / Close */}
-          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-            <button
-              type="button"
-              onClick={() => setPreset('today')}
-              className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
-            >
-              Hoje
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-            >
-              Fechar
-            </button>
+                  {/* Weekday Names Header (Do, 2ª, 3ª, 4ª, 5ª, 6ª, Sá) */}
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {WEEK_DAYS_HEADER.map((wd, i) => (
+                      <span
+                        key={i}
+                        className="text-[11px] font-bold text-slate-400 uppercase py-0.5"
+                      >
+                        {wd}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Days Grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {/* Empty padding before day 1 */}
+                    {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                      <div key={`empty-${i}`} className="h-8 w-8" />
+                    ))}
+
+                    {/* Actual month days */}
+                    {Array.from({ length: daysInMonth }).map((_, i) => {
+                      const dayNum = i + 1;
+                      const isSelected = dayNum === tempDay;
+                      const now = new Date();
+                      const isCurrentToday =
+                        now.getDate() === dayNum &&
+                        now.getMonth() === tempMonth &&
+                        now.getFullYear() === tempYear;
+
+                      return (
+                        <button
+                          key={dayNum}
+                          type="button"
+                          onClick={() => handleSelectDay(dayNum)}
+                          className={`h-8 w-8 mx-auto rounded-full text-xs font-bold transition-all flex items-center justify-center cursor-pointer select-none ${
+                            isSelected
+                              ? 'bg-purple-600 text-white font-black shadow-md scale-105'
+                              : isCurrentToday
+                              ? 'border border-purple-400 text-purple-400 font-black'
+                              : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          {dayNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. BOTTOM ACTIONS (CANCELAR / OK) */}
+            <div className="p-4 pt-2 border-t border-white/5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-4 py-2 rounded-xl text-xs font-black text-purple-400 hover:text-purple-300 hover:bg-purple-950/40 transition-colors uppercase tracking-wider cursor-pointer"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirm}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-xs font-black text-white transition-all uppercase tracking-wider shadow-sm cursor-pointer"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
