@@ -348,66 +348,132 @@ export const GoalsPage: React.FC = () => {
           isOpen={isGoalModalOpen}
           onClose={() => setIsGoalModalOpen(false)}
           title={editingGoal ? 'Editar Meta' : 'Criar Nova Meta'}
+          maxWidth="lg"
         >
           <form onSubmit={handleSaveGoal} className="space-y-4">
+            {/* Ícone e Cor da Meta */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ícone da Meta</label>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {['🎯', '💰', '🏖️', '🚗', '🏠', '💍', '👶', '🎓', '💻', '✈️', '📱', '🛡️'].map(e => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setIcon(e)}
+                    className={`w-10 h-10 rounded-2xl text-lg flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                      icon === e
+                        ? 'bg-purple-600/20 border-2 border-purple-500 scale-105 shadow-sm'
+                        : 'bg-slate-100 dark:bg-[#121214] border border-slate-200 dark:border-slate-800 hover:border-slate-400'
+                    }`}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Título da Meta */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título da Meta</label>
               <input
                 type="text"
-                placeholder="Ex: Reserva de Emergência, Viagem, Carro Novo"
+                placeholder="Ex: Reserva de Emergência, Viagem para Europa, Carro Novo"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Valores Alvo e Inicial */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Valor Alvo (Meta)</label>
-                <input
-                  type="number"
-                  step="50"
-                  placeholder="R$ 0,00"
-                  value={targetAmount}
-                  onChange={e => setTargetAmount(e.target.value)}
-                  required
-                  className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-slate-900 dark:text-white"
-                />
-              </div>
-
-              {!editingGoal && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Já tenho guardado</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                    R$
+                  </span>
                   <input
                     type="number"
-                    step="50"
-                    placeholder="R$ 0,00"
-                    value={initialAmount}
-                    onChange={e => setInitialAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-slate-900 dark:text-white"
+                    step="0.01"
+                    min="1"
+                    placeholder="0,00"
+                    value={targetAmount}
+                    onChange={e => setTargetAmount(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
                   />
+                </div>
+              </div>
+
+              {!editingGoal ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Já Tenho Guardado (Opcional)</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0,00"
+                      value={initialAmount}
+                      onChange={e => setInitialAmount(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Valor Atual Guardado</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0,00"
+                      value={initialAmount}
+                      onChange={e => setInitialAmount(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* Data Limite Desejada */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Data Limite Desejada</label>
-              <input
-                type="date"
-                value={deadline}
-                onChange={e => setDeadline(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={e => setDeadline(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                />
+              </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            {/* Action Buttons */}
+            <div className="pt-4 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsGoalModalOpen(false)}
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
+                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Salvar Meta
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{editingGoal ? 'Salvar Alterações' : 'Criar Meta'}</span>
               </button>
             </div>
           </form>
@@ -423,20 +489,27 @@ export const GoalsPage: React.FC = () => {
             setSelectedGoalForDeposit(null);
           }}
           title={`Guardar Dinheiro: ${selectedGoalForDeposit.title}`}
+          maxWidth="md"
         >
           <form onSubmit={handleDepositSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Valor a Guardar</label>
-              <input
-                type="number"
-                step="10"
-                placeholder="R$ 0,00"
-                value={depositAmount}
-                onChange={e => setDepositAmount(e.target.value)}
-                required
-                autoFocus
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-slate-900 dark:text-white"
-              />
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                  R$
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0,00"
+                  value={depositAmount}
+                  onChange={e => setDepositAmount(e.target.value)}
+                  required
+                  autoFocus
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
+                />
+              </div>
             </div>
 
             <div>
@@ -444,7 +517,7 @@ export const GoalsPage: React.FC = () => {
               <select
                 value={depositAccountId}
                 onChange={e => setDepositAccountId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
               >
                 {accounts.map(a => (
                   <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance, user.currency)})</option>
@@ -459,16 +532,27 @@ export const GoalsPage: React.FC = () => {
                 placeholder="Ex: Aporte mensal, Economia do almoço"
                 value={depositNote}
                 onChange={e => setDepositNote(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#121214] text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400"
               />
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-4 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDepositModalOpen(false);
+                  setSelectedGoalForDeposit(null);
+                }}
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
+                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Confirmar Aporte
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Confirmar Aporte</span>
               </button>
             </div>
           </form>

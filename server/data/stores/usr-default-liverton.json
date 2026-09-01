@@ -1320,9 +1320,9 @@
     "email": "liverton.aguiar@hotmail.com",
     "showValues": true,
     "theme": "dark",
-    "accentColor": "#00A884",
-    "themePreset": "emerald-slate",
+    "accentColor": "#7C4DFF",
+    "themePreset": "midnight-oled",
     "cardRadius": "rounded"
   },
-  "_serverTimestamp": "2026-09-01T03:23:07.829Z"
+  "_serverTimestamp": "2026-09-01T03:25:07.823Z"
 }

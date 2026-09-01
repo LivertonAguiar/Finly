@@ -43,11 +43,11 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
       {/* Modal / Bottom Sheet Card */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#2C2C2E] border-t sm:border border-slate-200/80 dark:border-slate-700/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-250 text-slate-900 dark:text-white`}
+        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border-t sm:border border-slate-200/80 dark:border-slate-800/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-250 text-slate-900 dark:text-white`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -67,7 +67,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Modal Content with Smooth Momentum Scrolling */}
-        <div className="p-6 overflow-y-auto overscroll-contain flex-1">
+        <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 pb-12 sm:pb-6">
           {children}
         </div>
       </div>
