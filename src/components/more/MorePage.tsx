@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Target,
   CreditCard,
@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   HelpCircle,
   FileText,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -26,6 +28,39 @@ interface MorePageProps {
 export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, onOpenPwaModal }) => {
   const { exportBackupJSON, user } = useFinancial();
   const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'GERENCIAR' | 'SOBRE'>('GERAL');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+          await (document.documentElement as any).webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document.exitFullscreen as any)();
+        }
+      }
+    } catch (err) {
+      console.warn('Fullscreen toggle error:', err);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in pb-16">
@@ -33,12 +68,12 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, onOpenPwaModal
       <div>
         <h2 className="text-xl font-black text-slate-900 dark:text-white">Mais opções</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Ferramentas adicionais, gestão de categorias, automações e suporte
+          Ferramentas adicionais, modo tela cheia, gestão de categorias, automações e suporte
         </p>
       </div>
 
       {/* Segmented Switcher */}
-      <div className="p-1 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 flex items-center gap-1 shadow-xs">
+      <div className="p-1 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 flex items-center gap-1 shadow-xs">
         {(['GERAL', 'GERENCIAR', 'SOBRE'] as const).map(tab => (
           <button
             key={tab}
@@ -56,17 +91,38 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, onOpenPwaModal
       </div>
 
       {/* List Container */}
-      <div className="rounded-3xl bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden">
+      <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden">
         {/* ABA GERAL */}
         {segmentedTab === 'GERAL' && (
           <>
+            {/* Modo Tela Cheia Action */}
+            <button
+              onClick={toggleFullscreen}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#222226] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+                </div>
+                <div>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white block">
+                    {isFullscreen ? 'Sair do Modo Tela Cheia' : 'Modo Tela Cheia Imersivo'}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {isFullscreen ? 'Restaurar visualização com barras do navegador' : 'Ocultar barras e navegar como um aplicativo instalado'}
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
             {onOpenPwaModal && (
               <button
                 onClick={onOpenPwaModal}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer"
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#222226] transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                     <Download className="w-5 h-5" />
                   </div>
                   <div>

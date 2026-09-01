@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   Gift,
   Crown,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
@@ -49,6 +51,39 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+          await (document.documentElement as any).webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.warn('Fullscreen toggle failed:', err);
+    }
+  };
 
   useEffect(() => {
     return apiSync.subscribeStatus(setSyncStatus);
@@ -73,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 w-full bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between">
+    <header className="sticky top-0 z-30 h-16 w-full bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between">
       {/* Left: Mobile Hamburger + User Profile Badge / Brand */}
       <div className="flex items-center gap-3">
         <button
@@ -97,8 +132,21 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Gift Rewards, Notifications, Settings, User Avatar */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Right: Fullscreen, Rewards, Hide Values, Theme, Notifications, Settings, User Avatar */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        {/* Fullscreen Mode Toggle */}
+        <button
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Sair do Modo Tela Cheia' : 'Entrar no Modo Tela Cheia (App)'}
+          className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer hover:text-purple-500"
+        >
+          {isFullscreen ? (
+            <Minimize2 className="w-4 h-4 text-purple-500" />
+          ) : (
+            <Maximize2 className="w-4 h-4" />
+          )}
+        </button>
+
         {/* Mobills Rewards Gift Button */}
         <button
           onClick={() => setActiveTab('mais')}

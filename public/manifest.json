@@ -1,8 +1,33 @@
 {
   "short_name": "Finly",
   "name": "Finly - Finanças Inteligentes",
-  "description": "Controle financeiro inteligente, contas, cartões e orçamentos com o Finly.",
+  "description": "Controle financeiro inteligente, contas bancárias, cartões de crédito e planejamento com o Finly.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#121214",
+  "theme_color": "#121214",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "finance",
+    "productivity",
+    "utilities"
+  ],
   "icons": [
+    {
+      "src": "/finly-logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
     {
       "src": "/icon-192.png",
       "type": "image/png",
@@ -16,16 +41,60 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/icon.png",
+      "src": "/logo.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any"
     }
   ],
-  "start_url": "/",
-  "background_color": "#1C1C1E",
-  "theme_color": "#7C4DFF",
-  "display": "standalone",
-  "orientation": "portrait",
-  "scope": "/"
+  "shortcuts": [
+    {
+      "name": "Nova Transação",
+      "short_name": "Novo Lançamento",
+      "description": "Adicionar receita, despesa ou transferência rapidamente",
+      "url": "/?action=new_tx",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Minhas Contas",
+      "short_name": "Contas",
+      "description": "Ver saldos e extratos de contas",
+      "url": "/?tab=contas",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Cartões de Crédito",
+      "short_name": "Cartões",
+      "description": "Ver faturas e limites dos cartões",
+      "url": "/?tab=cartoes",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Planejamento e Metas",
+      "short_name": "Planejamento",
+      "description": "Acompanhar orçamentos e objetivos financeiros",
+      "url": "/?tab=planejamento",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }
