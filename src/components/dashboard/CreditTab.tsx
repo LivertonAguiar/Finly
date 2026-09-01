@@ -30,6 +30,7 @@ import { CardModal } from '../cadastros/CardModal';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
 import { Modal } from '../ui/Modal';
+import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 
 interface CreditTabProps {
@@ -40,6 +41,14 @@ interface CreditTabProps {
 export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCardDetailId }) => {
   const { cards, user, transactions, accounts, categories, payCardInvoice, unpayCardInvoice, toggleTransactionStatus, reimburseThirdPartyTransaction, deleteCard, addTransaction, deleteTransaction } = useFinancial();
   const { confirm } = useConfirm();
+
+  const [viewMode, setViewMode] = useState<CardViewMode>(() => {
+    try {
+      return (localStorage.getItem('finly_cards_view_mode') as CardViewMode) || 'grid';
+    } catch (e) {
+      return 'grid';
+    }
+  });
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [activeCardDetailId, setActiveCardDetailId] = useState<string | null>(initialCardDetailId || null);
@@ -703,8 +712,16 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               </button>
             </div>
 
-            {/* Circular Action Buttons */}
+            {/* Circular Action Buttons & ViewModeToggle */}
             <div className="flex items-center gap-2">
+              <ViewModeToggle
+                mode={viewMode}
+                onChange={(m) => {
+                  setViewMode(m);
+                  try { localStorage.setItem('finly_cards_view_mode', m); } catch (e) {}
+                }}
+              />
+
               <button
                 onClick={onOpenNewCard}
                 className="w-10 h-10 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
@@ -712,7 +729,6 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               >
                 <Plus className="w-5 h-5" />
               </button>
-
 
               <div className="relative">
                 <button
@@ -845,49 +861,122 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             </div>
           </div>
 
-          {/* Cards Grid: "+ Novo Cartão" + All Credit Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* + Novo Cartão Card */}
-            <div
-              onClick={onOpenNewCard}
-              className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-md dark:hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-200 flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[220px] group"
-            >
-              <div className="w-11 h-11 rounded-full border-2 border-purple-500/80 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
-                <Plus className="w-5 h-5 stroke-[2.5]" />
-              </div>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                Novo cartão
-              </span>
-            </div>
-
-            {/* List of Credit Cards */}
-            {cardsData.map(card => (
+          {/* Cards View: LIST (=) or GRID (||) */}
+          {viewMode === 'list' ? (
+            /* LIST VIEW (=) */
+            <div className="flex flex-col gap-2.5">
+              {/* Novo Cartao Row */}
               <div
-                key={card.id}
-                onClick={() => setActiveCardDetailId(card.id)}
-                className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 space-y-4 relative group flex flex-col justify-between cursor-pointer"
+                onClick={onOpenNewCard}
+                className="p-3.5 rounded-2xl border-2 border-dashed border-slate-200/80 dark:border-slate-800 hover:border-purple-500/60 dark:hover:border-purple-500/60 bg-white/40 dark:bg-[#18181B]/40 hover:bg-slate-50 dark:hover:bg-[#202024] flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 group"
               >
-                {/* Header: Brand + Name + 3-dots Menu */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
+                <Plus className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
+                <span>Cadastrar Novo Cartão de Crédito</span>
+              </div>
+
+              {cardsData.map(card => (
+                <div
+                  key={card.id}
+                  onClick={() => setActiveCardDetailId(card.id)}
+                  className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative cursor-pointer"
+                >
+                  {/* Left: Brand Logo + Card Name + Status */}
+                  <div className="flex items-center gap-3 min-w-[200px]">
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center p-1 text-xs shrink-0 shadow-xs"
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs"
                       style={{ backgroundColor: card.color ? card.color + '25' : '#7c4dff25' }}
                     >
-                      <CardBrandLogo brand={card.brand} size={20} />
+                      <CardBrandLogo brand={card.brand} size={22} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
-                        {card.name}
-                      </h4>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${card.statusColor}`}>
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white line-clamp-1">{card.name}</h4>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block mt-0.5 ${card.statusColor}`}>
                         {card.statusLabel}
                       </span>
                     </div>
                   </div>
 
-                  {/* 3-dots Menu */}
-                  <div className="relative" onClick={e => e.stopPropagation()}>
+                  {/* Middle: Limits Progress Bar */}
+                  <div className="flex-1 max-w-xs space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span className="text-slate-400">Disp: <span className="text-[#66bb6a] font-black">{formatCurrency(card.available, user.currency, !user.showValues)}</span></span>
+                      <span className="text-slate-400 font-normal">Total: {formatCurrency(card.limit, user.currency, !user.showValues)}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${Math.min(100, Math.max(card.usedPercentage > 0 ? 3 : 0, card.usedPercentage))}%`, backgroundColor: card.usedPercentage > 85 ? '#ef5350' : card.usedPercentage > 60 ? '#f59e0b' : '#7c4dff' }}
+                        className="h-full rounded-full transition-all duration-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right: Invoice Amount & Dates */}
+                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 font-bold block">Fatura {capitalizedMonth}</span>
+                      <span className={`text-xs sm:text-sm font-black ${card.isPaid ? 'text-[#66bb6a]' : 'text-slate-900 dark:text-white'}`}>
+                        {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block font-semibold">Vence dia {card.dueDay}</span>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveCardDetailId(card.id);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-wider hover:bg-purple-100 transition-colors"
+                    >
+                      Ver Fatura
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* GRID BLOCKS VIEW (||) */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* + Novo Cartão Card */}
+              <div
+                onClick={onOpenNewCard}
+                className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-md dark:hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-200 flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[220px] group"
+              >
+                <div className="w-11 h-11 rounded-full border-2 border-purple-500/80 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                  <Plus className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                  Novo cartão
+                </span>
+              </div>
+
+              {/* List of Credit Cards */}
+              {cardsData.map(card => (
+                <div
+                  key={card.id}
+                  onClick={() => setActiveCardDetailId(card.id)}
+                  className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 space-y-4 relative group flex flex-col justify-between cursor-pointer"
+                >
+                  {/* Header: Brand + Name + 3-dots Menu */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center p-1 text-xs shrink-0 shadow-xs"
+                        style={{ backgroundColor: card.color ? card.color + '25' : '#7c4dff25' }}
+                      >
+                        <CardBrandLogo brand={card.brand} size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                          {card.name}
+                        </h4>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${card.statusColor}`}>
+                          {card.statusLabel}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 3-dots Menu */}
+                    <div className="relative" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => setOpenMenuCardId(openMenuCardId === card.id ? null : card.id)}
                       className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
@@ -1085,8 +1174,9 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* MODAL: EDITAR CARTÃO */}
       {isEditModalOpen && (
@@ -1169,12 +1259,12 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           isOpen={!!selectedDetailTx}
           onClose={() => setSelectedDetailTx(null)}
           transaction={selectedDetailTx}
-          onEdit={(tx) => {
+          onEdit={(tx: Transaction) => {
             setEditingInvoiceTx(tx);
             setSelectedCardForExpense(tx.cardId || null);
             setIsAddExpenseModalOpen(true);
           }}
-          onDuplicate={(tx) => {
+          onDuplicate={(tx: Transaction) => {
             setEditingInvoiceTx({
               ...tx,
               id: '',

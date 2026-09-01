@@ -15,10 +15,19 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, 
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
 import { Modal } from '../ui/Modal';
+import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { InvestmentAsset, InvestmentType } from '../../types';
 
 export const InvestmentsTab: React.FC = () => {
   const { investments, addInvestment, updateInvestment, deleteInvestment, user, metrics } = useFinancial();
+
+  const [viewMode, setViewMode] = useState<CardViewMode>(() => {
+    try {
+      return (localStorage.getItem('finly_investments_view_mode') as CardViewMode) || 'grid';
+    } catch (e) {
+      return 'grid';
+    }
+  });
 
   const [showModal, setShowModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<InvestmentAsset | null>(null);
@@ -220,12 +229,22 @@ export const InvestmentsTab: React.FC = () => {
             <p className="text-xs text-slate-400">Acompanhe e gerencie cada ativo individualmente</p>
           </div>
 
-          <button
-            onClick={handleOpenAdd}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4" /> Novo Ativo
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <ViewModeToggle
+              mode={viewMode}
+              onChange={(m) => {
+                setViewMode(m);
+                try { localStorage.setItem('finly_investments_view_mode', m); } catch (e) {}
+              }}
+            />
+
+            <button
+              onClick={handleOpenAdd}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Novo Ativo
+            </button>
+          </div>
         </div>
 
         {investments.length === 0 ? (
@@ -239,12 +258,68 @@ export const InvestmentsTab: React.FC = () => {
             </p>
             <button
               onClick={handleOpenAdd}
-              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 mt-2"
+              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 mt-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Cadastrar Primeiro Ativo
             </button>
           </div>
+        ) : viewMode === 'grid' ? (
+          /* GRID BLOCKS VIEW (||) */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            {investments.map(i => (
+              <div
+                key={i.id}
+                className="p-5 rounded-2xl bg-slate-50/50 dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">{i.name}</h4>
+                      {i.ticker && (
+                        <span className="px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 font-mono text-[10px] font-bold">
+                          {i.ticker}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-semibold">{typeLabels[i.type] || i.type} • {i.institution}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => handleOpenEdit(i)} className="p-1 text-slate-400 hover:text-purple-600 transition-colors cursor-pointer">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDelete(i.id)} className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-bold">Saldo Atual</span>
+                    <span className="font-black text-slate-900 dark:text-white text-sm">
+                      {formatCurrency(i.currentBalance, user.currency, !user.showValues)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-bold">Investido</span>
+                    <span className="font-bold text-slate-500">
+                      {formatCurrency(i.investedAmount, user.currency, !user.showValues)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Rentabilidade</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                    +{formatPercentage(i.yieldPercentage)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
+          /* LIST / TABLE VIEW (=) */
           <div className="overflow-x-auto mt-2">
             <table className="w-full text-xs text-left">
               <thead>
@@ -282,14 +357,14 @@ export const InvestmentsTab: React.FC = () => {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleOpenEdit(i)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                           title="Editar ativo"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(i.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                           title="Remover ativo"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

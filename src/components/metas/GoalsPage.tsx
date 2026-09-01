@@ -22,11 +22,20 @@ import { useConfirm } from '../../context/ConfirmContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
+import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { Goal } from '../../types';
 
 export const GoalsPage: React.FC = () => {
   const { goals, addGoal, updateGoal, deleteGoal, depositToGoal, accounts, user } = useFinancial();
   const { confirm } = useConfirm();
+
+  const [viewMode, setViewMode] = useState<CardViewMode>(() => {
+    try {
+      return (localStorage.getItem('finly_goals_view_mode') as CardViewMode) || 'grid';
+    } catch (e) {
+      return 'grid';
+    }
+  });
 
   const [activeSegment, setActiveSegment] = useState<'andamento' | 'concluidos'>('andamento');
 
@@ -143,13 +152,23 @@ export const GoalsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Criar Nova Meta</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <ViewModeToggle
+            mode={viewMode}
+            onChange={(m) => {
+              setViewMode(m);
+              try { localStorage.setItem('finly_goals_view_mode', m); } catch (e) {}
+            }}
+          />
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Criar Nova Meta</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. OVERALL GOALS SUMMARY CARD */}
@@ -218,28 +237,107 @@ export const GoalsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 4. GOALS GRID */}
+      {/* 4. GOALS LIST / GRID VIEW */}
       {displayGoals.length === 0 ? (
-        <div className="p-12 text-center rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm text-slate-400 text-xs space-y-3">
+        <div className="p-12 text-center rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm text-slate-400 text-xs space-y-3">
           <Target className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
           <h4 className="text-sm font-black text-slate-700 dark:text-slate-300">
-            {activeSegment === 'andamento' ? 'Nenhum objetivo em andamento' : 'Nenhum objetivo concluído ainda'}
+            {activeSegment === 'andamento' ? 'Nenhuma meta em andamento' : 'Nenhuma meta concluída ainda'}
           </h4>
           <p className="text-slate-400">
             {activeSegment === 'andamento'
-              ? 'Que tal criar um para começar a economizar com foco?'
-              : 'Assim que você completar seus objetivos, eles serão exibidos aqui.'}
+              ? 'Que tal criar uma para começar a economizar com foco?'
+              : 'Assim que você completar suas metas, elas serão exibidas aqui.'}
           </p>
           {activeSegment === 'andamento' && (
             <button
               onClick={openCreateModal}
               className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md cursor-pointer"
             >
-              Criar Primeiro Objetivo
+              Criar Primeira Meta
             </button>
           )}
         </div>
+      ) : viewMode === 'list' ? (
+        /* LIST VIEW (=) */
+        <div className="flex flex-col gap-2.5">
+          {displayGoals.map(goal => {
+            const percent = goal.targetAmount > 0 ? Math.min(100, (goal.currentAmount / goal.targetAmount) * 100) : 0;
+            const remaining = Math.max(0, goal.targetAmount - goal.currentAmount);
+
+            return (
+              <div
+                key={goal.id}
+                className="p-4 rounded-2xl bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+              >
+                {/* Left: Icon + Title + Date */}
+                <div className="flex items-center gap-3 min-w-[200px]">
+                  <div
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs"
+                    style={{ backgroundColor: (goal.color || '#7c4dff') + '20' }}
+                  >
+                    {goal.icon || '🎯'}
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white line-clamp-1">{goal.title}</h4>
+                    <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>Meta até {formatDate(goal.deadline)}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Middle: Progress Bar */}
+                <div className="flex-1 max-w-xs space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-900 dark:text-white">{formatCurrency(goal.currentAmount, user.currency, !user.showValues)}</span>
+                    <span className="text-slate-400">({percent.toFixed(0)}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${Math.min(100, Math.max(3, percent))}%`, backgroundColor: goal.color || '#7c4dff' }}
+                      className="h-full rounded-full transition-all duration-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Right: Target Amount + Action CTA */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 font-bold block">Alvo</span>
+                    <span className="text-xs font-black text-slate-900 dark:text-white">
+                      {formatCurrency(goal.targetAmount, user.currency, !user.showValues)}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedGoalForDeposit(goal);
+                      setIsDepositModalOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 text-[11px] font-black uppercase tracking-wider hover:bg-purple-100 transition-colors cursor-pointer"
+                  >
+                    + Guardar
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openEditModal(goal)} className="p-1 text-slate-400 hover:text-purple-600 transition-colors cursor-pointer">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={async () => {
+                      const ok = await confirm({ title: 'Excluir Meta', message: `Deseja excluir a meta "${goal.title}"?`, confirmText: 'Excluir Meta', type: 'danger' });
+                      if (ok) deleteGoal(goal.id);
+                    }} className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
+        /* GRID BLOCKS VIEW (||) */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {displayGoals.map(goal => {
             const percent = goal.targetAmount > 0 ? Math.min(100, (goal.currentAmount / goal.targetAmount) * 100) : 0;
@@ -248,7 +346,7 @@ export const GoalsPage: React.FC = () => {
             return (
               <div
                 key={goal.id}
-                className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 relative flex flex-col justify-between"
+                className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 relative flex flex-col justify-between"
               >
                 {/* Header: Icon + Title + Edit/Delete */}
                 <div className="flex items-center justify-between">
@@ -278,9 +376,9 @@ export const GoalsPage: React.FC = () => {
                     <button
                       onClick={async () => {
                         const ok = await confirm({
-                          title: 'Excluir Objetivo',
-                          message: `Deseja excluir o objetivo "${goal.title}"?`,
-                          confirmText: 'Excluir Objetivo',
+                          title: 'Excluir Meta',
+                          message: `Deseja excluir a meta "${goal.title}"?`,
+                          confirmText: 'Excluir Meta',
                           type: 'danger'
                         });
                         if (ok) {
