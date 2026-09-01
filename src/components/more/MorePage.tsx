@@ -16,6 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { FinlyLogo } from '../ui/FinlyLogo';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
@@ -216,9 +217,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, onOpenPwaModal
         {segmentedTab === 'SOBRE' && (
           <div className="p-6 space-y-4 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                P
-              </div>
+              <FinlyLogo size="lg" />
               <div>
                 <h4 className="text-sm font-black text-slate-900 dark:text-white">Finly Web</h4>
                 <p>Versão 2.174.0 (Pro Edition)</p>

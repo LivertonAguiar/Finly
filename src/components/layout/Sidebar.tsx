@@ -14,6 +14,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { FinlyLogo } from '../ui/FinlyLogo';
 
 interface SidebarProps {
   activeTab: string;
@@ -68,19 +69,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand & Toggle */}
         <div>
           <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 h-16">
-            <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-lg shadow-md shadow-emerald-500/20 shrink-0">
-                F
-              </div>
-              <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                  collapsed ? 'max-w-0 opacity-0 -translate-x-2' : 'max-w-[120px] opacity-100 translate-x-0'
-                }`}
-              >
-                <span className="font-black text-base text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
-                  Fin<span className="text-emerald-500">ly</span>
-                </span>
-              </div>
+            <div className="flex items-center gap-2.5 min-w-0 overflow-hidden cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+              <FinlyLogo size="md" showText={!collapsed} />
             </div>
 
             <button

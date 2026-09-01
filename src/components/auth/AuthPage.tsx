@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { FinlyLogo } from '../ui/FinlyLogo';
 
 export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuccess }) => {
   const { login, register, allUsers, requestPasswordReset, resetPassword } = useAuth();
@@ -132,16 +133,13 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Glows */}
-      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#007a4d]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 z-10 space-y-6">
         {/* Top Brand Header */}
         <div className="flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#007a4d] flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-[#007a4d]/30 mb-3.5">F</div>
-          <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-            <span>Fin</span><span className="text-emerald-400">ly</span>
-          </h2>
+          <FinlyLogo size="xl" showText={true} className="mb-2 justify-center" />
           <p className="text-xs text-slate-400 mt-1">
             {mode === 'login' && 'Acesse sua conta para gerenciar seu patrimônio'}
             {mode === 'register' && 'Crie sua conta para começar com seus dados reais'}
@@ -161,7 +159,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
               }}
               className={'flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ' + (
                 mode === 'login'
-                  ? 'bg-[#007a4d] text-white shadow-md'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
@@ -175,7 +173,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
               }}
               className={'flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ' + (
                 mode === 'register'
-                  ? 'bg-[#007a4d] text-white shadow-md'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
@@ -192,7 +190,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
               setMode('login');
               setErrorMessage('');
             }}
-            className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-bold hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-purple-400 font-bold hover:underline cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Login
           </button>

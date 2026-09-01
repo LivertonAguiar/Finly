@@ -16,6 +16,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { apiSync, SyncStatus } from '../../utils/apiSync';
 import { Cloud, CheckCircle2, RefreshCw, CloudOff } from 'lucide-react';
+import { FinlyLogo } from '../ui/FinlyLogo';
 
 interface HeaderProps {
   activeTab?: string;
@@ -82,13 +83,8 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* Mobile Brand */}
-        <div className="flex md:hidden items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-[#007a4d] flex items-center justify-center text-white text-[11px] font-black shadow-xs">
-            F
-          </div>
-          <span className="font-extrabold text-base tracking-tight text-[#007a4d] dark:text-emerald-400">
-            Fin<span className="text-emerald-500 font-bold">ly</span>
-          </span>
+        <div className="flex md:hidden items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+          <FinlyLogo size="sm" />
         </div>
 
         {/* Desktop Active Section Title */}

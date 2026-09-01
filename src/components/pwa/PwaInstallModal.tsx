@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Download, Smartphone, Laptop, Share } from 'lucide-react';
+import { FinlyLogo } from '../ui/FinlyLogo';
 
 interface PwaInstallModalProps {
   isOpen: boolean;
@@ -18,19 +19,19 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Instalar Aplicativo Finly" maxWidth="lg">
       <div className="space-y-6">
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/20">
-          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-black shrink-0">F</div>
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-600 text-white shadow-lg shadow-purple-600/20">
+          <FinlyLogo size="lg" showText={false} />
           <div>
             <h4 className="text-sm font-black">Finly no seu Celular ou Computador</h4>
-            <p className="text-xs text-emerald-100 mt-0.5">
+            <p className="text-xs text-purple-100 mt-0.5">
               Acesso rápido sem precisar digitar endereço, funciona offline e carrega instantaneamente!
             </p>
           </div>
         </div>
 
         {canInstallPrompt && (
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
-            <div className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">
+          <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 flex items-center justify-between">
+            <div className="text-xs text-purple-800 dark:text-purple-300 font-bold">
               Instalação direta disponível no seu navegador!
             </div>
             <button
@@ -38,7 +39,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 if (onInstall) onInstall();
                 onClose();
               }}
-              className="px-4 py-2 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-black bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="w-4 h-4" /> Instalar Agora
             </button>
