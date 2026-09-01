@@ -263,14 +263,14 @@ export const ProfilePage: React.FC = () => {
           Seus dados são salvos localmente e isolados no seu navegador. Você pode baixar uma cópia completa em JSON para guardar ou restaurar a qualquer momento.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 pt-2">
           <button
             type="button"
             onClick={exportBackupJSON}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>Baixar Backup Completo (.JSON)</span>
+            <span>Baixar Backup (.JSON)</span>
           </button>
 
           <input
@@ -287,7 +287,28 @@ export const ProfilePage: React.FC = () => {
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer"
           >
             <Upload className="w-4 h-4 text-slate-500" />
-            <span>Restaurar Backup (.JSON)</span>
+            <span>Restaurar Backup</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              const ok = await confirm({
+                title: 'Gerar Dados Fictícios Completos?',
+                message: 'Isso irá carregar um conjunto completo e realista com contas bancárias, cartões de crédito, parcelamentos, despesas fixas, receitas, orçamentos, metas e investimentos.',
+                confirmText: 'Sim, Gerar Dados Demo',
+                type: 'info'
+              });
+              if (ok) {
+                loadDemoData();
+                setBackupAlert('Dados fictícios realistas gerados com sucesso!');
+                setTimeout(() => setBackupAlert(null), 4000);
+              }
+            }}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-purple-300 dark:border-purple-800/80 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-black transition-all cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span>Gerar Dados Fictícios Completos</span>
           </button>
         </div>
       </div>

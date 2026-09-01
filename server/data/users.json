@@ -7,5 +7,14 @@
     "phone": "85985949115",
     "role": "admin",
     "createdAt": "2026-01-01"
+  },
+  {
+    "id": "usr-demo-financeiro",
+    "name": "Conta Demonstração",
+    "email": "demo@finly.com",
+    "password": "demo",
+    "phone": "11999998888",
+    "role": "admin",
+    "createdAt": "2026-01-01"
   }
 ]

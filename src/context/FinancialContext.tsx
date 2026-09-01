@@ -16,6 +16,7 @@ import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
+import { generateRealisticDemoStore } from '../utils/demoDataGenerator';
 
 
 
@@ -983,10 +984,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const loadDemoData = () => {
-    setAccounts(SEED_ACCOUNTS);
-    setCards(SEED_CARDS);
-    setTransactions(SEED_TRANSACTIONS);
-    setCategories(DEFAULT_CATEGORIES);
+    const demo = generateRealisticDemoStore();
+    setAccounts(demo.accounts);
+    setCards(demo.cards);
+    setCategories(demo.categories);
+    setTransactions(demo.transactions);
+    setBudgets(demo.budgets);
+    setGoals(demo.goals);
+    setDebts(demo.debts);
+    setInvestments(demo.investments);
+    setFamilyMembers(demo.familyMembers);
+    if (demo.userProfile) setUser(prev => ({ ...prev, ...demo.userProfile }));
   };
 
   const importBackupJSON = (jsonString: string): boolean => {

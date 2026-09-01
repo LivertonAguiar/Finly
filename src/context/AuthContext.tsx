@@ -23,6 +23,16 @@ const DEFAULT_ADMIN_USER: AuthUser = {
   createdAt: '2026-01-01',
 };
 
+export const DEFAULT_DEMO_USER: AuthUser = {
+  id: 'usr-demo-financeiro',
+  name: 'Conta Demonstração',
+  email: 'demo@finly.com',
+  password: 'demo',
+  phone: '11999998888',
+  role: 'admin',
+  createdAt: '2026-01-01',
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [allUsers, setAllUsers] = useState<AuthUser[]>(() => {
     try {
@@ -34,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error(e);
     }
-    return [DEFAULT_ADMIN_USER];
+    return [DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
   });
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -88,6 +98,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAllUsers(prev => [user!, ...prev.filter(u => u.email.toLowerCase() !== cleanEmail)]);
     }
 
+    // If user is demo
+    if (!user && (cleanEmail === 'demo@finly.com' || cleanEmail === 'demo' || cleanEmail === 'demonstracao@finly.com')) {
+      user = DEFAULT_DEMO_USER;
+      setAllUsers(prev => [user!, ...prev.filter(u => u.id !== DEFAULT_DEMO_USER.id)]);
+    }
+
     if (!user) {
       // Auto-register convenience if email looks valid
       if (cleanEmail.includes('@')) {
@@ -107,10 +123,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // If password provided and user has default password, update to their personal password
-    if (password && user.password === '123' && password !== '123') {
+    if (password && user.password === '123' && password !== '123' && user.id !== DEFAULT_DEMO_USER.id) {
       user.password = password;
       setAllUsers(prev => prev.map(u => u.id === user!.id ? { ...u, password } : u));
-    } else if (password && user.password && user.password !== password) {
+    } else if (password && user.password && user.password !== password && user.id !== DEFAULT_DEMO_USER.id) {
       // If wrong password, still give helpful option
       return { success: false, message: 'Senha incorreta. Se esqueceu sua senha, use a recuperação abaixo.' };
     }
@@ -122,6 +138,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.setItem(ACTIVE_SESSION_KEY, user.id);
     }
     return { success: true };
+  };
+
+  const loginAsDemo = () => {
+    let demoUser = allUsers.find(u => u.id === DEFAULT_DEMO_USER.id);
+    if (!demoUser) {
+      demoUser = DEFAULT_DEMO_USER;
+      setAllUsers(prev => [demoUser!, ...prev]);
+    }
+    setCurrentUser(demoUser);
+    localStorage.setItem(ACTIVE_SESSION_KEY, demoUser.id);
   };
 
   const register = (name: string, email: string, password?: string, phone?: string) => {
@@ -265,6 +291,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         allUsers,
         login,
+        loginAsDemo,
         register,
         logout,
         updateUserAccount,

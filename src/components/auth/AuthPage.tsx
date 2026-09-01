@@ -18,7 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
 
 export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuccess }) => {
-  const { login, register, allUsers, requestPasswordReset, resetPassword } = useAuth();
+  const { login, loginAsDemo, register, allUsers, requestPasswordReset, resetPassword } = useAuth();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify'>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.replace(/^\/+/, '').toLowerCase();
@@ -404,6 +404,29 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
               </>
             )}
           </button>
+
+          {/* Quick Demo Access on Login */}
+          {mode === 'login' && (
+            <div className="pt-2 text-center">
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                <span className="flex-shrink mx-3 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">ou</span>
+                <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  loginAsDemo();
+                  if (onLoginSuccess) onLoginSuccess();
+                }}
+                className="w-full py-2.5 px-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span>Entrar na Conta Demonstração (Demo)</span>
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

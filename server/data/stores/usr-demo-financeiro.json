@@ -1,0 +1,2247 @@
+{
+  "accounts": [
+    {
+      "id": "acc-demo-nubank",
+      "name": "Nubank Conta",
+      "type": "checking",
+      "balance": 4850,
+      "initialBalance": 2000,
+      "institution": "Nubank",
+      "color": "#820ad1",
+      "includeInTotal": true
+    },
+    {
+      "id": "acc-demo-itau",
+      "name": "Itaú Personnalité",
+      "type": "checking",
+      "balance": 8920.5,
+      "initialBalance": 5000,
+      "institution": "Itaú",
+      "color": "#ec7000",
+      "includeInTotal": true
+    },
+    {
+      "id": "acc-demo-xp",
+      "name": "XP Investimentos",
+      "type": "investment",
+      "balance": 15400,
+      "initialBalance": 10000,
+      "institution": "XP Investimentos",
+      "color": "#000000",
+      "includeInTotal": true
+    },
+    {
+      "id": "acc-demo-c6",
+      "name": "C6 Bank",
+      "type": "checking",
+      "balance": 1650,
+      "initialBalance": 1000,
+      "institution": "C6 Bank",
+      "color": "#242424",
+      "includeInTotal": true
+    },
+    {
+      "id": "acc-demo-carteira",
+      "name": "Carteira (Dinheiro)",
+      "type": "cash",
+      "balance": 380,
+      "initialBalance": 200,
+      "institution": "Carteira",
+      "color": "#10b981",
+      "includeInTotal": true
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-demo-nubank",
+      "name": "Nubank Ultravioleta",
+      "brand": "Mastercard",
+      "limit": 12000,
+      "closingDay": 27,
+      "dueDay": 1,
+      "color": "#820ad1",
+      "defaultAccountId": "acc-demo-nubank"
+    },
+    {
+      "id": "card-demo-itau",
+      "name": "Itaú Mastercard Black",
+      "brand": "Mastercard",
+      "limit": 25000,
+      "closingDay": 20,
+      "dueDay": 28,
+      "color": "#ec7000",
+      "defaultAccountId": "acc-demo-itau"
+    },
+    {
+      "id": "card-demo-c6",
+      "name": "C6 Carbon Black",
+      "brand": "Mastercard",
+      "limit": 8000,
+      "closingDay": 15,
+      "dueDay": 22,
+      "color": "#242424",
+      "defaultAccountId": "acc-demo-c6"
+    },
+    {
+      "id": "card-demo-inter",
+      "name": "Inter Mastercard Gold",
+      "brand": "Mastercard",
+      "limit": 5000,
+      "closingDay": 28,
+      "dueDay": 5,
+      "color": "#ff7a00",
+      "defaultAccountId": "acc-demo-nubank"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-desp-alimentacao",
+      "name": "Alimentação",
+      "icon": "🍽️",
+      "color": "#f97316",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-alim-mercado",
+          "name": "Mercado / Supermercado",
+          "icon": "🛒",
+          "categoryId": "cat-desp-alimentacao"
+        },
+        {
+          "id": "sub-alim-hortifruti",
+          "name": "Hortifruti / Feira",
+          "icon": "🥦",
+          "categoryId": "cat-desp-alimentacao"
+        },
+        {
+          "id": "sub-alim-padaria",
+          "name": "Padaria",
+          "icon": "🥖",
+          "categoryId": "cat-desp-alimentacao"
+        },
+        {
+          "id": "sub-alim-restaurante",
+          "name": "Restaurante",
+          "icon": "🍽️",
+          "categoryId": "cat-desp-alimentacao"
+        },
+        {
+          "id": "sub-alim-delivery",
+          "name": "Delivery",
+          "icon": "🍕",
+          "categoryId": "cat-desp-alimentacao"
+        },
+        {
+          "id": "sub-alim-cafe",
+          "name": "Café / Lanches",
+          "icon": "☕",
+          "categoryId": "cat-desp-alimentacao"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-moradia",
+      "name": "Moradia",
+      "icon": "🏠",
+      "color": "#3b82f6",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-mor-itbi-registro",
+          "name": "ITBI & Escritura / Registro",
+          "icon": "🏛️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-taxa-obra",
+          "name": "Taxa de Evolução de Obra",
+          "icon": "📄",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-seguro-habitacional",
+          "name": "Seguro Habitacional (MIP/DFI)",
+          "icon": "🛡️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-parcela-construtora",
+          "name": "Parcela da Construtora / Entrada / Balão",
+          "icon": "🏗️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-amortizacao-imovel",
+          "name": "Amortização do Financiamento",
+          "icon": "💸",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-financiamento-apto",
+          "name": "Financiamento do Apartamento / Imóvel",
+          "icon": "🏢",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-aluguel",
+          "name": "Aluguel",
+          "icon": "🏠",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-condominio",
+          "name": "Condomínio",
+          "icon": "🏢",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-energia",
+          "name": "Energia Elétrica",
+          "icon": "⚡",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-agua",
+          "name": "Água / Esgoto",
+          "icon": "🚰",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-internet",
+          "name": "Internet",
+          "icon": "🌐",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-telefone",
+          "name": "Telefone",
+          "icon": "📱",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-diarista",
+          "name": "Diarista",
+          "icon": "🧹",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-manutencao",
+          "name": "Manutenção da Casa",
+          "icon": "🔧",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-moveis",
+          "name": "Móveis",
+          "icon": "🛋️",
+          "categoryId": "cat-desp-moradia"
+        },
+        {
+          "id": "sub-mor-eletro",
+          "name": "Eletrodomésticos",
+          "icon": "🧊",
+          "categoryId": "cat-desp-moradia"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-transporte",
+      "name": "Transporte",
+      "icon": "🚗",
+      "color": "#8b5cf6",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-trans-combustivel",
+          "name": "Combustível",
+          "icon": "⛽",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-uber",
+          "name": "Uber / 99 / Táxi",
+          "icon": "🚕",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-publico",
+          "name": "Transporte Público",
+          "icon": "🚌",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-estacionamento",
+          "name": "Estacionamento",
+          "icon": "🅿️",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-pedagio",
+          "name": "Pedágio",
+          "icon": "🛣️",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-manutencao",
+          "name": "Manutenção do Veículo",
+          "icon": "🔧",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-seguro",
+          "name": "Seguro",
+          "icon": "🛡️",
+          "categoryId": "cat-desp-transporte"
+        },
+        {
+          "id": "sub-trans-financiamento",
+          "name": "Financiamento do Veículo",
+          "icon": "🚗",
+          "categoryId": "cat-desp-transporte"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-saude",
+      "name": "Saúde",
+      "icon": "🩺",
+      "color": "#ef4444",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-saude-farmacia",
+          "name": "Farmácia / Medicamentos",
+          "icon": "💊",
+          "categoryId": "cat-desp-saude"
+        },
+        {
+          "id": "sub-saude-plano",
+          "name": "Plano de Saúde",
+          "icon": "🏥",
+          "categoryId": "cat-desp-saude"
+        },
+        {
+          "id": "sub-saude-consultas",
+          "name": "Consultas",
+          "icon": "🩺",
+          "categoryId": "cat-desp-saude"
+        },
+        {
+          "id": "sub-saude-exames",
+          "name": "Exames",
+          "icon": "🧪",
+          "categoryId": "cat-desp-saude"
+        },
+        {
+          "id": "sub-saude-odonto",
+          "name": "Odontologia",
+          "icon": "🦷",
+          "categoryId": "cat-desp-saude"
+        },
+        {
+          "id": "sub-saude-higiene",
+          "name": "Higiene / Cuidados Pessoais",
+          "icon": "🧴",
+          "categoryId": "cat-desp-saude"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-academia-esportes",
+      "name": "Academia & Esportes",
+      "icon": "🏋️",
+      "color": "#10b981",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-acad-academia",
+          "name": "Academia",
+          "icon": "🏋️",
+          "categoryId": "cat-desp-academia-esportes"
+        },
+        {
+          "id": "sub-acad-esportes",
+          "name": "Esportes",
+          "icon": "⚽",
+          "categoryId": "cat-desp-academia-esportes"
+        },
+        {
+          "id": "sub-acad-suplementos",
+          "name": "Suplementos",
+          "icon": "🥤",
+          "categoryId": "cat-desp-academia-esportes"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-filhos",
+      "name": "Filhos & Família",
+      "icon": "👶",
+      "color": "#ec4899",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-filhos-alimentacao",
+          "name": "Alimentação / Fórmulas",
+          "icon": "🍼",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-fraldas",
+          "name": "Fraldas / Higiene",
+          "icon": "🧼",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-saude",
+          "name": "Saúde / Pediatra",
+          "icon": "🩺",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-roupas",
+          "name": "Roupas / Calçados",
+          "icon": "👕",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-escola",
+          "name": "Educação / Escola",
+          "icon": "🎓",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-brinquedos",
+          "name": "Brinquedos",
+          "icon": "🧸",
+          "categoryId": "cat-desp-filhos"
+        },
+        {
+          "id": "sub-filhos-passeios",
+          "name": "Passeios / Atividades",
+          "icon": "🎡",
+          "categoryId": "cat-desp-filhos"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-compras-pessoal",
+      "name": "Compras & Pessoal",
+      "icon": "🛍️",
+      "color": "#f43f5e",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-comp-roupas",
+          "name": "Roupas / Calçados",
+          "icon": "👕",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-presentes",
+          "name": "Presentes",
+          "icon": "🎁",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-eletronicos",
+          "name": "Eletrônicos",
+          "icon": "📺",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-informatica",
+          "name": "Informática / Hardware",
+          "icon": "💻",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-perifericos",
+          "name": "Periféricos",
+          "icon": "🔌",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-celular",
+          "name": "Celular / Smartphones",
+          "icon": "📱",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-plano-cel",
+          "name": "Plano de Celular",
+          "icon": "📶",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-recarga",
+          "name": "Recarga",
+          "icon": "🔋",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-higiene",
+          "name": "Higiene / Cosméticos",
+          "icon": "🧴",
+          "categoryId": "cat-desp-compras-pessoal"
+        },
+        {
+          "id": "sub-comp-salao",
+          "name": "Salão / Barbearia",
+          "icon": "💈",
+          "categoryId": "cat-desp-compras-pessoal"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-educacao",
+      "name": "Educação",
+      "icon": "🎓",
+      "color": "#06b6d4",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-educ-escola",
+          "name": "Escola / Faculdade",
+          "icon": "🏫",
+          "categoryId": "cat-desp-educacao"
+        },
+        {
+          "id": "sub-educ-cursos",
+          "name": "Cursos / Treinamentos",
+          "icon": "💻",
+          "categoryId": "cat-desp-educacao"
+        },
+        {
+          "id": "sub-educ-livros",
+          "name": "Livros",
+          "icon": "📚",
+          "categoryId": "cat-desp-educacao"
+        },
+        {
+          "id": "sub-educ-livros-tecnicos",
+          "name": "Livros Técnicos / Teologia",
+          "icon": "📖",
+          "categoryId": "cat-desp-educacao"
+        },
+        {
+          "id": "sub-educ-material",
+          "name": "Material Escolar / Papelaria",
+          "icon": "✏️",
+          "categoryId": "cat-desp-educacao"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-lazer",
+      "name": "Lazer & Entretenimento",
+      "icon": "🎮",
+      "color": "#a855f7",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-lazer-streaming",
+          "name": "Streaming / Assinaturas",
+          "icon": "📺",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-cinema",
+          "name": "Cinema / Shows",
+          "icon": "🎬",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-festas",
+          "name": "Festas / Eventos",
+          "icon": "🎉",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-jogos",
+          "name": "Jogos / Hobbies",
+          "icon": "🎮",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-viagens",
+          "name": "Viagens",
+          "icon": "✈️",
+          "categoryId": "cat-desp-lazer"
+        },
+        {
+          "id": "sub-lazer-hospedagem",
+          "name": "Hospedagem",
+          "icon": "🏨",
+          "categoryId": "cat-desp-lazer"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-pets",
+      "name": "Pets",
+      "icon": "🐶",
+      "color": "#eab308",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-pets-racao",
+          "name": "Ração / Petiscos",
+          "icon": "🥩",
+          "categoryId": "cat-desp-pets"
+        },
+        {
+          "id": "sub-pets-vet",
+          "name": "Veterinário / Vacinas",
+          "icon": "🩺",
+          "categoryId": "cat-desp-pets"
+        },
+        {
+          "id": "sub-pets-banho",
+          "name": "Banho / Tosa",
+          "icon": "✂️",
+          "categoryId": "cat-desp-pets"
+        },
+        {
+          "id": "sub-pets-acessorios",
+          "name": "Acessórios / Brinquedos",
+          "icon": "🧸",
+          "categoryId": "cat-desp-pets"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-igreja-doacoes",
+      "name": "Igreja & Doações",
+      "icon": "🙏",
+      "color": "#eab308",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-igreja-dizimos",
+          "name": "Dízimos",
+          "icon": "🙏",
+          "categoryId": "cat-desp-igreja-doacoes"
+        },
+        {
+          "id": "sub-igreja-ofertas",
+          "name": "Ofertas",
+          "icon": "🎁",
+          "categoryId": "cat-desp-igreja-doacoes"
+        },
+        {
+          "id": "sub-igreja-missoes",
+          "name": "Missões",
+          "icon": "🌎",
+          "categoryId": "cat-desp-igreja-doacoes"
+        },
+        {
+          "id": "sub-igreja-doacoes",
+          "name": "Doações",
+          "icon": "❤️",
+          "categoryId": "cat-desp-igreja-doacoes"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-financeiro",
+      "name": "Financeiro",
+      "icon": "💳",
+      "color": "#64748b",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-fin-amortizacao-extra",
+          "name": "Amortização Extraordinária",
+          "icon": "💸",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-financiamento-imob",
+          "name": "Financiamento Imobiliário",
+          "icon": "🏢",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-juros",
+          "name": "Juros",
+          "icon": "📈",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-multas",
+          "name": "Multas",
+          "icon": "⚠️",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-tarifas",
+          "name": "Tarifas Bancárias",
+          "icon": "🏦",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-juros-cartao",
+          "name": "Juros do Cartão",
+          "icon": "💳",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-pagamento-dividas",
+          "name": "Pagamento de Dívidas",
+          "icon": "🤝",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-acordos",
+          "name": "Acordos / Renegociações",
+          "icon": "🤝",
+          "categoryId": "cat-desp-financeiro"
+        },
+        {
+          "id": "sub-fin-encargos",
+          "name": "Outros Encargos Financeiros",
+          "icon": "📄",
+          "categoryId": "cat-desp-financeiro"
+        }
+      ]
+    },
+    {
+      "id": "cat-desp-impostos",
+      "name": "Impostos & Obrigações",
+      "icon": "🏛️",
+      "color": "#ef4444",
+      "type": "expense",
+      "subcategories": [
+        {
+          "id": "sub-imp-iptu",
+          "name": "IPTU",
+          "icon": "🏠",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-ipva",
+          "name": "IPVA",
+          "icon": "🚗",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-ir",
+          "name": "Imposto de Renda",
+          "icon": "📄",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-multas-transito",
+          "name": "Multas de Trânsito",
+          "icon": "🚨",
+          "categoryId": "cat-desp-impostos"
+        },
+        {
+          "id": "sub-imp-taxas",
+          "name": "Outros Impostos / Taxas",
+          "icon": "🧾",
+          "categoryId": "cat-desp-impostos"
+        }
+      ]
+    },
+    {
+      "id": "cat-rec-trabalho",
+      "name": "Trabalho & Renda",
+      "icon": "💼",
+      "color": "#10b981",
+      "type": "income",
+      "subcategories": [
+        {
+          "id": "sub-rec-salario",
+          "name": "Salário",
+          "icon": "💰",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-adiantamento",
+          "name": "Adiantamento",
+          "icon": "💵",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-13",
+          "name": "13º Salário",
+          "icon": "🎄",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-ferias",
+          "name": "Férias",
+          "icon": "🏖️",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-bonus",
+          "name": "Bônus",
+          "icon": "🎁",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-freelance",
+          "name": "Freelance",
+          "icon": "💻",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-servicos",
+          "name": "Prestação de Serviços",
+          "icon": "🛠️",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-venda-produtos",
+          "name": "Venda de Produtos",
+          "icon": "📦",
+          "categoryId": "cat-rec-trabalho"
+        },
+        {
+          "id": "sub-rec-venda-usados",
+          "name": "Venda de Usados",
+          "icon": "💵",
+          "categoryId": "cat-rec-trabalho"
+        }
+      ]
+    },
+    {
+      "id": "cat-rec-investimentos",
+      "name": "Investimentos & Rendas Passivas",
+      "icon": "📈",
+      "color": "#06b6d4",
+      "type": "income",
+      "subcategories": [
+        {
+          "id": "sub-rec-renda-fixa",
+          "name": "Rendimento de Renda Fixa",
+          "icon": "💰",
+          "categoryId": "cat-rec-investimentos"
+        },
+        {
+          "id": "sub-rec-dividendos",
+          "name": "Dividendos / JCP",
+          "icon": "📊",
+          "categoryId": "cat-rec-investimentos"
+        },
+        {
+          "id": "sub-rec-outros-rendimentos",
+          "name": "Outros Rendimentos de Investimentos",
+          "icon": "📈",
+          "categoryId": "cat-rec-investimentos"
+        },
+        {
+          "id": "sub-rec-aluguel-imoveis",
+          "name": "Aluguel de Imóveis",
+          "icon": "🏠",
+          "categoryId": "cat-rec-investimentos"
+        }
+      ]
+    },
+    {
+      "id": "cat-rec-beneficios-outras",
+      "name": "Benefícios & Outras Receitas",
+      "icon": "🎁",
+      "color": "#a855f7",
+      "type": "income",
+      "subcategories": [
+        {
+          "id": "sub-rec-va-vr",
+          "name": "Vale Alimentação / Refeição",
+          "icon": "🍽️",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-auxilios",
+          "name": "Auxílios / Subsídios",
+          "icon": "💶",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-cashback",
+          "name": "Cashback",
+          "icon": "💸",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-presentes",
+          "name": "Presentes",
+          "icon": "🎁",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-premios",
+          "name": "Prêmios",
+          "icon": "🏆",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-reembolsos",
+          "name": "Reembolsos",
+          "icon": "↩️",
+          "categoryId": "cat-rec-beneficios-outras"
+        },
+        {
+          "id": "sub-rec-outras-receitas",
+          "name": "Outras Receitas",
+          "icon": "💰",
+          "categoryId": "cat-rec-beneficios-outras"
+        }
+      ]
+    },
+    {
+      "id": "cat-mov-transferencias",
+      "name": "Transferências",
+      "icon": "🔄",
+      "color": "#3b82f6",
+      "type": "transfer",
+      "subcategories": [
+        {
+          "id": "sub-mov-transf-contas",
+          "name": "Transferência entre Contas",
+          "icon": "🏦",
+          "categoryId": "cat-mov-transferencias"
+        },
+        {
+          "id": "sub-mov-pagamento-cartao",
+          "name": "Pagamento de Cartão",
+          "icon": "💳",
+          "categoryId": "cat-mov-transferencias"
+        },
+        {
+          "id": "sub-mov-transf-poupanca",
+          "name": "Transferência para Poupança",
+          "icon": "🏦",
+          "categoryId": "cat-mov-transferencias"
+        }
+      ]
+    },
+    {
+      "id": "cat-mov-investimentos",
+      "name": "Investimentos / Patrimônio",
+      "icon": "📈",
+      "color": "#10b981",
+      "type": "transfer",
+      "subcategories": [
+        {
+          "id": "sub-mov-aporte-renda-fixa",
+          "name": "Aporte em Renda Fixa",
+          "icon": "💰",
+          "categoryId": "cat-mov-investimentos"
+        },
+        {
+          "id": "sub-mov-aporte-acoes",
+          "name": "Aporte em Ações / FIIs",
+          "icon": "📊",
+          "categoryId": "cat-mov-investimentos"
+        },
+        {
+          "id": "sub-mov-resgate-invest",
+          "name": "Resgate de Investimento",
+          "icon": "💵",
+          "categoryId": "cat-mov-investimentos"
+        }
+      ]
+    },
+    {
+      "id": "cat-mov-emprestimos",
+      "name": "Empréstimos",
+      "icon": "🤝",
+      "color": "#f59e0b",
+      "type": "transfer",
+      "subcategories": [
+        {
+          "id": "sub-mov-emprestimo-recebido",
+          "name": "Empréstimo Recebido",
+          "icon": "💵",
+          "categoryId": "cat-mov-emprestimos"
+        },
+        {
+          "id": "sub-mov-emprestimo-concedido",
+          "name": "Empréstimo Concedido",
+          "icon": "💸",
+          "categoryId": "cat-mov-emprestimos"
+        },
+        {
+          "id": "sub-mov-recebimento-emp",
+          "name": "Recebimento de Empréstimo",
+          "icon": "↩️",
+          "categoryId": "cat-mov-emprestimos"
+        },
+        {
+          "id": "sub-mov-pagamento-emp",
+          "name": "Pagamento de Empréstimo",
+          "icon": "💳",
+          "categoryId": "cat-mov-emprestimos"
+        }
+      ]
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-rec-salario",
+      "description": "Salário Mensal Líquido",
+      "amount": 9800,
+      "date": "2026-09-05",
+      "type": "income",
+      "status": "completed",
+      "categoryId": "cat-rec-salario",
+      "subcategoryId": "sub-sal-mensal",
+      "accountId": "acc-demo-itau",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "salario",
+        "fixo"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-rec-fiis",
+      "description": "Dividendos FIIs (HGLG11 / MXRF11)",
+      "amount": 485,
+      "date": "2026-09-15",
+      "type": "income",
+      "status": "completed",
+      "categoryId": "cat-rec-investimentos",
+      "subcategoryId": "sub-inv-dividendos",
+      "accountId": "acc-demo-xp",
+      "recurring": false,
+      "tags": [
+        "dividendos",
+        "renda_passiva"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-rec-freelance",
+      "description": "Consultoria Web / Projeto React",
+      "amount": 1750,
+      "date": "2026-09-18",
+      "type": "income",
+      "status": "completed",
+      "categoryId": "cat-rec-freelance",
+      "accountId": "acc-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "extra",
+        "freelance"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-rec-cashback",
+      "description": "Cashback Cartão Ultravioleta",
+      "amount": 62.4,
+      "date": "2026-09-22",
+      "type": "income",
+      "status": "completed",
+      "categoryId": "cat-rec-outras",
+      "accountId": "acc-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "cashback"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-aluguel",
+      "description": "Aluguel do Apartamento",
+      "amount": 2100,
+      "date": "2026-09-10",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-aluguel",
+      "accountId": "acc-demo-itau",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "fixo",
+        "moradia"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-condominio",
+      "description": "Condomínio Residencial",
+      "amount": 680,
+      "date": "2026-09-10",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-condominio",
+      "accountId": "acc-demo-itau",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "fixo",
+        "moradia"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-energia",
+      "description": "Energia Elétrica Enel",
+      "amount": 245.6,
+      "date": "2026-09-14",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-energia",
+      "accountId": "acc-demo-nubank",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "utilidades"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-internet",
+      "description": "Internet Fibra 600MB",
+      "amount": 119.9,
+      "date": "2026-09-12",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-moradia",
+      "subcategoryId": "sub-mor-internet",
+      "accountId": "acc-demo-nubank",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "internet"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-saude",
+      "description": "Plano de Saúde Unimed",
+      "amount": 480,
+      "date": "2026-09-15",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-saude",
+      "subcategoryId": "sub-sau-plano",
+      "accountId": "acc-demo-itau",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "saude"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-academia",
+      "description": "Academia Smart Fit Black",
+      "amount": 129.9,
+      "date": "2026-09-08",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-saude",
+      "subcategoryId": "sub-sau-academia",
+      "cardId": "card-demo-nubank",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "academia"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-desp-streamings",
+      "description": "Assinaturas (Netflix + Spotify + iCloud)",
+      "amount": 89.7,
+      "date": "2026-09-03",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-lazer",
+      "cardId": "card-demo-nubank",
+      "recurring": true,
+      "recurrenceFrequency": "monthly",
+      "tags": [
+        "streaming"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p1",
+      "description": "MacBook Pro M3 Apple Store (1/10)",
+      "amount": 849.9,
+      "date": "2026-07-15",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 1,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p2",
+      "description": "MacBook Pro M3 Apple Store (2/10)",
+      "amount": 849.9,
+      "date": "2026-08-15",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 2,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p3",
+      "description": "MacBook Pro M3 Apple Store (3/10)",
+      "amount": 849.9,
+      "date": "2026-09-15",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 3,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p4",
+      "description": "MacBook Pro M3 Apple Store (4/10)",
+      "amount": 849.9,
+      "date": "2026-10-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 4,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p5",
+      "description": "MacBook Pro M3 Apple Store (5/10)",
+      "amount": 849.9,
+      "date": "2026-11-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 5,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p6",
+      "description": "MacBook Pro M3 Apple Store (6/10)",
+      "amount": 849.9,
+      "date": "2026-12-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 6,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p7",
+      "description": "MacBook Pro M3 Apple Store (7/10)",
+      "amount": 849.9,
+      "date": "2027-01-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 7,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p8",
+      "description": "MacBook Pro M3 Apple Store (8/10)",
+      "amount": 849.9,
+      "date": "2027-02-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 8,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p9",
+      "description": "MacBook Pro M3 Apple Store (9/10)",
+      "amount": 849.9,
+      "date": "2027-03-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 9,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-macbook-p10",
+      "description": "MacBook Pro M3 Apple Store (10/10)",
+      "amount": 849.9,
+      "date": "2027-04-15",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 10,
+        "total": 10
+      },
+      "tags": [
+        "parcelado",
+        "apple",
+        "trabalho"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p1",
+      "description": "iPhone 16 Pro Max Titanium (1/12)",
+      "amount": 649.9,
+      "date": "2026-08-10",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 1,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p2",
+      "description": "iPhone 16 Pro Max Titanium (2/12)",
+      "amount": 649.9,
+      "date": "2026-09-10",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 2,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p3",
+      "description": "iPhone 16 Pro Max Titanium (3/12)",
+      "amount": 649.9,
+      "date": "2026-10-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 3,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p4",
+      "description": "iPhone 16 Pro Max Titanium (4/12)",
+      "amount": 649.9,
+      "date": "2026-11-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 4,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p5",
+      "description": "iPhone 16 Pro Max Titanium (5/12)",
+      "amount": 649.9,
+      "date": "2026-12-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 5,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p6",
+      "description": "iPhone 16 Pro Max Titanium (6/12)",
+      "amount": 649.9,
+      "date": "2027-01-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 6,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p7",
+      "description": "iPhone 16 Pro Max Titanium (7/12)",
+      "amount": 649.9,
+      "date": "2027-02-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 7,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p8",
+      "description": "iPhone 16 Pro Max Titanium (8/12)",
+      "amount": 649.9,
+      "date": "2027-03-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 8,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p9",
+      "description": "iPhone 16 Pro Max Titanium (9/12)",
+      "amount": 649.9,
+      "date": "2027-04-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 9,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p10",
+      "description": "iPhone 16 Pro Max Titanium (10/12)",
+      "amount": 649.9,
+      "date": "2027-05-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 10,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.372Z"
+    },
+    {
+      "id": "tx-parc-iphone-p11",
+      "description": "iPhone 16 Pro Max Titanium (11/12)",
+      "amount": 649.9,
+      "date": "2027-06-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 11,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-iphone-p12",
+      "description": "iPhone 16 Pro Max Titanium (12/12)",
+      "amount": 649.9,
+      "date": "2027-07-10",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-tecnologia",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "installments": {
+        "current": 12,
+        "total": 12
+      },
+      "tags": [
+        "parcelado",
+        "iphone"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-passagens-p1",
+      "description": "Passagens Aéreas Férias Europa (1/6)",
+      "amount": 416.5,
+      "date": "2026-09-08",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-viagens",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "installments": {
+        "current": 1,
+        "total": 6
+      },
+      "tags": [
+        "viagem",
+        "ferias"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-passagens-p2",
+      "description": "Passagens Aéreas Férias Europa (2/6)",
+      "amount": 416.5,
+      "date": "2026-10-08",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-viagens",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "installments": {
+        "current": 2,
+        "total": 6
+      },
+      "tags": [
+        "viagem",
+        "ferias"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-passagens-p3",
+      "description": "Passagens Aéreas Férias Europa (3/6)",
+      "amount": 416.5,
+      "date": "2026-11-08",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-viagens",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "installments": {
+        "current": 3,
+        "total": 6
+      },
+      "tags": [
+        "viagem",
+        "ferias"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-passagens-p4",
+      "description": "Passagens Aéreas Férias Europa (4/6)",
+      "amount": 416.5,
+      "date": "2026-12-08",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-viagens",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "installments": {
+        "current": 4,
+        "total": 6
+      },
+      "tags": [
+        "viagem",
+        "ferias"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-passagens-p5",
+      "description": "Passagens Aéreas Férias Europa (5/6)",
+      "amount": 416.5,
+      "date": "2027-01-08",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-viagens",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "installments": {
+        "current": 5,
+        "total": 6
+      },
+      "tags": [
+        "viagem",
+        "ferias"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-passagens-p6",
+      "description": "Passagens Aéreas Férias Europa (6/6)",
+      "amount": 416.5,
+      "date": "2027-02-08",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-viagens",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "installments": {
+        "current": 6,
+        "total": 6
+      },
+      "tags": [
+        "viagem",
+        "ferias"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-pneus-p1",
+      "description": "Pneus Michelin Carro (1/5)",
+      "amount": 320,
+      "date": "2026-06-18",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 1,
+        "total": 5
+      },
+      "tags": [
+        "carro",
+        "manutencao"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-pneus-p2",
+      "description": "Pneus Michelin Carro (2/5)",
+      "amount": 320,
+      "date": "2026-07-18",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 2,
+        "total": 5
+      },
+      "tags": [
+        "carro",
+        "manutencao"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-pneus-p3",
+      "description": "Pneus Michelin Carro (3/5)",
+      "amount": 320,
+      "date": "2026-08-18",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 3,
+        "total": 5
+      },
+      "tags": [
+        "carro",
+        "manutencao"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-pneus-p4",
+      "description": "Pneus Michelin Carro (4/5)",
+      "amount": 320,
+      "date": "2026-09-18",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 4,
+        "total": 5
+      },
+      "tags": [
+        "carro",
+        "manutencao"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-parc-pneus-p5",
+      "description": "Pneus Michelin Carro (5/5)",
+      "amount": 320,
+      "date": "2026-10-18",
+      "type": "expense",
+      "status": "pending",
+      "categoryId": "cat-desp-transporte",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "installments": {
+        "current": 5,
+        "total": 5
+      },
+      "tags": [
+        "carro",
+        "manutencao"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-mercado-1",
+      "description": "Supermercado Pão de Açúcar",
+      "amount": 465.8,
+      "date": "2026-09-04",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-alimentacao",
+      "subcategoryId": "sub-alim-mercado",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "mercado",
+        "casa"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-mercado-2",
+      "description": "Supermercado e Açougue",
+      "amount": 320.4,
+      "date": "2026-09-16",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-alimentacao",
+      "subcategoryId": "sub-alim-mercado",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "mercado"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-posto-1",
+      "description": "Combustível Posto Ipiranga",
+      "amount": 240,
+      "date": "2026-09-07",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "subcategoryId": "sub-tra-combustivel",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "tags": [
+        "combustivel"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-posto-2",
+      "description": "Combustível Posto Shell",
+      "amount": 215,
+      "date": "2026-09-21",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "subcategoryId": "sub-tra-combustivel",
+      "cardId": "card-demo-c6",
+      "recurring": false,
+      "tags": [
+        "combustivel"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-restaurante",
+      "description": "Jantar Restaurante Coco Bambu",
+      "amount": 195,
+      "date": "2026-09-11",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-alimentacao",
+      "subcategoryId": "sub-alim-restaurante",
+      "cardId": "card-demo-itau",
+      "recurring": false,
+      "tags": [
+        "lazer",
+        "jantar"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-farmacia",
+      "description": "Farmácia Drogasil (Vitaminas)",
+      "amount": 84.5,
+      "date": "2026-09-13",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-saude",
+      "subcategoryId": "sub-sau-medicamentos",
+      "accountId": "acc-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "farmacia"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-uber-1",
+      "description": "Uber Corridas da Semana",
+      "amount": 42.9,
+      "date": "2026-09-09",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-transporte",
+      "subcategoryId": "sub-tra-app",
+      "cardId": "card-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "transporte",
+        "uber"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-feira",
+      "description": "Feira Livre e Hortifruti",
+      "amount": 78,
+      "date": "2026-09-14",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-alimentacao",
+      "subcategoryId": "sub-alim-hortifruti",
+      "accountId": "acc-demo-carteira",
+      "recurring": false,
+      "tags": [
+        "feira"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-almoco",
+      "description": "Almoço Executivo Trabalho",
+      "amount": 45,
+      "date": "2026-09-17",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-alimentacao",
+      "subcategoryId": "sub-alim-restaurante",
+      "accountId": "acc-demo-nubank",
+      "recurring": false,
+      "tags": [
+        "almoco"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "tx-desp-padaria",
+      "description": "Padaria e Café da Manhã",
+      "amount": 26.5,
+      "date": "2026-09-19",
+      "type": "expense",
+      "status": "completed",
+      "categoryId": "cat-desp-alimentacao",
+      "subcategoryId": "sub-alim-padaria",
+      "accountId": "acc-demo-carteira",
+      "recurring": false,
+      "tags": [
+        "cafe"
+      ],
+      "createdAt": "2026-09-01T03:28:48.373Z"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "bud-alim",
+      "categoryId": "cat-desp-alimentacao",
+      "limit": 1800,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-moradia",
+      "categoryId": "cat-desp-moradia",
+      "limit": 3400,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-transporte",
+      "categoryId": "cat-desp-transporte",
+      "limit": 1200,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-lazer",
+      "categoryId": "cat-desp-lazer",
+      "limit": 800,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-saude",
+      "categoryId": "cat-desp-saude",
+      "limit": 900,
+      "month": "2026-09"
+    },
+    {
+      "id": "bud-tecnologia",
+      "categoryId": "cat-desp-tecnologia",
+      "limit": 2000,
+      "month": "2026-09"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal-reserva-emergencia",
+      "title": "Reserva de Emergência (6 Meses)",
+      "targetAmount": 35000,
+      "currentAmount": 21000,
+      "deadline": "2026-12-31",
+      "icon": "🛡️",
+      "color": "#10b981",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-1",
+          "amount": 15000,
+          "date": "2026-01-15",
+          "note": "Aporte Inicial de Poupança"
+        },
+        {
+          "id": "dep-2",
+          "amount": 3000,
+          "date": "2026-02-10",
+          "note": "Sobra do 13º"
+        },
+        {
+          "id": "dep-3",
+          "amount": 3000,
+          "date": "2026-09-05",
+          "note": "Aporte Mensal Recorrente"
+        }
+      ]
+    },
+    {
+      "id": "goal-viagem-europa",
+      "title": "Férias Europa 2027",
+      "targetAmount": 20000,
+      "currentAmount": 8500,
+      "deadline": "2027-07-31",
+      "icon": "✈️",
+      "color": "#3b82f6",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-v1",
+          "amount": 5000,
+          "date": "2026-01-20",
+          "note": "Início do Planejamento"
+        },
+        {
+          "id": "dep-v2",
+          "amount": 3500,
+          "date": "2026-09-10",
+          "note": "Freelance Design"
+        }
+      ]
+    },
+    {
+      "id": "goal-troca-carro",
+      "title": "Troca de Carro (SUV Novo)",
+      "targetAmount": 50000,
+      "currentAmount": 16000,
+      "deadline": "2028-06-30",
+      "icon": "🚗",
+      "color": "#7c4dff",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-c1",
+          "amount": 16000,
+          "date": "2026-02-01",
+          "note": "Entrada reservada"
+        }
+      ]
+    },
+    {
+      "id": "goal-imovel-proprio",
+      "title": "Entrada Apartamento Próprio",
+      "targetAmount": 80000,
+      "currentAmount": 32000,
+      "deadline": "2028-12-31",
+      "icon": "🏠",
+      "color": "#f59e0b",
+      "completed": false,
+      "deposits": [
+        {
+          "id": "dep-i1",
+          "amount": 32000,
+          "date": "2026-01-05",
+          "note": "Reserva FGTS + Investimentos"
+        }
+      ]
+    }
+  ],
+  "debts": [
+    {
+      "id": "debt-financiamento-caixa",
+      "title": "Financiamento Imobiliário Caixa",
+      "creditor": "Caixa Econômica Federal",
+      "totalAmount": 180000,
+      "remainingAmount": 164000,
+      "interestRate": 9.5,
+      "totalInstallments": 360,
+      "paidInstallments": 24,
+      "installmentAmount": 1480,
+      "dueDay": 15,
+      "nextDueDate": "2026-09-15",
+      "payments": [
+        {
+          "id": "pay-d1",
+          "amount": 1480,
+          "date": "2026-09-15",
+          "installmentNumber": 24
+        }
+      ]
+    },
+    {
+      "id": "debt-consorcio-auto",
+      "title": "Consórcio Veículo Porto Seguro",
+      "creditor": "Porto Seguro Consórcios",
+      "totalAmount": 40000,
+      "remainingAmount": 22000,
+      "interestRate": 0,
+      "totalInstallments": 60,
+      "paidInstallments": 27,
+      "installmentAmount": 780,
+      "dueDay": 20,
+      "nextDueDate": "2026-09-20",
+      "payments": [
+        {
+          "id": "pay-d2",
+          "amount": 780,
+          "date": "2026-09-20",
+          "installmentNumber": 27
+        }
+      ]
+    }
+  ],
+  "investments": [
+    {
+      "id": "inv-tesouro-ipca",
+      "name": "Tesouro IPCA+ 2035",
+      "ticker": "IPCA2035",
+      "type": "fixed",
+      "institution": "XP Investimentos",
+      "investedAmount": 12500,
+      "currentBalance": 13850,
+      "monthlyYield": 112.5,
+      "yieldPercentage": 10.8,
+      "updatedAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "inv-fii-hglg",
+      "name": "CSHG Logística FII",
+      "ticker": "HGLG11",
+      "type": "fiis",
+      "institution": "XP Investimentos",
+      "investedAmount": 8000,
+      "currentBalance": 8620,
+      "monthlyYield": 78.4,
+      "yieldPercentage": 7.75,
+      "updatedAt": "2026-09-01T03:28:48.373Z"
+    },
+    {
+      "id": "inv-cdb-cdi",
+      "name": "CDB 110% do CDI Liquidez Diária",
+      "ticker": "CDB-NUBANK",
+      "type": "fixed",
+      "institution": "Nubank",
+      "investedAmount": 9900,
+      "currentBalance": 10450,
+      "monthlyYield": 98.2,
+      "yieldPercentage": 5.55,
+      "updatedAt": "2026-09-01T03:28:48.373Z"
+    }
+  ],
+  "familyMembers": [
+    {
+      "id": "mem-demo-owner",
+      "name": "Usuário Demonstração",
+      "email": "demo@finly.com",
+      "phone": "11999998888",
+      "role": "admin",
+      "status": "active",
+      "isOwner": true,
+      "type": "linked",
+      "joinedAt": "01/01/2026"
+    },
+    {
+      "id": "mem-demo-partner",
+      "name": "Mariana Demo",
+      "email": "mariana.demo@finly.com",
+      "phone": "11988887777",
+      "role": "editor",
+      "status": "active",
+      "isOwner": false,
+      "type": "linked",
+      "joinedAt": "15/01/2026"
+    }
+  ],
+  "userProfile": {
+    "name": "Conta Demonstração",
+    "email": "demo@finly.com",
+    "phone": "(11) 99999-8888",
+    "currency": "BRL"
+  },
+  "_serverTimestamp": "2026-09-01T03:28:48.373Z"
+}
