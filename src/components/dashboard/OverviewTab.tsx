@@ -101,9 +101,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedCardForPay, setSelectedCardForPay] = useState<string | null>(null);
-  const [hoveredCategory, setHoveredCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string } | null>(null);
-  const [hoveredIncomeCategory, setHoveredIncomeCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string } | null>(null);
+  const [hoveredCategory, setHoveredCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string; id?: string } | null>(null);
+  const [hoveredIncomeCategory, setHoveredIncomeCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string; id?: string } | null>(null);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<string | null>(null);
+  const [selectedFrequencyDay, setSelectedFrequencyDay] = useState<number | null>(null);
+  const [budgetViewMode, setBudgetViewMode] = useState<'total' | 'categories'>('total');
 
   // Manage Home Screen Modal State
   const [isManageWidgetsOpen, setIsManageWidgetsOpen] = useState(false);
@@ -409,139 +412,235 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // ==========================================
 
   // Left 1: Despesas por Categoria
-  const renderDespesasCategoria = () => (
-    <div key="despesasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
-      </div>
+  const renderDespesasCategoria = () => {
+    const filteredTxsForCategory = selectedCategoryFilter
+      ? monthTransactions.filter(t => t.categoryId === selectedCategoryFilter && t.type === 'expense' && t.status === 'completed')
+      : [];
 
-      {categoryChartData.length === 0 ? (
-        <div className="py-12 text-center text-slate-400 text-xs">
-          Nenhuma despesa registrada neste mês.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="relative h-48 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={52}
-                  outerRadius={72}
-                  paddingAngle={3}
-                  dataKey="value"
-                  stroke="transparent"
-                  onMouseEnter={(_, index) => setHoveredCategory(categoryChartData[index])}
-                  onMouseLeave={() => setHoveredCategory(null)}
-                >
-                  {categoryChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-overview-cat-${index}`}
-                      fill={entry.color}
-                      className="cursor-pointer transition-all hover:opacity-90"
-                    />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-              {hoveredCategory ? (
-                <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
-                  <span className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[120px]">
-                    {hoveredCategory.icon} {hoveredCategory.name}
-                  </span>
-                  <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
-                    {formatCurrency(hoveredCategory.value, user.currency, !user.showValues)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                    {hoveredCategory.percentage.toFixed(1)}%
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center">
-                  <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
-                    {formatCurrency(totalExpenseCategorySum, user.currency, !user.showValues)}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    Total
-                  </span>
-                </div>
-              )}
-            </div>
+    return (
+      <div key="despesasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
+            <p className="text-[11px] text-slate-400">Clique em uma categoria para filtrar</p>
           </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
+        </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-40 overflow-y-auto scrollbar-thin pr-1">
-            {categoryChartData.slice(0, 5).map((c, i) => (
-              <div key={i} className="flex items-center justify-between text-xs py-1">
-                <div className="flex items-center gap-2 truncate min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                  <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
-                    {c.icon} {c.name}
+        {categoryChartData.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 text-xs">
+            Nenhuma despesa registrada neste mês.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="relative h-48 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={52}
+                    outerRadius={72}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="transparent"
+                    onClick={(entry) => setSelectedCategoryFilter(selectedCategoryFilter === entry.id ? null : entry.id)}
+                    onMouseEnter={(_, index) => setHoveredCategory(categoryChartData[index])}
+                    onMouseLeave={() => setHoveredCategory(null)}
+                  >
+                    {categoryChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-overview-cat-${index}`}
+                        fill={entry.color}
+                        className={`cursor-pointer transition-all ${
+                          selectedCategoryFilter === entry.id ? 'stroke-purple-600 stroke-2 scale-105' : 'hover:opacity-90'
+                        }`}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+                {hoveredCategory ? (
+                  <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[120px]">
+                      {hoveredCategory.icon} {hoveredCategory.name}
+                    </span>
+                    <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                      {formatCurrency(hoveredCategory.value, user.currency, !user.showValues)}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                      {hoveredCategory.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                      {formatCurrency(totalExpenseCategorySum, user.currency, !user.showValues)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Total
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-44 overflow-y-auto scrollbar-thin pr-1">
+              {categoryChartData.map((c) => {
+                const isSelected = selectedCategoryFilter === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedCategoryFilter(isSelected ? null : c.id)}
+                    className={`flex items-center justify-between text-xs p-2 rounded-xl cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800 font-bold'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                      <span className="text-slate-800 dark:text-slate-200 truncate">
+                        {c.icon} {c.name}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
+                      <span className="text-[10px] text-slate-400 block">{c.percentage.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {selectedCategoryFilter && (
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    Transações ({filteredTxsForCategory.length})
                   </span>
+                  <button
+                    onClick={() => setSelectedCategoryFilter(null)}
+                    className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+                  >
+                    Limpar filtro
+                  </button>
                 </div>
-                <div className="text-right shrink-0">
-                  <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
-                  <span className="text-[10px] text-slate-400 block font-semibold">{c.percentage.toFixed(1)}%</span>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-32 overflow-y-auto pr-1">
+                  {filteredTxsForCategory.map(tx => (
+                    <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
+                      <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
+                      <span className="font-black text-[#ef5350] shrink-0">{formatCurrency(tx.amount, user.currency)}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            )}
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
-            <button
-              onClick={() => setActiveTab('relatorios')}
-              className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
-            >
-              VER MAIS <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+              <button
+                onClick={() => setActiveTab('relatorios')}
+                className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+              >
+                VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   // Left 2: Frequência de Gastos
-  const renderFrequenciaGastos = () => (
-    <div key="frequenciaGastos" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-base">📊</span>
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">Frequência de gastos</h3>
+  const renderFrequenciaGastos = () => {
+    const selectedDayExpenses = selectedFrequencyDay
+      ? monthTransactions.filter(t => {
+          const d = parseInt(t.date.split('-')[2], 10);
+          return d === selectedFrequencyDay && t.type === 'expense' && t.status === 'completed';
+        })
+      : [];
+
+    return (
+      <div key="frequenciaGastos" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📊</span>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Frequência de gastos</h3>
+              <p className="text-[11px] text-slate-400">Clique na barra do dia para ver detalhes</p>
+            </div>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
         </div>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
-      </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        Distribuição dos seus gastos por dia do mês:
-      </p>
-
-      <div className="h-40 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={dailyFrequencyData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-            <XAxis dataKey="dayNum" stroke="#64748b" fontSize={9} tickLine={false} interval={4} />
-            <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
-            <Tooltip
-              formatter={(val: any) => [formatCurrency(Number(val) || 0, user.currency), 'Gasto']}
-              labelFormatter={label => `Dia ${label}`}
-              contentStyle={{ backgroundColor: '#1E1E20', borderColor: '#334155', borderRadius: '12px', fontSize: '11px', color: '#fff' }}
-            />
-            <Bar dataKey="amount" fill="#7c4dff" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {maxSpendingDay && (
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400">
-          <span>Pico de gastos: <strong>Dia {maxSpendingDay.dayNum}</strong></span>
-          <span className="text-purple-600 dark:text-purple-400 font-black">{formatCurrency(maxSpendingDay.amount, user.currency)}</span>
+        <div className="h-40 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={dailyFrequencyData}
+              margin={{ top: 10, right: 0, left: -25, bottom: 0 }}
+              onClick={(state) => {
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  const dayNum = state.activePayload[0].payload.dayNum;
+                  setSelectedFrequencyDay(selectedFrequencyDay === dayNum ? null : dayNum);
+                }
+              }}
+            >
+              <XAxis dataKey="dayNum" stroke="#64748b" fontSize={9} tickLine={false} interval={3} />
+              <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+              <Tooltip
+                formatter={(val: any) => [formatCurrency(Number(val) || 0, user.currency), 'Gasto']}
+                labelFormatter={label => `Dia ${label}`}
+                contentStyle={{ backgroundColor: '#1E1E20', borderColor: '#334155', borderRadius: '12px', fontSize: '11px', color: '#fff' }}
+              />
+              <Bar dataKey="amount" fill="#7c4dff" radius={[4, 4, 0, 0]} className="cursor-pointer" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      )}
-    </div>
-  );
+
+        {selectedFrequencyDay && (
+          <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 space-y-2 animate-in fade-in">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-800 dark:text-slate-200">
+                Gastos no <strong>Dia {selectedFrequencyDay}</strong> ({selectedDayExpenses.length})
+              </span>
+              <button
+                onClick={() => setSelectedFrequencyDay(null)}
+                className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {selectedDayExpenses.length === 0 ? (
+              <p className="text-[11px] text-slate-400 py-1">Nenhuma despesa registrada neste dia.</p>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-28 overflow-y-auto pr-1">
+                {selectedDayExpenses.map(tx => (
+                  <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
+                    <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
+                    <span className="font-black text-[#ef5350] shrink-0">{formatCurrency(tx.amount, user.currency)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {maxSpendingDay && !selectedFrequencyDay && (
+          <div
+            onClick={() => setSelectedFrequencyDay(maxSpendingDay.dayNum)}
+            className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer hover:text-purple-600 transition-colors"
+          >
+            <span>Pico de gastos: <strong className="underline">Dia {maxSpendingDay.dayNum}</strong></span>
+            <span className="text-purple-600 dark:text-purple-400 font-black">{formatCurrency(maxSpendingDay.amount, user.currency)}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Left 3: Balanço Mensal
   const renderBalancoMensal = () => (
@@ -628,49 +727,108 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   );
 
   // Left 5: Resumo do Orçamento (Planejamento)
-  const renderPlanejamento = () => (
-    <div key="planejamento" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Resumo do orçamento</h3>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+  const renderPlanejamento = () => {
+    const budgetedCategories = budgets.map(b => {
+      const cat = categories.find(c => c.id === b.categoryId);
+      const spent = monthTransactions
+        .filter(t => t.categoryId === b.categoryId && t.type === 'expense' && t.status === 'completed' && !t.ignored)
+        .reduce((sum, t) => sum + t.amount, 0);
+      const pct = b.limit > 0 ? Math.min(100, (spent / b.limit) * 100) : 0;
+      return {
+        ...b,
+        name: cat?.name || 'Categoria',
+        icon: cat?.icon || '📁',
+        spent,
+        pct,
+      };
+    });
+
+    return (
+      <div key="planejamento" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">Resumo do orçamento</h3>
+            <p className="text-[11px] text-slate-400">Controle de limites e metas de gastos</p>
+          </div>
+          {budgetSummary.totalBudget > 0 && (
+            <button
+              onClick={() => setBudgetViewMode(budgetViewMode === 'total' ? 'categories' : 'total')}
+              className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+            >
+              {budgetViewMode === 'total' ? 'Ver Categorias' : 'Ver Geral'}
+            </button>
+          )}
+        </div>
+
+        {budgetSummary.totalBudget > 0 ? (
+          <div className="space-y-3">
+            {budgetViewMode === 'total' ? (
+              <>
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-slate-600 dark:text-slate-400">Gasto do orçamento geral</span>
+                  <span className={`font-black ${budgetSummary.percent > 90 ? 'text-rose-500' : 'text-purple-600 dark:text-purple-400'}`}>
+                    {budgetSummary.percent.toFixed(1)}%
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-100 dark:bg-[#1E1E20] h-3 rounded-full overflow-hidden shadow-inner">
+                  <div
+                    style={{ width: `${budgetSummary.percent}%` }}
+                    className={`h-full transition-all duration-500 ${
+                      budgetSummary.percent > 90 ? 'bg-rose-500' : budgetSummary.percent > 70 ? 'bg-amber-500' : 'bg-purple-600'
+                    }`}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  <span>Gasto: <strong>{formatCurrency(budgetSummary.totalSpent, user.currency)}</strong></span>
+                  <span>Teto: <strong>{formatCurrency(budgetSummary.totalBudget, user.currency)}</strong></span>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2.5 max-h-36 overflow-y-auto pr-1">
+                {budgetedCategories.map(bc => (
+                  <div key={bc.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{bc.icon} {bc.name}</span>
+                      <span className="font-bold text-slate-500 text-[10px]">{formatCurrency(bc.spent, user.currency)} / {formatCurrency(bc.limit, user.currency)}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-[#1E1E20] h-1.5 rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${bc.pct}%` }}
+                        className={`h-full ${bc.pct > 100 ? 'bg-rose-500' : 'bg-purple-600'}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setActiveTab('orcamento')}
+                className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+              >
+                AJUSTAR ORÇAMENTO <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 text-center space-y-3">
+            <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+              Defina o teto de gastos por categoria e acompanhe sua economia em tempo real.
+            </p>
+            <button
+              onClick={() => setActiveTab('orcamento')}
+              className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+            >
+              DEFINIR MEU PLANEJAMENTO
+            </button>
+          </div>
+        )}
       </div>
-
-      {budgetSummary.totalBudget > 0 ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-slate-600 dark:text-slate-400">Gasto do orçamento</span>
-            <span className="text-purple-600 dark:text-purple-400">{budgetSummary.percent.toFixed(1)}%</span>
-          </div>
-
-          <div className="w-full bg-slate-100 dark:bg-[#1E1E20] h-3 rounded-full overflow-hidden shadow-inner">
-            <div
-              style={{ width: `${budgetSummary.percent}%` }}
-              className={`h-full transition-all duration-500 ${
-                budgetSummary.percent > 90 ? 'bg-rose-500' : budgetSummary.percent > 70 ? 'bg-amber-500' : 'bg-purple-600'
-              }`}
-            />
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
-            <span>Gasto: <strong>{formatCurrency(budgetSummary.totalSpent, user.currency)}</strong></span>
-            <span>Teto: <strong>{formatCurrency(budgetSummary.totalBudget, user.currency)}</strong></span>
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
-            Defina o teto de gastos por categoria e acompanhe sua economia em tempo real.
-          </p>
-          <button
-            onClick={() => setActiveTab('orcamento')}
-            className="w-full py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-600/20 transition-all cursor-pointer"
-          >
-            DEFINIR MEU PLANEJAMENTO
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   // Left 6: Transações Favoritas
   const renderTransacoesFavoritas = () => (
@@ -712,14 +870,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const blanks = Array.from({ length: firstDayOfWeek }, (_, i) => i);
 
+    const selectedDayTransactions = selectedCalendarDay
+      ? monthTransactions.filter(t => t.date === selectedCalendarDay && t.status === 'completed')
+      : [];
+
     return (
       <div key="calendarioMovimentacoes" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CalendarDays className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">Calendário de Movimentações</h3>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Calendário de Movimentações</h3>
+              <p className="text-[11px] text-slate-400">Clique em qualquer dia para ver ou lançar</p>
+            </div>
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-slate-400 uppercase">
@@ -746,7 +911,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 onClick={() => setSelectedCalendarDay(isSelected ? null : dateStr)}
                 className={`h-8 rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'bg-purple-600 text-white shadow-md'
+                    ? 'bg-purple-600 text-white shadow-md scale-105'
                     : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -760,17 +925,43 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           })}
         </div>
 
-        {selectedCalendarDay && map[selectedCalendarDay] && (
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs animate-in fade-in">
-            <span className="font-bold text-slate-500">Dia {selectedCalendarDay.split('-')[2]}:</span>
-            <div className="flex items-center gap-3 font-black">
-              {map[selectedCalendarDay].income > 0 && (
-                <span className="text-[#66bb6a]">+{formatCurrency(map[selectedCalendarDay].income, user.currency)}</span>
-              )}
-              {map[selectedCalendarDay].expense > 0 && (
-                <span className="text-[#ef5350]">-{formatCurrency(map[selectedCalendarDay].expense, user.currency)}</span>
-              )}
+        {selectedCalendarDay && (
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 space-y-2.5 animate-in fade-in">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-800 dark:text-slate-200">
+                Movimentações do Dia <strong>{selectedCalendarDay.split('-')[2]}/{selectedCalendarDay.split('-')[1]}</strong> ({selectedDayTransactions.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedCalendarDay(null)}
+                className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+              >
+                Fechar
+              </button>
             </div>
+
+            {selectedDayTransactions.length === 0 ? (
+              <p className="text-[11px] text-slate-400 py-1">Nenhuma movimentação registrada nesta data.</p>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-32 overflow-y-auto pr-1">
+                {selectedDayTransactions.map(tx => (
+                  <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
+                    <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
+                    <span className={`font-black shrink-0 ${tx.type === 'income' ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
+                      {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, user.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onOpenNewTransaction}
+              className="w-full py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 hover:bg-purple-600 hover:text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /> Adicionar transação nesta data
+            </button>
           </div>
         )}
       </div>
@@ -781,7 +972,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const renderContas = () => (
     <div key="contas" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Contas</h3>
+        <div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">Contas</h3>
+          <p className="text-[11px] text-slate-400">Saldos bancários e carteiras</p>
+        </div>
         <button
           onClick={() => setActiveTab('contas')}
           className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
@@ -795,13 +989,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           <p className="text-xs text-slate-400 py-3 text-center">Nenhuma conta cadastrada.</p>
         ) : (
           accounts.map(acc => (
-            <div key={acc.id} className="py-2.5 flex items-center justify-between">
+            <div
+              key={acc.id}
+              onClick={() => setActiveTab('contas')}
+              className="py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 px-1 rounded-xl transition-colors group"
+            >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-[#1E1E20] flex items-center justify-center p-1 shrink-0 border border-slate-200 dark:border-slate-800">
+                <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-[#1E1E20] flex items-center justify-center p-1 shrink-0 border border-slate-200 dark:border-slate-800 group-hover:scale-105 transition-transform">
                   <BankLogo nameOrId={acc.institution || acc.name} size={18} className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-white">{acc.name}</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-purple-600 transition-colors">{acc.name}</p>
                   <span className="text-[10px] text-slate-400">
                     {acc.type === 'cash' ? 'Carteira' : 'Conta Corrente'}
                   </span>
@@ -833,8 +1031,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const renderReceitasCategoria = () => (
     <div key="receitasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Receitas por categoria</h3>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+        <div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">Receitas por categoria</h3>
+          <p className="text-[11px] text-slate-400">Fontes de renda e rendimentos</p>
+        </div>
+        <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
       </div>
 
       {incomeCategoryChartData.length === 0 ? (
@@ -929,8 +1130,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const renderBalancoSemestral = () => (
     <div key="balancoSemestral" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço semestral (6 meses)</h3>
-        <span className="text-xs text-slate-400">Histórico</span>
+        <div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço semestral (6 meses)</h3>
+          <p className="text-[11px] text-slate-400">Comparativo histórico de receitas x despesas</p>
+        </div>
+        <span className="text-xs text-slate-400 font-bold">Semestre</span>
       </div>
 
       <div className="h-44 w-full">
@@ -959,8 +1163,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const renderBalancoTrimestral = () => (
     <div key="balancoTrimestral" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço trimestral (3 meses)</h3>
-        <span className="text-xs text-slate-400">Tendência</span>
+        <div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço trimestral (3 meses)</h3>
+          <p className="text-[11px] text-slate-400">Tendência recente de fluxo de caixa</p>
+        </div>
+        <span className="text-xs text-slate-400 font-bold">Trimestre</span>
       </div>
 
       <div className="h-44 w-full">
@@ -989,8 +1196,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const renderCartoes = () => (
     <div key="cartoes" className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">Cartões de crédito</h3>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+        <div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">Cartões de crédito</h3>
+          <p className="text-[11px] text-slate-400">Faturas, limites e vencimentos</p>
+        </div>
+        <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
       </div>
 
       <div className="space-y-4 max-h-[480px] overflow-y-auto scrollbar-thin pr-1 divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -1141,19 +1351,23 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           {goals.slice(0, 3).map(goal => {
             const percent = goal.targetAmount > 0 ? Math.min(100, (goal.currentAmount / goal.targetAmount) * 100) : 0;
             return (
-              <div key={goal.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 space-y-2">
+              <div
+                key={goal.id}
+                onClick={() => setActiveTab('metas')}
+                className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E1E20] border border-slate-200 dark:border-slate-800 space-y-2 cursor-pointer hover:border-purple-500/60 transition-all group"
+              >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-900 dark:text-white truncate">{goal.icon} {goal.title}</span>
+                  <span className="font-bold text-slate-900 dark:text-white truncate group-hover:text-purple-600 transition-colors">{goal.icon} {goal.title}</span>
                   <span className="font-black text-purple-600 dark:text-purple-400">{percent.toFixed(0)}%</span>
                 </div>
 
                 <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div style={{ width: `${percent}%` }} className="h-full bg-purple-600 rounded-full" />
+                  <div style={{ width: `${percent}%` }} className="h-full bg-purple-600 rounded-full transition-all duration-500" />
                 </div>
 
                 <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-                  <span>{formatCurrency(goal.currentAmount, user.currency)}</span>
-                  <span>Meta: {formatCurrency(goal.targetAmount, user.currency)}</span>
+                  <span>Acumulado: <strong>{formatCurrency(goal.currentAmount, user.currency)}</strong></span>
+                  <span>Meta: <strong>{formatCurrency(goal.targetAmount, user.currency)}</strong></span>
                 </div>
               </div>
             );
