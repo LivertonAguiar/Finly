@@ -37,11 +37,12 @@ app.use(express.json({ limit: '20mb' }));
 app.disable('x-powered-by');
 
 // App Version & Update Endpoint
+const APP_VERSION = '1.1.3';
 app.get('/api/app/version', (req, res) => {
   res.json({
-    version: '1.1.2',
+    version: APP_VERSION,
     buildDate: '2026-09-02',
-    notes: 'Novidades da versão: Gesto Puxe para Atualizar (Pull-to-refresh), otimização da conta demo, tela cheia imersiva e central de atualizações na aba Sobre.',
+    notes: 'Novidades da v1.1.3: Ícone oficial do Finly em alta definição, modo tela cheia imersivo nativo, suporte a atualizações contínuas com chave permanente e central de atualizações na aba Sobre.',
     downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases',
     isLatest: true,
   });

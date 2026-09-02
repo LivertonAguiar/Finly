@@ -4,7 +4,7 @@
  */
 import { getApiUrl } from '../services/apiConfig';
 
-export const APP_VERSION = '1.1.2';
+export const APP_VERSION = '1.1.3';
 export const APP_BUILD_DATE = '2026-09-02';
 export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/planner-financeiro';
 export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/planner-financeiro/actions';
@@ -16,6 +16,26 @@ export interface UpdateCheckResult {
   notes?: string;
   downloadUrl?: string;
   source?: 'api' | 'sw' | 'github' | 'local';
+}
+
+export function isNewerVersion(latest: string, current: string): boolean {
+  if (!latest || !current) return false;
+  const parse = (v: string) =>
+    v.replace(/^[^\d]*/, '')
+      .split('.')
+      .map(n => parseInt(n, 10) || 0);
+
+  const l = parse(latest);
+  const c = parse(current);
+  const maxLen = Math.max(l.length, c.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const lPart = l[i] || 0;
+    const cPart = c[i] || 0;
+    if (lPart > cPart) return true;
+    if (lPart < cPart) return false;
+  }
+  return false;
 }
 
 export const isNativeCapacitor = (): boolean => {
@@ -52,9 +72,10 @@ export const checkForAppUpdates = async (): Promise<UpdateCheckResult> => {
     if (apiRes.ok) {
       const serverInfo = await apiRes.json();
       const serverVer = (serverInfo.version || '').replace(/^v/, '');
+      const hasUpdate = isNewerVersion(serverVer, APP_VERSION);
       
       return {
-        hasUpdate: serverVer !== APP_VERSION,
+        hasUpdate,
         latestVersion: serverVer || APP_VERSION,
         notes: serverInfo.notes || 'Melhorias de desempenho e novas funcionalidades financeiras.',
         downloadUrl: serverInfo.downloadUrl || GITHUB_RELEASES_URL,
