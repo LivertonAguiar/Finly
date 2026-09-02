@@ -11,6 +11,8 @@ import {
   TrendingDown,
   CreditCard,
 } from 'lucide-react';
+import { useTranslation } from '../../utils/i18n';
+import { useFinancial } from '../../context/FinancialContext';
 
 interface BottomNavProps {
   activeTab: string;
@@ -25,7 +27,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onOpenNewTransaction,
   onOpenAction,
 }) => {
+  const { user } = useFinancial();
+  const { t } = useTranslation();
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
+  const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('plannerfin_accent_color') || '#7C4DFF');
+
+  // Sync with theme changes
+  React.useEffect(() => {
+    if (user.accentColor) {
+      setAccentColor(user.accentColor);
+    }
+    const handleThemeChange = (e: any) => {
+      if (e?.detail?.accentColor) {
+        setAccentColor(e.detail.accentColor);
+      } else {
+        const saved = localStorage.getItem('plannerfin_accent_color');
+        if (saved) setAccentColor(saved);
+      }
+    };
+    window.addEventListener('plannerfin_theme_changed', handleThemeChange);
+    return () => window.removeEventListener('plannerfin_theme_changed', handleThemeChange);
+  }, [user.accentColor]);
 
   const handleAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {
     setIsSpeedDialOpen(false);
@@ -59,7 +81,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 <ArrowLeftRight className="w-6 h-6 stroke-[2.5]" />
               </button>
               <span className="text-[11px] font-bold text-white mt-1.5 text-center drop-shadow-sm">
-                Transferência
+                {t('action.transfer', 'Transferência')}
               </span>
             </div>
 
@@ -73,7 +95,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 <TrendingUp className="w-6 h-6 stroke-[2.5]" />
               </button>
               <span className="text-[11px] font-bold text-white mt-1.5 text-center drop-shadow-sm">
-                Receita
+                {t('action.new_income', 'Receita')}
               </span>
             </div>
 
@@ -87,7 +109,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 <CreditCard className="w-6 h-6 stroke-[2.5]" />
               </button>
               <span className="text-[11px] font-bold text-white mt-1.5 text-center leading-tight drop-shadow-sm">
-                Despesa<br />cartão
+                {t('action.card_expense', 'Despesa Cartão')}
               </span>
             </div>
 
@@ -101,12 +123,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 <TrendingDown className="w-6 h-6 stroke-[2.5]" />
               </button>
               <span className="text-[11px] font-bold text-white mt-1.5 text-center drop-shadow-sm">
-                Despesa
+                {t('action.new_expense', 'Despesa')}
               </span>
             </div>
           </div>
 
-          {/* Quick Entity Pills below Arc (Metas, Dívidas, Investimentos) */}
+          {/* Quick Entity Pills below Arc (Metas, Dívidas, Investimentos, Cartões) */}
           <div className="mt-6 flex items-center gap-2 flex-wrap justify-center max-w-xs px-2 animate-in fade-in duration-300">
             <button
               type="button"
@@ -116,7 +138,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               }}
               className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-purple-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
             >
-              <span>🎯</span> Meta
+              <span>🎯</span> {t('nav.goals', 'Metas')}
             </button>
 
             <button
@@ -127,7 +149,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               }}
               className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-rose-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
             >
-              <span>📉</span> Dívida
+              <span>📉</span> {t('nav.debts', 'Dívidas')}
             </button>
 
             <button
@@ -138,7 +160,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               }}
               className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-emerald-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
             >
-              <span>📈</span> Investimento
+              <span>📈</span> {t('nav.investments', 'Investimentos')}
             </button>
 
             <button
@@ -149,7 +171,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               }}
               className="px-3 py-1.5 rounded-full bg-[#2C2C30] hover:bg-teal-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
             >
-              <span>💳</span> Cartão
+              <span>💳</span> {t('nav.cards', 'Cartões')}
             </button>
           </div>
         </div>
@@ -163,18 +185,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           height: 'calc(3.8rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        {/* 1. Principal */}
+        {/* 1. Principal / Dashboard */}
         <button
           onClick={() => {
             setIsSpeedDialOpen(false);
             setActiveTab('dashboard');
           }}
+          style={activeTab === 'dashboard' ? { color: accentColor } : undefined}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'dashboard' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'
+            activeTab === 'dashboard' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[10px] font-bold tracking-tight">Principal</span>
+          <span className="text-[10px] tracking-tight">{t('nav.dashboard', 'Principal')}</span>
         </button>
 
         {/* 2. Transações */}
@@ -183,12 +206,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             setIsSpeedDialOpen(false);
             setActiveTab('transacoes');
           }}
+          style={activeTab === 'transacoes' ? { color: accentColor } : undefined}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'transacoes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'
+            activeTab === 'transacoes' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <List className="w-5 h-5" />
-          <span className="text-[10px] font-bold tracking-tight">Transações</span>
+          <span className="text-[10px] tracking-tight">{t('nav.transactions', 'Transações')}</span>
         </button>
 
         {/* 3. Central FAB Button (Toggles Speed Dial) */}
@@ -196,8 +220,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <button
             type="button"
             onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
-            className={`w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer border-4 border-white dark:border-[#121214] ${
-              isSpeedDialOpen ? 'rotate-90 bg-purple-700' : ''
+            style={{
+              backgroundColor: accentColor,
+              boxShadow: `0 4px 14px 0 ${accentColor}40`,
+            }}
+            className={`w-14 h-14 rounded-full text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer border-4 border-white dark:border-[#121214] hover:brightness-110 ${
+              isSpeedDialOpen ? 'rotate-90 brightness-90' : ''
             }`}
             title="Ações Rápidas"
           >
@@ -215,12 +243,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             setIsSpeedDialOpen(false);
             setActiveTab('planejamento');
           }}
+          style={activeTab === 'planejamento' || activeTab === 'orcamento' ? { color: accentColor } : undefined}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'planejamento' || activeTab === 'orcamento' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'
+            activeTab === 'planejamento' || activeTab === 'orcamento' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <Flag className="w-5 h-5" />
-          <span className="text-[10px] font-bold tracking-tight">Planejamento</span>
+          <span className="text-[10px] tracking-tight">{t('nav.planning', 'Planejamento')}</span>
         </button>
 
         {/* 5. Mais */}
@@ -229,14 +258,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             setIsSpeedDialOpen(false);
             setActiveTab('mais');
           }}
+          style={activeTab === 'mais' ? { color: accentColor } : undefined}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'mais' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'
+            activeTab === 'mais' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <MoreHorizontal className="w-5 h-5" />
-          <span className="text-[10px] font-bold tracking-tight">Mais</span>
+          <span className="text-[10px] tracking-tight">{t('nav.more', 'Mais')}</span>
         </button>
       </nav>
     </>
   );
 };
+

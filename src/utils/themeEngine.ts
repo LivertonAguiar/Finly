@@ -114,6 +114,13 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       }
     `}
   `;
+
+  // Notify active components immediately
+  try {
+    window.dispatchEvent(new CustomEvent('plannerfin_theme_changed', {
+      detail: { preset, accentColor: accent, cardRadius: radius }
+    }));
+  } catch (e) {}
 };
 
 export const initThemeEngine = () => {

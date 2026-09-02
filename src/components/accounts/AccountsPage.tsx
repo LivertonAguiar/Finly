@@ -269,7 +269,7 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
                       className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
                     >
                       <CreditCard className="w-4 h-4 text-[#26a69a]" />
-                      <span>Despesa cartão</span>
+                      <span>Despesa Cartão</span>
                     </button>
 
                     {/* 4. Transferência */}

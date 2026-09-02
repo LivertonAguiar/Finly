@@ -5,7 +5,7 @@ import { AccountsPage } from './components/accounts/AccountsPage';
 import { MorePage } from './components/more/MorePage';
 import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { FinancialProvider } from './context/FinancialContext';
+import { FinancialProvider, useFinancial } from './context/FinancialContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -25,6 +25,7 @@ import { FinancialSkillsPage } from './components/skills/FinancialSkillsPage';
 import { AuthPage } from './components/auth/AuthPage';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
+import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -72,9 +73,24 @@ const getInitialTabFromPath = (): string => {
 
 const AppContent: React.FC = () => {
   const { currentUser } = useAuth();
+  const { transactions, cards, budgets, goals } = useFinancial();
   const [activeTab, setActiveTab] = useState<string>(getInitialTabFromPath);
   const [cardsNavKey, setCardsNavKey] = useState<number>(0);
   const [selectedCardIdForDetail, setSelectedCardIdForDetail] = useState<string | null>(null);
+
+  // Background Financial Alerts Checker
+  useEffect(() => {
+    if (currentUser) {
+      checkAndTriggerScheduledAlerts({ transactions, cards, budgets, goals });
+
+      // Run periodically every 30 minutes
+      const interval = setInterval(() => {
+        checkAndTriggerScheduledAlerts({ transactions, cards, budgets, goals });
+      }, 30 * 60 * 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentUser, transactions, cards, budgets, goals]);
 
   const handleSelectTab = useCallback((tab: string) => {
     if (tab === 'cartoes') {

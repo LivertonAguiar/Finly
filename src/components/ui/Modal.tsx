@@ -43,11 +43,14 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+    >
       {/* Modal / Bottom Sheet Card */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border-t sm:border border-slate-200/80 dark:border-slate-800/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-250 text-slate-900 dark:text-white`}
+        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border-t sm:border border-slate-200/80 dark:border-slate-800/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-250 text-slate-900 dark:text-white cursor-default`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}

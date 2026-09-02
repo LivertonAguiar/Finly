@@ -707,18 +707,49 @@ export const ReportsPage: React.FC = () => {
                   Nenhuma transação encontrada no período.
                 </div>
               ) : (
-                <div className="relative w-64 h-64 flex items-center justify-center">
+                <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={donutData.items}
                         cx="50%"
                         cy="50%"
-                        innerRadius={70}
+                        innerRadius={74}
                         outerRadius={98}
                         paddingAngle={3}
                         dataKey="amount"
                         stroke="transparent"
+                        labelLine={false}
+                        label={(props) => {
+                          const { cx, cy, midAngle, outerRadius: oRad, index } = props;
+                          const entry = donutData.items[index];
+                          if (!entry || !entry.icon) return null;
+                          const RADIAN = Math.PI / 180;
+                          const radius = oRad + 7;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                          return (
+                            <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
+                              <circle
+                                cx="0"
+                                cy="0"
+                                r="11"
+                                className="fill-white dark:fill-[#222226] stroke-slate-200/90 dark:stroke-slate-700 shadow-sm"
+                                strokeWidth="1.5"
+                              />
+                              <text
+                                x="0"
+                                y="0.5"
+                                textAnchor="middle"
+                                dominantBaseline="central"
+                                fontSize="11"
+                              >
+                                {entry.icon}
+                              </text>
+                            </g>
+                          );
+                        }}
                         onMouseEnter={(_, index) => setHoveredDonutItem(donutData.items[index])}
                         onMouseLeave={() => setHoveredDonutItem(null)}
                       >
@@ -733,27 +764,27 @@ export const ReportsPage: React.FC = () => {
                     </PieChart>
                   </ResponsiveContainer>
 
-                  {/* Interactive Center (No Overlapping Tooltip) */}
+                  {/* Interactive Center (No Overlapping Tooltip & Multi-line Wrap) */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
                     {hoveredDonutItem ? (
-                      <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
-                        <span className="text-[11px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[140px]">
+                      <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[155px] text-center px-1">
+                        <span className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase leading-tight line-clamp-2">
                           {hoveredDonutItem.icon} {hoveredDonutItem.name}
                         </span>
-                        <span className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                        <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
                           {formatCurrency(hoveredDonutItem.amount, user.currency, !user.showValues)}
                         </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
-                          {hoveredDonutItem.percentage.toFixed(1)}%
+                        <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">
+                          {hoveredDonutItem.percentage.toFixed(1)}% do total
                         </span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center">
-                        <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                      <div className="flex flex-col items-center justify-center max-w-[155px] text-center px-1">
+                        <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
                           {formatCurrency(donutData.total, user.currency, !user.showValues)}
                         </span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                          Total
+                        <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                          Total Geral
                         </span>
                       </div>
                     )}

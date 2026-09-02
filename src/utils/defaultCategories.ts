@@ -40,7 +40,7 @@ export const EMOJI_GROUPS: EmojiGroup[] = [
   {
     name: 'Financeiro & Renda',
     icon: '💰',
-    emojis: ['💰', '💵', '💳', '📈', '📊', '🏦', '🤝', '🏛️', '🧾', '📄', '🚨', '💸', '💎', '🪙', '💶', '💷']
+    emojis: ['💰', '💵', '💳', '📈', '📊', '🏦', '🤝', '🏛️', '🧾', '📄', '🚨', '💸', '💎', '🪙', '💶', '💷', '💼', '👔', '💻', '🎯', '✨', '🏆', '🎁', '🔑', '🏷️', '📦', '📅', '🏖️', '⏰', '🛠️', '🚗', '🎨', '🌾', '🍽️', '⛽', '↩️', '👶', '⭐']
   }
 ];
 
@@ -698,21 +698,21 @@ export const DEFAULT_CATEGORIES: Category[] = [
   },
   {
     "id": "cat-rec-trabalho",
-    "name": "Trabalho & Renda",
+    "name": "Salário & Trabalho",
     "icon": "💼",
     "color": "#10b981",
     "type": "income",
     "subcategories": [
       {
         "id": "sub-rec-salario",
-        "name": "Salário",
-        "icon": "💰",
+        "name": "Salário Líquido",
+        "icon": "💵",
         "categoryId": "cat-rec-trabalho"
       },
       {
         "id": "sub-rec-adiantamento",
-        "name": "Adiantamento",
-        "icon": "💵",
+        "name": "Adiantamento Salarial",
+        "icon": "📅",
         "categoryId": "cat-rec-trabalho"
       },
       {
@@ -723,39 +723,72 @@ export const DEFAULT_CATEGORIES: Category[] = [
       },
       {
         "id": "sub-rec-ferias",
-        "name": "Férias",
+        "name": "Férias / Abono",
         "icon": "🏖️",
         "categoryId": "cat-rec-trabalho"
       },
       {
         "id": "sub-rec-bonus",
-        "name": "Bônus",
-        "icon": "🎁",
+        "name": "Bônus & PLR",
+        "icon": "🎯",
         "categoryId": "cat-rec-trabalho"
       },
       {
-        "id": "sub-rec-freelance",
-        "name": "Freelance",
-        "icon": "💻",
+        "id": "sub-rec-horas-extras",
+        "name": "Horas Extras & Noturno",
+        "icon": "⏰",
         "categoryId": "cat-rec-trabalho"
+      },
+      {
+        "id": "sub-rec-pro-labore",
+        "name": "Pró-Labore & Retirada PJ",
+        "icon": "👔",
+        "categoryId": "cat-rec-trabalho"
+      }
+    ]
+  },
+  {
+    "id": "cat-rec-freelance",
+    "name": "Renda Extra & Freelance",
+    "icon": "💻",
+    "color": "#059669",
+    "type": "income",
+    "subcategories": [
+      {
+        "id": "sub-rec-freelance",
+        "name": "Projetos Freelance",
+        "icon": "💻",
+        "categoryId": "cat-rec-freelance"
       },
       {
         "id": "sub-rec-servicos",
         "name": "Prestação de Serviços",
         "icon": "🛠️",
-        "categoryId": "cat-rec-trabalho"
+        "categoryId": "cat-rec-freelance"
       },
       {
         "id": "sub-rec-venda-produtos",
         "name": "Venda de Produtos",
         "icon": "📦",
-        "categoryId": "cat-rec-trabalho"
+        "categoryId": "cat-rec-freelance"
       },
       {
         "id": "sub-rec-venda-usados",
-        "name": "Venda de Usados",
-        "icon": "💵",
-        "categoryId": "cat-rec-trabalho"
+        "name": "Venda de Usados / Desapego",
+        "icon": "🏷️",
+        "categoryId": "cat-rec-freelance"
+      },
+      {
+        "id": "sub-rec-comissoes",
+        "name": "Comissões & Consultorias",
+        "icon": "🤝",
+        "categoryId": "cat-rec-freelance"
+      },
+      {
+        "id": "sub-rec-apps-motorista",
+        "name": "Apps de Transporte / Entregas",
+        "icon": "🚗",
+        "categoryId": "cat-rec-freelance"
       }
     ]
   },
@@ -768,14 +801,26 @@ export const DEFAULT_CATEGORIES: Category[] = [
     "subcategories": [
       {
         "id": "sub-rec-renda-fixa",
-        "name": "Rendimento de Renda Fixa",
-        "icon": "💰",
+        "name": "Rendimento Renda Fixa (CDB/Tesouro)",
+        "icon": "🏦",
         "categoryId": "cat-rec-investimentos"
       },
       {
         "id": "sub-rec-dividendos",
-        "name": "Dividendos / JCP",
+        "name": "Dividendos de Ações & FIIs",
         "icon": "📊",
+        "categoryId": "cat-rec-investimentos"
+      },
+      {
+        "id": "sub-rec-aluguel-imoveis",
+        "name": "Aluguel de Imóveis & Temporada",
+        "icon": "🏠",
+        "categoryId": "cat-rec-investimentos"
+      },
+      {
+        "id": "sub-rec-cripto",
+        "name": "Criptomoedas & Staking",
+        "icon": "🪙",
         "categoryId": "cat-rec-investimentos"
       },
       {
@@ -783,19 +828,13 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "name": "Outros Rendimentos de Investimentos",
         "icon": "📈",
         "categoryId": "cat-rec-investimentos"
-      },
-      {
-        "id": "sub-rec-aluguel-imoveis",
-        "name": "Aluguel de Imóveis",
-        "icon": "🏠",
-        "categoryId": "cat-rec-investimentos"
       }
     ]
   },
   {
     "id": "cat-rec-beneficios-outras",
-    "name": "Benefícios & Outras Receitas",
-    "icon": "🎁",
+    "name": "Benefícios, Reembolsos & Outros",
+    "icon": "✨",
     "color": "#a855f7",
     "type": "income",
     "subcategories": [
@@ -806,38 +845,50 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
-        "id": "sub-rec-auxilios",
-        "name": "Auxílios / Subsídios",
-        "icon": "💶",
+        "id": "sub-rec-vt",
+        "name": "Vale Transporte / Combustível",
+        "icon": "⛽",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
         "id": "sub-rec-cashback",
-        "name": "Cashback",
+        "name": "Cashback & Pontos",
         "icon": "💸",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
+        "id": "sub-rec-reembolsos",
+        "name": "Reembolsos (Saúde / Trabalho)",
+        "icon": "↩️",
+        "categoryId": "cat-rec-beneficios-outras"
+      },
+      {
+        "id": "sub-rec-restituicao-ir",
+        "name": "Restituição de Imposto de Renda",
+        "icon": "🏛️",
+        "categoryId": "cat-rec-beneficios-outras"
+      },
+      {
         "id": "sub-rec-presentes",
-        "name": "Presentes",
+        "name": "Presentes & Doações",
         "icon": "🎁",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
         "id": "sub-rec-premios",
-        "name": "Prêmios",
+        "name": "Prêmios & Sorteios",
         "icon": "🏆",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
-        "id": "sub-rec-reembolsos",
-        "name": "Reembolsos",
-        "icon": "↩️",
+        "id": "sub-rec-auxilios",
+        "name": "Auxílios & Pensão",
+        "icon": "💶",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
         "id": "sub-rec-outras-receitas",
-        "name": "Outras Receitas",
+        "name": "Outras Entradas Diversas",
         "icon": "💰",
         "categoryId": "cat-rec-beneficios-outras"
       }

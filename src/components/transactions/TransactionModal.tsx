@@ -55,6 +55,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [type, setType] = useState<TransactionType>(initialType);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [centsAmount, setCentsAmount] = useState<number>(() => {
+    if (editingTransaction?.amount) {
+      return Math.round(Number(editingTransaction.amount) * 100);
+    }
+    return 0;
+  });
   const [date, setDate] = useState(getTodayString());
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
@@ -115,7 +121,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       if (editingTransaction) {
         setType(editingTransaction.type);
         setDescription(editingTransaction.description || '');
-        setAmount(editingTransaction.amount ? Number(editingTransaction.amount).toFixed(2) : '');
+        const c = editingTransaction.amount ? Math.round(Number(editingTransaction.amount) * 100) : 0;
+        setCentsAmount(c);
+        setAmount(c > 0 ? (c / 100).toFixed(2) : '');
         setDate(editingTransaction.date || getTodayString());
         
         const foundCat = categories.find(c => c.id === editingTransaction.categoryId || c.name.toLowerCase() === editingTransaction.categoryId?.toLowerCase());
@@ -143,6 +151,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       } else {
         setType(initialType);
         setDescription('');
+        setCentsAmount(0);
         setAmount('');
         setDate(getTodayString());
         const defaultCat = categories.filter(c => c.type === (initialType === 'income' ? 'income' : 'expense'))[0]?.id || '';
@@ -195,6 +204,47 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
     return recurring ? 'Nova Despesa Fixa' : 'Nova Despesa';
   }, [editingTransaction, type, paymentMethod, recurring]);
+
+  // Helper to format cents into Brazilian Real string
+  const formatCentsToDisplay = (cents: number): string => {
+    return (cents / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const displayAmount = useMemo(() => {
+    return formatCentsToDisplay(centsAmount);
+  }, [centsAmount]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value;
+    const digits = rawVal.replace(/\D/g, '');
+    if (!digits || digits === '0') {
+      setCentsAmount(0);
+      setAmount('');
+      return;
+    }
+    const trimmed = digits.slice(-11);
+    const cents = parseInt(trimmed, 10) || 0;
+    setCentsAmount(cents);
+    setAmount((cents / 100).toFixed(2));
+  };
+
+  const handleAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const str = centsAmount.toString();
+      if (str.length <= 1) {
+        setCentsAmount(0);
+        setAmount('');
+      } else {
+        const nextCents = parseInt(str.slice(0, -1), 10) || 0;
+        setCentsAmount(nextCents);
+        setAmount(nextCents > 0 ? (nextCents / 100).toFixed(2) : '');
+      }
+    }
+  };
 
   const handleAddTag = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && tagInput.trim()) {
@@ -311,6 +361,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
     if (saveAndNew) {
       setDescription('');
+      setCentsAmount(0);
       setAmount('');
       setDate(getTodayString());
       setNotes('');
@@ -320,7 +371,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
   };
 
-  const isAmountValid = !!amount && parseFloat(amount) > 0;
+  const isAmountValid = centsAmount > 0;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="md">
@@ -364,7 +415,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <span className="truncate">Receita</span>
             </button>
 
-            {/* 3. Despesa Cartão */}
+            {/* 3. Despesa de Cartão */}
             <button
               type="button"
               onClick={() => {
@@ -401,7 +452,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 1. TOP VALUE BOX (CENTERED & CLEAN) */}
+        {/* 1. TOP VALUE BOX (DYNAMIC RIGHT-TO-LEFT REAL-TIME MONEY MASK) */}
         {/* ========================================================================= */}
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#1E1E22] border border-slate-200/80 dark:border-slate-800 flex items-center justify-center shadow-xs">
           <div className="inline-flex items-center justify-center gap-2 max-w-full">
@@ -410,13 +461,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </span>
             <input
               type="text"
-              inputMode="decimal"
+              inputMode="numeric"
               required
-              placeholder="0,00"
-              value={amount}
-              onChange={e => {
-                const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
-                setAmount(val);
+              value={displayAmount}
+              onKeyDown={handleAmountKeyDown}
+              onChange={handleAmountChange}
+              onFocus={e => {
+                const len = e.target.value.length;
+                e.target.setSelectionRange(len, len);
+              }}
+              onClick={e => {
+                const len = (e.target as HTMLInputElement).value.length;
+                (e.target as HTMLInputElement).setSelectionRange(len, len);
               }}
               autoFocus
               className={`borderless-money-input text-center text-3xl sm:text-4xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 ${
@@ -429,17 +485,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   : 'text-[#42a5f5]'
               }`}
               style={{
-                width: `${Math.max(amount.length + 1, 5)}ch`,
+                width: `${Math.max(displayAmount.length + 1, 5)}ch`,
                 outline: 'none',
                 boxShadow: 'none',
                 border: 'none',
+                caretColor: type === 'income' ? '#66bb6a' : type === 'expense' ? '#ef5350' : '#7C4DFF',
               }}
             />
           </div>
         </div>
 
-        {!isAmountValid && amount !== '' && (
-          <p className="text-center text-[11px] font-bold text-rose-500 -mt-2">Deve ter um valor diferente de 0</p>
+        {!isAmountValid && centsAmount === 0 && (
+          <p className="text-center text-[11px] font-bold text-slate-400 -mt-2">Digite o valor da transação</p>
         )}
 
         {/* ========================================================================= */}

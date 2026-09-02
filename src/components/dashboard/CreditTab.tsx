@@ -250,7 +250,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
 
   
   const handleExportCardsCSV = () => {
-    const headers = ['Cartao', 'Bandeira', 'Limite Total', 'Limite Disponivel', 'Fatura Atual', 'Fechamento', 'Vencimento', 'Status'];
+    const headers = ['Cartão', 'Bandeira', 'Limite Total', 'Limite Disponível', 'Fatura Atual', 'Fechamento', 'Vencimento', 'Status'];
     const rows = cardsData.map(c => [
       c.name,
       c.brand,

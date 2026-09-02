@@ -355,7 +355,7 @@ export const TransactionsPage: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta/Cartao', 'Valor', 'Status'];
+    const headers = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta/Cartão', 'Valor', 'Status'];
     const rows = displayTransactions.map(t => {
       const cat = findCategory(t.categoryId, t.subcategoryId);
       const acc = accounts.find(a => a.id === t.accountId);
@@ -514,7 +514,7 @@ export const TransactionsPage: React.FC = () => {
                       className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
                     >
                       <CreditCard className="w-4 h-4 text-[#26a69a]" />
-                      <span>Despesa cartão</span>
+                      <span>Despesa Cartão</span>
                     </button>
 
                     {/* 4. Transferência */}
@@ -789,36 +789,41 @@ export const TransactionsPage: React.FC = () => {
                     <div
                       key={t.id}
                       onClick={() => setSelectedDetailTx(t)}
-                      className="py-3 first:pt-1 last:pb-0 flex items-center justify-between gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/50 px-2.5 rounded-2xl transition-colors cursor-pointer"
+                      className="py-3 first:pt-1 last:pb-0 flex items-center justify-between gap-2.5 sm:gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/50 px-2 sm:px-2.5 rounded-2xl transition-colors cursor-pointer"
                     >
-                      {/* Left: Status check + Category Icon + Info */}
-                      <div className="flex items-center gap-3 min-w-0">
-{getStatusBadge(t)}
+                      {/* Left: Status (desktop) + Category Icon + Info */}
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                        {/* On desktop (sm:), show status badge on the far left */}
+                        <div className="hidden sm:flex shrink-0">
+                          {getStatusBadge(t)}
+                        </div>
 
+                        {/* Category Icon */}
                         <div
-                          className="w-9 h-9 rounded-2xl flex items-center justify-center text-sm shrink-0 shadow-xs"
+                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-sm shrink-0 shadow-xs"
                           style={{ backgroundColor: (cat?.color || '#7c4dff') + '20', color: cat?.color || '#7c4dff' }}
                         >
                           {cat?.icon || (isIncome ? '💰' : '📁')}
                         </div>
 
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {/* Description & Metadata with full space */}
+                        <div className="min-w-0 flex-1 pr-1">
+                          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                             {t.description}
                           </p>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-semibold truncate">
-                            <span className="uppercase">{cat?.name || 'Geral'}</span>
+                          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">
+                            <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
                             {card ? (
-                              <span>• Cartão {card.name}</span>
+                              <span className="truncate">• Cartão {card.name}</span>
                             ) : acc ? (
-                              <span>• {acc.name}</span>
+                              <span className="truncate">• {acc.name}</span>
                             ) : null}
                           </div>
                         </div>
                       </div>
 
-                      {/* Right: Amount + Action buttons */}
-                      <div className="flex items-center gap-2.5 shrink-0">
+                      {/* Right: Amount + Status (mobile) + Action buttons */}
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2.5 shrink-0 text-right">
                         {t.isThirdParty && !t.reimbursed && (
                           <button
                             type="button"
@@ -842,7 +847,7 @@ export const TransactionsPage: React.FC = () => {
                         )}
 
                         <span
-                          className={`text-xs font-black ${
+                          className={`text-xs sm:text-sm font-black whitespace-nowrap ${
                             isIncome ? 'text-[#66bb6a]' : isExpense ? 'text-[#ef5350]' : 'text-slate-700 dark:text-slate-300'
                           }`}
                         >
@@ -850,9 +855,16 @@ export const TransactionsPage: React.FC = () => {
                           {formatCurrency(t.amount, user.currency, !user.showValues)}
                         </span>
 
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* On mobile (< sm:), show status badge here under amount */}
+                        <div className="flex sm:hidden">
+                          {getStatusBadge(t)}
+                        </div>
+
+                        {/* Desktop Action buttons */}
+                        <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingTransaction(t);
                               setIsModalOpen(true);
                             }}
@@ -861,7 +873,10 @@ export const TransactionsPage: React.FC = () => {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteTransaction(t)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTransaction(t);
+                            }}
                             className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

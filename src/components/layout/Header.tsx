@@ -21,6 +21,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { apiSync, SyncStatus } from '../../utils/apiSync';
 import { FinlyLogo } from '../ui/FinlyLogo';
+import { useTranslation } from '../../utils/i18n';
 
 interface HeaderProps {
   activeTab?: string;
@@ -46,6 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
     exportBackupJSON,
   } = useFinancial();
 
+  const { t } = useTranslation();
   const { currentUser, logout } = useAuth();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -94,7 +96,40 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Desktop Active Section Title */}
         <div className="hidden md:flex items-center gap-2">
           <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100 capitalize">
-            {activeTab === 'settings' ? 'Configurações' : activeTab === 'orcamento' || activeTab === 'planejamento' ? 'Planejamento' : activeTab === 'metas' ? 'Metas' : activeTab === 'cartoes' ? 'Cartões de Crédito' : activeTab === 'transacoes' ? 'Transações' : activeTab === 'contas' ? 'Contas' : activeTab === 'relatorios' ? 'Relatórios' : activeTab === 'calendario' ? 'Calendário' : activeTab === 'mais' ? 'Mais Opções' : activeTab || 'Dashboard'}
+            {t(
+              activeTab === 'settings'
+                ? 'nav.settings'
+                : activeTab === 'orcamento' || activeTab === 'planejamento'
+                ? 'nav.planning'
+                : activeTab === 'metas'
+                ? 'nav.goals'
+                : activeTab === 'cartoes'
+                ? 'nav.cards'
+                : activeTab === 'transacoes'
+                ? 'nav.transactions'
+                : activeTab === 'contas'
+                ? 'nav.accounts'
+                : activeTab === 'relatorios'
+                ? 'nav.reports'
+                : activeTab === 'calendario'
+                ? 'nav.calendar'
+                : activeTab === 'mais'
+                ? 'nav.more'
+                : activeTab === 'dividas'
+                ? 'nav.debts'
+                : activeTab === 'investimentos'
+                ? 'nav.investments'
+                : activeTab === 'whatsapp'
+                ? 'nav.whatsapp'
+                : activeTab === 'skills'
+                ? 'nav.skills'
+                : activeTab === 'cadastro'
+                ? 'nav.categories'
+                : activeTab === 'familia'
+                ? 'nav.family'
+                : `nav.${activeTab}`,
+              activeTab || 'Dashboard'
+            )}
           </h2>
         </div>
       </div>
@@ -105,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Hide Values Toggle */}
         <button
           onClick={toggleHideValues}
-          title={user.showValues ? 'Ocultar valores' : 'Mostrar valores'}
+          title={user.showValues ? t('common.hide_values', 'Ocultar valores') : t('common.hide_values', 'Mostrar valores')}
           className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
           {user.showValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 text-purple-500" />}

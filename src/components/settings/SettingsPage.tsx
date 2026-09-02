@@ -13,10 +13,26 @@ import {
   CheckCircle2,
   RotateCcw,
   Languages,
+  CreditCard,
+  Clock,
+  AlertTriangle,
+  Target,
+  Volume2,
+  VolumeX,
+  Send,
+  Check,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { t, SupportedLanguage } from '../../utils/i18n';
 import { applyTheme, ThemePreset, CardRadius } from '../../utils/themeEngine';
+import {
+  getStoredNotificationPrefs,
+  saveNotificationPrefs,
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  NotificationPreferences,
+} from '../../utils/notificationEngine';
 
 export const SettingsPage: React.FC = () => {
   const { user, updateUser } = useFinancial();
@@ -32,11 +48,11 @@ export const SettingsPage: React.FC = () => {
   const [selectedCardRadius, setSelectedCardRadius] = useState<CardRadius>((user.cardRadius as CardRadius) || 'rounded');
   const [hideValues, setHideValues] = useState(!user.showValues);
 
-  // Alerts
-  const [dueAlertDays, setDueAlertDays] = useState('3');
-  const [budgetAlert80, setBudgetAlert80] = useState(true);
-  const [budgetAlert100, setBudgetAlert100] = useState(true);
-  const [weeklySummary, setWeeklySummary] = useState(true);
+  // Notification Engine Preferences State
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(getStoredNotificationPrefs);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(getNotificationPermission);
+  const [testSending, setTestSending] = useState(false);
+  const [testSuccess, setTestSuccess] = useState(false);
 
   // Dashboard 15 Widgets Switches
   const [dashLeftWidgets, setDashLeftWidgets] = useState({
@@ -214,69 +230,55 @@ export const SettingsPage: React.FC = () => {
         })}
       </div>
 
-      {/* TAB 1: PREFERÊNCIAS & IDIOMAS */}
+      {/* TAB 1: PREFERÊNCIAS (MINIMALISTA) */}
       {activeTab === 'preferences' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Idioma da Interface */}
-          <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                <Languages className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">{t('settings.lang.title', selectedLang)}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t('settings.lang.desc', selectedLang)}</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { id: 'pt-BR', label: '🇧🇷 Português (Brasil)', desc: 'Português padrão com termos brasileiros' },
-                { id: 'en-US', label: '🇺🇸 English (United States)', desc: 'English UI with American financial terms' },
-                { id: 'es-ES', label: '🇪🇸 Español (España / Latam)', desc: 'Interfaz completa en idioma español' },
-              ].map(lang => (
-                <div
-                  key={lang.id}
-                  onClick={() => setSelectedLang(lang.id as SupportedLanguage)}
-                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                    selectedLang === lang.id
-                      ? 'border-purple-600 bg-purple-50/40 dark:bg-purple-950/20'
-                      : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
-                  }`}
-                >
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">{lang.label}</h4>
-                    <span className="text-[11px] text-slate-400">{lang.desc}</span>
-                  </div>
-                  {selectedLang === lang.id && <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />}
+        <div className="space-y-6">
+          <div className="max-w-xl">
+            {/* Seletor Minimalista de Idioma */}
+            <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <Languages className="w-5 h-5" />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Ocultar Valores */}
-          <div className="md:col-span-2 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-600/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                {hideValues ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    {t('settings.lang.title', selectedLang)}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('settings.lang.desc', selectedLang)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">Modo Privacidade (Ocultar Saldos)</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Substitui valores numéricos por asteriscos (•••••) em todos os painéis e gráficos.
-                </p>
+
+              {/* Minimalist Segmented Buttons */}
+              <div className="grid grid-cols-3 gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-[#1C1C1E] border border-slate-200/80 dark:border-slate-800/80">
+                {[
+                  { id: 'pt-BR', flag: '🇧🇷', label: 'Português' },
+                  { id: 'en-US', flag: '🇺🇸', label: 'English' },
+                  { id: 'es-ES', flag: '🇪🇸', label: 'Español' },
+                ].map(lang => {
+                  const isSelected = selectedLang === lang.id;
+                  return (
+                    <button
+                      key={lang.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedLang(lang.id as SupportedLanguage);
+                        updateUser({ language: lang.id as SupportedLanguage });
+                      }}
+                      className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-white dark:bg-[#2C2C2E] text-purple-600 dark:text-purple-400 shadow-sm border border-purple-500/20'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span className="text-base leading-none">{lang.flag}</span>
+                      <span className="truncate">{lang.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={hideValues}
-                onChange={e => setHideValues(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-purple-600" />
-            </label>
           </div>
         </div>
       )}
@@ -456,66 +458,272 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 4: ALERTAS & NOTIFICAÇÕES */}
+      {/* TAB 4: ALERTAS & NOTIFICAÇÕES (WEB & MOBILE PWA) */}
       {activeTab === 'alerts' && (
-        <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">Gatilhos de Notificação Automáticos</h3>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Alerta de Vencimento de Faturas</h4>
-                <p className="text-[11px] text-slate-400">Avisar com antecedência antes do vencimento</p>
+        <div className="space-y-5">
+          {/* 1. PERMISSION & STATUS HERO CARD */}
+          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+                  notifPermission === 'granted'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                    : notifPermission === 'denied'
+                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                    : 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400'
+                }`}>
+                  <Bell className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white">Central de Notificações</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      notifPermission === 'granted'
+                        ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                        : notifPermission === 'denied'
+                        ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
+                        : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                    }`}>
+                      {notifPermission === 'granted' ? 'Ativo no Navegador' : notifPermission === 'denied' ? 'Bloqueado' : 'Permissão Pendente'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Receba lembretes de vencimentos, faturas e controle de orçamento no Web App e Mobile.
+                  </p>
+                </div>
               </div>
-              <select
-                value={dueAlertDays}
-                onChange={e => setDueAlertDays(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold"
-              >
-                <option value="1">1 dia antes</option>
-                <option value="3">3 dias antes</option>
-                <option value="5">5 dias antes</option>
-                <option value="7">7 dias antes</option>
-              </select>
+
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                {notifPermission !== 'granted' ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await requestNotificationPermission();
+                      setNotifPermission(res);
+                      if (res === 'granted') {
+                        setNotifPrefs(prev => saveNotificationPrefs({ ...prev, enabled: true }));
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>Permitir Notificações</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={testSending}
+                    onClick={async () => {
+                      setTestSending(true);
+                      const sent = await sendTestNotification();
+                      setTestSuccess(sent);
+                      setTestSending(false);
+                      setTimeout(() => setTestSuccess(false), 4000);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 active:scale-95"
+                  >
+                    {testSuccess ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-600 dark:text-emerald-400">Enviada!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Testar Notificação</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Alerta de Orçamento a 80%</h4>
-                <p className="text-[11px] text-slate-400">Avisar quando os gastos atingirem 80% do teto mensal</p>
+            {testSuccess && (
+              <div className="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Notificação de teste enviada! Verifique a central de notificações do seu sistema ou celular.</span>
               </div>
-              <input
-                type="checkbox"
-                checked={budgetAlert80}
-                onChange={e => setBudgetAlert80(e.target.checked)}
-                className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer"
-              />
+            )}
+          </div>
+
+          {/* 2. GRANULAR NOTIFICATION SWITCHES */}
+          <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Preferências de Disparo</h4>
+                <p className="text-[11px] text-slate-500">Escolha quais eventos devem gerar avisos no seu dispositivo</p>
+              </div>
+
+              {/* Master Toggle */}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.enabled}
+                  onChange={e => {
+                    const next = saveNotificationPrefs({ enabled: e.target.checked });
+                    setNotifPrefs(next);
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-purple-600"></div>
+              </label>
             </div>
 
-            <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Alerta de Estouro de Orçamento (100%)</h4>
-                <p className="text-[11px] text-slate-400">Avisar imediatamente se alguma categoria estourar o limite</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={budgetAlert100}
-                onChange={e => setBudgetAlert100(e.target.checked)}
-                className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer"
-              />
-            </div>
+            <div className={`space-y-4 transition-opacity ${notifPrefs.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+              {/* 1. Cartões de Crédito */}
+              <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Faturas de Cartão de Crédito</h4>
+                    <p className="text-[11px] text-slate-400">Lembrete de vencimento e fechamento da fatura</p>
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Resumo Semanal por E-mail</h4>
-                <p className="text-[11px] text-slate-400">Receber balanço financeiro todo domingo à noite</p>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={String(notifPrefs.dueDaysAhead)}
+                    onChange={e => {
+                      const next = saveNotificationPrefs({ dueDaysAhead: parseInt(e.target.value) || 3 });
+                      setNotifPrefs(next);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100"
+                  >
+                    <option value="0">No dia do vencimento</option>
+                    <option value="1">1 dia antes</option>
+                    <option value="3">3 dias antes</option>
+                    <option value="5">5 dias antes</option>
+                    <option value="7">7 dias antes</option>
+                  </select>
+
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.cardInvoices}
+                    onChange={e => {
+                      const next = saveNotificationPrefs({ cardInvoices: e.target.checked });
+                      setNotifPrefs(next);
+                    }}
+                    className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                  />
+                </div>
               </div>
-              <input
-                type="checkbox"
-                checked={weeklySummary}
-                onChange={e => setWeeklySummary(e.target.checked)}
-                className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer"
-              />
+
+              {/* 2. Contas Pendentes */}
+              <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Contas e Despesas Pendentes / Fixas</h4>
+                    <p className="text-[11px] text-slate-400">Avisos de contas cadastradas com pagamento programado</p>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.pendingBills}
+                  onChange={e => {
+                    const next = saveNotificationPrefs({ pendingBills: e.target.checked });
+                    setNotifPrefs(next);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {/* 3. Alerta de 80% do Orçamento */}
+              <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Alerta Preventivo de Orçamento (80%)</h4>
+                    <p className="text-[11px] text-slate-400">Avisar quando os gastos do mês atingirem 80% do limite planejado</p>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.budget80}
+                  onChange={e => {
+                    const next = saveNotificationPrefs({ budget80: e.target.checked });
+                    setNotifPrefs(next);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {/* 4. Estouro de Orçamento (100%) */}
+              <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Alerta de Estouro de Orçamento (100%)</h4>
+                    <p className="text-[11px] text-slate-400">Avisar imediatamente ao exceder o teto total estipulado</p>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.budget100}
+                  onChange={e => {
+                    const next = saveNotificationPrefs({ budget100: e.target.checked });
+                    setNotifPrefs(next);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {/* 5. Metas Concluídas */}
+              <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Metas e Objetivos Concluídos</h4>
+                    <p className="text-[11px] text-slate-400">Celebração e notificação quando uma meta atingir 100%</p>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.goalsProgress}
+                  onChange={e => {
+                    const next = saveNotificationPrefs({ goalsProgress: e.target.checked });
+                    setNotifPrefs(next);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {/* 6. Som de Notificação */}
+              <div className="flex items-center justify-between py-2.5">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 mt-0.5">
+                    {notifPrefs.sound ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Efeito Sonoro Suave (Chime)</h4>
+                    <p className="text-[11px] text-slate-400">Tocar um som harmônico discreto ao disparar notificações</p>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.sound}
+                  onChange={e => {
+                    const next = saveNotificationPrefs({ sound: e.target.checked });
+                    setNotifPrefs(next);
+                  }}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
             </div>
           </div>
         </div>

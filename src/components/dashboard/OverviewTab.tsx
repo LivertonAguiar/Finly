@@ -32,6 +32,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  GripVertical,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -53,6 +54,7 @@ import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
 import { MonthPickerPopover } from '../ui/MonthPickerPopover';
+import { useTranslation } from '../../utils/i18n';
 
 interface OverviewTabProps {
   onOpenNewTransaction: () => void;
@@ -73,6 +75,7 @@ export interface DashboardCardsState {
   contas: boolean;
 
   // Right Column
+  autonomiaReserva: boolean;
   receitasCategoria: boolean;
   balancoSemestral: boolean;
   balancoTrimestral: boolean;
@@ -92,6 +95,7 @@ const DEFAULT_CARDS_STATE: DashboardCardsState = {
   calendarioMovimentacoes: false,
   contas: true,
 
+  autonomiaReserva: true,
   receitasCategoria: true,
   balancoSemestral: false,
   balancoTrimestral: false,
@@ -101,10 +105,34 @@ const DEFAULT_CARDS_STATE: DashboardCardsState = {
   perfil: false,
 };
 
-const CARDS_STORAGE_KEY = 'plannerfin_dashboard_cards_v4';
+const DEFAULT_LEFT_COLUMN_CARDS = [
+  'despesasCategoria',
+  'frequenciaGastos',
+  'balancoMensal',
+  'transacoesPendentes',
+  'planejamento',
+  'transacoesFavoritas',
+  'calendarioMovimentacoes',
+  'contas',
+];
+
+const DEFAULT_RIGHT_COLUMN_CARDS = [
+  'autonomiaReserva',
+  'receitasCategoria',
+  'balancoSemestral',
+  'balancoTrimestral',
+  'cartoes',
+  'objetivos',
+  'economiaMes',
+  'perfil',
+];
+
+const CARDS_STORAGE_KEY = 'plannerfin_dashboard_cards_v5';
+const CARDS_ORDER_STORAGE_KEY = 'plannerfin_dashboard_cards_order_v1';
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, onOpenNewCard, setActiveTab, onOpenCardDetail }) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
+  const { lang, t, translateCategory } = useTranslation();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -128,6 +156,125 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return DEFAULT_CARDS_STATE;
   });
 
+  // Dynamic Card Ordering & Drag-and-Drop state
+  const [columnCards, setColumnCards] = useState<{ left: string[]; right: string[] }>(() => {
+    try {
+      const saved = localStorage.getItem(CARDS_ORDER_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.left) && Array.isArray(parsed.right)) {
+          const allKnown = [...DEFAULT_LEFT_COLUMN_CARDS, ...DEFAULT_RIGHT_COLUMN_CARDS];
+          const left = parsed.left.filter((k: string) => allKnown.includes(k));
+          const right = parsed.right.filter((k: string) => allKnown.includes(k));
+          allKnown.forEach(k => {
+            if (!left.includes(k) && !right.includes(k)) {
+              if (DEFAULT_LEFT_COLUMN_CARDS.includes(k)) left.push(k);
+              else right.push(k);
+            }
+          });
+          return { left, right };
+        }
+      }
+    } catch (e) {}
+    return { left: [...DEFAULT_LEFT_COLUMN_CARDS], right: [...DEFAULT_RIGHT_COLUMN_CARDS] };
+  });
+
+  const [draggedCard, setDraggedCard] = useState<{ key: string; col: 'left' | 'right'; index: number } | null>(null);
+  const [dragOverCard, setDragOverCard] = useState<{ key: string; col: 'left' | 'right'; index: number } | null>(null);
+  const [draggableCardKey, setDraggableCardKey] = useState<string | null>(null);
+
+  const saveColumnCards = (newCols: { left: string[]; right: string[] }) => {
+    setColumnCards(newCols);
+    try {
+      localStorage.setItem(CARDS_ORDER_STORAGE_KEY, JSON.stringify(newCols));
+    } catch (e) {}
+  };
+
+  const resetCardsOrder = () => {
+    const defaults = { left: [...DEFAULT_LEFT_COLUMN_CARDS], right: [...DEFAULT_RIGHT_COLUMN_CARDS] };
+    saveColumnCards(defaults);
+  };
+
+  const handleDragStart = (e: React.DragEvent, key: string, col: 'left' | 'right', index: number) => {
+    setDraggedCard({ key, col, index });
+    e.dataTransfer.setData('text/plain', key);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetKey: string, targetCol: 'left' | 'right', targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    if (!dragOverCard || dragOverCard.key !== targetKey) {
+      setDragOverCard({ key: targetKey, col: targetCol, index: targetIndex });
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetKey: string, targetCol: 'left' | 'right', targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedCard) return;
+    if (draggedCard.key === targetKey && draggedCard.col === targetCol) {
+      setDraggedCard(null);
+      setDragOverCard(null);
+      setDraggableCardKey(null);
+      return;
+    }
+
+    const sourceCol = draggedCard.col;
+    const newLeft = [...columnCards.left];
+    const newRight = [...columnCards.right];
+
+    const sourceList = sourceCol === 'left' ? newLeft : newRight;
+    const targetList = targetCol === 'left' ? newLeft : newRight;
+
+    const sourceIdx = sourceList.indexOf(draggedCard.key);
+    const targetIdx = targetList.indexOf(targetKey);
+
+    if (sourceIdx !== -1 && targetIdx !== -1) {
+      // Direct 1-to-1 swap between the dragged card and the target card
+      const temp = sourceList[sourceIdx];
+      sourceList[sourceIdx] = targetList[targetIdx];
+      targetList[targetIdx] = temp;
+      saveColumnCards({ left: newLeft, right: newRight });
+    }
+
+    setDraggedCard(null);
+    setDragOverCard(null);
+    setDraggableCardKey(null);
+  };
+
+  const handleColumnDrop = (e: React.DragEvent, targetCol: 'left' | 'right') => {
+    e.preventDefault();
+    if (!draggedCard) return;
+    if (draggedCard.col === targetCol) return;
+
+    const newLeft = [...columnCards.left];
+    const newRight = [...columnCards.right];
+
+    const sourceList = draggedCard.col === 'left' ? newLeft : newRight;
+    const targetList = targetCol === 'left' ? newLeft : newRight;
+
+    const sourceIdx = sourceList.indexOf(draggedCard.key);
+    if (sourceIdx !== -1) {
+      sourceList.splice(sourceIdx, 1);
+      // Insert at the exact same row/slot index on the other side instead of sending to bottom
+      const insertIdx = Math.min(draggedCard.index, targetList.length);
+      targetList.splice(insertIdx, 0, draggedCard.key);
+      saveColumnCards({ left: newLeft, right: newRight });
+    }
+
+    setDraggedCard(null);
+    setDragOverCard(null);
+    setDraggableCardKey(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedCard(null);
+    setDragOverCard(null);
+    setDraggableCardKey(null);
+  };
+
   const updateCardState = (key: keyof DashboardCardsState, value: boolean) => {
     const updated = { ...cardsState, [key]: value };
     setCardsState(updated);
@@ -138,6 +285,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
   const resetCardState = () => {
     setCardsState(DEFAULT_CARDS_STATE);
+    resetCardsOrder();
     try {
       localStorage.setItem(CARDS_STORAGE_KEY, JSON.stringify(DEFAULT_CARDS_STATE));
     } catch (e) {}
@@ -150,7 +298,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return d;
   }, [selectedMonthOffset]);
 
-  const monthName = viewDate.toLocaleDateString('pt-BR', { month: 'long' });
+  const monthName = viewDate.toLocaleDateString(lang || 'pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const yearNum = viewDate.getFullYear();
   const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
@@ -194,18 +342,102 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return Object.entries(expensesByCategory)
       .map(([catId, item]) => {
         const resolved = resolveCategory(categories, catId, undefined, 'expense');
-        const name = resolved.name;
+        const name = translateCategory(resolved.name);
         const color = resolved.color;
         const icon = resolved.icon;
         const percentage = total > 0 ? (item.amount / total) * 100 : 0;
         return { name, value: item.amount, color, icon, percentage, id: catId };
       })
       .sort((a, b) => b.value - a.value);
-  }, [monthTransactions, categories]);
+  }, [monthTransactions, categories, translateCategory]);
 
   const totalExpenseCategorySum = useMemo(() => {
     return categoryChartData.reduce((acc, curr) => acc + curr.value, 0);
   }, [categoryChartData]);
+
+  // Fixed vs Variable Split for Expenses (MGO Inspired)
+  const fixedVsVariable = useMemo(() => {
+    const fixedKeywords = [
+      'moradia', 'aluguel', 'condomínio', 'condominio', 'internet', 'água', 'agua',
+      'luz', 'energia', 'plano', 'assinatura', 'streaming', 'mensalidade',
+      'educação', 'educacao', 'escola', 'faculdade', 'imposto', 'seguro',
+      'financiamento', 'empréstimo', 'emprestimo', 'casa', 'contas de casa',
+      'tarifas bancárias', 'manutenção', 'fixo', 'fixa'
+    ];
+
+    let fixed = 0;
+    let variable = 0;
+
+    categoryChartData.forEach(c => {
+      const lower = (c.name || '').toLowerCase();
+      const isFixed = fixedKeywords.some(k => lower.includes(k));
+      if (isFixed) {
+        fixed += c.value;
+      } else {
+        variable += c.value;
+      }
+    });
+
+    const total = fixed + variable;
+    const fixedPct = total > 0 ? (fixed / total) * 100 : 0;
+    const variablePct = total > 0 ? (variable / total) * 100 : 0;
+
+    return {
+      fixed,
+      variable,
+      fixedPct,
+      variablePct,
+      total,
+    };
+  }, [categoryChartData]);
+
+  // Category Adherence with Budget Limits
+  const categoryAdherenceList = useMemo(() => {
+    const fixedKeywords = [
+      'moradia', 'aluguel', 'condomínio', 'condominio', 'internet', 'água', 'agua',
+      'luz', 'energia', 'plano', 'assinatura', 'streaming', 'mensalidade',
+      'educação', 'educacao', 'escola', 'faculdade', 'imposto', 'seguro',
+      'financiamento', 'empréstimo', 'emprestimo', 'casa', 'contas de casa',
+      'tarifas bancárias', 'manutenção', 'fixo', 'fixa'
+    ];
+
+    return categoryChartData.map(c => {
+      const budgetForCat = budgets.find(b => b.categoryId === c.id && (b.month === currentMonthPrefix || !b.month));
+      const budgetAmount = budgetForCat ? budgetForCat.limit : 0;
+      const lower = (c.name || '').toLowerCase();
+      const isFixed = fixedKeywords.some(k => lower.includes(k));
+      const adherence = budgetAmount > 0 ? (c.value / budgetAmount) * 100 : 100;
+      return {
+        ...c,
+        isFixed,
+        budgetAmount,
+        adherence,
+      };
+    });
+  }, [categoryChartData, budgets, currentMonthPrefix]);
+
+  // Autonomia de Reserva (Runway / Burn Rate)
+  const runwayData = useMemo(() => {
+    const totalLiquidBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    const today = new Date();
+    const isCurrentMonth = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth();
+    const daysElapsed = isCurrentMonth ? Math.max(1, today.getDate()) : new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+    const dailyBurn = monthlyExpense > 0 ? monthlyExpense / daysElapsed : 0;
+
+    const daysLeft = dailyBurn > 0 && totalLiquidBalance > 0 ? Math.round(totalLiquidBalance / dailyBurn) : (totalLiquidBalance > 0 ? 365 : 0);
+
+    const depletionDate = new Date();
+    depletionDate.setDate(depletionDate.getDate() + Math.min(daysLeft, 3650));
+    const depletionDateStr = depletionDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    return {
+      totalLiquidBalance,
+      dailyBurn,
+      daysLeft,
+      depletionDateStr,
+      status: daysLeft > 90 ? 'safe' : daysLeft >= 30 ? 'warning' : 'danger',
+    };
+  }, [accounts, monthlyExpense, viewDate]);
 
   // 2. Income by Category Donut Data
   const incomeCategoryChartData = useMemo(() => {
@@ -229,14 +461,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return Object.entries(incomeByCategory)
       .map(([catId, item], idx) => {
         const resolved = resolveCategory(categories, catId, undefined, 'income');
-        const name = resolved.name;
+        const name = translateCategory(resolved.name);
         const color = resolved.color && resolved.color.startsWith('#') ? resolved.color : greenTones[idx % greenTones.length];
         const icon = resolved.icon;
         const percentage = total > 0 ? (item.amount / total) * 100 : 0;
         return { name, value: item.amount, color, icon, percentage, id: catId };
       })
       .sort((a, b) => b.value - a.value);
-  }, [monthTransactions, categories]);
+  }, [monthTransactions, categories, translateCategory]);
 
   const totalIncomeCategorySum = useMemo(() => {
     return incomeCategoryChartData.reduce((acc, curr) => acc + curr.value, 0);
@@ -430,7 +662,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // CARD RENDERERS: LEFT COLUMN
   // ==========================================
 
-  // Left 1: Despesas por Categoria
+  // Left 1: Despesas por Categoria (MGO Elevated Layout)
   const renderDespesasCategoria = () => {
     const filteredTxsForCategory = selectedCategoryFilter
       ? monthTransactions.filter(t => t.categoryId === selectedCategoryFilter && t.type === 'expense' && t.status === 'completed')
@@ -439,11 +671,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return (
       <div key="despesasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
-            <p className="text-[11px] text-slate-400">Clique em uma categoria para filtrar</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm font-bold">
+              🍩
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
+              <p className="text-[11px] text-slate-400">Fixas vs Variáveis e Aderência ao Orçamento</p>
+            </div>
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full">{capitalizedMonth}</span>
         </div>
 
         {categoryChartData.length === 0 ? (
@@ -452,18 +689,50 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="relative h-48 w-full flex items-center justify-center">
+            {/* Donut Chart with Macro Split in the center and Persistent Emoji Badges */}
+            <div className="relative h-64 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={categoryChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={52}
-                    outerRadius={72}
+                    innerRadius={74}
+                    outerRadius={98}
                     paddingAngle={3}
                     dataKey="value"
                     stroke="transparent"
+                    labelLine={false}
+                    label={(props) => {
+                      const { cx, cy, midAngle, outerRadius: oRad, index } = props;
+                      const entry = categoryChartData[index];
+                      if (!entry || !entry.icon) return null;
+                      const RADIAN = Math.PI / 180;
+                      const radius = oRad + 7;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                      return (
+                        <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
+                          <circle
+                            cx="0"
+                            cy="0"
+                            r="11"
+                            className="fill-white dark:fill-[#222226] stroke-slate-200/90 dark:stroke-slate-700 shadow-sm"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="0"
+                            y="0.5"
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            fontSize="11"
+                          >
+                            {entry.icon}
+                          </text>
+                        </g>
+                      );
+                    }}
                     onClick={(entry) => setSelectedCategoryFilter(selectedCategoryFilter === entry.id ? null : entry.id)}
                     onMouseEnter={(_, index) => setHoveredCategory(categoryChartData[index])}
                     onMouseLeave={() => setHoveredCategory(null)}
@@ -483,52 +752,89 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
                 {hoveredCategory ? (
-                  <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
-                    <span className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase truncate max-w-[120px]">
+                  <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[145px] text-center px-1">
+                    <span className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase leading-tight line-clamp-2">
                       {hoveredCategory.icon} {hoveredCategory.name}
                     </span>
-                    <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                    <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
                       {formatCurrency(hoveredCategory.value, user.currency, !user.showValues)}
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                      {hoveredCategory.percentage.toFixed(1)}%
+                      {hoveredCategory.percentage.toFixed(1)}% do total
                     </span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center">
-                    <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
-                      {formatCurrency(totalExpenseCategorySum, user.currency, !user.showValues)}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Total
-                    </span>
+                  <div className="flex flex-col items-center justify-center space-y-1 text-center max-w-[145px] px-1">
+                    <div className="text-[10px] font-black text-slate-500 dark:text-slate-400">
+                      <span>Variáveis ({fixedVsVariable.variablePct.toFixed(0)}%)</span>
+                      <strong className="block text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-black whitespace-nowrap">
+                        {formatCurrency(fixedVsVariable.variable, user.currency, !user.showValues)}
+                      </strong>
+                    </div>
+                    <div className="w-14 h-px bg-slate-200 dark:bg-slate-700/80 my-0.5" />
+                    <div className="text-[10px] font-black text-slate-500 dark:text-slate-400">
+                      <span>Fixas ({fixedVsVariable.fixedPct.toFixed(0)}%)</span>
+                      <strong className="block text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-black whitespace-nowrap">
+                        {formatCurrency(fixedVsVariable.fixed, user.currency, !user.showValues)}
+                      </strong>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-44 overflow-y-auto scrollbar-thin pr-1">
-              {categoryChartData.map((c) => {
+            {/* Category Progress & Adherence Bars */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-56 overflow-y-auto scrollbar-thin pr-1">
+              {categoryAdherenceList.map((c) => {
                 const isSelected = selectedCategoryFilter === c.id;
+                const hasBudget = c.budgetAmount > 0;
+                const progressPct = hasBudget ? Math.min(100, (c.value / c.budgetAmount) * 100) : Math.min(100, c.percentage);
+                const isOverBudget = hasBudget && c.value > c.budgetAmount;
+
                 return (
                   <div
                     key={c.id}
                     onClick={() => setSelectedCategoryFilter(isSelected ? null : c.id)}
-                    className={`flex items-center justify-between text-xs p-2 rounded-xl cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-2xl cursor-pointer transition-all space-y-1.5 border ${
                       isSelected
-                        ? 'bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800 font-bold'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                        ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800 shadow-xs'
+                        : 'bg-slate-50/60 dark:bg-[#202024]/60 border-slate-100 dark:border-slate-800/60 hover:border-purple-300 dark:hover:border-purple-800'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                      <span className="text-slate-800 dark:text-slate-200 truncate">
-                        {c.icon} {c.name}
-                      </span>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 truncate min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs shadow-2xs shrink-0">
+                          {c.icon || '🏷️'}
+                        </span>
+                        <div className="min-w-0">
+                          <span className="font-bold text-slate-900 dark:text-white truncate block">
+                            {c.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {c.isFixed ? 'Gasto Fixo' : 'Gasto Variável'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-slate-900 dark:text-white font-extrabold block">
+                          {formatCurrency(c.value, user.currency, !user.showValues)}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {hasBudget ? `de ${formatCurrency(c.budgetAmount, user.currency, !user.showValues)}` : `${c.percentage.toFixed(1)}%`}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
-                      <span className="text-[10px] text-slate-400 block">{c.percentage.toFixed(1)}%</span>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-slate-200 dark:bg-slate-700/80 h-1.5 rounded-full overflow-hidden flex items-center">
+                      <div
+                        style={{
+                          width: `${progressPct}%`,
+                          backgroundColor: isOverBudget ? '#ef5350' : c.color || '#7C4DFF',
+                        }}
+                        className="h-full rounded-full transition-all duration-500"
+                      />
                     </div>
                   </div>
                 );
@@ -564,7 +870,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 onClick={() => setActiveTab('relatorios')}
                 className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
               >
-                VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+                VER MAIS RELATÓRIOS <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -1054,6 +1360,96 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // CARD RENDERERS: RIGHT COLUMN
   // ==========================================
 
+  // Right 0: Autonomia Financeira (Runway / Burn Rate - MGO Inspired)
+  const renderAutonomiaReserva = () => (
+    <div key="autonomiaReserva" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+            ⏱️
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">Sua reserva dá pra quantos dias?</h3>
+            <p className="text-[11px] text-slate-400">Autonomia financeira e taxa de queima</p>
+          </div>
+        </div>
+        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+          runwayData.status === 'safe'
+            ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+            : runwayData.status === 'warning'
+            ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400'
+            : 'bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'
+        }`}>
+          {runwayData.status === 'safe' ? 'Seguro' : runwayData.status === 'warning' ? 'Moderado' : 'Atenção'}
+        </span>
+      </div>
+
+      <div className="flex flex-col items-center justify-center py-2 space-y-3">
+        {/* Circular Gauge */}
+        <div className="relative w-32 h-32 flex items-center justify-center">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              className="text-slate-100 dark:text-slate-800 stroke-current"
+              strokeWidth="10"
+              fill="transparent"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              className={`stroke-current transition-all duration-1000 ease-out ${
+                runwayData.status === 'safe'
+                  ? 'text-emerald-500'
+                  : runwayData.status === 'warning'
+                  ? 'text-amber-500'
+                  : 'text-rose-500'
+              }`}
+              strokeWidth="10"
+              strokeDasharray="251.2"
+              strokeDashoffset={251.2 - (251.2 * Math.min(100, (runwayData.daysLeft / 180) * 100)) / 100}
+              strokeLinecap="round"
+              fill="transparent"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {runwayData.daysLeft > 365 ? '+365d' : `${runwayData.daysLeft}d`}
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Autonomia
+            </span>
+          </div>
+        </div>
+
+        <p className="text-xs text-center text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+          {runwayData.dailyBurn > 0 ? (
+            <>Se nada mudar, sua reserva em contas dura até <strong className="text-slate-900 dark:text-white">{runwayData.depletionDateStr}</strong>.</>
+          ) : (
+            <>Sem despesas registradas para calcular a taxa de queima.</>
+          )}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#202024] border border-slate-100 dark:border-slate-800/60 text-center">
+          <span className="text-[10px] text-slate-400 font-semibold block">Gasto Médio/Dia</span>
+          <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+            {formatCurrency(runwayData.dailyBurn, user.currency, !user.showValues)}
+          </span>
+        </div>
+        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#202024] border border-slate-100 dark:border-slate-800/60 text-center">
+          <span className="text-[10px] text-slate-400 font-semibold block">Saldo em Contas</span>
+          <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(runwayData.totalLiquidBalance, user.currency, !user.showValues)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
   // Right 1: Receitas por Categoria
   const renderReceitasCategoria = () => (
     <div key="receitasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
@@ -1071,18 +1467,49 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="relative h-48 w-full flex items-center justify-center">
+          <div className="relative h-60 w-full flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={incomeCategoryChartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={52}
-                  outerRadius={72}
+                  innerRadius={68}
+                  outerRadius={92}
                   paddingAngle={3}
                   dataKey="value"
                   stroke="transparent"
+                  labelLine={false}
+                  label={(props) => {
+                    const { cx, cy, midAngle, outerRadius: oRad, index } = props;
+                    const entry = incomeCategoryChartData[index];
+                    if (!entry || !entry.icon) return null;
+                    const RADIAN = Math.PI / 180;
+                    const radius = oRad + 7;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                    return (
+                      <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="11"
+                          className="fill-white dark:fill-[#222226] stroke-slate-200/90 dark:stroke-slate-700 shadow-sm"
+                          strokeWidth="1.5"
+                        />
+                        <text
+                          x="0"
+                          y="0.5"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize="11"
+                        >
+                          {entry.icon}
+                        </text>
+                      </g>
+                    );
+                  }}
                   onMouseEnter={(_, index) => setHoveredIncomeCategory(incomeCategoryChartData[index])}
                   onMouseLeave={() => setHoveredIncomeCategory(null)}
                 >
@@ -1099,20 +1526,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
               {hoveredIncomeCategory ? (
-                <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center">
-                  <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase truncate max-w-[120px]">
+                <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[145px] text-center px-1">
+                  <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase leading-tight line-clamp-2">
                     {hoveredIncomeCategory.icon} {hoveredIncomeCategory.name}
                   </span>
-                  <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                  <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
                     {formatCurrency(hoveredIncomeCategory.value, user.currency, !user.showValues)}
                   </span>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                    {hoveredIncomeCategory.percentage.toFixed(1)}%
+                    {hoveredIncomeCategory.percentage.toFixed(1)}% do total
                   </span>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center">
-                  <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight">
+                <div className="flex flex-col items-center justify-center max-w-[145px] text-center px-1">
+                  <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
                     {formatCurrency(totalIncomeCategorySum, user.currency, !user.showValues)}
                   </span>
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
@@ -1518,7 +1945,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       <div className="p-6 rounded-[28px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 text-center">
         <div className="space-y-1">
           <span className="text-xs text-slate-400 dark:text-slate-400 font-semibold tracking-wide block">
-            Saldo em contas
+            {t('common.total_balance', 'Saldo em contas')}
           </span>
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -1530,7 +1957,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               type="button"
               onClick={toggleHideValues}
               className="p-1.5 rounded-full text-slate-400 hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-[#222226] transition-colors cursor-pointer"
-              title={user.showValues ? 'Ocultar valores' : 'Mostrar valores'}
+              title={user.showValues ? t('common.hide_values', 'Ocultar valores') : t('common.hide_values', 'Mostrar valores')}
             >
               {user.showValues ? (
                 <Eye className="w-4.5 h-4.5 text-slate-400 hover:text-purple-400 transition-colors" />
@@ -1552,7 +1979,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div className="min-w-0">
-              <span className="text-[11px] text-slate-400 font-semibold block">Receitas</span>
+              <span className="text-[11px] text-slate-400 font-semibold block">{t('common.incomes', 'Receitas')}</span>
               <span className="text-xs sm:text-sm font-black text-[#66bb6a] block truncate">
                 {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
               </span>
@@ -1568,7 +1995,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div className="min-w-0">
-              <span className="text-[11px] text-slate-400 font-semibold block">Despesas</span>
+              <span className="text-[11px] text-slate-400 font-semibold block">{t('common.expenses', 'Despesas')}</span>
               <span className="text-xs sm:text-sm font-black text-[#ef5350] block truncate">
                 {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
               </span>
@@ -1580,7 +2007,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       {/* 3. PENDÊNCIAS E ALERTAS (MOBILLS STYLE HORIZONTAL CAROUSEL) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Pendências e alertas</h3>
+          <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+            {lang === 'en-US' ? 'Alerts & Reminders' : lang === 'es-ES' ? 'Alertas y Pendientes' : 'Pendências e alertas'}
+          </h3>
         </div>
 
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
@@ -1600,7 +2029,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               )}
             </div>
             <div>
-              <span className="text-[11px] text-slate-400 font-medium block">Despesas pendentes</span>
+              <span className="text-[11px] text-slate-400 font-medium block">
+                {lang === 'en-US' ? 'Pending expenses' : lang === 'es-ES' ? 'Gastos pendientes' : 'Despesas pendentes'}
+              </span>
               <span className="text-xs sm:text-sm font-black text-[#ef5350]">
                 {formatCurrency(pendingExpensesTotal, user.currency, !user.showValues)}
               </span>
@@ -1629,7 +2060,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               )}
             </div>
             <div>
-              <span className="text-[11px] text-slate-400 font-medium block">Faturas vencidas</span>
+              <span className="text-[11px] text-slate-400 font-medium block">
+                {lang === 'en-US' ? 'Overdue invoices' : lang === 'es-ES' ? 'Facturas vencidas' : 'Faturas vencidas'}
+              </span>
               <span className="text-xs sm:text-sm font-black text-[#ef5350]">
                 {formatCurrency(overdueInvoicesTotal, user.currency, !user.showValues)}
               </span>
@@ -1653,7 +2086,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               </div>
             </div>
             <div>
-              <span className="text-[11px] text-slate-400 font-medium block">Faturas abertas</span>
+              <span className="text-[11px] text-slate-400 font-medium block">
+                {lang === 'en-US' ? 'Open card bills' : lang === 'es-ES' ? 'Facturas abiertas' : 'Faturas abertas'}
+              </span>
               <span className="text-xs sm:text-sm font-black text-[#26a69a]">
                 {formatCurrency(openInvoicesTotal, user.currency, !user.showValues)}
               </span>
@@ -1662,29 +2097,164 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 4. TWO-COLUMN RESPONSIVE LAYOUT (MOBILLS MODULAR GRID) */}
+      {/* 4. TWO-COLUMN RESPONSIVE LAYOUT (DRAG AND DROP MODULAR GRID) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* LEFT COLUMN CARDS */}
-        <div className="space-y-6">
-          {cardsState.despesasCategoria && renderDespesasCategoria()}
-          {cardsState.frequenciaGastos && renderFrequenciaGastos()}
-          {cardsState.balancoMensal && renderBalancoMensal()}
-          {cardsState.transacoesPendentes && renderTransacoesPendentes()}
-          {cardsState.planejamento && renderPlanejamento()}
-          {cardsState.transacoesFavoritas && renderTransacoesFavoritas()}
-          {cardsState.calendarioMovimentacoes && renderCalendarioMovimentacoes()}
-          {cardsState.contas && renderContas()}
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleColumnDrop(e, 'left')}
+          className="space-y-6 min-h-[120px]"
+        >
+          {columnCards.left
+            .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
+            .map((cardKey, idx) => {
+              const cardRenderers: Record<string, () => React.ReactNode> = {
+                despesasCategoria: renderDespesasCategoria,
+                frequenciaGastos: renderFrequenciaGastos,
+                balancoMensal: renderBalancoMensal,
+                transacoesPendentes: renderTransacoesPendentes,
+                planejamento: renderPlanejamento,
+                transacoesFavoritas: renderTransacoesFavoritas,
+                calendarioMovimentacoes: renderCalendarioMovimentacoes,
+                contas: renderContas,
+                autonomiaReserva: renderAutonomiaReserva,
+                receitasCategoria: renderReceitasCategoria,
+                balancoSemestral: renderBalancoSemestral,
+                balancoTrimestral: renderBalancoTrimestral,
+                cartoes: renderCartoes,
+                objetivos: renderObjetivos,
+                economiaMes: renderEconomiaMes,
+                perfil: renderPerfil,
+              };
+
+              const renderer = cardRenderers[cardKey];
+              if (!renderer) return null;
+              const isBeingDragged = draggedCard?.key === cardKey;
+              const isOver = dragOverCard?.key === cardKey && !isBeingDragged;
+
+              return (
+                <div
+                  key={cardKey}
+                  draggable={draggableCardKey === cardKey}
+                  onDragStart={(e) => handleDragStart(e, cardKey, 'left', idx)}
+                  onDragOver={(e) => handleDragOver(e, cardKey, 'left', idx)}
+                  onDrop={(e) => handleDrop(e, cardKey, 'left', idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`relative group/draggable transition-all duration-200 ${
+                    isBeingDragged
+                      ? 'opacity-40 scale-[0.98] border-2 border-dashed border-purple-500 rounded-[28px]'
+                      : isOver
+                      ? 'ring-2 ring-purple-500 ring-offset-4 dark:ring-offset-[#121214] scale-[1.02] shadow-2xl bg-purple-500/5 rounded-[28px]'
+                      : ''
+                  }`}
+                >
+                  {/* Dedicated Solid Drag Handle (Prevents accidental dragging anywhere else on the card) */}
+                  <div
+                    onMouseDown={() => setDraggableCardKey(cardKey)}
+                    onMouseUp={() => setDraggableCardKey(null)}
+                    onTouchStart={() => setDraggableCardKey(cardKey)}
+                    onTouchEnd={() => setDraggableCardKey(null)}
+                    className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-500/50 shadow-sm transition-all cursor-grab active:cursor-grabbing select-none group/handle opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100"
+                    title="Segure e arraste sobre outro card para inverter suas posições"
+                  >
+                    <GripVertical className="w-3.5 h-3.5 shrink-0 transition-transform group-hover/handle:scale-110" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover/handle:text-purple-600 dark:group-hover/handle:text-purple-400 hidden sm:inline">
+                      Mover
+                    </span>
+                  </div>
+
+                  {/* Swap Indicator Overlay when another card is hovered over this card */}
+                  {isOver && (
+                    <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xs">
+                      <span className="px-4 py-2 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-lg">
+                        ⇄ Solte para inverter posição
+                      </span>
+                    </div>
+                  )}
+
+                  {renderer()}
+                </div>
+              );
+            })}
         </div>
 
         {/* RIGHT COLUMN CARDS */}
-        <div className="space-y-6">
-          {cardsState.receitasCategoria && renderReceitasCategoria()}
-          {cardsState.balancoSemestral && renderBalancoSemestral()}
-          {cardsState.balancoTrimestral && renderBalancoTrimestral()}
-          {cardsState.cartoes && renderCartoes()}
-          {cardsState.objetivos && renderObjetivos()}
-          {cardsState.economiaMes && renderEconomiaMes()}
-          {cardsState.perfil && renderPerfil()}
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleColumnDrop(e, 'right')}
+          className="space-y-6 min-h-[120px]"
+        >
+          {columnCards.right
+            .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
+            .map((cardKey, idx) => {
+              const cardRenderers: Record<string, () => React.ReactNode> = {
+                despesasCategoria: renderDespesasCategoria,
+                frequenciaGastos: renderFrequenciaGastos,
+                balancoMensal: renderBalancoMensal,
+                transacoesPendentes: renderTransacoesPendentes,
+                planejamento: renderPlanejamento,
+                transacoesFavoritas: renderTransacoesFavoritas,
+                calendarioMovimentacoes: renderCalendarioMovimentacoes,
+                contas: renderContas,
+                autonomiaReserva: renderAutonomiaReserva,
+                receitasCategoria: renderReceitasCategoria,
+                balancoSemestral: renderBalancoSemestral,
+                balancoTrimestral: renderBalancoTrimestral,
+                cartoes: renderCartoes,
+                objetivos: renderObjetivos,
+                economiaMes: renderEconomiaMes,
+                perfil: renderPerfil,
+              };
+
+              const renderer = cardRenderers[cardKey];
+              if (!renderer) return null;
+              const isBeingDragged = draggedCard?.key === cardKey;
+              const isOver = dragOverCard?.key === cardKey && !isBeingDragged;
+
+              return (
+                <div
+                  key={cardKey}
+                  draggable={draggableCardKey === cardKey}
+                  onDragStart={(e) => handleDragStart(e, cardKey, 'right', idx)}
+                  onDragOver={(e) => handleDragOver(e, cardKey, 'right', idx)}
+                  onDrop={(e) => handleDrop(e, cardKey, 'right', idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`relative group/draggable transition-all duration-200 ${
+                    isBeingDragged
+                      ? 'opacity-40 scale-[0.98] border-2 border-dashed border-purple-500 rounded-[28px]'
+                      : isOver
+                      ? 'ring-2 ring-purple-500 ring-offset-4 dark:ring-offset-[#121214] scale-[1.02] shadow-2xl bg-purple-500/5 rounded-[28px]'
+                      : ''
+                  }`}
+                >
+                  {/* Dedicated Solid Drag Handle (Prevents accidental dragging anywhere else on the card) */}
+                  <div
+                    onMouseDown={() => setDraggableCardKey(cardKey)}
+                    onMouseUp={() => setDraggableCardKey(null)}
+                    onTouchStart={() => setDraggableCardKey(cardKey)}
+                    onTouchEnd={() => setDraggableCardKey(null)}
+                    className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-500/50 shadow-sm transition-all cursor-grab active:cursor-grabbing select-none group/handle opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100"
+                    title="Segure e arraste sobre outro card para inverter suas posições"
+                  >
+                    <GripVertical className="w-3.5 h-3.5 shrink-0 transition-transform group-hover/handle:scale-110" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover/handle:text-purple-600 dark:group-hover/handle:text-purple-400 hidden sm:inline">
+                      Mover
+                    </span>
+                  </div>
+
+                  {/* Swap Indicator Overlay when another card is hovered over this card */}
+                  {isOver && (
+                    <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xs">
+                      <span className="px-4 py-2 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-lg">
+                        ⇄ Solte para inverter posição
+                      </span>
+                    </div>
+                  )}
+
+                  {renderer()}
+                </div>
+              );
+            })}
         </div>
       </div>
 
@@ -1722,7 +2292,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   { key: 'transacoesPendentes', label: 'Mostrar transações pendentes?' },
                   { key: 'planejamento', label: 'Mostrar resumo do orçamento do mês atual?' },
                   { key: 'transacoesFavoritas', label: 'Mostrar transações favoritas?' },
-                  { key: 'calendarioMovimentacoes', label: 'Mostrar calendário de Movimentações?' },
+                  { key: 'calendarioMovimentacoes', label: 'Mostrar calendário de movimentações?' },
                   { key: 'contas', label: 'Mostrar minhas contas?' },
                 ].map(item => {
                   const checked = cardsState[item.key as keyof DashboardCardsState];
@@ -1757,11 +2327,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 </h4>
 
                 {[
+                  { key: 'autonomiaReserva', label: 'Mostrar autonomia de reserva (Runway em dias)?' },
                   { key: 'receitasCategoria', label: 'Mostrar gráfico de receitas por categoria?' },
                   { key: 'balancoSemestral', label: 'Mostrar gráfico do balanço semestral?' },
                   { key: 'balancoTrimestral', label: 'Mostrar gráfico do balanço trimestral?' },
-                  { key: 'cartoes', label: 'Mostrar informações de cartão de crédito?' },
-                  { key: 'objetivos', label: 'Mostrar seus objetivos?' },
+                  { key: 'cartoes', label: 'Mostrar informações de cartões de crédito?' },
+                  { key: 'objetivos', label: 'Mostrar seus objetivos e metas?' },
                   { key: 'economiaMes', label: 'Mostrar informações da economia no mês atual?' },
                   { key: 'perfil', label: 'Mostrar informações de perfil?' },
                 ].map(item => {
