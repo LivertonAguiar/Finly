@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK & Release
 
 on:
   push:
@@ -7,9 +7,12 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
-    name: Compilar Finly Android APK
+    name: Compilar Finly Android APK & Release
     runs-on: ubuntu-latest
 
     steps:
@@ -48,10 +51,39 @@ jobs:
           cd android
           ./gradlew assembleDebug --stacktrace
 
+      - name: 🏷️ Definir Versão da Release
+        id: versioning
+        run: |
+          VERSION="v1.1.${{ github.run_number }}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          cp android/app/build/outputs/apk/debug/*.apk ./finly-${VERSION}.apk
+
       - name: 📤 Publicar APK como Artefato de Download
         uses: actions/upload-artifact@v4
         with:
-          name: finly-app-debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: finly-${{ env.VERSION }}
+          path: finly-${{ env.VERSION }}.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: 🌟 Publicar GitHub Release Oficial
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Finly ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: finly-${{ env.VERSION }}.apk
+          body: |
+            ## 📱 Finly - Versão ${{ env.VERSION }}
+            
+            ### ✨ Novidades desta versão:
+            - **Gesto Nativo:** Puxe para Atualizar (Pull-to-Refresh) com resposta háptica e atualização em tempo real.
+            - **Conta Demo 100% Otimizada:** Carregamento instantâneo com conjunto completo de dados realistas (contas, cartões, metas e transações).
+            - **Central de Atualizações no App:** Verificação de novas versões e sincronização instantânea de cache.
+            - **Performance & Estabilidade:** Integração com Capacitor 8 e backend Dockerizado na Oracle Cloud.
+            
+            ---
+            📲 **Download do APK:** Baixe o arquivo `finly-${{ env.VERSION }}.apk` abaixo e instale diretamente no seu celular Android!
