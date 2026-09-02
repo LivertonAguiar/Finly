@@ -26,6 +26,7 @@ import { AuthPage } from './components/auth/AuthPage';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
+import { PullToRefresh } from './components/mobile/PullToRefresh';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -73,7 +74,7 @@ const getInitialTabFromPath = (): string => {
 
 const AppContent: React.FC = () => {
   const { currentUser } = useAuth();
-  const { transactions, cards, budgets, goals } = useFinancial();
+  const { transactions, cards, budgets, goals, refreshData } = useFinancial();
   const [activeTab, setActiveTab] = useState<string>(getInitialTabFromPath);
   const [cardsNavKey, setCardsNavKey] = useState<number>(0);
   const [selectedCardIdForDetail, setSelectedCardIdForDetail] = useState<string | null>(null);
@@ -191,41 +192,43 @@ const AppContent: React.FC = () => {
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 w-full">
-          <div className="w-full max-w-[1600px] mx-auto">
-          {activeTab === 'dashboard' && (
-            <DashboardPage
-              onOpenNewTransaction={() => setIsNewTxOpen(true)}
-              onOpenNewCard={() => setIsNewCardOpen(true)}
-              setActiveTab={handleSelectTab}
-              onOpenCardDetail={handleOpenCardDetail}
-            />
-          )}
-          {activeTab === 'transacoes' && <TransactionsPage />}
-          {activeTab === 'cartoes' && (
-            <CreditTab
-              key={cardsNavKey}
-              initialCardDetailId={selectedCardIdForDetail}
-              onOpenNewCard={() => setIsNewCardOpen(true)}
-            />
-          )}
-          {activeTab === 'contas' && <AccountsPage setActiveTab={handleSelectTab} />}
-          {(activeTab === 'planejamento' || activeTab === 'orcamento') && <BudgetPage />}
-          {activeTab === 'relatorios' && <ReportsPage />}
-          {activeTab === 'calendario' && <CalendarPage />}
-          {activeTab === 'settings' && <SettingsPage />}
-          {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} />}
-          {activeTab === 'metas' && <GoalsPage />}
-          {activeTab === 'dividas' && <DebtsPage />}
-          {activeTab === 'investimentos' && <InvestmentsTab />}
-          {activeTab === 'whatsapp' && <WhatsAppPage />}
-          {activeTab === 'skills' && <FinancialSkillsPage />}
-          {activeTab === 'familia' && <FamilyPage />}
-          {activeTab === 'cadastro' && <CadastrosPage />}
-          {activeTab === 'perfil' && <ProfilePage />}
-        </div>
-      </main>
+        {/* Main Content Area with Mobile Pull-to-Refresh */}
+        <PullToRefresh onRefresh={refreshData}>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 w-full">
+            <div className="w-full max-w-[1600px] mx-auto">
+            {activeTab === 'dashboard' && (
+              <DashboardPage
+                onOpenNewTransaction={() => setIsNewTxOpen(true)}
+                onOpenNewCard={() => setIsNewCardOpen(true)}
+                setActiveTab={handleSelectTab}
+                onOpenCardDetail={handleOpenCardDetail}
+              />
+            )}
+            {activeTab === 'transacoes' && <TransactionsPage />}
+            {activeTab === 'cartoes' && (
+              <CreditTab
+                key={cardsNavKey}
+                initialCardDetailId={selectedCardIdForDetail}
+                onOpenNewCard={() => setIsNewCardOpen(true)}
+              />
+            )}
+            {activeTab === 'contas' && <AccountsPage setActiveTab={handleSelectTab} />}
+            {(activeTab === 'planejamento' || activeTab === 'orcamento') && <BudgetPage />}
+            {activeTab === 'relatorios' && <ReportsPage />}
+            {activeTab === 'calendario' && <CalendarPage />}
+            {activeTab === 'settings' && <SettingsPage />}
+            {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} />}
+            {activeTab === 'metas' && <GoalsPage />}
+            {activeTab === 'dividas' && <DebtsPage />}
+            {activeTab === 'investimentos' && <InvestmentsTab />}
+            {activeTab === 'whatsapp' && <WhatsAppPage />}
+            {activeTab === 'skills' && <FinancialSkillsPage />}
+            {activeTab === 'familia' && <FamilyPage />}
+            {activeTab === 'cadastro' && <CadastrosPage />}
+            {activeTab === 'perfil' && <ProfilePage />}
+          </div>
+        </main>
+        </PullToRefresh>
       </div>
 
       {/* Mobile Bottom Navigation with Speed Dial Arc FAB */}

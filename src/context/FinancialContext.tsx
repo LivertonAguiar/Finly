@@ -150,6 +150,7 @@ interface FinancialContextType {
   markAllNotificationsRead: () => void;
 
   // Data Management & Backups
+  refreshData: () => Promise<void>;
   clearAppCache: () => void;
   resetAllUserData: () => void;
   resetToCleanState: () => void;
@@ -199,6 +200,7 @@ function sanitizeStoredData<T>(obj: T): T {
 
 export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const payingInvoiceLockRef = useRef<Record<string, number>>({});
+  const isStoreLoadedForUserIdRef = useRef<string | null>(null);
 
   const { currentUser } = useAuth();
   const userId = currentUser ? currentUser.id : 'guest';
@@ -228,39 +230,46 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Helper to load user's initial state
   const loadUserStore = (): UserStoreData => {
+    const isDemo = userId === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com';
+
     try {
       const saved = localStorage.getItem(userStoreKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return sanitizeStoredData({
-          accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
-          cards: Array.isArray(parsed.cards) ? parsed.cards : [],
-          categories: mergeCategories(parsed.categories),
-          budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
-          goals: Array.isArray(parsed.goals) ? parsed.goals : [],
-          debts: Array.isArray(parsed.debts) ? parsed.debts : [],
-          investments: Array.isArray(parsed.investments) ? parsed.investments : [],
-          transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
-          familyMembers: Array.isArray(parsed.familyMembers) ? parsed.familyMembers : [
-            { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
-          ],
-          notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
-          userProfile: parsed.userProfile || {
-            name: currentUser?.name || 'Liverton',
-            email: currentUser?.email || 'liverton.aguiar@hotmail.com',
-            currency: 'BRL',
-            role: 'admin',
-            theme: 'dark',
-            showValues: true,
-          },
-        });
+        // If demo user but transactions/accounts are empty, regenerate complete demo store
+        if (isDemo && (!Array.isArray(parsed.transactions) || parsed.transactions.length === 0 || !Array.isArray(parsed.accounts) || parsed.accounts.length === 0)) {
+          // Fall through to generateRealisticDemoStore below
+        } else {
+          return sanitizeStoredData({
+            accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
+            cards: Array.isArray(parsed.cards) ? parsed.cards : [],
+            categories: mergeCategories(parsed.categories),
+            budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
+            goals: Array.isArray(parsed.goals) ? parsed.goals : [],
+            debts: Array.isArray(parsed.debts) ? parsed.debts : [],
+            investments: Array.isArray(parsed.investments) ? parsed.investments : [],
+            transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+            familyMembers: Array.isArray(parsed.familyMembers) ? parsed.familyMembers : [
+              { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
+            ],
+            notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
+            userProfile: parsed.userProfile || {
+              name: currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
+              email: currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
+              currency: 'BRL',
+              role: 'admin',
+              theme: 'dark',
+              showValues: true,
+            },
+          });
+        }
       }
     } catch (e) {
       console.error('Error loading user store:', e);
     }
 
-    // If this is the Demo Account and no local storage exists yet, initialize with full realistic demo dataset!
-    if (userId === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com') {
+    // If this is the Demo Account, initialize with full realistic demo dataset!
+    if (isDemo) {
       const demo = generateRealisticDemoStore();
       try {
         localStorage.setItem(userStoreKey, JSON.stringify(demo));
@@ -341,6 +350,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(store.transactions);
     setFamilyMembers(store.familyMembers);
     setNotifications(store.notifications);
+    isStoreLoadedForUserIdRef.current = userId;
   }, [userId]);
 
   const [period, setPeriod] = useState<string>('this_month');
@@ -399,9 +409,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [currentUser?.id]);
 
-  // Push updates to server on any state change (debounced)
+  // Automatic Real-Time Persistence (local offline cache + debounced server sync)
   useEffect(() => {
-    if (!currentUser) return;
+    // Only save if the store has actually been loaded for the CURRENT user (prevents wiping out data on switch)
+    if (!currentUser || isStoreLoadedForUserIdRef.current !== currentUser.id) return;
 
     const currentStore: UserStoreData = {
       accounts,
@@ -420,49 +431,67 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Save to local storage as offline cache
     try {
       localStorage.setItem(userStoreKey, JSON.stringify(currentStore));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error saving user store to localStorage:', e);
+    }
 
     // Push to backend server
     apiSync.pushStore(currentUser.id, currentStore);
-  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, user, userStoreKey, currentUser?.id]);
+  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, familyMembers, notifications, user, userStoreKey, currentUser?.id]);
 
-  // Reload state whenever active user changes
-  useEffect(() => {
-    const store = loadUserStore();
-    setUser(store.userProfile);
-    setAccounts(store.accounts);
-    setCards(store.cards);
-    setCategories(store.categories);
-    setBudgets(store.budgets);
-    setGoals(store.goals);
-    setDebts(store.debts);
-    setInvestments(store.investments);
-    setTransactions(store.transactions);
-    setFamilyMembers(store.familyMembers);
-    setNotifications(store.notifications);
-  }, [userId]);
-
-  // Automatic Real-Time Persistence
-  useEffect(() => {
+  // Pull-to-refresh & In-app manual sync handler
+  const refreshData = async (): Promise<void> => {
+    if (!currentUser) return;
     try {
-      const dataToSave: UserStoreData = {
-        accounts,
-        cards,
-        categories,
-        budgets,
-        goals,
-        debts,
-        investments,
-        transactions,
-        familyMembers,
-        notifications,
-        userProfile: user,
-      };
-      localStorage.setItem(userStoreKey, JSON.stringify(dataToSave));
-    } catch (e) {
-      console.error('Error saving user store:', e);
+      // 1. Demo account handling: guarantee full realistic demo data
+      if (currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com') {
+        const store = loadUserStore();
+        setUser(store.userProfile);
+        setAccounts(store.accounts);
+        setCards(store.cards);
+        setCategories(store.categories);
+        setBudgets(store.budgets);
+        setGoals(store.goals);
+        setDebts(store.debts);
+        setInvestments(store.investments);
+        setTransactions(store.transactions);
+        setFamilyMembers(store.familyMembers);
+        setNotifications(store.notifications);
+        return;
+      }
+
+      // 2. Pull latest server store
+      const serverStore = await apiSync.fetchServerStore(currentUser.id);
+      if (serverStore && serverStore.accounts) {
+        setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+        setCards(serverStore.cards || []);
+        setCategories(mergeCategories(serverStore.categories));
+        setBudgets(serverStore.budgets || []);
+        setGoals(serverStore.goals || []);
+        setDebts(serverStore.debts || []);
+        setInvestments(serverStore.investments || []);
+        setTransactions(serverStore.transactions || []);
+        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+        if (serverStore.userProfile) setUser(serverStore.userProfile);
+      } else {
+        // Fallback reload from local storage
+        const store = loadUserStore();
+        setUser(store.userProfile);
+        setAccounts(store.accounts);
+        setCards(store.cards);
+        setCategories(store.categories);
+        setBudgets(store.budgets);
+        setGoals(store.goals);
+        setDebts(store.debts);
+        setInvestments(store.investments);
+        setTransactions(store.transactions);
+        setFamilyMembers(store.familyMembers);
+        setNotifications(store.notifications);
+      }
+    } catch (err) {
+      console.warn('Sync completed with local cache fallback:', err);
     }
-  }, [userStoreKey, accounts, cards, categories, budgets, goals, debts, investments, transactions, familyMembers, notifications, user]);
+  };
 
   // Apply Dark/Light Theme
   useEffect(() => {
@@ -1171,6 +1200,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         notifications,
         markNotificationRead,
         markAllNotificationsRead,
+        refreshData,
         clearAppCache,
         resetAllUserData,
         exportBackupJSON,

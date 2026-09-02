@@ -168,6 +168,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       demoUser = DEFAULT_DEMO_USER;
       setAllUsers(prev => [demoUser!, ...prev]);
     }
+    try {
+      const demoStoreRaw = localStorage.getItem('finly_user_usr-demo-financeiro_store');
+      if (demoStoreRaw) {
+        const parsed = JSON.parse(demoStoreRaw);
+        if (!Array.isArray(parsed.transactions) || parsed.transactions.length === 0 || !Array.isArray(parsed.accounts) || parsed.accounts.length === 0) {
+          localStorage.removeItem('finly_user_usr-demo-financeiro_store');
+        }
+      }
+    } catch (e) {}
     setCurrentUser(demoUser);
     localStorage.setItem(ACTIVE_SESSION_KEY, demoUser.id);
   };

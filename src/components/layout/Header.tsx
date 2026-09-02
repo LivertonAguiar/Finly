@@ -16,12 +16,14 @@ import {
   CheckCircle2,
   RefreshCw,
   CloudOff,
+  Sparkles,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { apiSync, SyncStatus } from '../../utils/apiSync';
 import { FinlyLogo } from '../ui/FinlyLogo';
 import { useTranslation } from '../../utils/i18n';
+import { AppUpdateModal } from '../common/AppUpdateModal';
 
 interface HeaderProps {
   activeTab?: string;
@@ -45,6 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
     notifications,
     markAllNotificationsRead,
     exportBackupJSON,
+    refreshData,
   } = useFinancial();
 
   const { t } = useTranslation();
@@ -52,6 +55,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
 
   useEffect(() => {
@@ -155,6 +160,22 @@ export const Header: React.FC<HeaderProps> = ({
           {user.theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
         </button>
 
+        {/* Quick Data Sync Button */}
+        <button
+          onClick={async () => {
+            setIsManualSyncing(true);
+            try {
+              if ('vibrate' in navigator) navigator.vibrate(18);
+            } catch (_) {}
+            await refreshData();
+            setTimeout(() => setIsManualSyncing(false), 600);
+          }}
+          title={isManualSyncing ? 'Sincronizando dados...' : 'Sincronizar e Atualizar Dados'}
+          className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+        >
+          <RefreshCw className={`w-4 h-4 text-purple-500 ${isManualSyncing ? 'animate-spin' : ''}`} />
+        </button>
+
         {/* Notifications */}
         <div className="relative">
           <button
@@ -249,6 +270,17 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Baixar Backup (.JSON)</span>
               </button>
 
+              <button
+                onClick={() => {
+                  setShowUpdateModal(true);
+                  setShowUserMenu(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left"
+              >
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <span>Atualizações do App</span>
+              </button>
+
               <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                 <button
                   onClick={handleLogout}
@@ -262,6 +294,9 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* In-App Update Modal */}
+      <AppUpdateModal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} />
     </header>
   );
 };
