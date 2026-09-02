@@ -1,19 +1,19 @@
-# Stage 1: Build Frontend
-FROM node:20-alpine AS builder
+# Stage 1: Build Frontend React / Vite
+FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Production Server
-FROM node:20-alpine
+# Stage 2: Production Server Node.js (ARM64 & x86_64 compatible)
+FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY server ./server
