@@ -17,18 +17,22 @@ if (-not (Test-Path $keyPath)) {
 }
 
 Write-Host "Empacotando arquivos do projeto..." -ForegroundColor Yellow
-tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="scratch*" -czf finly-update.tar.gz .
+tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" -czf finly-update.tar.gz .
 
 Write-Host "Enviando pacote para a VPS ($server)..." -ForegroundColor Yellow
 scp.exe -i $keyPath -o StrictHostKeyChecking=no finly-update.tar.gz "$($server):$($remoteDir)/"
 
-if (Test-Path finly-update.tar.gz) {
-    Remove-Item -Force finly-update.tar.gz
-}
-
 Write-Host "Reconstruindo container Docker no servidor..." -ForegroundColor Yellow
 $cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz && rm finly-update.tar.gz && docker compose up -d --build'
 ssh.exe -i $keyPath -o StrictHostKeyChecking=no $server $cmd
+
+try {
+    if (Test-Path finly-update.tar.gz) {
+        Remove-Item -Force finly-update.tar.gz -ErrorAction SilentlyContinue
+    }
+} catch {
+    # Ignore any temporary file lock
+}
 
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "DEPLOY CONCLUIDO COM SUCESSO NA VPS!" -ForegroundColor Green
