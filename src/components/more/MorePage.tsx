@@ -26,6 +26,9 @@ import {
   CheckCircle2,
   ExternalLink,
   Smartphone,
+  Bell,
+  Send,
+  Check,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -46,6 +49,11 @@ import {
   isNativeCapacitor,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+} from '../../utils/notificationEngine';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
@@ -63,6 +71,11 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
   const [isReloading, setIsReloading] = useState(false);
+
+  // Notification states
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(getNotificationPermission);
+  const [testSending, setTestSending] = useState(false);
+  const [testSuccess, setTestSuccess] = useState(false);
 
   useEffect(() => {
     if (initialSubTab) {
@@ -457,7 +470,83 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </div>
             </div>
 
-            {/* 3. Novidades desta Versao */}
+            {/* 3. Card de Notificações no Aplicativo */}
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h5 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                        Notificações e Lembretes Móveis
+                      </h5>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        notifPermission === 'granted'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                      }`}>
+                        {notifPermission === 'granted' ? 'Ativado' : 'Pendente'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Receba avisos de faturas, contas a vencer e controle de teto de gastos no celular.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  {notifPermission !== 'granted' ? (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const res = await requestNotificationPermission();
+                        setNotifPermission(res);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
+                    >
+                      <Bell className="w-3.5 h-3.5" />
+                      <span>Ativar Notificações</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={testSending}
+                      onClick={async () => {
+                        setTestSending(true);
+                        const sent = await sendTestNotification();
+                        setTestSuccess(sent);
+                        setTestSending(false);
+                        setTimeout(() => setTestSuccess(false), 4000);
+                      }}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
+                    >
+                      {testSuccess ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <span className="text-emerald-600 dark:text-emerald-400">Enviada!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5 text-purple-500" />
+                          <span>Testar Notificação</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {testSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>Notificação disparada com sucesso! Verifique o topo da tela ou a barra de notificações do Android.</span>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Novidades desta Versao */}
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
               <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">
                 O que há de novo na v{APP_VERSION}

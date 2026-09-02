@@ -1,7 +1,8 @@
 /**
- * Finly - Notification Engine (Web & Mobile PWA)
- * Supports browser notifications, in-app alerts, audio chimes, and scheduled check triggers.
+ * Finly - Notification Engine (Native Mobile Android/iOS & Web PWA)
+ * Supports Capacitor Local Notifications, browser notifications, in-app alerts, audio chimes, and scheduled check triggers.
  */
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 export interface NotificationPreferences {
   enabled: boolean;
@@ -31,6 +32,31 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
 
 const STORAGE_KEY = 'finly_notification_prefs_v1';
 const SENT_ALERTS_KEY = 'finly_sent_alerts_log_v1';
+
+export const isNativePlatform = (): boolean => {
+  return typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+};
+
+/**
+ * Initializes notification channels for Android 8+ (Oreo and higher)
+ */
+export async function initializeNotificationChannels() {
+  if (!isNativePlatform()) return;
+  try {
+    await LocalNotifications.createChannel({
+      id: 'finly-alerts',
+      name: 'Alertas Financeiros Finly',
+      description: 'Lembretes de vencimento de faturas, contas a pagar e orçamentos do Finly',
+      importance: 5, // High importance (heads-up notification)
+      visibility: 1, // Public visibility on lockscreen
+      vibration: true,
+      lights: true,
+      lightColor: '#7C4DFF',
+    });
+  } catch (e) {
+    console.warn('Could not initialize Capacitor notification channel:', e);
+  }
+}
 
 /**
  * Retrieves stored notification preferences
@@ -62,19 +88,43 @@ export function saveNotificationPrefs(prefs: Partial<NotificationPreferences>): 
 }
 
 /**
- * Checks current browser permission
+ * Checks current permission (Native or Browser)
  */
 export function getNotificationPermission(): NotificationPermission {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
+  if (typeof window === 'undefined') return 'denied';
+
+  if (isNativePlatform()) {
+    const prefs = getStoredNotificationPrefs();
+    return prefs.enabled ? 'granted' : 'default';
+  }
+
+  if (!('Notification' in window)) {
     return 'denied';
   }
   return Notification.permission;
 }
 
 /**
- * Requests notification permission from user
+ * Requests notification permission from user (Native Android or Browser)
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  // 1. Native Mobile (Capacitor Android/iOS)
+  if (isNativePlatform()) {
+    try {
+      await initializeNotificationChannels();
+      const res = await LocalNotifications.requestPermissions();
+      if (res.display === 'granted') {
+        saveNotificationPrefs({ enabled: true });
+        return 'granted';
+      }
+      return 'denied';
+    } catch (e) {
+      console.warn('Native requestPermissions error:', e);
+      return 'denied';
+    }
+  }
+
+  // 2. Browser Fallback
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return 'denied';
   }
@@ -129,7 +179,7 @@ export function playNotificationSound() {
 }
 
 /**
- * Sends a local notification (desktop browser or mobile standalone PWA)
+ * Sends a local notification (Native Android APK, Mobile PWA, or Desktop Browser)
  */
 export async function sendLocalNotification(
   title: string,
@@ -139,25 +189,70 @@ export async function sendLocalNotification(
     icon?: string;
     badge?: string;
     data?: any;
+    id?: number;
   }
 ): Promise<boolean> {
   const prefs = getStoredNotificationPrefs();
   if (!prefs.enabled) return false;
 
+  // Always emit an in-app notification event so active users see a visual toast immediately
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('finly_in_app_notification', {
+        detail: {
+          title,
+          body: options.body,
+          tag: options.tag,
+        },
+      })
+    );
+  }
+
+  // Audio chime
   if (prefs.sound) {
     playNotificationSound();
   }
 
-  if (typeof window === 'undefined' || !('Notification' in window)) {
-    return false;
+  // Device vibration
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try {
+      navigator.vibrate([60, 40, 60]);
+    } catch (_) {}
   }
 
-  if (Notification.permission !== 'granted') {
-    return false;
+  // 1. Native Capacitor (Android APK)
+  if (isNativePlatform()) {
+    try {
+      await initializeNotificationChannels();
+      const perm = await LocalNotifications.checkPermissions();
+      if (perm.display !== 'granted') {
+        const req = await LocalNotifications.requestPermissions();
+        if (req.display !== 'granted') return true; // still true because in-app toast shown
+      }
+
+      const notifId = options.id || Math.floor(Math.random() * 100000) + 1;
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title,
+            body: options.body,
+            id: notifId,
+            channelId: 'finly-alerts',
+            schedule: { at: new Date(Date.now() + 150) },
+            extra: options.data,
+          },
+        ],
+      });
+
+      return true;
+    } catch (err) {
+      console.warn('LocalNotifications native schedule error:', err);
+    }
   }
 
+  // 2. Service Worker (Mobile PWA)
   try {
-    // Try service worker showNotification first (ideal for Mobile PWA / Android / iOS)
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
       if (reg && reg.showNotification) {
@@ -171,39 +266,41 @@ export async function sendLocalNotification(
         return true;
       }
     }
+  } catch (_) {}
 
-    // Fallback to standard Notification constructor
-    const notif = new Notification(title, {
-      body: options.body,
-      icon: options.icon || '/favicon.ico',
-      tag: options.tag || 'finly-alert',
-      data: options.data,
-    });
+  // 3. Desktop Browser Notification
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notif = new Notification(title, {
+        body: options.body,
+        icon: options.icon || '/favicon.ico',
+        tag: options.tag || 'finly-alert',
+        data: options.data,
+      });
 
-    notif.onclick = () => {
-      window.focus();
-      notif.close();
-    };
+      notif.onclick = () => {
+        window.focus();
+        notif.close();
+      };
 
-    return true;
-  } catch (e) {
-    console.warn('Could not display native notification:', e);
-    return false;
+      return true;
+    } catch (e) {
+      console.warn('Could not display native notification:', e);
+    }
   }
+
+  return true;
 }
 
 /**
  * Sends an immediate test notification with visual and sound feedback
  */
 export async function sendTestNotification(): Promise<boolean> {
-  const perm = getNotificationPermission();
-  if (perm !== 'granted') {
-    const req = await requestNotificationPermission();
-    if (req !== 'granted') return false;
-  }
+  const perm = await requestNotificationPermission();
+  if (perm !== 'granted') return false;
 
   return sendLocalNotification('🎉 Finly - Notificações Ativadas!', {
-    body: 'Você receberá lembretes inteligentes de contas, faturas e orçamento.',
+    body: 'Você receberá lembretes inteligentes de contas, faturas e controle de orçamento no seu celular.',
     tag: 'test-notification',
   });
 }

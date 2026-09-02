@@ -28,6 +28,7 @@ import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
+import { InAppNotificationToast } from './components/common/InAppNotificationToast';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -213,6 +214,9 @@ const AppContent: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Floating In-App Update Notice Popup on Entry */}
         <UpdateNoticeCard onGoToUpdate={handleGoToUpdate} />
+
+        {/* Real-time In-App Notification Toast */}
+        <InAppNotificationToast />
 
         {/* Main Top Header with Mobile Hamburger */}
         <Header
