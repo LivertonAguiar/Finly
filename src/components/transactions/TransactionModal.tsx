@@ -20,6 +20,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
+import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
 import { Transaction, TransactionType, TransactionStatus } from '../../types';
 import { formatCurrency, getTodayString, round2 } from '../../utils/formatters';
@@ -400,11 +401,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 1. TOP CURRENCY VALUE BOX (MOBILLS EXACT SPEC: R$ | 0,00 | BRL + SWITCH) */}
+        {/* 1. TOP VALUE BOX (CENTERED & CLEAN) */}
         {/* ========================================================================= */}
-        <div className="p-4 rounded-[22px] bg-slate-50 dark:bg-[#1e222d] border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-xl font-black text-slate-400">R$</span>
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#1E1E22] border border-slate-200/80 dark:border-slate-800 flex items-center justify-center shadow-xs">
+          <div className="inline-flex items-center justify-center gap-2 max-w-full">
+            <span className="text-2xl sm:text-3xl font-black text-slate-400 dark:text-slate-500 select-none">
+              R$
+            </span>
             <input
               type="text"
               inputMode="decimal"
@@ -416,7 +419,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 setAmount(val);
               }}
               autoFocus
-              className={`w-full text-2xl font-black bg-transparent border-none focus:outline-none tracking-tight ${
+              className={`borderless-money-input text-center text-3xl sm:text-4xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 ${
                 type === 'income'
                   ? 'text-[#66bb6a]'
                   : type === 'expense' && paymentMethod === 'card'
@@ -425,35 +428,58 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   ? 'text-[#ef5350]'
                   : 'text-[#42a5f5]'
               }`}
+              style={{
+                width: `${Math.max(amount.length + 1, 5)}ch`,
+                outline: 'none',
+                boxShadow: 'none',
+                border: 'none',
+              }}
             />
-            <span className="px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase shrink-0">
-              BRL
-            </span>
           </div>
-
-          {/* Paid / Received Status Switch (For non-card accounts) */}
-          {paymentMethod === 'account' && type !== 'transfer' && (
-            <label className="flex items-center gap-2 cursor-pointer select-none shrink-0 pl-2 border-l border-slate-200 dark:border-slate-700">
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                {type === 'income' ? 'Foi recebida' : 'Foi paga'}
-              </span>
-              <input
-                type="checkbox"
-                checked={isPaid}
-                onChange={e => setIsPaid(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
-              />
-            </label>
-          )}
         </div>
 
         {!isAmountValid && amount !== '' && (
-          <p className="text-[11px] font-bold text-rose-500 px-1 -mt-2">Deve ter um valor diferente de 0</p>
+          <p className="text-center text-[11px] font-bold text-rose-500 -mt-2">Deve ter um valor diferente de 0</p>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 1.5 STATUS SEGMENTED CONTROL: PAGO / PENDENTE | RECEBIDO / A RECEBER */}
+        {/* ========================================================================= */}
+        {paymentMethod === 'account' && type !== 'transfer' && (
+          <div className="flex justify-center -mt-1 mb-1">
+            <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setIsPaid(true)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isPaid
+                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 scale-[1.02]'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 hover:bg-slate-200/50 dark:hover:bg-slate-700/40'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{type === 'income' ? 'Recebido' : 'Pago'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPaid(false)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                  !isPaid
+                    ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30 scale-[1.02]'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-amber-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/40'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{type === 'income' ? 'A Receber' : 'Pendente'}</span>
+              </button>
+            </div>
+          </div>
         )}
 
 
         {/* ========================================================================= */}
-        {/* 2. DATE WITH QUICK CHIPS ([HOJE], [ONTEM], [OUTROS...]) */}
+        {/* 2. DATE WITH QUICK CHIPS & CUSTOM THEMED DATEPICKER */}
         {/* ========================================================================= */}
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -462,7 +488,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <button
                 type="button"
                 onClick={() => setDate(getTodayString())}
-                className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-slate-600 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer"
+                className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+                  date === getTodayString()
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-100 dark:hover:bg-purple-950/40 hover:text-purple-600'
+                }`}
               >
                 Hoje
               </button>
@@ -479,12 +509,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </button>
             </div>
           </div>
-          <input
-            type="date"
-            required
+          <DatePicker
             value={date}
-            onChange={e => setDate(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
+            onChange={setDate}
+            showPresets={true}
           />
         </div>
 

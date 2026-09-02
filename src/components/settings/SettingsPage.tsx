@@ -7,7 +7,6 @@ import {
   Palette,
   Eye,
   EyeOff,
-  DollarSign,
   Mail,
   Lock,
   Sparkles,
@@ -250,48 +249,6 @@ export const SettingsPage: React.FC = () => {
                     <span className="text-[11px] text-slate-400">{lang.desc}</span>
                   </div>
                   {selectedLang === lang.id && <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Moeda Principal */}
-          <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                <DollarSign className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">{t('settings.currency.title', selectedLang)}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t('settings.currency.desc', selectedLang)}</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { id: 'BRL', symbol: 'R$', label: 'Real Brasileiro (BRL)', desc: 'Padrão brasileiro (ex: R$ 1.250,00)' },
-                { id: 'USD', symbol: '$', label: 'US Dollar (USD)', desc: 'American standard (e.g. $1,250.00)' },
-                { id: 'EUR', symbol: '€', label: 'Euro (EUR)', desc: 'Formato europeu (ex: €1.250,00)' },
-              ].map(curr => (
-                <div
-                  key={curr.id}
-                  onClick={() => setSelectedCurrency(curr.id)}
-                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                    selectedCurrency === curr.id
-                      ? 'border-purple-600 bg-purple-50/40 dark:bg-purple-950/20'
-                      : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-xs flex items-center justify-center text-slate-700 dark:text-slate-300">
-                      {curr.symbol}
-                    </span>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">{curr.label}</h4>
-                      <span className="text-[10px] text-slate-400">{curr.desc}</span>
-                    </div>
-                  </div>
-                  {selectedCurrency === curr.id && <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />}
                 </div>
               ))}
             </div>

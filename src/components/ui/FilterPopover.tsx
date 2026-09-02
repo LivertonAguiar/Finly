@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Category, Account, CreditCard as CreditCardType, UserProfile } from '../../types';
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
+import { DatePicker } from './DatePicker';
 
 export interface FilterState {
   period?: string; // 'current_month' | 'today' | 'week' | 'last_30_days' | 'prev_month' | 'next_month' | 'current_year' | 'custom' | string;
@@ -268,20 +269,20 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
                       <div className="grid grid-cols-2 gap-2 pt-1">
                         <div>
                           <label className="text-[10px] font-bold text-slate-400 block mb-1">De</label>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={filters.customStartDate || ''}
-                            onChange={e => onFilterChange({ ...filters, customStartDate: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#202024] text-xs text-slate-800 dark:text-slate-100"
+                            onChange={v => onFilterChange({ ...filters, customStartDate: v })}
+                            placeholder="Início"
+                            showPresets={false}
                           />
                         </div>
                         <div>
                           <label className="text-[10px] font-bold text-slate-400 block mb-1">Até</label>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={filters.customEndDate || ''}
-                            onChange={e => onFilterChange({ ...filters, customEndDate: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#202024] text-xs text-slate-800 dark:text-slate-100"
+                            onChange={v => onFilterChange({ ...filters, customEndDate: v })}
+                            placeholder="Fim"
+                            showPresets={false}
                           />
                         </div>
                       </div>

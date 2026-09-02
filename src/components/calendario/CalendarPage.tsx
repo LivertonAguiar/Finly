@@ -208,14 +208,18 @@ export const CalendarPage: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in pb-16">
       {/* 1. TOP HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <CalendarIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            <span>Calendário</span>
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Acompanhe o vencimento de contas, receitas e parcelas dia a dia
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 shadow-xs">
+            <CalendarIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white">
+              Calendário
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Acompanhe o vencimento de contas, receitas e parcelas dia a dia
+            </p>
+          </div>
         </div>
 
         {/* Month Navigator & Regime Toggle */}

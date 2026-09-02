@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../ui/Modal';
+import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getCurrentMonth, getTodayString } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
@@ -254,12 +255,10 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
               </button>
             </div>
           </div>
-          <input
-            type="date"
-            required
+          <DatePicker
             value={payDate}
-            onChange={e => setPayDate(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100"
+            onChange={setPayDate}
+            showPresets={true}
           />
         </div>
 

@@ -2289,9 +2289,9 @@
     "phone": "(11) 99999-8888",
     "currency": "BRL",
     "showValues": true,
-    "theme": "dark",
+    "theme": "light",
     "themePreset": "planner-dark",
     "cardRadius": "rounded"
   },
-  "_serverTimestamp": "2026-09-01T23:53:25.578Z"
+  "_serverTimestamp": "2026-09-02T00:41:56.957Z"
 }

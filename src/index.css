@@ -13,6 +13,31 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* Zero outline / border / background for money hero input */
+.borderless-money-input,
+.borderless-money-input:focus,
+.borderless-money-input:focus-visible,
+.borderless-money-input:active,
+html:not(.dark) input.borderless-money-input,
+html:not(.dark) input.borderless-money-input:focus,
+html:not(.dark) input.borderless-money-input:focus-visible,
+html.dark input.borderless-money-input,
+html.dark input.borderless-money-input:focus,
+html.dark input.borderless-money-input:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
+  border-style: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
 :root {
   --app-bg: #121214;
   --app-card-bg: #18181B;
@@ -100,18 +125,18 @@ html:not(.dark) nav {
   background-color: #FFFFFF !important;
 }
 
-/* Light mode Form Inputs */
-html:not(.dark) input,
-html:not(.dark) select,
-html:not(.dark) textarea {
+/* Light mode Form Inputs (excluding borderless money inputs) */
+html:not(.dark) input:not(.borderless-money-input),
+html:not(.dark) select:not(.borderless-money-input),
+html:not(.dark) textarea:not(.borderless-money-input) {
   border: 1px solid #CBD5E1 !important;
   background-color: #FFFFFF !important;
   color: #0F172A !important;
 }
 
-html:not(.dark) input:focus,
-html:not(.dark) select:focus,
-html:not(.dark) textarea:focus {
+html:not(.dark) input:not(.borderless-money-input):focus,
+html:not(.dark) select:not(.borderless-money-input):focus,
+html:not(.dark) textarea:not(.borderless-money-input):focus {
   border-color: var(--primary-accent, #7C4DFF) !important;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent, #7C4DFF) 25%, transparent) !important;
 }
