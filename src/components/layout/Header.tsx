@@ -259,17 +259,6 @@ export const Header: React.FC<HeaderProps> = ({
 
               <button
                 onClick={() => {
-                  exportBackupJSON();
-                  setShowUserMenu(false);
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
-              >
-                <Download className="w-4 h-4 text-emerald-600" />
-                <span>Baixar Backup (.JSON)</span>
-              </button>
-
-              <button
-                onClick={() => {
                   setShowUserMenu(false);
                   setActiveTab('sobre');
                 }}

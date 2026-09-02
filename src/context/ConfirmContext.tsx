@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { AlertCircle, HelpCircle, Info, Trash2, X, Check } from 'lucide-react';
+import { useBackButton } from '../hooks/useBackButton';
 
 interface ConfirmOptions {
   title?: string;
@@ -22,6 +23,16 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
     resolve: (value: boolean) => void;
   } | null>(null);
 
+  const handleCancel = useCallback(() => {
+    if (dialogState) {
+      dialogState.resolve(false);
+      setDialogState(null);
+    }
+  }, [dialogState]);
+
+  // Intercept back gesture on confirm dialog with higher priority
+  useBackButton(!!dialogState?.isOpen, handleCancel, 20);
+
   const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
     return new Promise((resolve) => {
       setDialogState({
@@ -41,13 +52,6 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const handleConfirm = () => {
     if (dialogState) {
       dialogState.resolve(true);
-      setDialogState(null);
-    }
-  };
-
-  const handleCancel = () => {
-    if (dialogState) {
-      dialogState.resolve(false);
       setDialogState(null);
     }
   };

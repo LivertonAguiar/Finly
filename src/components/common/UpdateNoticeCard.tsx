@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, X, Smartphone } from 'lucide-react';
-import { checkForAppUpdates, APP_VERSION } from '../../utils/appUpdateService';
+import { checkForAppUpdates, APP_VERSION, isNativeCapacitor } from '../../utils/appUpdateService';
 
 interface UpdateNoticeCardProps {
   onGoToUpdate: () => void;
@@ -13,6 +13,9 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
   const [latestVersion, setLatestVersion] = useState<string>('');
 
   useEffect(() => {
+    // Only display update notice popup on Native Mobile Android App (Not on Web)
+    if (!isNativeCapacitor()) return;
+
     // Check if dismissed in this session
     const dismissed = sessionStorage.getItem(DISMISS_KEY);
     if (dismissed) return;
@@ -42,7 +45,7 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
     onGoToUpdate();
   };
 
-  if (!isVisible) return null;
+  if (!isNativeCapacitor() || !isVisible) return null;
 
   return (
     <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 animate-in slide-in-from-top-4 duration-300">

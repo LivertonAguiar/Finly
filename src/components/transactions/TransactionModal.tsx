@@ -374,8 +374,54 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const isAmountValid = centsAmount > 0;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={modalTitle}
+      maxWidth="md"
+      footer={
+        <div className="flex items-center justify-between gap-2 w-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer"
+          >
+            Cancelar
+          </button>
+
+          <div className="flex items-center gap-2">
+            {!editingTransaction && (
+              <button
+                type="submit"
+                form="transaction-form"
+                onClick={() => setSaveAndNew(true)}
+                disabled={!isAmountValid}
+                className="px-3.5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-black text-purple-600 dark:text-purple-400 disabled:opacity-40 cursor-pointer"
+              >
+                Salvar e criar
+              </button>
+            )}
+
+            <button
+              type="submit"
+              form="transaction-form"
+              onClick={() => setSaveAndNew(false)}
+              disabled={!isAmountValid}
+              className={`px-5 sm:px-6 py-2.5 rounded-full text-white text-xs font-black shadow-md disabled:opacity-40 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all ${
+                type === 'income'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                  : type === 'expense'
+                  ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
+                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
+              }`}
+            >
+              {editingTransaction ? 'Atualizar' : 'Salvar'}
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <form id="transaction-form" onSubmit={handleSubmit} className="space-y-3.5">
         {/* ========================================================================= */}
         {/* 0. PRIMARY TRANSACTION TYPE SELECTOR (DESPESA | RECEITA | CARTÃO | TRANSFERÊNCIA) */}
         {/* ========================================================================= */}
@@ -388,13 +434,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 setType('expense');
                 setPaymentMethod('account');
               }}
-              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer ${
                 type === 'expense' && paymentMethod === 'account'
                   ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30 scale-[1.02]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-rose-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
               }`}
             >
-              <TrendingDown className="w-4 h-4 shrink-0" />
+              <TrendingDown className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Despesa</span>
             </button>
 
@@ -405,13 +451,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 setType('income');
                 setPaymentMethod('account');
               }}
-              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer ${
                 type === 'income'
                   ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 scale-[1.02]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-emerald-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
               }`}
             >
-              <TrendingUp className="w-4 h-4 shrink-0" />
+              <TrendingUp className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Receita</span>
             </button>
 
@@ -422,13 +468,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 setType('expense');
                 setPaymentMethod('card');
               }}
-              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer ${
                 type === 'expense' && paymentMethod === 'card'
                   ? 'bg-teal-500 text-white shadow-sm shadow-teal-500/30 scale-[1.02]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-teal-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
               }`}
             >
-              <CardIcon className="w-4 h-4 shrink-0" />
+              <CardIcon className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Cartão</span>
             </button>
 
@@ -439,13 +485,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 setType('transfer');
                 setPaymentMethod('account');
               }}
-              className={`py-2 px-1 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer ${
                 type === 'transfer'
                   ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30 scale-[1.02]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-purple-500 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
               }`}
             >
-              <ArrowLeftRight className="w-4 h-4 shrink-0" />
+              <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Transf.</span>
             </button>
           </div>
@@ -1208,47 +1254,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           </div>
         )}
-
-        {/* ========================================================================= */}
-        {/* 7. FOOTER ACTION BUTTONS (CANCELAR / SALVAR E CRIAR NOVA / SALVAR) */}
-        {/* ========================================================================= */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer"
-          >
-            Cancelar
-          </button>
-
-          <div className="flex items-center gap-2">
-            {!editingTransaction && (
-              <button
-                type="submit"
-                onClick={() => setSaveAndNew(true)}
-                disabled={!isAmountValid}
-                className="px-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-black text-purple-600 dark:text-purple-400 disabled:opacity-40 cursor-pointer"
-              >
-                Salvar e criar nova
-              </button>
-            )}
-
-            <button
-              type="submit"
-              onClick={() => setSaveAndNew(false)}
-              disabled={!isAmountValid}
-              className={`px-6 py-2.5 rounded-full text-white text-xs font-black shadow-md disabled:opacity-40 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all ${
-                type === 'income'
-                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
-                  : type === 'expense'
-                  ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
-                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
-              }`}
-            >
-              {editingTransaction ? 'Atualizar' : 'Salvar'}
-            </button>
-          </div>
-        </div>
       </form>
     </Modal>
   );

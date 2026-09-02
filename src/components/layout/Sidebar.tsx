@@ -16,6 +16,7 @@ import {
 } from '../../utils/sidebarConfig';
 import { SidebarCustomizerModal } from './SidebarCustomizerModal';
 import { useTranslation } from '../../utils/i18n';
+import { useBackButton } from '../../hooks/useBackButton';
 
 interface SidebarProps {
   activeTab: string;
@@ -41,6 +42,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [activeItemIds, setActiveItemIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('plannerfin_accent_color') || '#7C4DFF');
+
+  // Close mobile sidebar drawer on Android back gesture
+  useBackButton(mobileOpen, () => setMobileOpen(false));
 
   // Sync accent color when user changes or theme updates
   useEffect(() => {

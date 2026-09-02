@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../../utils/i18n';
 import { useFinancial } from '../../context/FinancialContext';
+import { useBackButton } from '../../hooks/useBackButton';
 
 interface BottomNavProps {
   activeTab: string;
@@ -31,6 +32,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const { t } = useTranslation();
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('plannerfin_accent_color') || '#7C4DFF');
+
+  // Close speed dial on Android back gesture
+  useBackButton(isSpeedDialOpen, () => setIsSpeedDialOpen(false));
 
   // Sync with theme changes
   React.useEffect(() => {

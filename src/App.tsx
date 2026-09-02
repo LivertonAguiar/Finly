@@ -29,6 +29,7 @@ import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
+import { setRootBackHandler } from './utils/backButtonManager';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -153,6 +154,23 @@ const AppContent: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Handle Android back button navigation when no modal/drawer is open
+  useEffect(() => {
+    setRootBackHandler(() => {
+      // If user is on any other tab than dashboard, back goes to dashboard
+      if (activeTab !== 'dashboard') {
+        handleSelectTab('dashboard');
+        return true;
+      }
+      // If already on dashboard, returning false allows double-tap exit toast
+      return false;
+    });
+
+    return () => {
+      setRootBackHandler(null);
+    };
+  }, [activeTab, handleSelectTab]);
 
   // Ensure /login URL when unauthenticated, and /dashboard when authenticated
   useEffect(() => {

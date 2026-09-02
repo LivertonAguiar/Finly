@@ -42,7 +42,7 @@ app.get('/api/app/version', (req, res) => {
   res.json({
     version: APP_VERSION,
     buildDate: '2026-09-02',
-    notes: 'Novidades da v1.1.3: Ícone oficial do Finly em alta definição, modo tela cheia imersivo nativo, suporte a atualizações contínuas com chave permanente e central de atualizações na aba Sobre.',
+    notes: 'Novidades da v1.1.3: Gesto de voltar nativo do Android, rodapé fixo responsivo na janela de lançamentos, ícone oficial em alta definição, backup exclusivo no perfil e central de atualizações móvel.',
     downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases',
     isLatest: true,
   });
