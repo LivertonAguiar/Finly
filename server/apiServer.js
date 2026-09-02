@@ -36,6 +36,17 @@ app.use(express.json({ limit: '20mb' }));
 // Hide Server Information
 app.disable('x-powered-by');
 
+// App Version & Update Endpoint
+app.get('/api/app/version', (req, res) => {
+  res.json({
+    version: '1.1.2',
+    buildDate: '2026-09-02',
+    notes: 'Novidades da versão: Gesto Puxe para Atualizar (Pull-to-refresh), otimização da conta demo, tela cheia imersiva e central de atualizações na aba Sobre.',
+    downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases',
+    isLatest: true,
+  });
+});
+
 const DATA_DIR = path.join(__dirname, 'data');
 const STORES_DIR = path.join(DATA_DIR, 'stores');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');

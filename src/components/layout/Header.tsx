@@ -23,7 +23,6 @@ import { useAuth } from '../../context/AuthContext';
 import { apiSync, SyncStatus } from '../../utils/apiSync';
 import { FinlyLogo } from '../ui/FinlyLogo';
 import { useTranslation } from '../../utils/i18n';
-import { AppUpdateModal } from '../common/AppUpdateModal';
 
 interface HeaderProps {
   activeTab?: string;
@@ -55,7 +54,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [isManualSyncing, setIsManualSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
 
@@ -272,13 +270,13 @@ export const Header: React.FC<HeaderProps> = ({
 
               <button
                 onClick={() => {
-                  setShowUpdateModal(true);
                   setShowUserMenu(false);
+                  setActiveTab('sobre');
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left"
               >
                 <Sparkles className="w-4 h-4 text-purple-500" />
-                <span>Atualizações do App</span>
+                <span>Atualizações do App (Sobre)</span>
               </button>
 
               <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
@@ -294,9 +292,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
-
-      {/* In-App Update Modal */}
-      <AppUpdateModal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} />
     </header>
   );
 };

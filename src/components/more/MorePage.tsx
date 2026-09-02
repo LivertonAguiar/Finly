@@ -22,6 +22,10 @@ import {
   Building2,
   List,
   Settings,
+  RefreshCw,
+  CheckCircle2,
+  ExternalLink,
+  Smartphone,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -32,17 +36,45 @@ import {
 } from '../../utils/sidebarConfig';
 import { SidebarCustomizerModal } from '../layout/SidebarCustomizerModal';
 import { useTranslation } from '../../utils/i18n';
+import {
+  APP_VERSION,
+  APP_BUILD_DATE,
+  checkForAppUpdates,
+  openExternalUrl,
+  forceAppReload,
+  GITHUB_RELEASES_URL,
+  isNativeCapacitor,
+  UpdateCheckResult,
+} from '../../utils/appUpdateService';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
+  initialSubTab?: 'GERAL' | 'GERENCIAR' | 'SOBRE';
 }
 
-export const MorePage: React.FC<MorePageProps> = ({ setActiveTab }) => {
+export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab }) => {
   const { exportBackupJSON, user } = useFinancial();
   const { lang, t } = useTranslation();
-  const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'GERENCIAR' | 'SOBRE'>('GERAL');
+  const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'GERENCIAR' | 'SOBRE'>(initialSubTab || 'GERAL');
   const [activeSidebarIds, setActiveSidebarIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+
+  // Update check states
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [isReloading, setIsReloading] = useState(false);
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setSegmentedTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  useEffect(() => {
+    const handleOpenSobre = () => setSegmentedTab('SOBRE');
+    window.addEventListener('finly_open_sobre', handleOpenSobre);
+    return () => window.removeEventListener('finly_open_sobre', handleOpenSobre);
+  }, []);
 
   // Sync with sidebar changes
   useEffect(() => {
@@ -300,29 +332,164 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab }) => {
           </>
         )}
 
-        {/* ABA SOBRE */}
+        {/* ABA SOBRE COM CENTRAL DE ATUALIZAÇÕES */}
         {segmentedTab === 'SOBRE' && (
-          <div className="p-6 space-y-4 text-xs text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-3">
-              <FinlyLogo size="lg" />
-              <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">Finly</h4>
-                <p>Versão 2.174.0</p>
+          <div className="p-6 space-y-6">
+            {/* 1. Header do App */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-transparent border border-purple-500/20">
+              <div className="flex items-center gap-4">
+                <FinlyLogo size="lg" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-black text-slate-900 dark:text-white">Finly</h4>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                      v{APP_VERSION}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Build {APP_BUILD_DATE} • {isNativeCapacitor() ? 'App Android Nativo' : 'Web App / PWA'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Pronto para uso
+                </span>
               </div>
             </div>
 
-            <p>
-              Plataforma financeira completa para controle de orçamento, fluxo de caixa, cartões e patrimônio.
-            </p>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <div className="flex justify-between font-semibold">
-                <span>Criptografia:</span>
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  AES-256 / SSL Seguro
-                </span>
+            {/* 2. Card da Central de Atualizações */}
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h5 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                    Central de Atualizações
+                  </h5>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Mantenha o Finly sempre atualizado com as últimas melhorias
+                  </p>
+                </div>
               </div>
+
+              {/* Status do Update */}
+              {updateResult && (
+                <div
+                  className={`p-3.5 rounded-xl border text-xs ${
+                    updateResult.hasUpdate
+                      ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
+                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-black">
+                    {updateResult.hasUpdate ? (
+                      <Sparkles className="w-4 h-4 text-purple-500" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    )}
+                    <span>
+                      {updateResult.hasUpdate
+                        ? `Nova versão disponível: v${updateResult.latestVersion}`
+                        : 'Você já está na versão mais recente!'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    {updateResult.notes}
+                  </p>
+                </div>
+              )}
+
+              {/* Botoes de Acao */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                {/* 1. Verificar Atualizacoes */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsCheckingUpdate(true);
+                    try {
+                      const res = await checkForAppUpdates();
+                      setUpdateResult(res);
+                    } catch (e) {
+                      setUpdateResult({
+                        hasUpdate: false,
+                        latestVersion: APP_VERSION,
+                        notes: 'Não foi possível verificar no momento.',
+                      });
+                    } finally {
+                      setIsCheckingUpdate(false);
+                    }
+                  }}
+                  disabled={isCheckingUpdate}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                  <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
+                </button>
+
+                {/* 2. Baixar APK Atualizado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openExternalUrl(updateResult?.downloadUrl || GITHUB_RELEASES_URL);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Baixar APK (Android)</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400 ml-auto" />
+                </button>
+
+                {/* 3. Recarregar e Limpar Cache */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsReloading(true);
+                    await forceAppReload();
+                  }}
+                  disabled={isReloading}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
+                  <span>{isReloading ? 'Recarregando...' : 'Limpar Cache & Recarregar'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Novidades desta Versao */}
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+              <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                O que há de novo na v{APP_VERSION}
+              </h5>
+
+              <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                  <span><strong>Gesto Puxe para Atualizar:</strong> Arraste do topo da tela para baixo para sincronizar instantaneamente seus saldos.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                  <span><strong>Modo Tela Cheia Imersivo:</strong> Experiência nativa em tela cheia no Android sem barras cortando a interface.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                  <span><strong>Conta Demonstração Otimizada:</strong> Carregamento imediato com transações, contas e metas realistas completas.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                  <span><strong>Central de Atualizações:</strong> Baixe novas versões e limpe o cache do app direto pela aba Sobre.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* 4. Segurança e Criptografia */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <span>Criptografia de ponta a ponta (AES-256 / SSL Seguro)</span>
+              </div>
+              <span className="text-[11px] font-bold text-slate-400">Finly Cloud Engine</span>
             </div>
           </div>
         )}

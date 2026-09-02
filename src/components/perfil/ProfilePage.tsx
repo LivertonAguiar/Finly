@@ -19,9 +19,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { Trash2, Sparkles, RefreshCw, Smartphone } from 'lucide-react';
-import { AppUpdateModal } from '../common/AppUpdateModal';
-import { APP_VERSION } from '../../utils/appUpdateService';
+import { Trash2, Sparkles, RefreshCw } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
   const { user, updateUser, toggleTheme, exportBackupJSON, importBackupJSON, resetToCleanState, loadDemoData } = useFinancial();
@@ -34,7 +32,6 @@ export const ProfilePage: React.FC = () => {
   const [currency, setCurrency] = useState(user.currency);
   const [savedAlert, setSavedAlert] = useState(false);
   const [backupAlert, setBackupAlert] = useState<string | null>(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Password change states
   const [currentPass, setCurrentPass] = useState('');
@@ -335,29 +332,7 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. App Updates & In-App Synchronization Card */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Atualizações do Aplicativo</h3>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 border border-purple-500/20">
-              v{APP_VERSION}
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">Verifique novas versões, atualize o APK ou limpe o cache do app</p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowUpdateModal(true)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-500/20 transition-all cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4 text-purple-200" />
-          <span>Verificar Atualizações</span>
-        </button>
-      </div>
-
-      {/* 5. Logout Card */}
+      {/* 4. Logout Card */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
         <div>
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Sair da Conta Atual</h3>
@@ -373,8 +348,6 @@ export const ProfilePage: React.FC = () => {
           <span>Sair da Conta</span>
         </button>
       </div>
-
-      <AppUpdateModal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} />
     </div>
   );
 };

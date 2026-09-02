@@ -27,6 +27,7 @@ import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
+import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -39,6 +40,7 @@ const TAB_TO_PATH: Record<string, string> = {
   calendario: '/calendario',
   settings: '/settings',
   mais: '/mais',
+  sobre: '/mais',
   metas: '/metas',
   dividas: '/dividas',
   investimentos: '/investimentos',
@@ -93,7 +95,29 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, transactions, cards, budgets, goals]);
 
+  // Fullscreen configuration for Native Android
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+      import('@capacitor/status-bar').then(({ StatusBar }) => {
+        StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+        StatusBar.hide().catch(() => {});
+      }).catch(() => {});
+    }
+  }, []);
+
   const handleSelectTab = useCallback((tab: string) => {
+    if (tab === 'sobre') {
+      setActiveTab('mais');
+      const targetPath = '/mais';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ tab: 'mais' }, '', targetPath);
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('finly_open_sobre'));
+      }, 50);
+      return;
+    }
+
     if (tab === 'cartoes') {
       setSelectedCardIdForDetail(null);
       setCardsNavKey(prev => prev + 1);
@@ -104,6 +128,10 @@ const AppContent: React.FC = () => {
       window.history.pushState({ tab }, '', targetPath);
     }
   }, []);
+
+  const handleGoToUpdate = useCallback(() => {
+    handleSelectTab('sobre');
+  }, [handleSelectTab]);
 
   const handleOpenCardDetail = useCallback((cardId: string) => {
     setSelectedCardIdForDetail(cardId);
@@ -183,6 +211,9 @@ const AppContent: React.FC = () => {
 
       {/* Main Column (Header + Content) */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* Floating In-App Update Notice Popup on Entry */}
+        <UpdateNoticeCard onGoToUpdate={handleGoToUpdate} />
+
         {/* Main Top Header with Mobile Hamburger */}
         <Header
           activeTab={activeTab}
