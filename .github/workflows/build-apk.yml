@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: 📥 Clonar Repositório
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 🟢 Configurar Node.js
         uses: actions/setup-node@v4
@@ -56,6 +58,23 @@ jobs:
       - name: 🏷️ Preparar APK da Release
         run: cp android/app/build/outputs/apk/debug/*.apk ./finly-${{ env.VERSION }}.apk
 
+      - name: 📝 Gerar Notas de Versão Dinâmicas
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "## 📱 Finly - Versão ${{ env.VERSION }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### 🚀 O que mudou nesta versão:" >> release_notes.md
+          echo "" >> release_notes.md
+          if [ -n "$PREV_TAG" ]; then
+            git log ${PREV_TAG}..HEAD --pretty=format:"- **%s** ([%h](https://github.com/${{ github.repository }}/commit/%H))" >> release_notes.md
+          else
+            git log -n 5 --pretty=format:"- **%s** ([%h](https://github.com/${{ github.repository }}/commit/%H))" >> release_notes.md
+          fi
+          echo "" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "📲 **Download do APK:** Baixe o arquivo \`finly-${{ env.VERSION }}.apk\` abaixo e instale diretamente no seu celular Android!" >> release_notes.md
+
       - name: 📤 Publicar APK como Artefato de Download
         uses: actions/upload-artifact@v4
         with:
@@ -74,15 +93,5 @@ jobs:
           prerelease: false
           make_latest: true
           files: finly-${{ env.VERSION }}.apk
-          body: |
-            ## 📱 Finly - Versão ${{ env.VERSION }}
-            
-            ### ✨ Novidades desta versão:
-            - **Modo Tela Cheia Imersivo:** Experiência imersiva sem barras indesejadas no Android.
-            - **Aviso de Nova Versão:** Card inteligente ao abrir o aplicativo informando se há atualizações prontas.
-            - **Central de Atualizações na aba Sobre:** Verificação, download de APK e limpeza de cache direto na aba Sobre.
-            - **Gesto Nativo:** Puxe para Atualizar (Pull-to-Refresh) com sincronização em tempo real.
-            - **Conta Demo 100% Otimizada:** Carregamento instantâneo com conjunto completo de dados realistas.
-            
-            ---
-            📲 **Download do APK:** Baixe o arquivo `finly-${{ env.VERSION }}.apk` abaixo e instale diretamente no seu celular Android!
+          body_path: release_notes.md
+          generate_release_notes: true
