@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, AuthContextType } from '../types/auth';
+import { getApiUrl } from '../services/apiConfig';
 
 interface ExtendedAuthContextType extends AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; debugCode?: string }>;
@@ -120,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Cryptographic Authentication via Backend API
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password }),
@@ -178,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), email: cleanEmail, password, phone }),
@@ -236,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      const response = await fetch('/api/send-recovery-code', {
+      const response = await fetch(getApiUrl('/api/send-recovery-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail }),
@@ -263,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyResetCode = async (email: string, code: string) => {
     const cleanEmail = email.trim().toLowerCase();
     try {
-      const response = await fetch('/api/verify-code', {
+      const response = await fetch(getApiUrl('/api/verify-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, code }),
@@ -286,7 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      const response = await fetch('/api/reset-password', {
+      const response = await fetch(getApiUrl('/api/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, code, newPassword }),
@@ -314,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const res = await fetch('/api/auth/change-password', {
+      const res = await fetch(getApiUrl('/api/auth/change-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: currentUser.email, oldPassword, newPassword }),

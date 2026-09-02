@@ -1,3 +1,5 @@
+import { getApiUrl } from '../services/apiConfig';
+
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error';
 
 class ApiSyncService {
@@ -28,7 +30,7 @@ class ApiSyncService {
   public async fetchServerStore(userId: string): Promise<any | null> {
     try {
       this.setStatus('syncing');
-      const res = await fetch('/api/user/store', {
+      const res = await fetch(getApiUrl('/api/user/store'), {
         headers: {
           'x-user-id': userId,
         },
@@ -75,7 +77,7 @@ class ApiSyncService {
 
     try {
       this.setStatus('syncing');
-      const res = await fetch('/api/user/store', {
+      const res = await fetch(getApiUrl('/api/user/store'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
