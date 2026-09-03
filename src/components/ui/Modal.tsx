@@ -53,23 +53,21 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 animate-in fade-in duration-200 cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 animate-in fade-in duration-200 cursor-pointer"
       style={{
-        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingTop: 'max(12px, env(safe-area-inset-top, 12px))',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
+        paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
+        paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
       }}
     >
-      {/* Modal / Bottom Sheet Card */}
+      {/* Centered Modal Card */}
       <div
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border-t sm:border border-slate-200/80 dark:border-slate-800/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col h-[90dvh] sm:h-auto sm:max-h-[88dvh] max-h-[94dvh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 text-slate-900 dark:text-white cursor-default will-change-transform`}
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
+        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 rounded-[24px] sm:rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[88dvh] animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white cursor-default will-change-transform`}
       >
-        {/* Mobile Drag Indicator Bar */}
-        <div className="w-10 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2.5 sm:hidden shrink-0" />
 
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
