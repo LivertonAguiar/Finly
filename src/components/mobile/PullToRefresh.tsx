@@ -16,20 +16,49 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
 
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
-  const hasTriggeredHapticRef = useRef(false);
 
   const handleTouchStart = (e: TouchEvent) => {
-    // Only allow pull-down if user is at the very top of page
+    // 1. Never intercept when any modal, drawer, or dialog is active
+    if (
+      document.body.style.overflow === 'hidden' ||
+      document.querySelector('[role="dialog"]') ||
+      document.querySelector('.fixed.inset-0.z-50')
+    ) {
+      isPullingRef.current = false;
+      return;
+    }
+
+    // 2. Never intercept if touch originates inside an inner scrollable element or form input
+    const target = e.target as HTMLElement | null;
+    if (target) {
+      const scrollable = target.closest('.overflow-y-auto, .overflow-auto, [data-scrollable], [role="dialog"], form');
+      if (scrollable && scrollable !== document.documentElement && scrollable !== document.body) {
+        isPullingRef.current = false;
+        return;
+      }
+    }
+
+    // 3. Only allow pull-down if user is at the very top of page
     const scrollY = window.scrollY || document.documentElement.scrollTop;
     if (scrollY <= 0 && !isRefreshing) {
       startYRef.current = e.touches[0].clientY;
       isPullingRef.current = true;
-      hasTriggeredHapticRef.current = false;
     }
   };
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isPullingRef.current || isRefreshing) return;
+
+    // Safety: ignore if a modal opened in the meantime
+    if (
+      document.body.style.overflow === 'hidden' ||
+      document.querySelector('[role="dialog"]') ||
+      document.querySelector('.fixed.inset-0.z-50')
+    ) {
+      isPullingRef.current = false;
+      setPullDistance(0);
+      return;
+    }
 
     const currentY = e.touches[0].clientY;
     const diff = currentY - startYRef.current;
@@ -41,16 +70,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
         // Apply rubber-band damping (diminishing return)
         const damped = Math.min(MAX_PULL, Math.pow(diff, 0.82) * 1.8);
         setPullDistance(damped);
-
-        // Haptic feedback once threshold crossed
-        if (damped >= PULL_THRESHOLD && !hasTriggeredHapticRef.current) {
-          hasTriggeredHapticRef.current = true;
-          try {
-            if ('vibrate' in navigator) navigator.vibrate(18);
-          } catch (_) {}
-        } else if (damped < PULL_THRESHOLD && hasTriggeredHapticRef.current) {
-          hasTriggeredHapticRef.current = false;
-        }
 
         // Prevent native overscroll when pulling down
         if (e.cancelable && damped > 15) {
@@ -74,9 +93,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
       try {
         await onRefresh();
         setIsSuccess(true);
-        try {
-          if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]);
-        } catch (_) {}
         setTimeout(() => {
           setIsSuccess(false);
           setIsRefreshing(false);

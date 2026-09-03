@@ -162,9 +162,6 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={async () => {
             setIsManualSyncing(true);
-            try {
-              if ('vibrate' in navigator) navigator.vibrate(18);
-            } catch (_) {}
             await refreshData();
             setTimeout(() => setIsManualSyncing(false), 600);
           }}

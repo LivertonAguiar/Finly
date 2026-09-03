@@ -8,6 +8,7 @@ class ApiSyncService {
   private currentUserId: string | null = null;
   private statusListeners: ((status: SyncStatus) => void)[] = [];
   public currentStatus: SyncStatus = 'synced';
+  private initialConnected = false;
 
   public setUserId(userId: string | null) {
     this.currentUserId = userId;
@@ -43,6 +44,17 @@ class ApiSyncService {
 
       const data = await res.json();
       this.setStatus('synced');
+
+      // Subtle haptic confirmation on initial server connection only
+      if (!this.initialConnected) {
+        this.initialConnected = true;
+        try {
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(25);
+          }
+        } catch (_) {}
+      }
+
       return data.store || null;
     } catch (e) {
       this.setStatus('offline');

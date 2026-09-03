@@ -520,7 +520,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 const len = (e.target as HTMLInputElement).value.length;
                 (e.target as HTMLInputElement).setSelectionRange(len, len);
               }}
-              autoFocus
               className={`borderless-money-input text-center text-3xl sm:text-4xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 ${
                 type === 'income'
                   ? 'text-[#66bb6a]'

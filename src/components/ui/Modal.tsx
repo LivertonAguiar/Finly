@@ -53,15 +53,17 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 animate-in fade-in duration-200 cursor-pointer"
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
       {/* Modal / Bottom Sheet Card */}
       <div
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border-t sm:border border-slate-200/80 dark:border-slate-800/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col h-[90dvh] sm:h-auto sm:max-h-[88dvh] max-h-[94dvh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-250 text-slate-900 dark:text-white cursor-default`}
+        className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border-t sm:border border-slate-200/80 dark:border-slate-800/80 rounded-t-[28px] sm:rounded-[25px] shadow-2xl overflow-hidden flex flex-col h-[90dvh] sm:h-auto sm:max-h-[88dvh] max-h-[94dvh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 text-slate-900 dark:text-white cursor-default will-change-transform`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -81,14 +83,20 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Content with Smooth Momentum Scrolling */}
-        <div className={`overflow-y-auto overscroll-contain flex-1 ${bodyClassName || 'p-4 sm:p-6 pb-6'}`}>
+        {/* Modal Content with Hardware-Accelerated Momentum Scrolling */}
+        <div
+          className={`overflow-y-auto overscroll-y-contain flex-1 touch-pan-y ${bodyClassName || 'p-4 sm:p-6 pb-6'}`}
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+          }}
+        >
           {children}
         </div>
 
-        {/* Sticky Fixed Footer (if provided) */}
+        {/* Sticky Fixed Footer (Solid background for maximum GPU scroll performance) */}
         {footer && (
-          <div className="shrink-0 px-4 sm:px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md">
+          <div className="shrink-0 px-4 sm:px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[#18181B]">
             {footer}
           </div>
         )}

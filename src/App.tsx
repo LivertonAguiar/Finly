@@ -294,7 +294,7 @@ const AppContent: React.FC = () => {
 
       {/* Global Modals */}
       <TransactionModal
-        key={`tx-modal-${newTxInitialType}-${newTxPaymentMethod}-${isNewTxOpen}`}
+        key={`tx-modal-${newTxInitialType}-${newTxPaymentMethod}`}
         isOpen={isNewTxOpen}
         onClose={() => setIsNewTxOpen(false)}
         initialType={newTxInitialType}
