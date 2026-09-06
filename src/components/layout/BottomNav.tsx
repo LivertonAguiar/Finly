@@ -183,10 +183,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
       {/* Main Bottom Navigation Bar */}
       <nav
-        className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-around px-2 z-50 md:hidden shadow-2xl transition-all select-none"
+        className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-around px-2 z-40 md:hidden shadow-2xl transition-all select-none"
         style={{
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
-          height: 'calc(3.8rem + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px), 8px)',
+          height: 'calc(3.8rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))',
         }}
       >
         {/* 1. Principal / Dashboard */}
@@ -220,7 +220,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </button>
 
         {/* 3. Central FAB Button (Toggles Speed Dial) */}
-        <div className="flex-1 flex items-center justify-center -mt-6 z-50">
+        <div className="flex-1 flex items-center justify-center -mt-6 z-40">
           <button
             type="button"
             onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}

@@ -788,7 +788,10 @@ export const TransactionsPage: React.FC = () => {
                   return (
                     <div
                       key={t.id}
-                      onClick={() => setSelectedDetailTx(t)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDetailTx(t);
+                      }}
                       className="py-3 first:pt-1 last:pb-0 flex items-center justify-between gap-2.5 sm:gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/50 px-2 sm:px-2.5 rounded-2xl transition-colors cursor-pointer"
                     >
                       {/* Left: Status (desktop) + Category Icon + Info */}
@@ -916,7 +919,10 @@ export const TransactionsPage: React.FC = () => {
                 return (
                   <tr
                     key={t.id}
-                    onClick={() => setSelectedDetailTx(t)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDetailTx(t);
+                    }}
                     className="hover:bg-slate-50/80 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer"
                   >
                     <td className="py-3 px-3" onClick={e => e.stopPropagation()}>{getStatusBadge(t)}</td>

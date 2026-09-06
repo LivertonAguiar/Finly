@@ -1,6 +1,10 @@
-# 🚀 Finly Web (Pro Edition)
+# 🚀 Finly (Pro Edition) `v1.1.18`
 
-> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade ao ecossistema Finly Web.
+> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade Web e Mobile Android.
+
+[![Build Android APK & Release](https://github.com/LivertonAguiar/planner-financeiro/actions/workflows/build-apk.yml/badge.svg)](https://github.com/LivertonAguiar/planner-financeiro/actions/workflows/build-apk.yml)
+[![Version](https://img.shields.io/badge/version-1.1.18-purple.svg)](package.json)
+[![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -16,12 +20,13 @@
 - [Instalação, Execução e Build](#-instalação-execução-e-build)
 - [Guia de Deploy & Produção](#-guia-de-deploy--produção)
 - [Extensibilidade & Banco de Dados](#-extensibilidade--banco-de-dados)
+- [Changelog e Versões](#-changelog-e-versões)
 
 ---
 
 ## 🌟 Visão Geral
 
-O **Finly Web** é um sistema financeiro moderno construído para alta performance e responsividade. Ele combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito e assistente financeiro inteligente.
+O **Finly** é um sistema financeiro moderno construído para alta performance e responsividade tanto na Web quanto no aplicativo nativo Android. Ele combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito e assistente financeiro inteligente.
 
 ---
 
@@ -30,12 +35,13 @@ O **Finly Web** é um sistema financeiro moderno construído para alta performan
 | Camada | Tecnologia | Descrição |
 | :--- | :--- | :--- |
 | **Frontend Framework** | **React 18** (TypeScript) | Interface declarativa com tipagem estrita |
+| **Mobile Runtime** | **Capacitor 8** (Android) | Empacotamento nativo Android com suporte a hardware back button e safe-area |
 | **Build & Bundler** | **Vite 5** | Compilação ultra-rápida e hot reload |
 | **Estilização** | **Tailwind CSS + CSS Variables** | Design responsivo com motor de temas dinâmico |
 | **Ícones** | **Lucide React** | Conjunto completo de ícones minimalistas |
 | **Efeitos Visuais** | **Canvas Confetti** | Animações de metas e marcos financeiros |
 | **Roteamento** | **HTML5 History API** | Sincronização em tempo real da URL (`/dashboard`, `/contas`, etc.) |
-| **Backend Mail Service** | **Node.js / Express** | Serviço local de envio de relatórios e alertas por e-mail |
+| **Backend API & Sync** | **Node.js / Express** | Serviço de sincronização multi-usuário e envio de relatórios |
 | **Internacionalização** | **i18n Custom Engine** | Suporte a pt-BR, en-US e es-ES + multi-moedas |
 
 ---
@@ -171,29 +177,45 @@ npm install
 # 2. Iniciar servidor de desenvolvimento Vite
 npm run dev
 
-# 3. Compilar para produção
+# 3. Compilar para produção Web
 npm run build
 
-# 4. Pré-visualizar build de produção
-npm run preview
+# 4. Sincronizar com Android (Capacitor)
+npm run cap:sync
+
+# 5. Abrir no Android Studio
+npm run cap:open
 ```
 
-### Serviço de E-mail Backend (`server/index.js`):
+### Serviço Backend API (`server/apiServer.js`):
 
 ```bash
-node server/index.js
+npm run server
 ```
 
 ---
 
 ## 🚀 Guia de Deploy & Produção
 
-O projeto é um SPA (Single Page Application) estático de altíssima performance:
+### 1. Deploy Automático na VPS (Oracle Cloud com Docker):
+O projeto conta com script PowerShell pronto para empacotar e atualizar o container Docker em produção:
 
-* **Vercel / Netlify / Cloudflare Pages**:
-  * Build Command: `npm run build`
-  * Output Directory: `dist`
-  * Rewrite Rules: Adicionar regra de redirecionamento `/* -> /index.html` para suporte a rotas diretas.
+```powershell
+npm run deploy:vps
+# Executa: powershell -ExecutionPolicy Bypass -File ./scripts/deploy-vps.ps1
+```
+
+### 2. CI/CD no GitHub Actions (Android APK Release):
+A cada push ou pull request na branch `main`, o GitHub Actions:
+- Compila a aplicação Web (`npm run build`).
+- Sincroniza os assets no Capacitor Android (`npx cap sync android`).
+- Gera o arquivo `.apk` de produção assinado.
+- Cria uma release oficial no GitHub com download direto do APK e changelog detalhado.
+
+### 3. Vercel / Netlify / Cloudflare Pages (Web):
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Rewrite Rules**: Adicionar regra `/* -> /index.html` para suporte a rotas diretas.
 
 ---
 
@@ -201,6 +223,12 @@ O projeto é um SPA (Single Page Application) estático de altíssima performanc
 
 O estado global em `FinancialContext.tsx` está estruturado com arquitetura desacoplada:
 
-1. **Persistência Atual**: `localStorage` com suporte a importação e exportação de backups JSON criptografados.
+1. **Persistência Atual**: `localStorage` no frontend com sincronização periódica via API REST (`server/apiServer.js`) e suporte a importação/exportação de backups JSON.
 2. **Integração com Backend Remoto**:
-   * Para conectar com **Supabase**, **PostgreSQL** ou **Firebase**, basta substituir as chamadas do `localStorage` em `FinancialContext.tsx` pelas funções assíncronas da sua API REST/GraphQL.
+   - Para conectar com **Supabase**, **PostgreSQL** ou **Firebase**, basta substituir as chamadas do `localStorage` em `FinancialContext.tsx` pelas funções assíncronas da sua API REST/GraphQL.
+
+---
+
+## 📋 Changelog e Versões
+
+Consulte o arquivo [`CHANGELOG.md`](CHANGELOG.md) para o histórico completo de novidades, melhorias e correções a cada versão.

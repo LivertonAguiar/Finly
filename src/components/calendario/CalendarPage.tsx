@@ -423,7 +423,10 @@ export const CalendarPage: React.FC = () => {
                       return (
                         <div
                           key={t.id}
-                          onClick={() => setSelectedDetailTx(t)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDetailTx(t);
+                          }}
                           className="p-3 rounded-2xl bg-slate-50 dark:bg-[#343437]/50 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-3 group hover:border-purple-500/40 transition-colors cursor-pointer"
                         >
                           {/* Left: Status + Icon + Title */}

@@ -2340,11 +2340,11 @@
     "phone": "(11) 99999-8888",
     "currency": "BRL",
     "showValues": true,
-    "theme": "dark",
+    "theme": "light",
     "themePreset": "midnight-oled",
     "cardRadius": "rounded",
     "language": "pt-BR",
     "accentColor": "#7C4DFF"
   },
-  "_serverTimestamp": "2026-09-02T23:05:33.331Z"
+  "_serverTimestamp": "2026-09-06T14:29:39.578Z"
 }

@@ -63,7 +63,7 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
       {/* THEME-INTEGRATED CONFIRM MODAL (NO BROWSER POPUPS) */}
       {dialogState?.isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={handleCancel}
         >
           <div

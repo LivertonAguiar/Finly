@@ -97,13 +97,20 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, transactions, cards, budgets, goals]);
 
-  // Fullscreen configuration for Native Android
+  // Fullscreen configuration for Native Android with Notch / Cutout compensation
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
       import('@capacitor/status-bar').then(({ StatusBar }) => {
         StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
         StatusBar.hide().catch(() => {});
       }).catch(() => {});
+
+      // Fallback safe-area notch compensation if native listener hasn't set it yet
+      const currentSat = getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-top');
+      if (!currentSat || currentSat.trim() === '' || currentSat === '0px') {
+        document.documentElement.style.setProperty('--safe-area-inset-top', '28px');
+        document.documentElement.style.setProperty('--sat', '28px');
+      }
     }
   }, []);
 

@@ -80,7 +80,13 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 w-full bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between">
+    <header
+      className="sticky top-0 z-30 w-full bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between transition-all"
+      style={{
+        paddingTop: 'max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px))',
+        height: 'calc(4rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)))',
+      }}
+    >
       {/* Left: Mobile Hamburger + User Profile Badge / Brand */}
       <div className="flex items-center gap-3">
         <button
@@ -210,15 +216,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Settings Button */}
-        <button
-          onClick={() => setActiveTab('perfil')}
-          className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title="Configurações"
-        >
-          <Settings className="w-4.5 h-4.5" />
-        </button>
-
         {/* User Profile Avatar */}
         <div className="relative" ref={userMenuRef}>
           <button
@@ -248,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setActiveTab('perfil');
                   setShowUserMenu(false);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer"
               >
                 <UserIcon className="w-4 h-4 text-slate-400" />
                 <span>Meu Perfil</span>
@@ -256,10 +253,21 @@ export const Header: React.FC<HeaderProps> = ({
 
               <button
                 onClick={() => {
+                  setActiveTab('settings');
+                  setShowUserMenu(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer"
+              >
+                <Settings className="w-4 h-4 text-slate-400" />
+                <span>Configurações</span>
+              </button>
+
+              <button
+                onClick={() => {
                   setShowUserMenu(false);
                   setActiveTab('sobre');
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-purple-500" />
                 <span>Atualizações do App (Sobre)</span>

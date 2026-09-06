@@ -47,6 +47,8 @@ import {
   forceAppReload,
   GITHUB_RELEASES_URL,
   isNativeCapacitor,
+  isMobileDevice,
+  getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
 import {
@@ -89,12 +91,20 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
     return () => window.removeEventListener('finly_open_sobre', handleOpenSobre);
   }, []);
 
-  // Auto-check for updates when user views the SOBRE tab (only in native mobile app)
+  // Auto-check for updates when user views the SOBRE tab (both mobile and web)
   useEffect(() => {
-    if (segmentedTab === 'SOBRE' && isNativeCapacitor()) {
+    if (segmentedTab === 'SOBRE') {
+      setIsCheckingUpdate(true);
       checkForAppUpdates()
         .then(res => setUpdateResult(res))
-        .catch(() => {});
+        .catch(() => {
+          setUpdateResult({
+            hasUpdate: false,
+            latestVersion: APP_VERSION,
+            notes: 'Você já está utilizando a versão mais recente do Finly.',
+          });
+        })
+        .finally(() => setIsCheckingUpdate(false));
     }
   }, [segmentedTab]);
 
@@ -349,18 +359,25 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Build {APP_BUILD_DATE} • {isNativeCapacitor() ? 'App Android Nativo' : 'Web App / PWA'}
+                    Build {APP_BUILD_DATE} • {getPlatformLabel()}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
-                  updateResult?.hasUpdate
+                  isCheckingUpdate
+                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                    : updateResult?.hasUpdate
                     ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20'
                     : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                 }`}>
-                  {updateResult?.hasUpdate ? (
+                  {isCheckingUpdate ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Verificando...
+                    </>
+                  ) : updateResult?.hasUpdate ? (
                     <>
                       <Sparkles className="w-3.5 h-3.5" />
                       Nova versão disponível
@@ -368,175 +385,168 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   ) : (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      Pronto para uso
+                      Versão mais recente
                     </>
                   )}
                 </span>
               </div>
             </div>
 
-            {/* 2. Card da Central de Atualizações (Exclusivo para o App Mobile Android) */}
-            {isNativeCapacitor() ? (
-              <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h5 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-500" />
-                      Central de Atualizações
-                    </h5>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Mantenha o aplicativo Finly sempre atualizado no seu celular
-                    </p>
+            {/* 2. Card da Central de Versões & Atualizações (Unificado para Mobile & Web) */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h5 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                    Central de Versões & Atualizações
+                  </h5>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {isNativeCapacitor()
+                      ? 'Mantenha o aplicativo Finly atualizado no seu celular Android'
+                      : 'Informações de versão da plataforma web, integridade do cache e sincronização contínua'}
+                  </p>
+                </div>
+
+                <span className="self-start sm:self-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  {getPlatformLabel()}
+                </span>
+              </div>
+
+              {/* Indicadores de Versao Instalada vs Servidor vs Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    {isNativeCapacitor() ? 'Versão Neste Celular' : 'Versão Deste Navegador'}
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-sm font-black text-slate-800 dark:text-slate-100">
+                      v{APP_VERSION}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      ({APP_BUILD_DATE})
+                    </span>
                   </div>
                 </div>
 
-                {/* Indicadores de Versao Instalada vs Servidor */}
-                <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Versão Neste Celular
-                    </span>
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                      v{APP_VERSION}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Versão Mais Recente (Nuvem)
-                    </span>
-                    <span className={`text-xs font-black ${
-                      updateResult?.hasUpdate
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Versão Mais Recente (Nuvem)
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-sm font-black ${
+                      isCheckingUpdate
+                        ? 'text-slate-400'
+                        : updateResult?.hasUpdate
                         ? 'text-purple-600 dark:text-purple-400'
                         : 'text-emerald-600 dark:text-emerald-400'
                     }`}>
-                      {updateResult ? `v${updateResult.latestVersion}` : 'Consultando...'}
+                      {isCheckingUpdate ? 'Consultando...' : updateResult ? `v${updateResult.latestVersion}` : `v${APP_VERSION}`}
                     </span>
-                  </div>
-                </div>
-
-                {/* Status do Update */}
-                {updateResult && (
-                  <div
-                    className={`p-3.5 rounded-xl border text-xs ${
-                      updateResult.hasUpdate
-                        ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
-                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-black">
-                      {updateResult.hasUpdate ? (
-                        <Sparkles className="w-4 h-4 text-purple-500" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      )}
-                      <span>
-                        {updateResult.hasUpdate
-                          ? `Nova versão disponível na nuvem: v${updateResult.latestVersion}`
-                          : `Você já está com a versão mais recente instalada (v${APP_VERSION})!`}
+                    {!isCheckingUpdate && updateResult && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                        updateResult.hasUpdate
+                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300'
+                          : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300'
+                      }`}>
+                        {updateResult.hasUpdate ? 'Disponível' : 'Atualizado'}
                       </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      {updateResult.notes}
-                    </p>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {/* Botoes de Acao (Apenas Mobile) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                  {/* 1. Verificar Atualizacoes */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsCheckingUpdate(true);
-                      try {
-                        const res = await checkForAppUpdates();
-                        setUpdateResult(res);
-                      } catch (e) {
-                        setUpdateResult({
-                          hasUpdate: false,
-                          latestVersion: APP_VERSION,
-                          notes: 'Não foi possível verificar no momento.',
-                        });
-                      } finally {
-                        setIsCheckingUpdate(false);
-                      }
-                    }}
-                    disabled={isCheckingUpdate}
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
-                    <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
-                  </button>
-
-                  {/* 2. Baixar APK Atualizado */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      openExternalUrl(updateResult?.downloadUrl || GITHUB_RELEASES_URL);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Baixar APK (Android)</span>
-                    <ExternalLink className="w-3 h-3 text-slate-400 ml-auto" />
-                  </button>
-
-                  {/* 3. Recarregar e Limpar Cache */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsReloading(true);
-                      await forceAppReload();
-                    }}
-                    disabled={isReloading}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
-                    <span>{isReloading ? 'Recarregando...' : 'Limpar Cache & Recarregar'}</span>
-                  </button>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Status do Servidor
+                  </span>
+                  <span className="font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-1 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Online & Sincronizado
+                  </span>
                 </div>
               </div>
-            ) : (
-              /* Informações da Plataforma Web (Sem botões de update ou download de APK) */
-              <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h5 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      Finly Web Cloud
-                    </h5>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Versão web em nuvem com sincronização contínua e atualização automática do servidor.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Status do Servidor
-                    </span>
-                    <span className="font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Online & Sincronizado (v{APP_VERSION})
+              {/* Status do Update / Mensagem de Integridade */}
+              {updateResult && (
+                <div
+                  className={`p-3.5 rounded-xl border text-xs ${
+                    updateResult.hasUpdate
+                      ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
+                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-black">
+                    {updateResult.hasUpdate ? (
+                      <Sparkles className="w-4 h-4 text-purple-500 shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    )}
+                    <span>
+                      {updateResult.hasUpdate
+                        ? `Nova versão disponível na nuvem: v${updateResult.latestVersion}`
+                        : `Você já está com a versão mais recente instalada (v${APP_VERSION})!`}
                     </span>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsReloading(true);
-                      await forceAppReload();
-                    }}
-                    disabled={isReloading}
-                    className="py-2 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
-                    <span>{isReloading ? 'Atualizando...' : 'Recarregar Aplicação Web'}</span>
-                  </button>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    {updateResult.notes || 'Todas as melhorias de desempenho, correções e novidades já estão ativas.'}
+                  </p>
                 </div>
+              )}
+
+              {/* Botoes de Acao (Disponíveis em Mobile e Web) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                {/* 1. Verificar Atualizacoes */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsCheckingUpdate(true);
+                    try {
+                      const res = await checkForAppUpdates();
+                      setUpdateResult(res);
+                    } catch (e) {
+                      setUpdateResult({
+                        hasUpdate: false,
+                        latestVersion: APP_VERSION,
+                        notes: 'Não foi possível verificar no momento.',
+                      });
+                    } finally {
+                      setIsCheckingUpdate(false);
+                    }
+                  }}
+                  disabled={isCheckingUpdate}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                  <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
+                </button>
+
+                {/* 2. Baixar APK Atualizado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openExternalUrl(updateResult?.downloadUrl || GITHUB_RELEASES_URL);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Baixar APK (Android)</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400 ml-auto" />
+                </button>
+
+                {/* 3. Recarregar e Limpar Cache */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsReloading(true);
+                    await forceAppReload();
+                  }}
+                  disabled={isReloading}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
+                  <span>{isReloading ? 'Recarregando...' : 'Limpar Cache & Recarregar'}</span>
+                </button>
               </div>
-            )}
+            </div>
 
             {/* 3. Card de Notificações no Aplicativo */}
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">

@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def appVersionCode = Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "100")
-def appVersionName = (System.getenv("VERSION") ?: "1.1.0").replace("v", "")
+def appVersionCode = Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "118")
+def appVersionName = (System.getenv("VERSION") ?: "1.1.18").replace("v", "")
 
 android {
     namespace = "com.finly.app"

@@ -78,90 +78,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
 
   // Month calculation
   
-  const getStatusBadge = (t: Transaction) => {
-    const isIncome = t.type === 'income';
-    const isTransfer = t.type === 'transfer';
-    const isCard = !!t.cardId;
-    const isCompleted = t.status === 'completed';
 
-    let label = '';
-    let styleClass = '';
-    let icon = null;
-
-    if (t.isThirdParty) {
-      if (t.reimbursed) {
-        label = `${t.thirdPartyName || 'Terceiro'} (Reembolsado)`;
-        styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
-        icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
-      } else {
-        label = `${t.thirdPartyName || 'Terceiro'} (A Reembolsar)`;
-        styleClass = 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/25';
-        icon = <Clock className="w-3.5 h-3.5 text-purple-500 shrink-0" />;
-      }
-    } else if (t.ignored) {
-      label = 'Ignorada';
-      styleClass = 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30 hover:bg-slate-500/25';
-      icon = <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
-    } else if (isIncome) {
-      if (isCompleted) {
-        label = 'Recebida';
-        styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
-        icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
-      } else {
-        label = 'A receber';
-        styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
-        icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
-      }
-    } else if (isTransfer) {
-      if (isCompleted) {
-        label = 'Efetivada';
-        styleClass = 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/25';
-        icon = <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
-      } else {
-        label = 'Pendente';
-        styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
-        icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
-      }
-    } else {
-      // Expense
-      if (isCard) {
-        if (isCompleted) {
-          label = 'Fatura Paga';
-          styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
-          icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
-        } else {
-          label = 'Fatura Aberta';
-          styleClass = 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30 hover:bg-teal-500/25';
-          icon = <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />;
-        }
-      } else {
-        if (isCompleted) {
-          label = 'Paga';
-          styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
-          icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
-        } else {
-          label = 'A pagar';
-          styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
-          icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
-        }
-      }
-    }
-
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleTransactionStatus(t.id);
-        }}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs shrink-0 ${styleClass}`}
-        title={`Situação: ${label} (Clique para alternar)`}
-      >
-        {icon}
-        <span>{label}</span>
-      </button>
-    );
-  };
 
   const viewDate = useMemo(() => {
     const d = new Date();
@@ -298,6 +215,21 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
 
   const [isPayingInvoice, setIsPayingInvoice] = useState(false);
 
+  const handleOpenPayModal = (targetCard?: CreditCardType | null) => {
+    const cardToPay =
+      targetCard ||
+      activeCardDetail ||
+      cardsData.find(c => c.invoiceTotal > 0 && !c.isPaid) ||
+      cardsData[0] ||
+      null;
+    if (!cardToPay) return;
+    setPayingCard(cardToPay);
+    const cardData = cardsData.find(c => c.id === cardToPay.id);
+    const invoiceAmt = cardData ? cardData.invoiceTotal : 0;
+    setPayAmount(invoiceAmt > 0 ? invoiceAmt.toFixed(2) : '');
+    setIsPayModalOpen(true);
+  };
+
   const handlePayInvoiceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isPayingInvoice || !payingCard) return;
@@ -380,9 +312,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       <button
                         onClick={() => {
                           setIsHeaderMenuOpen(false);
-                          setPayingCard(activeCardDetail);
-                          setPayAmount(activeCardDetail.invoiceTotal.toFixed(2));
-                          setIsPayModalOpen(true);
+                          handleOpenPayModal(activeCardDetail);
                         }}
                         className="w-full px-4 py-2.5 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2.5 cursor-pointer"
                       >
@@ -423,49 +353,51 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           </div>
 
           {/* Card Invoice Header Summary */}
-          <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center p-2 shadow-xs"
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center p-2 shadow-xs shrink-0"
                   style={{ backgroundColor: activeCardDetail.color ? activeCardDetail.color + '25' : '#7c4dff25' }}
                 >
                   <CardBrandLogo brand={activeCardDetail.brand} size={28} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
                     {activeCardDetail.name}
                   </h3>
-                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeCardDetail.statusColor}`}>
+                  <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border inline-block mt-0.5 ${activeCardDetail.statusColor}`}>
                     {activeCardDetail.statusLabel}
                   </span>
                 </div>
               </div>
 
               {/* Month Selector for Invoice */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2 self-center sm:self-auto">
                 <button
                   onClick={() => setSelectedMonthOffset(prev => prev - 1)}
                   className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                  title="Mês anterior"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-4 py-1.5 rounded-full bg-slate-50 dark:bg-[#343437] border border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full bg-slate-50 dark:bg-[#343437] border border-slate-200 dark:border-slate-700">
                   Fatura de {capitalizedMonth} {yearNum}
                 </span>
                 <button
                   onClick={() => setSelectedMonthOffset(prev => prev + 1)}
                   className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                  title="Próximo mês"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Invoice Total + Pay CTA */}
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <span className="text-[11px] text-slate-400 font-bold block">Valor da Fatura</span>
-                  <span className="text-xl font-black text-rose-600 dark:text-rose-400">
+              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
+                <div className="text-left sm:text-right">
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold block">Valor da Fatura</span>
+                  <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">
                     {formatCurrency(activeCardDetail.invoiceTotal, user.currency, !user.showValues)}
                   </span>
                 </div>
@@ -473,11 +405,9 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 {activeCardDetail.invoiceTotal > 0 && !activeCardDetail.isPaid ? (
                   <button
                     onClick={async () => {
-                      setPayingCard(activeCardDetail);
-                      setPayAmount(activeCardDetail.invoiceTotal.toFixed(2));
-                      setIsPayModalOpen(true);
+                      handleOpenPayModal(activeCardDetail);
                     }}
-                    className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap shrink-0"
                   >
                     Pagar Fatura
                   </button>
@@ -495,12 +425,21 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                         unpayCardInvoice(activeCardDetail.id, currentMonthPrefix);
                       }
                     }}
-                    className="px-4 py-2 rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer"
+                    className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     title="Desfazer pagamento e marcar fatura como pendente"
                   >
                     Marcar como não paga
                   </button>
-                ) : null}
+                ) : (
+                  <button
+                    onClick={async () => {
+                      handleOpenPayModal(activeCardDetail);
+                    }}
+                    className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    Pagar Fatura
+                  </button>
+                )}
               </div>
             </div>
 
@@ -575,10 +514,16 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           </div>
 
           {/* List of Invoice Expenses */}
-          <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-              Lançamentos desta Fatura ({activeCardDetail.monthTxs.length})
-            </h4>
+          <div className="p-4 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                Lançamentos desta Fatura ({activeCardDetail.monthTxs.length})
+              </h4>
+              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeCardDetail.statusColor}`}>
+                {activeCardDetail.isPaid && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                {activeCardDetail.statusLabel}
+              </span>
+            </div>
 
             {activeCardDetail.monthTxs.length === 0 ? (
               <div className="py-12 text-center text-slate-400 text-xs space-y-2">
@@ -592,13 +537,16 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   return (
                     <div
                       key={t.id}
-                      onClick={() => setSelectedDetailTx(t)}
-                      className="py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/40 px-2 rounded-2xl transition-colors cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDetailTx(t);
+                      }}
+                      className="py-3 sm:py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/40 px-2 sm:px-3 rounded-2xl transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center gap-3 min-w-0" onClick={e => e.stopPropagation()}>
-{getStatusBadge(t)}
+                      {/* Left: Category Icon + Description + Metadata */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
-                          className="w-9 h-9 rounded-xl flex items-center justify-center text-xs shrink-0 shadow-xs"
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-xs"
                           style={{
                             backgroundColor: (cat?.color || '#7c4dff') + '20',
                             color: cat?.color || '#7c4dff',
@@ -606,16 +554,42 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                         >
                           {cat?.icon || '💳'}
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{t.description}</p>
-                          <span className="text-[10px] text-slate-400 block truncate">
-                            {formatDate(t.date)} • {cat?.name || 'Geral'}
-                            {t.installments ? ` • Parcela ${t.installments.current}/${t.installments.total}` : ''}
-                          </span>
+                        <div className="min-w-0 flex-1 pr-1">
+                          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {t.description}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">
+                            <span className="shrink-0">{formatDate(t.date)}</span>
+                            <span>•</span>
+                            <span className="shrink-0 text-slate-600 dark:text-slate-300 font-bold">{cat?.name || 'Geral'}</span>
+                            {t.installments && (
+                              <>
+                                <span>•</span>
+                                <span className="shrink-0 text-purple-600 dark:text-purple-400 font-bold">
+                                  Parcela {t.installments.current}/{t.installments.total}
+                                </span>
+                              </>
+                            )}
+                            {t.isThirdParty && (
+                              <>
+                                <span>•</span>
+                                <span className={`shrink-0 font-bold ${t.reimbursed ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                                  👤 {t.thirdPartyName || 'Terceiro'}{t.reimbursed ? ' (Reembolsado)' : ''}
+                                </span>
+                              </>
+                            )}
+                            {t.ignored && (
+                              <>
+                                <span>•</span>
+                                <span className="shrink-0 text-slate-500 font-bold">Ignorada</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2.5 shrink-0">
+                      {/* Right: Amount + Actions */}
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         {t.isThirdParty && !t.reimbursed && (
                           <button
                             type="button"
@@ -631,20 +605,21 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                                 reimburseThirdPartyTransaction(t.id, accounts[0]?.id || 'acc-carteira-padrao');
                               }
                             }}
-                            className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                            className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0"
                             title="Registrar recebimento do valor emprestado"
                           >
                             + Receber
                           </button>
                         )}
 
-                        <span className="text-xs font-black text-rose-600 dark:text-rose-400">
+                        <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">
                           -{formatCurrency(t.amount, user.currency, !user.showValues)}
                         </span>
 
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingInvoiceTx(t);
                               setIsAddExpenseModalOpen(true);
                             }}
@@ -654,7 +629,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               const ok = await confirm({
                                 title: 'Excluir Lançamento',
                                 message: `Deseja realmente excluir "${t.description}" de ${formatCurrency(t.amount, user.currency)}?`,
@@ -722,6 +698,17 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 }}
               />
 
+              {cardsData.length > 0 && (
+                <button
+                  onClick={() => handleOpenPayModal()}
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  title="Pagar fatura de cartão"
+                >
+                  <CardIcon className="w-4 h-4" />
+                  <span>Pagar Fatura</span>
+                </button>
+              )}
+
               <button
                 onClick={onOpenNewCard}
                 className="w-10 h-10 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
@@ -757,7 +744,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
 
                     <button
                       onClick={() => {
-                        setIsPayModalOpen(true);
+                        handleOpenPayModal();
                         setIsHeaderMenuOpen(false);
                       }}
                       className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 flex items-center gap-2.5 cursor-pointer"
@@ -911,7 +898,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   </div>
 
                   {/* Right: Invoice Amount & Dates */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 font-bold block">Fatura {capitalizedMonth}</span>
                       <span className={`text-xs sm:text-sm font-black ${card.isPaid ? 'text-[#66bb6a]' : 'text-slate-900 dark:text-white'}`}>
@@ -920,15 +907,59 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       <span className="text-[10px] text-slate-400 block font-semibold">Vence dia {card.dueDay}</span>
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveCardDetailId(card.id);
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-wider hover:bg-purple-100 transition-colors"
-                    >
-                      Ver Fatura
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {card.invoiceTotal > 0 && !card.isPaid ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenPayModal(card);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-xs transition-colors cursor-pointer hover:scale-105"
+                        >
+                          Pagar Fatura
+                        </button>
+                      ) : card.isPaid ? (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const ok = await confirm({
+                              title: 'Marcar Fatura como Não Paga?',
+                              message: `Deseja marcar a fatura de ${card.name} como NÃO PAGA e estornar o valor?`,
+                              confirmText: 'Sim, Marcar Não Paga',
+                              cancelText: 'Cancelar',
+                              type: 'warning'
+                            });
+                            if (ok) {
+                              unpayCardInvoice(card.id, currentMonthPrefix);
+                            }
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                          title="Desfazer pagamento da fatura"
+                        >
+                          Desfazer Pago
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenPayModal(card);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                        >
+                          Pagar Fatura
+                        </button>
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveCardDetailId(card.id);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-wider hover:bg-purple-100 transition-colors cursor-pointer"
+                      >
+                        Ver Fatura
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1130,13 +1161,11 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     {card.invoiceTotal > 0 && !card.isPaid ? (
                       <button
                         onClick={async () => {
-                          setPayingCard(card);
-                          setPayAmount(card.invoiceTotal.toFixed(2));
-                          setIsPayModalOpen(true);
+                          handleOpenPayModal(card);
                         }}
                         className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer hover:scale-105"
                       >
-                        Pagar
+                        Pagar Fatura
                       </button>
                     ) : card.isPaid ? (
                       <button
@@ -1157,7 +1186,16 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       >
                         Desfazer Pago
                       </button>
-                    ) : null}
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          handleOpenPayModal(card);
+                        }}
+                        className="px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-[9px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        Pagar Fatura
+                      </button>
+                    )}
 
                     <button
                       onClick={async () => {
@@ -1199,8 +1237,51 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             setPayingCard(null);
           }}
           title={`Pagar Fatura - ${payingCard.name}`}
+          footer={
+            <div className="flex items-center justify-end gap-2.5 w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPayModalOpen(false);
+                  setPayingCard(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="credit-tab-pay-form"
+                disabled={isPayingInvoice}
+                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
+              >
+                Confirmar Pagamento
+              </button>
+            </div>
+          }
         >
-          <form onSubmit={handlePayInvoiceSubmit} className="space-y-4">
+          <form id="credit-tab-pay-form" onSubmit={handlePayInvoiceSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cartão de Crédito</label>
+              <select
+                value={payingCard.id}
+                onChange={e => {
+                  const card = cardsData.find(c => c.id === e.target.value);
+                  if (card) {
+                    setPayingCard(card);
+                    setPayAmount(card.invoiceTotal > 0 ? card.invoiceTotal.toFixed(2) : '');
+                  }
+                }}
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+              >
+                {cardsData.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — Fatura: {formatCurrency(c.invoiceTotal, user.currency)} {c.isPaid ? '(Já paga)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Valor do Pagamento</label>
               <input
@@ -1224,15 +1305,6 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance, user.currency)})</option>
                 ))}
               </select>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
-              >
-                Confirmar Pagamento
-              </button>
             </div>
           </form>
         </Modal>

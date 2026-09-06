@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -8,7 +9,7 @@ import {
   Sparkles,
   ChevronDown,
 } from 'lucide-react';
-import { getTodayString } from '../../utils/formatters';
+import { formatLocalDateISO, getTodayString } from '../../utils/formatters';
 
 export interface DatePickerProps {
   value: string; // YYYY-MM-DD
@@ -21,6 +22,7 @@ export interface DatePickerProps {
   variant?: 'compact' | 'modal';
   placeholder?: string;
   className?: string;
+  customTrigger?: (toggle: () => void, isOpen: boolean) => React.ReactNode;
 }
 
 const MONTH_NAMES_FULL = [
@@ -47,6 +49,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   variant = 'compact',
   placeholder = 'Selecione a data',
   className = '',
+  customTrigger,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<'calendar' | 'month' | 'year'>('calendar');
@@ -93,6 +96,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, variant]);
+
+  // Escape key to close picker without bubbling to parent modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        e.stopPropagation();
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown, true);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [isOpen]);
 
   // Format date display: "01/09/2026" or "01 de set de 2026"
   const formatDisplay = (isoStr: string) => {
@@ -147,7 +166,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const d = new Date();
     if (preset === 'yesterday') d.setDate(d.getDate() - 1);
     if (preset === 'tomorrow') d.setDate(d.getDate() + 1);
-    const iso = d.toISOString().substring(0, 10);
+    const iso = formatLocalDateISO(d);
     onChange(iso);
     setIsOpen(false);
   };
@@ -354,69 +373,111 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </label>
       )}
 
-      {/* TRIGGER BUTTON (COMPACT FORM INPUT) */}
-      <button
-        type="button"
-        onClick={() => {
+      {/* TRIGGER BUTTON (COMPACT FORM INPUT OR CUSTOM TRIGGER) */}
+      {customTrigger ? (
+        customTrigger(() => {
           setPickerMode('calendar');
-          setIsOpen(!isOpen);
-        }}
-        className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer select-none shadow-xs text-left ${
-          isOpen
-            ? 'border-purple-500 ring-2 ring-purple-500/20 bg-white dark:bg-[#1E1E22]'
-            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-400 dark:hover:border-purple-500'
-        } text-slate-800 dark:text-slate-100`}
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <CalendarIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors shrink-0" />
-          <span className="truncate">{formatDisplay(value)}</span>
-        </div>
-        <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
-          {value === todayStr ? 'Hoje' : ''}
-        </span>
-      </button>
+          setIsOpen(previous => !previous);
+        }, isOpen)
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setPickerMode('calendar');
+            setIsOpen(previous => !previous);
+          }}
+          className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer select-none shadow-xs text-left ${
+            isOpen
+              ? 'border-purple-500 ring-2 ring-purple-500/20 bg-white dark:bg-[#1E1E22]'
+              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-400 dark:hover:border-purple-500'
+          } text-slate-800 dark:text-slate-100`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <CalendarIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors shrink-0" />
+            <span className="truncate">{formatDisplay(value)}</span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
+            {value === todayStr ? 'Hoje' : ''}
+          </span>
+        </button>
+      )}
 
       {/* FLOATING POPOVER DROPDOWN (COMPACT VARIANT) */}
       {isOpen && variant === 'compact' && (
         <div
           ref={popoverRef}
+          role="dialog"
+          aria-label="Calendário"
           className="absolute z-50 left-0 sm:left-auto sm:right-0 mt-2 w-72 p-3.5 rounded-2xl bg-white dark:bg-[#1C1C20] border border-slate-200/90 dark:border-slate-700/80 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
         >
           {renderCalendarContent()}
         </div>
       )}
 
-      {/* MODAL DIALOG VARIANT (FOR FULLSCREEN / GOALS) */}
-      {isOpen && variant === 'modal' && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
-          onClick={() => setIsOpen(false)}
-        >
+      {/* MODAL DIALOG VARIANT (FOR FULLSCREEN / MODALS / MOBILE) */}
+      {isOpen && variant === 'modal' && typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="w-full max-w-[320px] rounded-3xl bg-white dark:bg-[#1C1C20] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-slate-700/80 overflow-hidden animate-in zoom-in-95 duration-200 p-4 select-none"
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+            onClick={() => setIsOpen(false)}
+            style={{
+              paddingTop: 'max(16px, env(safe-area-inset-top, 16px), var(--safe-area-inset-top, 16px))',
+              paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px), var(--safe-area-inset-bottom, 16px))',
+            }}
           >
-            {/* Modal Header */}
-            <div className="p-3 bg-slate-50 dark:bg-[#252528] rounded-2xl mb-3 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold text-slate-400 block">Data Selecionada</span>
-                <span className="text-base font-black text-purple-600 dark:text-purple-400">
-                  {getFullDisplay(value)}
-                </span>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Selecionar data"
+              className="w-full max-w-[340px] rounded-3xl bg-white dark:bg-[#1C1C20] text-slate-900 dark:text-white shadow-2xl border border-slate-200/90 dark:border-slate-700/80 overflow-hidden animate-in zoom-in-95 duration-200 p-4 select-none cursor-default"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-3 bg-slate-50 dark:bg-[#252528] rounded-2xl mb-3 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 block">
+                    Data Selecionada
+                  </span>
+                  <span className="text-sm font-black text-purple-600 dark:text-purple-400 capitalize">
+                    {getFullDisplay(value)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+                  aria-label="Fechar calendário"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {renderCalendarContent()}
-          </div>
-        </div>
-      )}
+              {renderCalendarContent()}
+
+              <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = getTodayString();
+                    onChange(d);
+                    setIsOpen(false);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                >
+                  Hoje
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black transition-all shadow-xs shadow-purple-600/30 cursor-pointer"
+                >
+                  Concluir
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

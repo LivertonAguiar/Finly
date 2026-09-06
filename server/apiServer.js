@@ -37,12 +37,12 @@ app.use(express.json({ limit: '20mb' }));
 app.disable('x-powered-by');
 
 // App Version & Update Endpoint
-const APP_VERSION = '1.1.3';
+const APP_VERSION = '1.1.18';
 app.get('/api/app/version', (req, res) => {
   res.json({
     version: APP_VERSION,
-    buildDate: '2026-09-02',
-    notes: 'Novidades da v1.1.3: Gesto de voltar nativo do Android, rodapé fixo responsivo na janela de lançamentos, ícone oficial em alta definição, backup exclusivo no perfil e central de atualizações móvel.',
+    buildDate: '2026-09-06',
+    notes: 'Novidades da v1.1.18: Redimensionamento modular de cards no Web (1 e 2 colunas), card de Despesas por Categoria horizontal com gráfico Donut estilizado, correção do fechamento automático de transações ao tocar, suporte ao entalhe de tela (notch) no Android e botão de configurações unificado no perfil.',
     downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases',
     isLatest: true,
   });

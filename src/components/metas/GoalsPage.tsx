@@ -536,6 +536,7 @@ export const GoalsPage: React.FC = () => {
               <DatePicker
                 value={deadline}
                 onChange={setDeadline}
+                variant="modal"
                 required
               />
             </div>

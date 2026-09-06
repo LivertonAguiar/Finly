@@ -24,6 +24,16 @@ export const Modal: React.FC<ModalProps> = ({
   // Intercept Android hardware back button and edge swipe gestures
   useBackButton(isOpen, onClose);
 
+  const mountTimeRef = React.useRef<number>(Date.now());
+  const isBackdropPointerDownRef = React.useRef<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      mountTimeRef.current = Date.now();
+      isBackdropPointerDownRef.current = false;
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -50,15 +60,38 @@ export const Modal: React.FC<ModalProps> = ({
     '2xl': 'max-w-2xl',
   };
 
+  const handleBackdropMouseDown = (e: React.MouseEvent) => {
+    isBackdropPointerDownRef.current = (e.target === e.currentTarget);
+  };
+
+  const handleBackdropTouchStart = (e: React.TouchEvent) => {
+    isBackdropPointerDownRef.current = (e.target === e.currentTarget);
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // 1. Strict target check: must be directly on the outer backdrop container
+    if (e.target !== e.currentTarget) return;
+
+    // 2. Ghost tap suppression: ignore click if modal opened less than 350ms ago
+    if (Date.now() - mountTimeRef.current < 350) return;
+
+    // 3. Pointer-down origin check: ensure the interaction actually started on the backdrop
+    if (!isBackdropPointerDownRef.current) return;
+
+    onClose();
+  };
+
   return (
     <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 animate-in fade-in duration-200 cursor-pointer"
+      onMouseDown={handleBackdropMouseDown}
+      onTouchStart={handleBackdropTouchStart}
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 animate-in fade-in duration-200 cursor-pointer"
       style={{
-        paddingTop: 'max(12px, env(safe-area-inset-top, 12px))',
-        paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
-        paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
-        paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
+        paddingTop: 'max(12px, env(safe-area-inset-top, 12px), var(--safe-area-inset-top, 12px))',
+        paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px), var(--safe-area-inset-bottom, 16px))',
+        paddingLeft: 'max(12px, env(safe-area-inset-left, 12px), var(--safe-area-inset-left, 12px))',
+        paddingRight: 'max(12px, env(safe-area-inset-right, 12px), var(--safe-area-inset-right, 12px))',
       }}
     >
       {/* Centered Modal Card */}
@@ -66,6 +99,8 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
         className={`w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 rounded-[24px] sm:rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[88dvh] animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white cursor-default will-change-transform`}
       >
 

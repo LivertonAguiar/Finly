@@ -33,6 +33,9 @@ import {
   EyeOff,
   FileText,
   GripVertical,
+  Maximize2,
+  Minimize2,
+  Info,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -105,30 +108,32 @@ const DEFAULT_CARDS_STATE: DashboardCardsState = {
   perfil: false,
 };
 
-const DEFAULT_LEFT_COLUMN_CARDS = [
+const DEFAULT_CARDS_ORDER: string[] = [
   'despesasCategoria',
+  'autonomiaReserva',
   'frequenciaGastos',
   'balancoMensal',
-  'transacoesPendentes',
+  'cartoes',
   'planejamento',
+  'contas',
+  'economiaMes',
+  'receitasCategoria',
+  'transacoesPendentes',
   'transacoesFavoritas',
   'calendarioMovimentacoes',
-  'contas',
-];
-
-const DEFAULT_RIGHT_COLUMN_CARDS = [
-  'autonomiaReserva',
-  'receitasCategoria',
   'balancoSemestral',
   'balancoTrimestral',
-  'cartoes',
   'objetivos',
-  'economiaMes',
   'perfil',
 ];
 
 const CARDS_STORAGE_KEY = 'plannerfin_dashboard_cards_v5';
-const CARDS_ORDER_STORAGE_KEY = 'plannerfin_dashboard_cards_order_v1';
+const CARDS_ORDER_STORAGE_KEY = 'plannerfin_dashboard_cards_order_v2';
+const CARDS_SIZES_STORAGE_KEY = 'finly_dashboard_card_sizes_v2';
+
+const DEFAULT_CARD_SIZES: Record<string, 'half' | 'full'> = {
+  despesasCategoria: 'full',
+};
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, onOpenNewCard, setActiveTab, onOpenCardDetail }) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
@@ -156,122 +161,150 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     return DEFAULT_CARDS_STATE;
   });
 
+  // Card Sizing State (half: 1 col, full: 2 cols / full horizontal)
+  const [cardSizes, setCardSizes] = useState<Record<string, 'half' | 'full'>>(() => {
+    try {
+      const saved = localStorage.getItem(CARDS_SIZES_STORAGE_KEY);
+      if (saved) {
+        return { ...DEFAULT_CARD_SIZES, ...JSON.parse(saved) };
+      }
+    } catch (e) {}
+    return { ...DEFAULT_CARD_SIZES };
+  });
+
+  const toggleCardSize = (cardKey: string) => {
+    setCardSizes((prev) => {
+      const current = prev[cardKey] || (cardKey === 'despesasCategoria' ? 'full' : 'half');
+      const nextSize: 'full' | 'half' = current === 'full' ? 'half' : 'full';
+      const updated: Record<string, 'full' | 'half'> = { ...prev, [cardKey]: nextSize };
+      try {
+        localStorage.setItem(CARDS_SIZES_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
+  const setCardSizeExplicit = (cardKey: string, size: 'half' | 'full') => {
+    setCardSizes((prev) => {
+      const updated: Record<string, 'full' | 'half'> = { ...prev, [cardKey]: size };
+      try {
+        localStorage.setItem(CARDS_SIZES_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
+  // Helper to format currency compactly for Donut center (e.g. R$ 1,3mil, R$ 2,8mil)
+  const formatCompactCurrency = (value: number, currency: string = 'BRL', hideValues: boolean = false) => {
+    if (hideValues) return '••••••';
+    const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'R$';
+    if (value >= 1_000_000) {
+      const v = (value / 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      return `${symbol} ${v}mi`;
+    }
+    if (value >= 1_000) {
+      const v = (value / 1_000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      return `${symbol} ${v}mil`;
+    }
+    return formatCurrency(value, currency, false);
+  };
+
   // Dynamic Card Ordering & Drag-and-Drop state
-  const [columnCards, setColumnCards] = useState<{ left: string[]; right: string[] }>(() => {
+  const [dashboardCardsOrder, setDashboardCardsOrder] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(CARDS_ORDER_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.left) && Array.isArray(parsed.right)) {
-          const allKnown = [...DEFAULT_LEFT_COLUMN_CARDS, ...DEFAULT_RIGHT_COLUMN_CARDS];
-          const left = parsed.left.filter((k: string) => allKnown.includes(k));
-          const right = parsed.right.filter((k: string) => allKnown.includes(k));
-          allKnown.forEach(k => {
-            if (!left.includes(k) && !right.includes(k)) {
-              if (DEFAULT_LEFT_COLUMN_CARDS.includes(k)) left.push(k);
-              else right.push(k);
-            }
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const valid = parsed.filter((k: string) => DEFAULT_CARDS_ORDER.includes(k));
+          DEFAULT_CARDS_ORDER.forEach(k => {
+            if (!valid.includes(k)) valid.push(k);
           });
-          return { left, right };
+          return valid;
+        }
+      }
+      // Migrate from v1 legacy columns if present
+      const legacy = localStorage.getItem('plannerfin_dashboard_cards_order_v1');
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (parsed && (Array.isArray(parsed.left) || Array.isArray(parsed.right))) {
+          const left = Array.isArray(parsed.left) ? parsed.left : [];
+          const right = Array.isArray(parsed.right) ? parsed.right : [];
+          const combined = Array.from(new Set(['despesasCategoria', ...left, ...right]));
+          const valid = combined.filter((k: string) => DEFAULT_CARDS_ORDER.includes(k));
+          DEFAULT_CARDS_ORDER.forEach(k => {
+            if (!valid.includes(k)) valid.push(k);
+          });
+          return valid;
         }
       }
     } catch (e) {}
-    return { left: [...DEFAULT_LEFT_COLUMN_CARDS], right: [...DEFAULT_RIGHT_COLUMN_CARDS] };
+    return [...DEFAULT_CARDS_ORDER];
   });
 
-  const [draggedCard, setDraggedCard] = useState<{ key: string; col: 'left' | 'right'; index: number } | null>(null);
-  const [dragOverCard, setDragOverCard] = useState<{ key: string; col: 'left' | 'right'; index: number } | null>(null);
+  const [draggedCardKey, setDraggedCardKey] = useState<string | null>(null);
+  const [dragOverCardKey, setDragOverCardKey] = useState<string | null>(null);
   const [draggableCardKey, setDraggableCardKey] = useState<string | null>(null);
 
-  const saveColumnCards = (newCols: { left: string[]; right: string[] }) => {
-    setColumnCards(newCols);
+  const saveCardsOrder = (newOrder: string[]) => {
+    setDashboardCardsOrder(newOrder);
     try {
-      localStorage.setItem(CARDS_ORDER_STORAGE_KEY, JSON.stringify(newCols));
+      localStorage.setItem(CARDS_ORDER_STORAGE_KEY, JSON.stringify(newOrder));
     } catch (e) {}
   };
 
   const resetCardsOrder = () => {
-    const defaults = { left: [...DEFAULT_LEFT_COLUMN_CARDS], right: [...DEFAULT_RIGHT_COLUMN_CARDS] };
-    saveColumnCards(defaults);
+    saveCardsOrder([...DEFAULT_CARDS_ORDER]);
+    setCardSizes({ ...DEFAULT_CARD_SIZES });
+    try {
+      localStorage.setItem(CARDS_SIZES_STORAGE_KEY, JSON.stringify(DEFAULT_CARD_SIZES));
+    } catch (e) {}
   };
 
-  const handleDragStart = (e: React.DragEvent, key: string, col: 'left' | 'right', index: number) => {
-    setDraggedCard({ key, col, index });
+  const handleDragStart = (e: React.DragEvent, key: string) => {
+    setDraggedCardKey(key);
     e.dataTransfer.setData('text/plain', key);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent, targetKey: string, targetCol: 'left' | 'right', targetIndex: number) => {
+  const handleDragOver = (e: React.DragEvent, targetKey: string) => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
-    if (!dragOverCard || dragOverCard.key !== targetKey) {
-      setDragOverCard({ key: targetKey, col: targetCol, index: targetIndex });
+    if (dragOverCardKey !== targetKey) {
+      setDragOverCardKey(targetKey);
     }
   };
 
-  const handleDrop = (e: React.DragEvent, targetKey: string, targetCol: 'left' | 'right', targetIndex: number) => {
+  const handleDrop = (e: React.DragEvent, targetKey: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!draggedCard) return;
-    if (draggedCard.key === targetKey && draggedCard.col === targetCol) {
-      setDraggedCard(null);
-      setDragOverCard(null);
+    if (!draggedCardKey || draggedCardKey === targetKey) {
+      setDraggedCardKey(null);
+      setDragOverCardKey(null);
       setDraggableCardKey(null);
       return;
     }
 
-    const sourceCol = draggedCard.col;
-    const newLeft = [...columnCards.left];
-    const newRight = [...columnCards.right];
-
-    const sourceList = sourceCol === 'left' ? newLeft : newRight;
-    const targetList = targetCol === 'left' ? newLeft : newRight;
-
-    const sourceIdx = sourceList.indexOf(draggedCard.key);
-    const targetIdx = targetList.indexOf(targetKey);
+    const newOrder = [...dashboardCardsOrder];
+    const sourceIdx = newOrder.indexOf(draggedCardKey);
+    const targetIdx = newOrder.indexOf(targetKey);
 
     if (sourceIdx !== -1 && targetIdx !== -1) {
-      // Direct 1-to-1 swap between the dragged card and the target card
-      const temp = sourceList[sourceIdx];
-      sourceList[sourceIdx] = targetList[targetIdx];
-      targetList[targetIdx] = temp;
-      saveColumnCards({ left: newLeft, right: newRight });
+      const temp = newOrder[sourceIdx];
+      newOrder[sourceIdx] = newOrder[targetIdx];
+      newOrder[targetIdx] = temp;
+      saveCardsOrder(newOrder);
     }
 
-    setDraggedCard(null);
-    setDragOverCard(null);
-    setDraggableCardKey(null);
-  };
-
-  const handleColumnDrop = (e: React.DragEvent, targetCol: 'left' | 'right') => {
-    e.preventDefault();
-    if (!draggedCard) return;
-    if (draggedCard.col === targetCol) return;
-
-    const newLeft = [...columnCards.left];
-    const newRight = [...columnCards.right];
-
-    const sourceList = draggedCard.col === 'left' ? newLeft : newRight;
-    const targetList = targetCol === 'left' ? newLeft : newRight;
-
-    const sourceIdx = sourceList.indexOf(draggedCard.key);
-    if (sourceIdx !== -1) {
-      sourceList.splice(sourceIdx, 1);
-      // Insert at the exact same row/slot index on the other side instead of sending to bottom
-      const insertIdx = Math.min(draggedCard.index, targetList.length);
-      targetList.splice(insertIdx, 0, draggedCard.key);
-      saveColumnCards({ left: newLeft, right: newRight });
-    }
-
-    setDraggedCard(null);
-    setDragOverCard(null);
+    setDraggedCardKey(null);
+    setDragOverCardKey(null);
     setDraggableCardKey(null);
   };
 
   const handleDragEnd = () => {
-    setDraggedCard(null);
-    setDragOverCard(null);
+    setDraggedCardKey(null);
+    setDragOverCardKey(null);
     setDraggableCardKey(null);
   };
 
@@ -662,25 +695,37 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // CARD RENDERERS: LEFT COLUMN
   // ==========================================
 
-  // Left 1: Despesas por Categoria (MGO Elevated Layout)
-  const renderDespesasCategoria = () => {
+  // Left 1: Despesas por Categoria (Elevated Layout matching screenshot)
+  const renderDespesasCategoria = (isFullWidth: boolean = true) => {
     const filteredTxsForCategory = selectedCategoryFilter
       ? monthTransactions.filter(t => t.categoryId === selectedCategoryFilter && t.type === 'expense' && t.status === 'completed')
       : [];
 
     return (
       <div key="despesasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+        {/* Header: 🍩 DESPESAS POR CATEGORIA ⓘ */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm font-bold">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm font-bold select-none">
               🍩
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Despesas por categoria</h3>
-              <p className="text-[11px] text-slate-400">Fixas vs Variáveis e Aderência ao Orçamento</p>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                {lang === 'en-US' ? 'EXPENSES BY CATEGORY' : lang === 'es-ES' ? 'GASTOS POR CATEGORÍA' : 'DESPESAS POR CATEGORIA'}
+              </h3>
+              <div className="group/tooltip relative inline-flex">
+                <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-help" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover/tooltip:flex flex-col items-center z-30 pointer-events-none">
+                  <span className="px-2.5 py-1 text-[10px] font-semibold text-white bg-slate-900 dark:bg-slate-700 rounded-md whitespace-nowrap shadow-lg">
+                    {lang === 'en-US' ? 'Fixed vs Variable & Budget Adherence' : lang === 'es-ES' ? 'Fijos vs Variables y Adherencia al Presupuesto' : 'Fixas vs Variáveis e Aderência ao Orçamento'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full">{capitalizedMonth}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full">
+            {capitalizedMonth}
+          </span>
         </div>
 
         {categoryChartData.length === 0 ? (
@@ -688,9 +733,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             Nenhuma despesa registrada neste mês.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className={isFullWidth ? "flex flex-col lg:flex-row items-center gap-8 lg:gap-12 pt-2" : "space-y-4 pt-2"}>
             {/* Donut Chart with Macro Split in the center and Persistent Emoji Badges */}
-            <div className="relative h-64 w-full flex items-center justify-center">
+            <div className={`relative flex items-center justify-center shrink-0 ${
+              isFullWidth ? "w-full lg:w-[320px] h-64" : "w-full h-64"
+            }`}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -764,18 +811,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                     </span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center space-y-1 text-center max-w-[145px] px-1">
-                    <div className="text-[10px] font-black text-slate-500 dark:text-slate-400">
-                      <span>Variáveis ({fixedVsVariable.variablePct.toFixed(0)}%)</span>
-                      <strong className="block text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-black whitespace-nowrap">
-                        {formatCurrency(fixedVsVariable.variable, user.currency, !user.showValues)}
+                  <div className="flex flex-col items-center justify-center space-y-1.5 text-center max-w-[150px] px-1 select-none">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 block leading-tight">
+                        Variáveis ({fixedVsVariable.variablePct.toFixed(0)}%)
+                      </span>
+                      <strong className="block text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
+                        {formatCompactCurrency(fixedVsVariable.variable, user.currency, !user.showValues)}
                       </strong>
                     </div>
-                    <div className="w-14 h-px bg-slate-200 dark:bg-slate-700/80 my-0.5" />
-                    <div className="text-[10px] font-black text-slate-500 dark:text-slate-400">
-                      <span>Fixas ({fixedVsVariable.fixedPct.toFixed(0)}%)</span>
-                      <strong className="block text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-black whitespace-nowrap">
-                        {formatCurrency(fixedVsVariable.fixed, user.currency, !user.showValues)}
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 block leading-tight">
+                        Fixas ({fixedVsVariable.fixedPct.toFixed(0)}%)
+                      </span>
+                      <strong className="block text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
+                        {formatCompactCurrency(fixedVsVariable.fixed, user.currency, !user.showValues)}
                       </strong>
                     </div>
                   </div>
@@ -783,54 +833,64 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               </div>
             </div>
 
-            {/* Category Progress & Adherence Bars */}
-            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-56 overflow-y-auto scrollbar-thin pr-1">
+            {/* Category Progress & Adherence Bars - Matching Screenshot Layout */}
+            <div className={isFullWidth ? "flex-1 w-full space-y-3.5 max-h-[380px] overflow-y-auto scrollbar-thin pr-1" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-56 overflow-y-auto scrollbar-thin pr-1"}>
               {categoryAdherenceList.map((c) => {
                 const isSelected = selectedCategoryFilter === c.id;
                 const hasBudget = c.budgetAmount > 0;
-                const progressPct = hasBudget ? Math.min(100, (c.value / c.budgetAmount) * 100) : Math.min(100, c.percentage);
+                const progressPct = hasBudget ? Math.min(100, (c.value / c.budgetAmount) * 100) : 100;
                 const isOverBudget = hasBudget && c.value > c.budgetAmount;
+                const adherenceLabel = `${progressPct.toFixed(0)}%`;
 
                 return (
                   <div
                     key={c.id}
                     onClick={() => setSelectedCategoryFilter(isSelected ? null : c.id)}
-                    className={`p-2.5 rounded-2xl cursor-pointer transition-all space-y-1.5 border ${
+                    className={`group/cat cursor-pointer transition-all space-y-1.5 p-2 rounded-2xl ${
                       isSelected
-                        ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800 shadow-xs'
-                        : 'bg-slate-50/60 dark:bg-[#202024]/60 border-slate-100 dark:border-slate-800/60 hover:border-purple-300 dark:hover:border-purple-800'
+                        ? 'bg-purple-500/10 ring-1 ring-purple-500/30'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 truncate min-w-0">
-                        <span className="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs shadow-2xs shrink-0">
+                    {/* Top Row: Icon + Name + Value | Budget, and Percentage */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Soft square icon badge */}
+                        <div
+                          className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 shadow-2xs transition-transform group-hover/cat:scale-105"
+                          style={{
+                            backgroundColor: c.color ? `${c.color}18` : '#f1f5f9',
+                          }}
+                        >
                           {c.icon || '🏷️'}
-                        </span>
+                        </div>
+
+                        {/* Category Name & Amount | Budget */}
                         <div className="min-w-0">
-                          <span className="font-bold text-slate-900 dark:text-white truncate block">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                             {c.name}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            {c.isFixed ? 'Gasto Fixo' : 'Gasto Variável'}
-                          </span>
+                          </h4>
+                          <p className="text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                            {formatCurrency(c.value, user.currency, !user.showValues)}
+                            <span className="mx-1 text-slate-300 dark:text-slate-600">|</span>
+                            {formatCurrency(c.budgetAmount, user.currency, !user.showValues)}
+                          </p>
                         </div>
                       </div>
 
+                      {/* Percentage on the right */}
                       <div className="text-right shrink-0">
-                        <span className="text-slate-900 dark:text-white font-extrabold block">
-                          {formatCurrency(c.value, user.currency, !user.showValues)}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {hasBudget ? `de ${formatCurrency(c.budgetAmount, user.currency, !user.showValues)}` : `${c.percentage.toFixed(1)}%`}
+                        <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                          {adherenceLabel}
                         </span>
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="w-full bg-slate-200 dark:bg-slate-700/80 h-1.5 rounded-full overflow-hidden flex items-center">
+                    {/* Full-width horizontal colored progress bar */}
+                    <div className="w-full bg-slate-100 dark:bg-slate-800/90 h-1.5 rounded-full overflow-hidden">
                       <div
                         style={{
-                          width: `${progressPct}%`,
+                          width: `${Math.min(100, Math.max(3, progressPct))}%`,
                           backgroundColor: isOverBudget ? '#ef5350' : c.color || '#7C4DFF',
                         }}
                         className="h-full rounded-full transition-all duration-500"
@@ -842,7 +902,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             </div>
 
             {selectedCategoryFilter && (
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-200 dark:border-slate-800/80 space-y-2 animate-in fade-in">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-200 dark:border-slate-800/80 space-y-2 animate-in fade-in w-full">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-800 dark:text-slate-200">
                     Transações ({filteredTxsForCategory.length})
@@ -865,7 +925,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               </div>
             )}
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end w-full">
               <button
                 onClick={() => setActiveTab('relatorios')}
                 className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
@@ -2097,165 +2157,111 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 4. TWO-COLUMN RESPONSIVE LAYOUT (DRAG AND DROP MODULAR GRID) */}
+      {/* 4. RESPONSIVE MODULAR GRID (DRAG AND DROP MODULAR GRID WITH RESIZABLE CARDS) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* LEFT COLUMN CARDS */}
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => handleColumnDrop(e, 'left')}
-          className="space-y-6 min-h-[120px]"
-        >
-          {columnCards.left
-            .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
-            .map((cardKey, idx) => {
-              const cardRenderers: Record<string, () => React.ReactNode> = {
-                despesasCategoria: renderDespesasCategoria,
-                frequenciaGastos: renderFrequenciaGastos,
-                balancoMensal: renderBalancoMensal,
-                transacoesPendentes: renderTransacoesPendentes,
-                planejamento: renderPlanejamento,
-                transacoesFavoritas: renderTransacoesFavoritas,
-                calendarioMovimentacoes: renderCalendarioMovimentacoes,
-                contas: renderContas,
-                autonomiaReserva: renderAutonomiaReserva,
-                receitasCategoria: renderReceitasCategoria,
-                balancoSemestral: renderBalancoSemestral,
-                balancoTrimestral: renderBalancoTrimestral,
-                cartoes: renderCartoes,
-                objetivos: renderObjetivos,
-                economiaMes: renderEconomiaMes,
-                perfil: renderPerfil,
-              };
+        {dashboardCardsOrder
+          .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
+          .map((cardKey) => {
+            const cardRenderers: Record<string, (isFull: boolean) => React.ReactNode> = {
+              despesasCategoria: renderDespesasCategoria,
+              frequenciaGastos: renderFrequenciaGastos,
+              balancoMensal: renderBalancoMensal,
+              transacoesPendentes: renderTransacoesPendentes,
+              planejamento: renderPlanejamento,
+              transacoesFavoritas: renderTransacoesFavoritas,
+              calendarioMovimentacoes: renderCalendarioMovimentacoes,
+              contas: renderContas,
+              autonomiaReserva: renderAutonomiaReserva,
+              receitasCategoria: renderReceitasCategoria,
+              balancoSemestral: renderBalancoSemestral,
+              balancoTrimestral: renderBalancoTrimestral,
+              cartoes: renderCartoes,
+              objetivos: renderObjetivos,
+              economiaMes: renderEconomiaMes,
+              perfil: renderPerfil,
+            };
 
-              const renderer = cardRenderers[cardKey];
-              if (!renderer) return null;
-              const isBeingDragged = draggedCard?.key === cardKey;
-              const isOver = dragOverCard?.key === cardKey && !isBeingDragged;
+            const renderer = cardRenderers[cardKey];
+            if (!renderer) return null;
 
-              return (
-                <div
-                  key={cardKey}
-                  draggable={draggableCardKey === cardKey}
-                  onDragStart={(e) => handleDragStart(e, cardKey, 'left', idx)}
-                  onDragOver={(e) => handleDragOver(e, cardKey, 'left', idx)}
-                  onDrop={(e) => handleDrop(e, cardKey, 'left', idx)}
-                  onDragEnd={handleDragEnd}
-                  className={`relative group/draggable transition-all duration-200 ${
-                    isBeingDragged
-                      ? 'opacity-40 scale-[0.98] border-2 border-dashed border-purple-500 rounded-[28px]'
-                      : isOver
-                      ? 'ring-2 ring-purple-500 ring-offset-4 dark:ring-offset-[#121214] scale-[1.02] shadow-2xl bg-purple-500/5 rounded-[28px]'
-                      : ''
-                  }`}
-                >
-                  {/* Dedicated Solid Drag Handle (Prevents accidental dragging anywhere else on the card) */}
+            const isFull = (cardSizes[cardKey] || (cardKey === 'despesasCategoria' ? 'full' : 'half')) === 'full';
+            const isBeingDragged = draggedCardKey === cardKey;
+            const isOver = dragOverCardKey === cardKey && !isBeingDragged;
+
+            return (
+              <div
+                key={cardKey}
+                draggable={draggableCardKey === cardKey}
+                onDragStart={(e) => handleDragStart(e, cardKey)}
+                onDragOver={(e) => handleDragOver(e, cardKey)}
+                onDrop={(e) => handleDrop(e, cardKey)}
+                onDragEnd={handleDragEnd}
+                className={`relative group/draggable transition-all duration-200 ${
+                  isFull ? 'col-span-1 lg:col-span-2' : 'col-span-1'
+                } ${
+                  isBeingDragged
+                    ? 'opacity-40 scale-[0.98] border-2 border-dashed border-purple-500 rounded-[28px]'
+                    : isOver
+                    ? 'ring-2 ring-purple-500 ring-offset-4 dark:ring-offset-[#121214] scale-[1.01] shadow-2xl bg-purple-500/5 rounded-[28px]'
+                    : ''
+                }`}
+              >
+                {/* Dedicated Solid Action Bar: Resize Button + Drag Handle */}
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-1 px-2 py-1 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 shadow-sm transition-all select-none opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100">
+                  {/* Resize Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCardSize(cardKey);
+                    }}
+                    className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                    title={isFull ? 'Reduzir para meia largura (1 coluna)' : 'Expandir para largura total horizontal (2 colunas)'}
+                  >
+                    {isFull ? (
+                      <>
+                        <Minimize2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Reduzir</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Expandir</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
+                  {/* Drag Handle */}
                   <div
                     onMouseDown={() => setDraggableCardKey(cardKey)}
                     onMouseUp={() => setDraggableCardKey(null)}
                     onTouchStart={() => setDraggableCardKey(cardKey)}
                     onTouchEnd={() => setDraggableCardKey(null)}
-                    className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-500/50 shadow-sm transition-all cursor-grab active:cursor-grabbing select-none group/handle opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100"
+                    className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-grab active:cursor-grabbing py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
                     title="Segure e arraste sobre outro card para inverter suas posições"
                   >
-                    <GripVertical className="w-3.5 h-3.5 shrink-0 transition-transform group-hover/handle:scale-110" />
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover/handle:text-purple-600 dark:group-hover/handle:text-purple-400 hidden sm:inline">
+                    <GripVertical className="w-3.5 h-3.5 shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
                       Mover
                     </span>
                   </div>
-
-                  {/* Swap Indicator Overlay when another card is hovered over this card */}
-                  {isOver && (
-                    <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xs">
-                      <span className="px-4 py-2 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-lg">
-                        ⇄ Solte para inverter posição
-                      </span>
-                    </div>
-                  )}
-
-                  {renderer()}
                 </div>
-              );
-            })}
-        </div>
 
-        {/* RIGHT COLUMN CARDS */}
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => handleColumnDrop(e, 'right')}
-          className="space-y-6 min-h-[120px]"
-        >
-          {columnCards.right
-            .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
-            .map((cardKey, idx) => {
-              const cardRenderers: Record<string, () => React.ReactNode> = {
-                despesasCategoria: renderDespesasCategoria,
-                frequenciaGastos: renderFrequenciaGastos,
-                balancoMensal: renderBalancoMensal,
-                transacoesPendentes: renderTransacoesPendentes,
-                planejamento: renderPlanejamento,
-                transacoesFavoritas: renderTransacoesFavoritas,
-                calendarioMovimentacoes: renderCalendarioMovimentacoes,
-                contas: renderContas,
-                autonomiaReserva: renderAutonomiaReserva,
-                receitasCategoria: renderReceitasCategoria,
-                balancoSemestral: renderBalancoSemestral,
-                balancoTrimestral: renderBalancoTrimestral,
-                cartoes: renderCartoes,
-                objetivos: renderObjetivos,
-                economiaMes: renderEconomiaMes,
-                perfil: renderPerfil,
-              };
-
-              const renderer = cardRenderers[cardKey];
-              if (!renderer) return null;
-              const isBeingDragged = draggedCard?.key === cardKey;
-              const isOver = dragOverCard?.key === cardKey && !isBeingDragged;
-
-              return (
-                <div
-                  key={cardKey}
-                  draggable={draggableCardKey === cardKey}
-                  onDragStart={(e) => handleDragStart(e, cardKey, 'right', idx)}
-                  onDragOver={(e) => handleDragOver(e, cardKey, 'right', idx)}
-                  onDrop={(e) => handleDrop(e, cardKey, 'right', idx)}
-                  onDragEnd={handleDragEnd}
-                  className={`relative group/draggable transition-all duration-200 ${
-                    isBeingDragged
-                      ? 'opacity-40 scale-[0.98] border-2 border-dashed border-purple-500 rounded-[28px]'
-                      : isOver
-                      ? 'ring-2 ring-purple-500 ring-offset-4 dark:ring-offset-[#121214] scale-[1.02] shadow-2xl bg-purple-500/5 rounded-[28px]'
-                      : ''
-                  }`}
-                >
-                  {/* Dedicated Solid Drag Handle (Prevents accidental dragging anywhere else on the card) */}
-                  <div
-                    onMouseDown={() => setDraggableCardKey(cardKey)}
-                    onMouseUp={() => setDraggableCardKey(null)}
-                    onTouchStart={() => setDraggableCardKey(cardKey)}
-                    onTouchEnd={() => setDraggableCardKey(null)}
-                    className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-500/50 shadow-sm transition-all cursor-grab active:cursor-grabbing select-none group/handle opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100"
-                    title="Segure e arraste sobre outro card para inverter suas posições"
-                  >
-                    <GripVertical className="w-3.5 h-3.5 shrink-0 transition-transform group-hover/handle:scale-110" />
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover/handle:text-purple-600 dark:group-hover/handle:text-purple-400 hidden sm:inline">
-                      Mover
+                {/* Swap Indicator Overlay when another card is hovered over this card */}
+                {isOver && (
+                  <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xs">
+                    <span className="px-4 py-2 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-lg">
+                      ⇄ Solte para inverter posição
                     </span>
                   </div>
+                )}
 
-                  {/* Swap Indicator Overlay when another card is hovered over this card */}
-                  {isOver && (
-                    <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xs">
-                      <span className="px-4 py-2 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-lg">
-                        ⇄ Solte para inverter posição
-                      </span>
-                    </div>
-                  )}
-
-                  {renderer()}
-                </div>
-              );
-            })}
-        </div>
+                {renderer(isFull)}
+              </div>
+            );
+          })}
       </div>
 
       {/* 3. BOTTOM BUTTON: "GERENCIAR TELA INICIAL" */}
@@ -2282,40 +2288,72 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               {/* LEFT COLUMN CHECKBOXES */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider text-center select-none">
-                  Cards da esquerda
+                  Cards Principais
                 </h4>
 
                 {[
-                  { key: 'despesasCategoria', label: 'Mostrar gráfico de despesas por categoria?' },
-                  { key: 'frequenciaGastos', label: 'Mostrar gráfico de frequência de gastos?' },
-                  { key: 'balancoMensal', label: 'Mostrar gráfico do balanço mensal?' },
-                  { key: 'transacoesPendentes', label: 'Mostrar transações pendentes?' },
-                  { key: 'planejamento', label: 'Mostrar resumo do orçamento do mês atual?' },
-                  { key: 'transacoesFavoritas', label: 'Mostrar transações favoritas?' },
-                  { key: 'calendarioMovimentacoes', label: 'Mostrar calendário de movimentações?' },
-                  { key: 'contas', label: 'Mostrar minhas contas?' },
+                  { key: 'despesasCategoria', label: 'Despesas por categoria' },
+                  { key: 'frequenciaGastos', label: 'Frequência de gastos' },
+                  { key: 'balancoMensal', label: 'Balanço mensal' },
+                  { key: 'transacoesPendentes', label: 'Transações pendentes' },
+                  { key: 'planejamento', label: 'Resumo do orçamento mensal' },
+                  { key: 'transacoesFavoritas', label: 'Transações favoritas' },
+                  { key: 'calendarioMovimentacoes', label: 'Calendário de movimentações' },
+                  { key: 'contas', label: 'Minhas contas' },
                 ].map(item => {
                   const checked = cardsState[item.key as keyof DashboardCardsState];
+                  const isFull = (cardSizes[item.key] || (item.key === 'despesasCategoria' ? 'full' : 'half')) === 'full';
+
                   return (
-                    <label
+                    <div
                       key={item.key}
-                      onClick={() => updateCardState(item.key as keyof DashboardCardsState, !checked)}
-                      className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-[#28282A] dark:bg-[#2C2C2E] border border-slate-700/60 dark:border-slate-800/80 hover:border-purple-500/50 hover:bg-[#323235] dark:hover:bg-[#343437] transition-all cursor-pointer select-none group shadow-xs"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-[#28282A] dark:bg-[#2C2C2E] border border-slate-700/60 dark:border-slate-800/80 hover:border-purple-500/50 hover:bg-[#323235] dark:hover:bg-[#343437] transition-all shadow-xs gap-2"
                     >
                       <div
-                        className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 ${
-                          checked
-                            ? 'bg-purple-600 text-white'
-                            : 'border-2 border-slate-500 group-hover:border-purple-400 bg-transparent'
-                        }`}
+                        onClick={() => updateCardState(item.key as keyof DashboardCardsState, !checked)}
+                        className="flex items-center gap-3 cursor-pointer select-none group min-w-0 flex-1"
                       >
-                        {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        <div
+                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 ${
+                            checked
+                              ? 'bg-purple-600 text-white'
+                              : 'border-2 border-slate-500 group-hover:border-purple-400 bg-transparent'
+                          }`}
+                        >
+                          {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+
+                        <span className="text-xs font-semibold text-slate-200 dark:text-slate-200 leading-snug truncate">
+                          {item.label}
+                        </span>
                       </div>
 
-                      <span className="text-xs font-semibold text-slate-200 dark:text-slate-200 leading-snug">
-                        {item.label}
-                      </span>
-                    </label>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCardSize(item.key);
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
+                          isFull
+                            ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
+                            : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
+                        }`}
+                        title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
+                      >
+                        {isFull ? (
+                          <>
+                            <Minimize2 className="w-3 h-3" />
+                            <span>2 cols</span>
+                          </>
+                        ) : (
+                          <>
+                            <Maximize2 className="w-3 h-3" />
+                            <span>1 col</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -2323,40 +2361,72 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               {/* RIGHT COLUMN CHECKBOXES */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider text-center select-none">
-                  Cards da direita
+                  Cards Complementares
                 </h4>
 
                 {[
-                  { key: 'autonomiaReserva', label: 'Mostrar autonomia de reserva (Runway em dias)?' },
-                  { key: 'receitasCategoria', label: 'Mostrar gráfico de receitas por categoria?' },
-                  { key: 'balancoSemestral', label: 'Mostrar gráfico do balanço semestral?' },
-                  { key: 'balancoTrimestral', label: 'Mostrar gráfico do balanço trimestral?' },
-                  { key: 'cartoes', label: 'Mostrar informações de cartões de crédito?' },
-                  { key: 'objetivos', label: 'Mostrar seus objetivos e metas?' },
-                  { key: 'economiaMes', label: 'Mostrar informações da economia no mês atual?' },
-                  { key: 'perfil', label: 'Mostrar informações de perfil?' },
+                  { key: 'autonomiaReserva', label: 'Autonomia de reserva (Runway)' },
+                  { key: 'receitasCategoria', label: 'Receitas por categoria' },
+                  { key: 'balancoSemestral', label: 'Balanço semestral' },
+                  { key: 'balancoTrimestral', label: 'Balanço trimestral' },
+                  { key: 'cartoes', label: 'Cartões de crédito' },
+                  { key: 'objetivos', label: 'Objetivos e metas' },
+                  { key: 'economiaMes', label: 'Economia do mês atual' },
+                  { key: 'perfil', label: 'Perfil de usuário' },
                 ].map(item => {
                   const checked = cardsState[item.key as keyof DashboardCardsState];
+                  const isFull = (cardSizes[item.key] || (item.key === 'despesasCategoria' ? 'full' : 'half')) === 'full';
+
                   return (
-                    <label
+                    <div
                       key={item.key}
-                      onClick={() => updateCardState(item.key as keyof DashboardCardsState, !checked)}
-                      className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-[#28282A] dark:bg-[#2C2C2E] border border-slate-700/60 dark:border-slate-800/80 hover:border-purple-500/50 hover:bg-[#323235] dark:hover:bg-[#343437] transition-all cursor-pointer select-none group shadow-xs"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-[#28282A] dark:bg-[#2C2C2E] border border-slate-700/60 dark:border-slate-800/80 hover:border-purple-500/50 hover:bg-[#323235] dark:hover:bg-[#343437] transition-all shadow-xs gap-2"
                     >
                       <div
-                        className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 ${
-                          checked
-                            ? 'bg-purple-600 text-white'
-                            : 'border-2 border-slate-500 group-hover:border-purple-400 bg-transparent'
-                        }`}
+                        onClick={() => updateCardState(item.key as keyof DashboardCardsState, !checked)}
+                        className="flex items-center gap-3 cursor-pointer select-none group min-w-0 flex-1"
                       >
-                        {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        <div
+                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 ${
+                            checked
+                              ? 'bg-purple-600 text-white'
+                              : 'border-2 border-slate-500 group-hover:border-purple-400 bg-transparent'
+                          }`}
+                        >
+                          {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+
+                        <span className="text-xs font-semibold text-slate-200 dark:text-slate-200 leading-snug truncate">
+                          {item.label}
+                        </span>
                       </div>
 
-                      <span className="text-xs font-semibold text-slate-200 dark:text-slate-200 leading-snug">
-                        {item.label}
-                      </span>
-                    </label>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCardSize(item.key);
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
+                          isFull
+                            ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
+                            : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
+                        }`}
+                        title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
+                      >
+                        {isFull ? (
+                          <>
+                            <Minimize2 className="w-3 h-3" />
+                            <span>2 cols</span>
+                          </>
+                        ) : (
+                          <>
+                            <Maximize2 className="w-3 h-3" />
+                            <span>1 col</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   );
                 })}
               </div>

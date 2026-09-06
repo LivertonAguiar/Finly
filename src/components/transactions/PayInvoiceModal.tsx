@@ -90,21 +90,51 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Pagamento total" maxWidth="lg">
-      <form onSubmit={handlePay} className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Pagamento total"
+      maxWidth="lg"
+      footer={
+        <div className="flex items-center justify-end gap-2.5 w-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="pay-invoice-form"
+            disabled={!selectedCard || totalInvoice <= 0 || isInvoiceAlreadyPaid || isSubmitting}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md flex items-center gap-1.5 transition-all cursor-pointer ${
+              totalInvoice > 0 && !isInvoiceAlreadyPaid
+                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 active:scale-95'
+                : 'bg-slate-400 dark:bg-slate-700 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <CardIcon className="w-3.5 h-3.5" />
+            <span>{isInvoiceAlreadyPaid ? 'Fatura Já Paga ✓' : isSubmitting ? 'Processando...' : 'Pagar Total'}</span>
+          </button>
+        </div>
+      }
+    >
+      <form id="pay-invoice-form" onSubmit={handlePay} className="space-y-3.5 pb-1">
         {/* Callout Banner (Mobills exact parity) */}
         {showCallout && (
-          <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 flex items-start gap-3 relative">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-900/60 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-300">
-              <Lightbulb className="w-4 h-4" />
+          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 flex items-start gap-2.5 relative">
+            <div className="w-7 h-7 rounded-xl bg-purple-100 dark:bg-purple-900/60 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-300">
+              <Lightbulb className="w-3.5 h-3.5" />
             </div>
-            <p className="text-xs text-purple-900 dark:text-purple-200 font-semibold pr-6 leading-relaxed">
+            <p className="text-[11px] text-purple-900 dark:text-purple-200 font-semibold pr-6 leading-relaxed">
               Aqui você realizará o pagamento total da fatura do seu cartão de crédito. O valor será debitado da conta indicada.
             </p>
             <button
               type="button"
               onClick={() => setShowCallout(false)}
-              className="absolute right-2.5 top-2.5 text-purple-400 hover:text-purple-600 transition-colors"
+              className="absolute right-2 top-2 p-1 text-purple-400 hover:text-purple-600 transition-colors cursor-pointer"
+              title="Fechar aviso"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -112,7 +142,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
         )}
 
         {/* Card and Period Selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="space-y-2.5">
           {/* Card Selector */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -131,46 +161,48 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
             </select>
           </div>
 
-          {/* Month Selector */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Mês da Fatura
-            </label>
-            <select
-              value={selectedMonth}
-              onChange={e => setSelectedMonth(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100"
-            >
-              {months.map(m => (
-                <option key={m.num} value={m.num}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Month Selector */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Mês da Fatura
+              </label>
+              <select
+                value={selectedMonth}
+                onChange={e => setSelectedMonth(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100"
+              >
+                {months.map(m => (
+                  <option key={m.num} value={m.num}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Year Selector */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Ano
-            </label>
-            <select
-              value={selectedYear}
-              onChange={e => setSelectedYear(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100"
-            >
-              {['2024', '2025', '2026', '2027'].map(yr => (
-                <option key={yr} value={yr}>
-                  {yr}
-                </option>
-              ))}
-            </select>
+            {/* Year Selector */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Ano
+              </label>
+              <select
+                value={selectedYear}
+                onChange={e => setSelectedYear(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100"
+              >
+                {['2024', '2025', '2026', '2027'].map(yr => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Invoice Summary Box */}
         {selectedCard ? (
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-7 flex items-center justify-center shrink-0">
                 <CardBrandLogo brand={selectedCard.brand} size={28} className="w-10 h-6" />
@@ -208,7 +240,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
             Lançamentos da Fatura ({invoiceTransactions.length})
           </label>
-          <div className="max-h-48 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900 scrollbar-thin">
+          <div className="max-h-36 sm:max-h-44 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900 scrollbar-thin">
             {invoiceTransactions.length === 0 ? (
               <div className="py-8 text-center text-slate-400">
                 <p className="text-xs font-medium">Nenhuma transação lançada neste período.</p>
@@ -229,7 +261,6 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
           </div>
         </div>
 
-        
         {/* Payment Date with Quick Chips */}
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -258,6 +289,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
           <DatePicker
             value={payDate}
             onChange={setPayDate}
+            variant="modal"
             showPresets={true}
           />
         </div>
@@ -286,29 +318,6 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
             ✓ Fatura paga com sucesso! Saldo atualizado.
           </div>
         )}
-
-        {/* Actions */}
-        <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={!selectedCard || totalInvoice <= 0 || isInvoiceAlreadyPaid || isSubmitting}
-            className={`px-5 py-2 rounded-xl text-xs font-black text-white shadow-md flex items-center gap-1.5 transition-all cursor-pointer ${
-              totalInvoice > 0
-                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 active:scale-95'
-                : 'bg-slate-400 dark:bg-slate-700 opacity-50 cursor-not-allowed'
-            }`}
-          >
-            <CardIcon className="w-3.5 h-3.5" />
-            <span>{isInvoiceAlreadyPaid ? 'Fatura Já Paga ✓' : isSubmitting ? 'Processando...' : 'Pagar Total'}</span>
-          </button>
-        </div>
       </form>
     </Modal>
   );

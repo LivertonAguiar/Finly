@@ -98,7 +98,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Top Section */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {/* Brand & Toggle */}
-          <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 h-16">
+          <div
+            className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 transition-all"
+            style={{
+              paddingTop: 'max(1rem, calc(1rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px))))',
+              height: 'calc(4rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)))',
+            }}
+          >
             <div className="flex items-center gap-2.5 min-w-0 overflow-hidden cursor-pointer" onClick={() => setActiveTab('dashboard')}>
               <FinlyLogo size="md" showText={!collapsed} />
             </div>

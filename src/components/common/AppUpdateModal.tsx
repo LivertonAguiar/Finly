@@ -17,6 +17,7 @@ import {
   checkForAppUpdates,
   forceAppReload,
   isNativeCapacitor,
+  getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -99,7 +100,7 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
           </div>
 
           <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-            {isNative ? 'Android Nativo' : 'Web App'}
+            {getPlatformLabel()}
           </span>
         </div>
 

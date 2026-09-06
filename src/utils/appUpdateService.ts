@@ -4,8 +4,8 @@
  */
 import { getApiUrl } from '../services/apiConfig';
 
-export const APP_VERSION = '1.1.3';
-export const APP_BUILD_DATE = '2026-09-02';
+export const APP_VERSION = '1.1.18';
+export const APP_BUILD_DATE = '2026-09-06';
 export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/planner-financeiro';
 export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/planner-financeiro/actions';
 export const GITHUB_RELEASES_URL = 'https://github.com/LivertonAguiar/planner-financeiro/releases';
@@ -40,6 +40,17 @@ export function isNewerVersion(latest: string, current: string): boolean {
 
 export const isNativeCapacitor = (): boolean => {
   return typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+};
+
+export const isMobileDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+export const getPlatformLabel = (): string => {
+  if (isNativeCapacitor()) return 'App Android Nativo';
+  if (isMobileDevice()) return 'Mobile Web / PWA';
+  return 'Web Desktop / PWA';
 };
 
 /**
@@ -83,8 +94,35 @@ export const checkForAppUpdates = async (): Promise<UpdateCheckResult> => {
       };
     }
   } catch (err) {
-    console.warn('API version check error, falling back to PWA/Local:', err);
+    console.warn('API version check error, falling back to GitHub/PWA:', err);
   }
+
+  // 1.5 Fallback to GitHub Releases API if server is offline or unreachable
+  try {
+    const ghController = new AbortController();
+    const ghTimeout = setTimeout(() => ghController.abort(), 3500);
+    const ghRes = await fetch('https://api.github.com/repos/LivertonAguiar/planner-financeiro/releases/latest', {
+      headers: { Accept: 'application/vnd.github.v3+json' },
+      signal: ghController.signal,
+    });
+    clearTimeout(ghTimeout);
+
+    if (ghRes.ok) {
+      const ghData = await ghRes.json();
+      const ghVer = (ghData.tag_name || '').replace(/^v/, '');
+      if (ghVer) {
+        const hasUpdate = isNewerVersion(ghVer, APP_VERSION);
+        const apkAsset = ghData.assets?.find((a: any) => typeof a.name === 'string' && a.name.endsWith('.apk'));
+        return {
+          hasUpdate,
+          latestVersion: ghVer,
+          notes: ghData.body || 'Nova versão disponível no repositório oficial.',
+          downloadUrl: apkAsset?.browser_download_url || ghData.html_url || GITHUB_RELEASES_URL,
+          source: 'github',
+        };
+      }
+    }
+  } catch (_) {}
 
   // 2. If in service-worker supported browser/PWA, check registration update
   try {

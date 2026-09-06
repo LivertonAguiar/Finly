@@ -23,7 +23,7 @@ import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
 import { Transaction, TransactionType, TransactionStatus } from '../../types';
-import { formatCurrency, getTodayString, round2 } from '../../utils/formatters';
+import { formatCurrency, formatLocalDateISO, getTodayString, round2 } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
 import { allocateCardTransaction } from '../../utils/invoiceCalculator';
 
@@ -204,6 +204,35 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
     return recurring ? 'Nova Despesa Fixa' : 'Nova Despesa';
   }, [editingTransaction, type, paymentMethod, recurring]);
+
+  const todayStr = getTodayString();
+  const yesterdayStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return formatLocalDateISO(d);
+  }, []);
+
+  const isToday = date === todayStr;
+  const isYesterday = date === yesterdayStr;
+  const isOther = !isToday && !isYesterday;
+
+  const activeDatePillColor = useMemo(() => {
+    if (type === 'income') return 'bg-[#66bb6a] text-white shadow-xs';
+    if (type === 'expense' && paymentMethod === 'card') return 'bg-teal-500 text-white shadow-xs';
+    if (type === 'expense') return 'bg-[#ef5350] text-white shadow-xs';
+    return 'bg-purple-600 text-white shadow-xs';
+  }, [type, paymentMethod]);
+
+  const inactiveDatePillStyle = 'bg-slate-200/90 dark:bg-[#3f3f46] text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-[#52525b]';
+
+  const formatCustomDateLabel = (dStr: string) => {
+    if (!dStr) return 'Outros...';
+    const parts = dStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}`;
+    }
+    return dStr;
+  };
 
   // Helper to format cents into Brazilian Real string
   const formatCentsToDisplay = (cents: number): string => {
@@ -584,28 +613,28 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         {/* 2. DATE WITH QUICK CHIPS & CUSTOM THEMED DATEPICKER */}
         {/* ========================================================================= */}
         <div>
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Data *</label>
-            <div className="flex items-center gap-1 text-[10px] font-bold">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold">
               <button
                 type="button"
-                onClick={() => setDate(getTodayString())}
-                className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-                  date === getTodayString()
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-100 dark:hover:bg-purple-950/40 hover:text-purple-600'
+                onClick={() => setDate(todayStr)}
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer select-none font-bold ${
+                  date === todayStr
+                    ? activeDatePillColor
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 Hoje
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const d = new Date();
-                  d.setDate(d.getDate() - 1);
-                  setDate(d.toISOString().substring(0, 10));
-                }}
-                className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-slate-600 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer"
+                onClick={() => setDate(yesterdayStr)}
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer select-none font-bold ${
+                  date === yesterdayStr
+                    ? activeDatePillColor
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
               >
                 Ontem
               </button>
@@ -614,6 +643,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <DatePicker
             value={date}
             onChange={setDate}
+            variant="modal"
             showPresets={true}
           />
         </div>
