@@ -23,7 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { apiSync, SyncStatus } from '../../utils/apiSync';
 import { FinlyLogo } from '../ui/FinlyLogo';
 import { useTranslation } from '../../utils/i18n';
-import { openAppUpdateModal, isNativeCapacitor } from '../../utils/appUpdateService';
+import { isNativeCapacitor } from '../../utils/appUpdateService';
 
 interface HeaderProps {
   activeTab?: string;
@@ -266,9 +266,6 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setShowUserMenu(false);
-                  if (isNativeCapacitor()) {
-                    openAppUpdateModal();
-                  }
                   setActiveTab('sobre');
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left cursor-pointer"

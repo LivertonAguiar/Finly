@@ -48,7 +48,6 @@ import {
   APP_VERSION,
   APP_BUILD_DATE,
   checkForAppUpdates,
-  openAppUpdateModal,
   openExternalUrl,
   forceAppReload,
   GITHUB_RELEASES_URL,
@@ -103,7 +102,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   useEffect(() => {
     if (segmentedTab === 'SOBRE' && isNativeCapacitor()) {
       setIsCheckingUpdate(true);
-      checkForAppUpdates()
+      checkForAppUpdates({ notifyIfFound: false, isManualCheck: false })
         .then(res => setUpdateResult(res))
         .catch(() => {
           setUpdateResult({
@@ -236,7 +235,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       colorClass: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60',
       customAction: () => {
         setSegmentedTab('SOBRE');
-        openAppUpdateModal(true);
       },
     },
   ];
@@ -531,16 +529,14 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     onClick={async () => {
                       setIsCheckingUpdate(true);
                       try {
-                        const res = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: true });
+                        const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: false });
                         setUpdateResult(res);
-                        openAppUpdateModal(false);
                       } catch (e) {
                         setUpdateResult({
                           hasUpdate: false,
                           latestVersion: APP_VERSION,
                           notes: 'Não foi possível verificar no momento.',
                         });
-                        openAppUpdateModal(false);
                       } finally {
                         setIsCheckingUpdate(false);
                       }

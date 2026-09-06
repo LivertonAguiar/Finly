@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, X, Smartphone } from 'lucide-react';
-import { checkForAppUpdates, APP_VERSION, isNativeCapacitor, openAppUpdateModal } from '../../utils/appUpdateService';
+import { checkForAppUpdates, APP_VERSION, isNativeCapacitor } from '../../utils/appUpdateService';
 
 interface UpdateNoticeCardProps {
   onGoToUpdate: () => void;
@@ -30,7 +30,7 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
       // Check updates after a short delay on app entry
       const timer = setTimeout(async () => {
         try {
-          const res = await checkForAppUpdates({ notifyIfFound: true });
+          const res = await checkForAppUpdates({ notifyIfFound: false });
           if (res && res.hasUpdate && res.latestVersion) {
             setLatestVersion(res.latestVersion);
             setIsVisible(true);
@@ -57,7 +57,6 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
 
   const handleClick = () => {
     setIsVisible(false);
-    openAppUpdateModal();
     onGoToUpdate();
   };
 

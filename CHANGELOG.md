@@ -5,6 +5,20 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.24] - 2026-09-06
+
+### 🐛 Correções e Melhorias de Experiência do Usuário (UX)
+- **Eliminação de Salto Desnecessário de Telas/Modais**:
+  - Ao clicar na aba **Atualizações & Sobre o Finly** ou no botão **Verificar Atualização**, o app agora navega e atualiza o status diretamente na página, sem abrir modais sobrepostos indesejados.
+  - O fluxo de navegação do menu de usuário (`Header.tsx`) e da central Mais Opções (`MorePage.tsx`) agora direciona suavemente para a página Sobre sem pop-ups intrusivos.
+- **Fim das Notificações Repetidas e Invasivas na Barra de Status**:
+  - Removido o disparo de notificações locais com som e vibração que avisavam "✓ Finly Atualizado" quando o aplicativo já estava na versão mais recente. A confirmação agora é exibida exclusivamente no card visual na tela.
+  - Bloqueada a reemissão de notificações para a mesma versão já comunicada.
+- **Deduplicação de Verificações em Paralelo (Request Lock)**:
+  - Implementada trava Promise em `appUpdateService.ts` (`activeCheckPromise`) para que múltiplas chamadas concorrentes ao abrir a aba não disparem requisições de rede ou eventos duplicados em paralelo.
+
+---
+
 ## [1.1.23] - 2026-09-06
 
 ### 🐛 Correções e Estabilidade

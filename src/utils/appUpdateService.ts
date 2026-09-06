@@ -100,12 +100,32 @@ export const openExternalUrl = (url: string) => {
   }
 };
 
+let activeCheckPromise: Promise<UpdateCheckResult> | null = null;
+
 export const checkForAppUpdates = async (options?: {
   notifyIfFound?: boolean;
   isManualCheck?: boolean;
 }): Promise<UpdateCheckResult> => {
-  const notifyIfFound = options?.notifyIfFound ?? true;
-  const isManualCheck = options?.isManualCheck ?? false;
+  if (activeCheckPromise) {
+    return activeCheckPromise;
+  }
+
+  activeCheckPromise = (async () => {
+    try {
+      return await performCheck(options);
+    } finally {
+      activeCheckPromise = null;
+    }
+  })();
+
+  return activeCheckPromise;
+};
+
+const performCheck = async (options?: {
+  notifyIfFound?: boolean;
+  isManualCheck?: boolean;
+}): Promise<UpdateCheckResult> => {
+  const notifyIfFound = options?.notifyIfFound ?? false;
 
   try {
     // 1. Check server API first with primary and fallback endpoints
@@ -141,15 +161,14 @@ export const checkForAppUpdates = async (options?: {
         source: 'api',
       };
 
-      if (hasUpdate && notifyIfFound && isNativeCapacitor()) {
-        const shouldAlert = isManualCheck || shouldNotifyVersion(serverVer);
-        if (shouldAlert) {
+      if (hasUpdate) {
+        if (notifyIfFound && isNativeCapacitor() && shouldNotifyVersion(serverVer)) {
           markVersionNotified(serverVer);
           sendLocalNotification('🚀 Nova Atualização do Finly Disponível!', {
             body: `A versão v${serverVer} está disponível para download. Toque para atualizar o app.`,
             tag: 'app_update',
             id: 99999,
-            force: true,
+            force: false,
             data: { url: downloadUrl, version: serverVer },
           }).catch(() => {});
         }
@@ -157,13 +176,6 @@ export const checkForAppUpdates = async (options?: {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('finly_app_update_available', { detail: result }));
         }
-      } else if (!hasUpdate && isManualCheck && isNativeCapacitor()) {
-        sendLocalNotification('✓ Finly Atualizado', {
-          body: `Você já está utilizando a versão mais recente do Finly (v${APP_VERSION}).`,
-          tag: 'app_up_to_date',
-          id: 99998,
-          force: true,
-        }).catch(() => {});
       }
 
       return result;
@@ -197,15 +209,14 @@ export const checkForAppUpdates = async (options?: {
           source: 'github',
         };
 
-        if (hasUpdate && notifyIfFound && isNativeCapacitor()) {
-          const shouldAlert = isManualCheck || shouldNotifyVersion(ghVer);
-          if (shouldAlert) {
+        if (hasUpdate) {
+          if (notifyIfFound && isNativeCapacitor() && shouldNotifyVersion(ghVer)) {
             markVersionNotified(ghVer);
             sendLocalNotification('🚀 Nova Atualização do Finly Disponível!', {
               body: `A versão v${ghVer} está disponível para download. Toque para atualizar o app.`,
               tag: 'app_update',
               id: 99999,
-              force: true,
+              force: false,
               data: { url: downloadUrl, version: ghVer },
             }).catch(() => {});
           }
@@ -234,12 +245,13 @@ export const checkForAppUpdates = async (options?: {
             source: 'sw',
           };
 
-          if (notifyIfFound) {
+          if (notifyIfFound && shouldNotifyVersion('sw_new')) {
+            markVersionNotified('sw_new');
             sendLocalNotification('🚀 Nova Versão do Finly!', {
               body: 'Uma nova versão do Finly já foi baixada e está pronta para ser ativada.',
               tag: 'app_update',
               id: 99999,
-              force: true,
+              force: false,
             }).catch(() => {});
           }
 
@@ -248,15 +260,6 @@ export const checkForAppUpdates = async (options?: {
       }
     }
   } catch (_) {}
-
-  if (isManualCheck && isNativeCapacitor()) {
-    sendLocalNotification('✓ Finly Atualizado', {
-      body: `Você já está utilizando a versão mais recente do Finly (v${APP_VERSION}).`,
-      tag: 'app_up_to_date',
-      id: 99998,
-      force: true,
-    }).catch(() => {});
-  }
 
   return {
     hasUpdate: false,

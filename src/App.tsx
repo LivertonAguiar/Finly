@@ -123,7 +123,6 @@ const AppContent: React.FC = () => {
       if (window.location.pathname !== targetPath) {
         window.history.pushState({ tab: 'mais' }, '', targetPath);
       }
-      setIsUpdateModalOpen(true);
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('finly_open_sobre'));
       }, 50);
@@ -142,7 +141,6 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleGoToUpdate = useCallback(() => {
-    setIsUpdateModalOpen(true);
     handleSelectTab('sobre');
   }, [handleSelectTab]);
 

@@ -16,10 +16,32 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.23';
+export const CURRENT_VERSION = '1.1.24';
 export const CURRENT_BUILD_DATE = '2026-09-06';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.24',
+    releaseDate: '2026-09-06',
+    summary: 'Eliminação de popups redundantes, trava contra checagens duplicadas e fim definitivo de notificações repetidas.',
+    highlights: [
+      {
+        title: 'Navegação Direta sem Salto de Telas',
+        description: 'Ao entrar na aba Sobre ou verificar atualizações, o app agora exibe o status diretamente na página, sem abrir modais desnecessários sobre a tela.',
+        type: 'fix',
+      },
+      {
+        title: 'Zero Notificações Falsas ou Invasivas',
+        description: 'Remoção de notificações locais na barra de status quando o app já está atualizado. Notificações só ocorrem quando houver nova versão real.',
+        type: 'fix',
+      },
+      {
+        title: 'Deduplicação de Verificação com Trava de Requisição',
+        description: 'Implementação de bloqueio de requisições simultâneas para evitar que múltiplos componentes disparem checagens e alertas em paralelo.',
+        type: 'perf',
+      },
+    ],
+  },
   {
     version: '1.1.23',
     releaseDate: '2026-09-06',

@@ -41,7 +41,7 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
   const handleCheck = async () => {
     setIsChecking(true);
     try {
-      const res = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: true });
+      const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: false });
       setResult(res);
     } catch (e) {
       setResult({
