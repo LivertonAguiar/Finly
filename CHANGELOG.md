@@ -5,6 +5,20 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.25] - 2026-09-06
+
+### ✨ Novas Funcionalidades
+- **Visualização 100% Idêntica ao App Android (`FinlyAndroidMockup.tsx`)**:
+  - Novo simulador interativo na Central de Ajuda reproduzindo com exatidão a interface do aplicativo Android (Dynamic Island/entalhe, relógio e status do sistema, cabeçalho oficial, menu em arco do Speed Dial com 4 botões e cartões de crédito realistas com chip EMV e botão de pagar fatura).
+- **Central de Ajuda Dedicada ao Mobile**:
+  - Quando acessada pelo aplicativo Android, os seletores e blocos de instrução da versão Desktop são automaticamente ocultados, oferecendo uma experiência 100% limpa e focada no celular.
+
+### ⚡ Melhorias & Otimizações
+- **Separação Estruturada dos Logs de Versão**:
+  - Implementação do componente `ReleaseLogView` para agrupar destaques entre Novas Funcionalidades, Correções & Fixes e Melhorias na aba Sobre, no modal de novidades e no endpoint da API.
+
+---
+
 ## [1.1.24] - 2026-09-06
 
 ### ✨ Novas Funcionalidades

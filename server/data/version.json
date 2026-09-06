@@ -1,30 +1,28 @@
 {
-  "version": "1.1.24",
-  "latestVersion": "1.1.24",
+  "version": "1.1.25",
+  "latestVersion": "1.1.25",
   "releaseDate": "2026-09-06",
-  "notes": "Novidades da v1.1.24: Central de Ajuda & Tutoriais Visuais para Web e Android, Boas-Vindas Móvel, Navegação Direta sem Telas Saltando e Separação Estruturada de Logs de Versão.",
-  "downloadUrl": "https://github.com/LivertonAguiar/planner-financeiro/releases/latest",
+  "notes": "Novidades da v1.1.25: Central de Ajuda com visualização idêntica ao app Android, modo móvel sem poluição desktop e separação estruturada dos logs de versão.",
+  "downloadUrl": "https://github.com/LivertonAguiar/planner-financeiro/releases/download/v1.1.25/finly-v1.1.25.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Central de Ajuda & Tutoriais com Telas Marcadas para Web e Android",
-      "Tela de Boas-Vindas no App Android no primeiro acesso após atualizar"
+      "Visualização 100% idêntica ao app Android no simulador da Central de Ajuda",
+      "Central de Ajuda mobile sem referências ou poluição de telas desktop"
     ],
     "fixes": [
-      "Navegação direta na aba Sobre sem modais ou telas saltando desnecessariamente",
-      "Zero notificações invasivas na barra de status quando o app já está atualizado"
+      "Navegação direta na aba Sobre sem modais saltando desnecessariamente",
+      "Zero notificações intrusivas na barra de status para versões já atualizadas"
     ],
     "improvements": [
-      "Deduplicação de verificação de atualizações com trava Promise",
-      "Separação visual estruturada dos logs de versão (Novidades, Fixes e Melhorias)"
+      "Separação estruturada dos logs de versão (Novidades, Fixes e Melhorias)",
+      "Trava de concorrência Promise para checagem rápida e segura de atualizações"
     ]
   },
   "highlights": [
-    "[Novidade] Central de Ajuda & Tutoriais com Telas Marcadas para Web e Android",
-    "[Novidade] Tela de Boas-Vindas no App Android no primeiro acesso após atualizar",
-    "[Correção] Navegação direta na aba Sobre sem modais ou telas saltando desnecessariamente",
-    "[Correção] Zero notificações invasivas na barra de status quando o app já está atualizado",
-    "[Melhoria] Deduplicação de verificação de atualizações com trava Promise",
-    "[Melhoria] Separação visual estruturada dos logs de versão (Novidades, Fixes e Melhorias)"
+    "[Novidade] Visualização 100% idêntica ao app Android no simulador da Central de Ajuda",
+    "[Novidade] Central de Ajuda mobile sem referências ou poluição de telas desktop",
+    "[Melhoria] Separação estruturada dos logs de versão (Novidades, Fixes e Melhorias)",
+    "[Correção] Navegação direta na aba Sobre sem modais saltando desnecessariamente"
   ]
 }

@@ -34,10 +34,37 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.24';
+export const CURRENT_VERSION = '1.1.25';
 export const CURRENT_BUILD_DATE = '2026-09-06';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.25',
+    releaseDate: '2026-09-06',
+    summary: 'Central de Ajuda com simulador 100% idêntico ao app Android, modo móvel sem poluição desktop e separação categorizada dos logs de versão.',
+    highlights: [
+      {
+        title: 'Visualização 100% Idêntica ao App Android',
+        description: 'Simulador interativo de tutoriais com reprodução fiel da carcaça do celular, entalhe de câmera, menu em arco de ações rápidas e faturas de cartão.',
+        type: 'feature',
+      },
+      {
+        title: 'Central de Ajuda 100% Focada no Celular',
+        description: 'No aplicativo Android, os seletores e caixas de instrução do desktop foram ocultados, exibindo apenas o passo a passo nativo do celular.',
+        type: 'feature',
+      },
+      {
+        title: 'Separação Estruturada dos Logs de Versão',
+        description: 'Destaques divididos visualmente entre Novas Funcionalidades, Correções & Fixes e Melhorias & Otimizações.',
+        type: 'improvement',
+      },
+      {
+        title: 'Navegação Direta e Sem Telas Sobrepostas',
+        description: 'Acesso direto à página Sobre sem salto de modais intrusivos e fim de notificações locais para apps já atualizados.',
+        type: 'fix',
+      },
+    ],
+  },
   {
     version: '1.1.24',
     releaseDate: '2026-09-06',
