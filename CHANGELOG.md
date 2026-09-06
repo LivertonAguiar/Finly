@@ -5,6 +5,14 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.19] - 2026-09-06
+
+### 🐛 Correções e Estabilidade
+- **Correção de Layout Flexbox no Card de Despesas por Categoria**: Solucionado o bug visual no layout horizontal do card de "Despesas por Categoria", onde o rodapé competia horizontalmente no mesmo contêiner flex e esmagava a lista de categorias para largura zero. Agora estruturado com contêiner dedicado para a coluna da direita com barras de progresso, percentuais de aderência ao orçamento e botão de relatórios perfeitamente alinhado.
+- **Suporte Horizontal Expandido para Receitas por Categoria**: Implementado o mesmo padrão de duas colunas responsivo para o card de "Receitas por Categoria".
+
+---
+
 ## [1.1.18] - 2026-09-06
 
 ### ✨ Novidades e Funcionalidades

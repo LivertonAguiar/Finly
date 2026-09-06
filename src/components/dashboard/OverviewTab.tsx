@@ -733,10 +733,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             Nenhuma despesa registrada neste mês.
           </div>
         ) : (
-          <div className={isFullWidth ? "flex flex-col lg:flex-row items-center gap-8 lg:gap-12 pt-2" : "space-y-4 pt-2"}>
-            {/* Donut Chart with Macro Split in the center and Persistent Emoji Badges */}
-            <div className={`relative flex items-center justify-center shrink-0 ${
-              isFullWidth ? "w-full lg:w-[320px] h-64" : "w-full h-64"
+          <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-10 pt-2" : "space-y-4 pt-2"}>
+            {/* Column 1: Donut Chart with Macro Split in the center and Persistent Emoji Badges */}
+            <div className={`relative flex items-center justify-center shrink-0 self-center ${
+              isFullWidth ? "w-full lg:w-[320px] h-64 my-auto" : "w-full h-64"
             }`}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -833,105 +833,107 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               </div>
             </div>
 
-            {/* Category Progress & Adherence Bars - Matching Screenshot Layout */}
-            <div className={isFullWidth ? "flex-1 w-full space-y-3.5 max-h-[380px] overflow-y-auto scrollbar-thin pr-1" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-56 overflow-y-auto scrollbar-thin pr-1"}>
-              {categoryAdherenceList.map((c) => {
-                const isSelected = selectedCategoryFilter === c.id;
-                const hasBudget = c.budgetAmount > 0;
-                const progressPct = hasBudget ? Math.min(100, (c.value / c.budgetAmount) * 100) : 100;
-                const isOverBudget = hasBudget && c.value > c.budgetAmount;
-                const adherenceLabel = `${progressPct.toFixed(0)}%`;
+            {/* Column 2: Category Progress & Adherence Bars + Action Footer */}
+            <div className={isFullWidth ? "flex-1 min-w-0 w-full flex flex-col justify-between space-y-4" : "space-y-4"}>
+              <div className={isFullWidth ? "space-y-3.5 max-h-[350px] overflow-y-auto scrollbar-thin pr-2" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-56 overflow-y-auto scrollbar-thin pr-1"}>
+                {categoryAdherenceList.map((c) => {
+                  const isSelected = selectedCategoryFilter === c.id;
+                  const hasBudget = c.budgetAmount > 0;
+                  const progressPct = hasBudget ? Math.min(100, (c.value / c.budgetAmount) * 100) : 100;
+                  const isOverBudget = hasBudget && c.value > c.budgetAmount;
+                  const adherenceLabel = `${progressPct.toFixed(0)}%`;
 
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => setSelectedCategoryFilter(isSelected ? null : c.id)}
-                    className={`group/cat cursor-pointer transition-all space-y-1.5 p-2 rounded-2xl ${
-                      isSelected
-                        ? 'bg-purple-500/10 ring-1 ring-purple-500/30'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                    }`}
-                  >
-                    {/* Top Row: Icon + Name + Value | Budget, and Percentage */}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Soft square icon badge */}
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => setSelectedCategoryFilter(isSelected ? null : c.id)}
+                      className={`group/cat cursor-pointer transition-all space-y-1.5 p-2 rounded-2xl ${
+                        isSelected
+                          ? 'bg-purple-500/10 ring-1 ring-purple-500/30'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                      }`}
+                    >
+                      {/* Top Row: Icon + Name + Value | Budget, and Percentage */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Soft square icon badge */}
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 shadow-2xs transition-transform group-hover/cat:scale-105"
+                            style={{
+                              backgroundColor: c.color ? `${c.color}18` : '#f1f5f9',
+                            }}
+                          >
+                            {c.icon || '🏷️'}
+                          </div>
+
+                          {/* Category Name & Amount | Budget */}
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {c.name}
+                            </h4>
+                            <p className="text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                              {formatCurrency(c.value, user.currency, !user.showValues)}
+                              <span className="mx-1 text-slate-300 dark:text-slate-600">|</span>
+                              {formatCurrency(c.budgetAmount, user.currency, !user.showValues)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Percentage on the right */}
+                        <div className="text-right shrink-0">
+                          <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                            {adherenceLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Full-width horizontal colored progress bar */}
+                      <div className="w-full bg-slate-100 dark:bg-slate-800/90 h-1.5 rounded-full overflow-hidden">
                         <div
-                          className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 shadow-2xs transition-transform group-hover/cat:scale-105"
                           style={{
-                            backgroundColor: c.color ? `${c.color}18` : '#f1f5f9',
+                            width: `${Math.min(100, Math.max(3, progressPct))}%`,
+                            backgroundColor: isOverBudget ? '#ef5350' : c.color || '#7C4DFF',
                           }}
-                        >
-                          {c.icon || '🏷️'}
-                        </div>
-
-                        {/* Category Name & Amount | Budget */}
-                        <div className="min-w-0">
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                            {c.name}
-                          </h4>
-                          <p className="text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                            {formatCurrency(c.value, user.currency, !user.showValues)}
-                            <span className="mx-1 text-slate-300 dark:text-slate-600">|</span>
-                            {formatCurrency(c.budgetAmount, user.currency, !user.showValues)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Percentage on the right */}
-                      <div className="text-right shrink-0">
-                        <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200">
-                          {adherenceLabel}
-                        </span>
+                          className="h-full rounded-full transition-all duration-500"
+                        />
                       </div>
                     </div>
-
-                    {/* Full-width horizontal colored progress bar */}
-                    <div className="w-full bg-slate-100 dark:bg-slate-800/90 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        style={{
-                          width: `${Math.min(100, Math.max(3, progressPct))}%`,
-                          backgroundColor: isOverBudget ? '#ef5350' : c.color || '#7C4DFF',
-                        }}
-                        className="h-full rounded-full transition-all duration-500"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {selectedCategoryFilter && (
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-200 dark:border-slate-800/80 space-y-2 animate-in fade-in w-full">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    Transações ({filteredTxsForCategory.length})
-                  </span>
-                  <button
-                    onClick={() => setSelectedCategoryFilter(null)}
-                    className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
-                  >
-                    Limpar filtro
-                  </button>
-                </div>
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-32 overflow-y-auto pr-1">
-                  {filteredTxsForCategory.map(tx => (
-                    <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
-                      <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
-                      <span className="font-black text-[#ef5350] shrink-0">{formatCurrency(tx.amount, user.currency)}</span>
-                    </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end w-full">
-              <button
-                onClick={() => setActiveTab('relatorios')}
-                className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
-              >
-                VER MAIS RELATÓRIOS <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              {selectedCategoryFilter && (
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-200 dark:border-slate-800/80 space-y-2 animate-in fade-in w-full">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      Transações ({filteredTxsForCategory.length})
+                    </span>
+                    <button
+                      onClick={() => setSelectedCategoryFilter(null)}
+                      className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+                    >
+                      Limpar filtro
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-32 overflow-y-auto pr-1">
+                    {filteredTxsForCategory.map(tx => (
+                      <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
+                        <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
+                        <span className="font-black text-[#ef5350] shrink-0">{formatCurrency(tx.amount, user.currency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end w-full">
+                <button
+                  onClick={() => setActiveTab('relatorios')}
+                  className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+                >
+                  VER MAIS RELATÓRIOS <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1511,7 +1513,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   );
 
   // Right 1: Receitas por Categoria
-  const renderReceitasCategoria = () => (
+  const renderReceitasCategoria = (isFullWidth: boolean = false) => (
     <div key="receitasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
       <div className="flex items-center justify-between">
         <div>
@@ -1526,8 +1528,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           Nenhuma receita registrada neste mês.
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="relative h-60 w-full flex items-center justify-center">
+        <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-10 pt-2" : "space-y-4"}>
+          <div className={`relative flex items-center justify-center shrink-0 self-center ${
+            isFullWidth ? "w-full lg:w-[320px] h-64 my-auto" : "w-full h-60"
+          }`}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -1610,30 +1614,32 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-40 overflow-y-auto scrollbar-thin pr-1">
-            {incomeCategoryChartData.slice(0, 5).map((c, i) => (
-              <div key={i} className="flex items-center justify-between text-xs py-1">
-                <div className="flex items-center gap-2 truncate min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                  <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
-                    {c.icon} {c.name}
-                  </span>
+          <div className={isFullWidth ? "flex-1 min-w-0 w-full flex flex-col justify-between space-y-4" : "space-y-4"}>
+            <div className={isFullWidth ? "space-y-2.5 max-h-[350px] overflow-y-auto scrollbar-thin pr-2" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-40 overflow-y-auto scrollbar-thin pr-1"}>
+              {(isFullWidth ? incomeCategoryChartData : incomeCategoryChartData.slice(0, 5)).map((c, i) => (
+                <div key={i} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                  <div className="flex items-center gap-2 truncate min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                    <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
+                      {c.icon} {c.name}
+                    </span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
+                    <span className="text-[10px] text-slate-400 block font-semibold">{c.percentage.toFixed(1)}%</span>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
-                  <span className="text-[10px] text-slate-400 block font-semibold">{c.percentage.toFixed(1)}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
-            <button
-              onClick={() => setActiveTab('relatorios')}
-              className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
-            >
-              VER MAIS <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+              <button
+                onClick={() => setActiveTab('relatorios')}
+                className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+              >
+                VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@
  */
 import { getApiUrl } from '../services/apiConfig';
 
-export const APP_VERSION = '1.1.18';
+export const APP_VERSION = '1.1.19';
 export const APP_BUILD_DATE = '2026-09-06';
 export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/planner-financeiro';
 export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/planner-financeiro/actions';
