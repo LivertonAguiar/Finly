@@ -3,11 +3,29 @@
  * Single Source of Truth for App Versioning, Changelog and In-App Release Notes.
  */
 
+export type ReleaseType = 'feature' | 'fix' | 'improvement' | 'visual' | 'perf';
+
 export interface ReleaseHighlight {
   title: string;
   description: string;
-  type?: 'feature' | 'fix' | 'visual' | 'perf';
+  type: ReleaseType;
 }
+
+export interface GroupedHighlights {
+  features: ReleaseHighlight[];
+  fixes: ReleaseHighlight[];
+  improvements: ReleaseHighlight[];
+}
+
+export const groupReleaseHighlights = (highlights: ReleaseHighlight[]): GroupedHighlights => {
+  return {
+    features: highlights.filter(h => h.type === 'feature'),
+    fixes: highlights.filter(h => h.type === 'fix'),
+    improvements: highlights.filter(
+      h => h.type === 'improvement' || h.type === 'visual' || h.type === 'perf'
+    ),
+  };
+};
 
 export interface ReleaseInfo {
   version: string;
@@ -23,22 +41,37 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: '1.1.24',
     releaseDate: '2026-09-06',
-    summary: 'Eliminação de popups redundantes, trava contra checagens duplicadas e fim definitivo de notificações repetidas.',
+    summary: 'Nova Central de Ajuda com tutoriais visuais para Web e Android, tela de boas-vindas móvel, fim de popups redundantes e logs categorizados.',
     highlights: [
       {
+        title: 'Central de Ajuda & Tutoriais com Telas Marcadas',
+        description: 'Nova base de conhecimento completa com tutoriais passo a passo, diagramas interativos com pinos numerados para Web e Android, FAQ e Helpdesk de suporte.',
+        type: 'feature',
+      },
+      {
+        title: 'Tela de Boas-Vindas no App Android',
+        description: 'Exibição da tela de novidades e notas de versão no primeiro acesso após a atualização no aplicativo Android nativo, com fechamento suave no botão voltar.',
+        type: 'feature',
+      },
+      {
         title: 'Navegação Direta sem Salto de Telas',
-        description: 'Ao entrar na aba Sobre ou verificar atualizações, o app agora exibe o status diretamente na página, sem abrir modais desnecessários sobre a tela.',
+        description: 'Ao entrar na aba Sobre ou verificar atualizações, o app agora exibe o status diretamente na página, sem abrir modais sobrepostos indesejados.',
         type: 'fix',
       },
       {
-        title: 'Zero Notificações Falsas ou Invasivas',
-        description: 'Remoção de notificações locais na barra de status quando o app já está atualizado. Notificações só ocorrem quando houver nova versão real.',
+        title: 'Zero Notificações Invasivas na Barra de Status',
+        description: 'Remoção de notificações locais na barra de status quando o app já está atualizado. Notificações só disparam quando houver nova versão real.',
         type: 'fix',
       },
       {
-        title: 'Deduplicação de Verificação com Trava de Requisição',
-        description: 'Implementação de bloqueio de requisições simultâneas para evitar que múltiplos componentes disparem checagens e alertas em paralelo.',
-        type: 'perf',
+        title: 'Deduplicação de Verificação com Trava Promise',
+        description: 'Bloqueio de requisições simultâneas para evitar que múltiplos componentes disparem checagens e alertas em paralelo.',
+        type: 'improvement',
+      },
+      {
+        title: 'Separação Estruturada dos Logs de Versão',
+        description: 'Organização visual dos registros entre Novas Funcionalidades, Correções & Fixes e Melhorias & Otimizações.',
+        type: 'improvement',
       },
     ],
   },

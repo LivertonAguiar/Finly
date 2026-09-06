@@ -3,6 +3,7 @@ import { Sparkles, X, Check, ArrowRight, Layers, ShieldCheck, Zap } from 'lucide
 import { CURRENT_VERSION, CURRENT_RELEASE } from '../../data/releases';
 import { isNativeCapacitor } from '../../utils/appUpdateService';
 import { useBackButton } from '../../hooks/useBackButton';
+import { ReleaseLogView } from './ReleaseLogView';
 
 interface WhatsNewModalProps {
   isOpen?: boolean;
@@ -100,26 +101,9 @@ export const WhatsNewModal: React.FC<WhatsNewModalProps> = ({
           </div>
         </div>
 
-        {/* Highlights List */}
-        <div className="space-y-2.5 mb-6 max-h-[48vh] overflow-y-auto pr-1">
-          {CURRENT_RELEASE.highlights.map((item, idx) => (
-            <div
-              key={idx}
-              className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/80 flex items-start gap-3"
-            >
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">
-                {idx + 1}
-              </div>
-              <div className="space-y-0.5">
-                <h5 className="text-xs font-black text-slate-800 dark:text-slate-200">
-                  {item.title}
-                </h5>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
-            </div>
-          ))}
+        {/* Highlights List Categorizada */}
+        <div className="mb-6 max-h-[50vh] overflow-y-auto pr-1">
+          <ReleaseLogView highlights={CURRENT_RELEASE.highlights} />
         </div>
 
         {/* Actions */}

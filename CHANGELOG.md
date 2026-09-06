@@ -7,13 +7,26 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.24] - 2026-09-06
 
-### 🐛 Correções e Melhorias de Experiência do Usuário (UX)
+### ✨ Novas Funcionalidades
+- **Central de Ajuda & Tutoriais Visuais (`HelpCenterPage.tsx`)**:
+  - Nova central completa de documentação com tutoriais passo a passo para Web e Android.
+  - Diagramas visuais interativos com marcações e pinos numerados para orientar novos usuários em cada fluxo financeiro.
+  - Seções dedicadas: Lançamentos & Contas, Cartões de Crédito & Faturas, Metas Financeiras, Orçamentos, Importação Bancária OFX e Configurações/Atualizações.
+  - Acesso direto a partir da barra lateral (`HelpCircle`) e atalhos rápidos.
+- **Tela de Boas-Vindas no App Android**:
+  - Exibição automática do modal de novidades no primeiro acesso após atualizar o app nativo Android, com suporte ao botão físico de voltar.
+
+### 🐛 Correções & Fixes
 - **Eliminação de Salto Desnecessário de Telas/Modais**:
   - Ao clicar na aba **Atualizações & Sobre o Finly** ou no botão **Verificar Atualização**, o app agora navega e atualiza o status diretamente na página, sem abrir modais sobrepostos indesejados.
   - O fluxo de navegação do menu de usuário (`Header.tsx`) e da central Mais Opções (`MorePage.tsx`) agora direciona suavemente para a página Sobre sem pop-ups intrusivos.
 - **Fim das Notificações Repetidas e Invasivas na Barra de Status**:
   - Removido o disparo de notificações locais com som e vibração que avisavam "✓ Finly Atualizado" quando o aplicativo já estava na versão mais recente. A confirmação agora é exibida exclusivamente no card visual na tela.
   - Bloqueada a reemissão de notificações para a mesma versão já comunicada.
+
+### ⚡ Melhorias & Otimizações
+- **Separação Estruturada dos Logs de Versão**:
+  - Registro e exibição categorizada de atualizações entre *Novas Funcionalidades*, *Correções & Fixes* e *Melhorias & Otimizações*, aplicados à aba Sobre (`MorePage.tsx`), ao modal de novidades (`WebWhatsNewModal.tsx`), à API do backend (`version.json`) e ao `CHANGELOG.md`.
 - **Deduplicação de Verificações em Paralelo (Request Lock)**:
   - Implementada trava Promise em `appUpdateService.ts` (`activeCheckPromise`) para que múltiplas chamadas concorrentes ao abrir a aba não disparem requisições de rede ou eventos duplicados em paralelo.
 

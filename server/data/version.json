@@ -2,13 +2,29 @@
   "version": "1.1.24",
   "latestVersion": "1.1.24",
   "releaseDate": "2026-09-06",
-  "notes": "Novidades da v1.1.24: Navegação direta sem salto de telas desnecessárias, fim de alertas repetidos e trava contra checagens concorrentes.",
+  "notes": "Novidades da v1.1.24: Central de Ajuda & Tutoriais Visuais para Web e Android, Boas-Vindas Móvel, Navegação Direta sem Telas Saltando e Separação Estruturada de Logs de Versão.",
   "downloadUrl": "https://github.com/LivertonAguiar/planner-financeiro/releases/latest",
   "isLatest": true,
+  "sections": {
+    "features": [
+      "Central de Ajuda & Tutoriais com Telas Marcadas para Web e Android",
+      "Tela de Boas-Vindas no App Android no primeiro acesso após atualizar"
+    ],
+    "fixes": [
+      "Navegação direta na aba Sobre sem modais ou telas saltando desnecessariamente",
+      "Zero notificações invasivas na barra de status quando o app já está atualizado"
+    ],
+    "improvements": [
+      "Deduplicação de verificação de atualizações com trava Promise",
+      "Separação visual estruturada dos logs de versão (Novidades, Fixes e Melhorias)"
+    ]
+  },
   "highlights": [
-    "Navegação direta na aba Sobre sem modais ou telas saltando desnecessariamente",
-    "Fim definitivo de notificações invasivas quando o app já está atualizado",
-    "Trava de requisição Promise contra chamadas e notificações duplicadas",
-    "Atualização rápida e em tempo real do status na página"
+    "[Novidade] Central de Ajuda & Tutoriais com Telas Marcadas para Web e Android",
+    "[Novidade] Tela de Boas-Vindas no App Android no primeiro acesso após atualizar",
+    "[Correção] Navegação direta na aba Sobre sem modais ou telas saltando desnecessariamente",
+    "[Correção] Zero notificações invasivas na barra de status quando o app já está atualizado",
+    "[Melhoria] Deduplicação de verificação de atualizações com trava Promise",
+    "[Melhoria] Separação visual estruturada dos logs de versão (Novidades, Fixes e Melhorias)"
   ]
 }

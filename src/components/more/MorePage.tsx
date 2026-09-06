@@ -43,6 +43,7 @@ import {
 } from '../../utils/sidebarConfig';
 import { SidebarCustomizerModal } from '../layout/SidebarCustomizerModal';
 import { WebWhatsNewModal } from '../common/WebWhatsNewModal';
+import { ReleaseLogView } from '../common/ReleaseLogView';
 import { useTranslation } from '../../utils/i18n';
 import { CURRENT_RELEASE, RELEASES } from '../../data/releases';
 import {
@@ -714,17 +715,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                 </span>
               </div>
 
-              <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                {CURRENT_RELEASE.highlights.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-500 mt-1.5 shrink-0 shadow-sm shadow-purple-500/50" />
-                    <div>
-                      <strong className="text-slate-800 dark:text-slate-200">{item.title}:</strong>{' '}
-                      <span className="text-slate-600 dark:text-slate-400 leading-relaxed">{item.description}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <ReleaseLogView highlights={CURRENT_RELEASE.highlights} />
 
               {/* Botao para Expandir Historico de Versoes */}
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
@@ -749,14 +740,9 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                           <span className="text-[10px] text-slate-400">{rel.releaseDate}</span>
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{rel.summary}</p>
-                        <ul className="space-y-1 pl-1">
-                          {rel.highlights.map((h, hIdx) => (
-                            <li key={hIdx} className="text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-1.5">
-                              <span className="text-purple-400 text-xs leading-none">•</span>
-                              <span><strong>{h.title}:</strong> {h.description}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        <div className="pt-1">
+                          <ReleaseLogView highlights={rel.highlights} compact />
+                        </div>
                       </div>
                     ))}
                   </div>
