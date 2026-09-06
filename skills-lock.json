@@ -211,6 +211,12 @@
       "skillPath": "skills/token-optimizer/SKILL.md",
       "computedHash": "464035a47e72fd154551a00707c54cd6c85664c4bd8e3e5320c3fae7728db54c"
     },
+    "tutorial-docs": {
+      "source": "existential-birds/beagle",
+      "sourceType": "github",
+      "skillPath": "plugins/beagle-docs/skills/tutorial-docs/SKILL.md",
+      "computedHash": "1e2f34a0c84f5494830c6191d9fb62c35c047d7d99baa56493f0834f1fb9ffba"
+    },
     "typeui-fundamentals": {
       "source": "bergside/typeui",
       "sourceType": "github",

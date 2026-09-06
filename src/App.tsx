@@ -31,6 +31,7 @@ import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
 import { AppUpdateModal } from './components/common/AppUpdateModal';
 import { WebWhatsNewModal } from './components/common/WebWhatsNewModal';
+import { HelpCenterPage } from './components/help/HelpCenterPage';
 import { setRootBackHandler } from './utils/backButtonManager';
 
 const TAB_TO_PATH: Record<string, string> = {
@@ -53,6 +54,7 @@ const TAB_TO_PATH: Record<string, string> = {
   familia: '/familia',
   cadastro: '/cadastro',
   perfil: '/perfil',
+  ajuda: '/ajuda',
 };
 
 const getInitialTabFromPath = (): string => {
@@ -301,6 +303,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'familia' && <FamilyPage />}
             {activeTab === 'cadastro' && <CadastrosPage />}
             {activeTab === 'perfil' && <ProfilePage />}
+            {activeTab === 'ajuda' && <HelpCenterPage onNavigateToTab={handleSelectTab} />}
           </div>
         </main>
         </PullToRefresh>

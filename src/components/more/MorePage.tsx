@@ -32,6 +32,7 @@ import {
   ChevronDown,
   ChevronUp,
   History,
+  LifeBuoy,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -226,6 +227,13 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       description: 'Preferências gerais, tema, moeda e dados',
       icon: Settings,
       colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+    },
+    {
+      id: 'ajuda',
+      label: 'Central de Ajuda & Tutoriais',
+      description: 'Guias visuais passo a passo para Web e Android, FAQ e suporte',
+      icon: LifeBuoy,
+      colorClass: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60',
     },
     {
       id: 'sobre',

@@ -17,6 +17,7 @@ import {
   Sparkles,
   BadgePercent,
   User,
+  LifeBuoy,
   LucideIcon,
 } from 'lucide-react';
 
@@ -134,6 +135,13 @@ export const ALL_SIDEBAR_ITEMS: SidebarItemDef[] = [
     icon: Settings,
     category: 'gestao',
   },
+  {
+    id: 'ajuda',
+    label: 'Central de Ajuda',
+    description: 'Tutoriais visuais, guias passo a passo e FAQ',
+    icon: LifeBuoy,
+    category: 'gestao',
+  },
 ];
 
 export const DEFAULT_SIDEBAR_ORDER: string[] = [
@@ -171,6 +179,7 @@ export const getSidebarItemLabel = (id: string, lang: SupportedLanguage = 'pt-BR
     cadastro: 'nav.categories',
     familia: 'nav.family',
     settings: 'nav.settings',
+    ajuda: 'nav.help',
     mais: 'nav.more',
   };
   return t(keyMap[id] || `nav.${id}`, lang, defaultLabel);
