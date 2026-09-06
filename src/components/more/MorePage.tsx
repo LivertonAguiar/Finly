@@ -43,6 +43,7 @@ import {
   APP_VERSION,
   APP_BUILD_DATE,
   checkForAppUpdates,
+  openAppUpdateModal,
   openExternalUrl,
   forceAppReload,
   GITHUB_RELEASES_URL,
@@ -220,6 +221,17 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       icon: Settings,
       colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
     },
+    {
+      id: 'sobre',
+      label: 'Atualizações & Sobre o Finly',
+      description: `Versão instalada v${APP_VERSION} • Verificar atualizações e novidades`,
+      icon: Sparkles,
+      colorClass: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60',
+      customAction: () => {
+        setSegmentedTab('SOBRE');
+        openAppUpdateModal(true);
+      },
+    },
   ];
 
   // Filter out any items that are already active in the sidebar (ZERO DUPLICITY)
@@ -321,7 +333,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => ((item as any).customAction ? (item as any).customAction() : setActiveTab(item.id))}
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#1E1E22] transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3.5">
@@ -500,14 +512,16 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   onClick={async () => {
                     setIsCheckingUpdate(true);
                     try {
-                      const res = await checkForAppUpdates();
+                      const res = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: true });
                       setUpdateResult(res);
+                      openAppUpdateModal(false);
                     } catch (e) {
                       setUpdateResult({
                         hasUpdate: false,
                         latestVersion: APP_VERSION,
                         notes: 'Não foi possível verificar no momento.',
                       });
+                      openAppUpdateModal(false);
                     } finally {
                       setIsCheckingUpdate(false);
                     }

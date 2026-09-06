@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Sparkles,
@@ -14,13 +14,15 @@ import {
   APP_VERSION,
   APP_BUILD_DATE,
   GITHUB_ACTIONS_URL,
+  GITHUB_RELEASES_URL,
   checkForAppUpdates,
+  openExternalUrl,
   forceAppReload,
   isNativeCapacitor,
   getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
-import { FinlyLogo } from '../ui/FinlyLogo';
+import { useBackButton } from '../../hooks/useBackButton';
 
 interface AppUpdateModalProps {
   isOpen: boolean;
@@ -32,12 +34,13 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
   const [result, setResult] = useState<UpdateCheckResult | null>(null);
   const [isReloading, setIsReloading] = useState(false);
 
-  if (!isOpen) return null;
+  // Close modal on Android physical back gesture
+  useBackButton(isOpen, onClose);
 
   const handleCheck = async () => {
     setIsChecking(true);
     try {
-      const res = await checkForAppUpdates();
+      const res = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: true });
       setResult(res);
     } catch (e) {
       setResult({
@@ -55,7 +58,14 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
     await forceAppReload();
   };
 
-  const isNative = isNativeCapacitor();
+  // Auto-check on modal open if not checked yet
+  useEffect(() => {
+    if (isOpen) {
+      handleCheck();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
@@ -142,17 +152,24 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
             <span>{isChecking ? 'Verificando atualizações...' : 'Verificar Atualizações Agora'}</span>
           </button>
 
-          {/* Download Latest APK Link */}
-          <a
-            href={GITHUB_ACTIONS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+          {/* Download Latest APK Button */}
+          <button
+            type="button"
+            onClick={() => openExternalUrl(result?.downloadUrl || GITHUB_RELEASES_URL)}
+            className={`w-full py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${
+              result?.hasUpdate
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/25 animate-pulse'
+                : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200'
+            }`}
           >
-            <Download className="w-4 h-4 text-emerald-500" />
-            <span>Baixar APK Atualizado (GitHub)</span>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400 ml-auto" />
-          </a>
+            <Download className={`w-4 h-4 ${result?.hasUpdate ? 'text-white' : 'text-emerald-500'}`} />
+            <span>
+              {result?.hasUpdate
+                ? `Baixar Atualização v${result.latestVersion} (APK)`
+                : 'Baixar APK do Aplicativo (Android)'}
+            </span>
+            <ExternalLink className="w-3.5 h-3.5 opacity-70 ml-auto" />
+          </button>
 
           {/* Force Reload / Cache Wipe */}
           <button

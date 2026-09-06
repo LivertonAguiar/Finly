@@ -2,9 +2,10 @@
  * Finly App Update & Cache Service
  * Handles in-app version inspection, manual cache clearing, and APK update downloads.
  */
-import { getApiUrl } from '../services/apiConfig';
+import { getApiUrl, PRODUCTION_API_URL } from '../services/apiConfig';
+import { sendLocalNotification } from './notificationEngine';
 
-export const APP_VERSION = '1.1.19';
+export const APP_VERSION = '1.1.20';
 export const APP_BUILD_DATE = '2026-09-06';
 export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/planner-financeiro';
 export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/planner-financeiro/actions';
@@ -54,6 +55,15 @@ export const getPlatformLabel = (): string => {
 };
 
 /**
+ * Dispatches a global event to open the AppUpdateModal from anywhere in the app
+ */
+export const openAppUpdateModal = (autoCheck: boolean = true) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('finly_open_update_modal', { detail: { autoCheck } }));
+  }
+};
+
+/**
  * Opens an external URL safely in mobile Android WebView or Desktop browser
  */
 export const openExternalUrl = (url: string) => {
@@ -70,28 +80,69 @@ export const openExternalUrl = (url: string) => {
   }
 };
 
-export const checkForAppUpdates = async (): Promise<UpdateCheckResult> => {
+export const checkForAppUpdates = async (options?: {
+  notifyIfFound?: boolean;
+  isManualCheck?: boolean;
+}): Promise<UpdateCheckResult> => {
+  const notifyIfFound = options?.notifyIfFound ?? true;
+  const isManualCheck = options?.isManualCheck ?? false;
+
   try {
-    // 1. Check local server API first
-    const apiEndpoint = getApiUrl('/api/app/version');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
+    // 1. Check server API first with primary and fallback endpoints
+    let apiRes: Response | null = null;
+    try {
+      const apiEndpoint = getApiUrl('/api/app/version');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      apiRes = await fetch(apiEndpoint, { signal: controller.signal });
+      clearTimeout(timeoutId);
+    } catch (primaryErr) {
+      console.warn('Primary version check failed, attempting direct production fallback:', primaryErr);
+      try {
+        const fallbackUrl = `${PRODUCTION_API_URL}/api/app/version`;
+        const controller2 = new AbortController();
+        const timeoutId2 = setTimeout(() => controller2.abort(), 4500);
+        apiRes = await fetch(fallbackUrl, { signal: controller2.signal });
+        clearTimeout(timeoutId2);
+      } catch (_) {}
+    }
 
-    const apiRes = await fetch(apiEndpoint, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (apiRes.ok) {
+    if (apiRes && apiRes.ok) {
       const serverInfo = await apiRes.json();
-      const serverVer = (serverInfo.version || '').replace(/^v/, '');
+      const serverVer = (serverInfo.latestVersion || serverInfo.version || '').replace(/^v/, '');
       const hasUpdate = isNewerVersion(serverVer, APP_VERSION);
-      
-      return {
+      const downloadUrl = serverInfo.downloadUrl || GITHUB_RELEASES_URL;
+
+      const result: UpdateCheckResult = {
         hasUpdate,
         latestVersion: serverVer || APP_VERSION,
         notes: serverInfo.notes || 'Melhorias de desempenho e novas funcionalidades financeiras.',
-        downloadUrl: serverInfo.downloadUrl || GITHUB_RELEASES_URL,
+        downloadUrl,
         source: 'api',
       };
+
+      if (hasUpdate && notifyIfFound) {
+        sendLocalNotification('🚀 Nova Atualização do Finly Disponível!', {
+          body: `A versão v${serverVer} está disponível para download. Toque para atualizar o app.`,
+          tag: 'app_update',
+          id: 99999,
+          force: true,
+          data: { url: downloadUrl, version: serverVer },
+        }).catch(() => {});
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('finly_app_update_available', { detail: result }));
+        }
+      } else if (!hasUpdate && isManualCheck) {
+        sendLocalNotification('✓ Finly Atualizado', {
+          body: `Você já está utilizando a versão mais recente do Finly (v${APP_VERSION}).`,
+          tag: 'app_up_to_date',
+          id: 99998,
+          force: true,
+        }).catch(() => {});
+      }
+
+      return result;
     }
   } catch (err) {
     console.warn('API version check error, falling back to GitHub/PWA:', err);
@@ -113,13 +164,30 @@ export const checkForAppUpdates = async (): Promise<UpdateCheckResult> => {
       if (ghVer) {
         const hasUpdate = isNewerVersion(ghVer, APP_VERSION);
         const apkAsset = ghData.assets?.find((a: any) => typeof a.name === 'string' && a.name.endsWith('.apk'));
-        return {
+        const downloadUrl = apkAsset?.browser_download_url || ghData.html_url || GITHUB_RELEASES_URL;
+        const result: UpdateCheckResult = {
           hasUpdate,
           latestVersion: ghVer,
           notes: ghData.body || 'Nova versão disponível no repositório oficial.',
-          downloadUrl: apkAsset?.browser_download_url || ghData.html_url || GITHUB_RELEASES_URL,
+          downloadUrl,
           source: 'github',
         };
+
+        if (hasUpdate && notifyIfFound) {
+          sendLocalNotification('🚀 Nova Atualização do Finly Disponível!', {
+            body: `A versão v${ghVer} está disponível para download. Toque para atualizar o app.`,
+            tag: 'app_update',
+            id: 99999,
+            force: true,
+            data: { url: downloadUrl, version: ghVer },
+          }).catch(() => {});
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('finly_app_update_available', { detail: result }));
+          }
+        }
+
+        return result;
       }
     }
   } catch (_) {}
@@ -131,16 +199,36 @@ export const checkForAppUpdates = async (): Promise<UpdateCheckResult> => {
       if (reg) {
         await reg.update();
         if (reg.waiting) {
-          return {
+          const swResult: UpdateCheckResult = {
             hasUpdate: true,
             latestVersion: 'Nova versão pronta!',
             notes: 'Uma nova versão do Finly já foi baixada e está pronta para ser ativada.',
             source: 'sw',
           };
+
+          if (notifyIfFound) {
+            sendLocalNotification('🚀 Nova Versão do Finly!', {
+              body: 'Uma nova versão do Finly já foi baixada e está pronta para ser ativada.',
+              tag: 'app_update',
+              id: 99999,
+              force: true,
+            }).catch(() => {});
+          }
+
+          return swResult;
         }
       }
     }
   } catch (_) {}
+
+  if (isManualCheck) {
+    sendLocalNotification('✓ Finly Atualizado', {
+      body: `Você já está utilizando a versão mais recente do Finly (v${APP_VERSION}).`,
+      tag: 'app_up_to_date',
+      id: 99998,
+      force: true,
+    }).catch(() => {});
+  }
 
   return {
     hasUpdate: false,

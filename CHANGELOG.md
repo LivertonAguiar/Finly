@@ -5,6 +5,21 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.20] - 2026-09-06
+
+### 🐛 Correções e Melhorias no Aplicativo Mobile
+- **Correção da Verificação de Atualizações no App Android**:
+  - Ajustado o roteamento de endpoints no ambiente Capacitor nativo (`apiConfig.ts`) para apontar automaticamente para o servidor de produção `https://finly.lpaguiar.com.br`, evitando falhas de conexão de rede em `http://localhost`.
+  - Adicionado fallback automático resiliente para o servidor de produção caso o endpoint principal falhe.
+- **Notificações em Tempo Real de Novas Versões**:
+  - Disparo automático de notificações nativas no Android (`@capacitor/local-notifications`) e banner toast visual no app (`InAppNotificationToast`) quando uma nova versão for detectada.
+  - Alertas de atualização prioritários não são silenciados por preferências gerais de notificação.
+- **Abertura Imediata do Modal de Atualização (`AppUpdateModal`)**:
+  - Ao tocar em "Verificar Atualização", "Atualizações do App" ou no aviso flutuante, a central de atualização é aberta imediatamente com verificação em tempo real, changelog e botão direto para download do APK via navegador padrão do celular.
+  - Suporte ao botão físico de voltar do Android (`useBackButton`) para fechar o modal suavemente.
+
+---
+
 ## [1.1.19] - 2026-09-06
 
 ### 🐛 Correções e Estabilidade

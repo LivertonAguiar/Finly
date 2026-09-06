@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, X, Smartphone } from 'lucide-react';
-import { checkForAppUpdates, APP_VERSION, isNativeCapacitor } from '../../utils/appUpdateService';
+import { checkForAppUpdates, APP_VERSION, isNativeCapacitor, openAppUpdateModal } from '../../utils/appUpdateService';
 
 interface UpdateNoticeCardProps {
   onGoToUpdate: () => void;
@@ -13,25 +13,40 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
   const [latestVersion, setLatestVersion] = useState<string>('');
 
   useEffect(() => {
-    // Only display update notice popup on Native Mobile Android App (Not on Web)
-    if (!isNativeCapacitor()) return;
+    // Listen for real-time app update detection event
+    const handleUpdateAvailable = (e: any) => {
+      const detail = e.detail;
+      if (detail && (detail.hasUpdate || detail.latestVersion !== APP_VERSION)) {
+        setLatestVersion(detail.latestVersion);
+        setIsVisible(true);
+      }
+    };
+
+    window.addEventListener('finly_app_update_available', handleUpdateAvailable);
 
     // Check if dismissed in this session
     const dismissed = sessionStorage.getItem(DISMISS_KEY);
-    if (dismissed) return;
+    if (!dismissed) {
+      // Check updates after a short delay on app entry
+      const timer = setTimeout(async () => {
+        try {
+          const res = await checkForAppUpdates({ notifyIfFound: true });
+          if (res.hasUpdate || res.latestVersion !== APP_VERSION) {
+            setLatestVersion(res.latestVersion);
+            setIsVisible(true);
+          }
+        } catch (_) {}
+      }, 1200);
 
-    // Check updates after a short delay on app entry
-    const timer = setTimeout(async () => {
-      try {
-        const res = await checkForAppUpdates();
-        if (res.hasUpdate || res.latestVersion !== APP_VERSION) {
-          setLatestVersion(res.latestVersion);
-          setIsVisible(true);
-        }
-      } catch (_) {}
-    }, 1200);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('finly_app_update_available', handleUpdateAvailable);
+      };
+    }
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.removeEventListener('finly_app_update_available', handleUpdateAvailable);
+    };
   }, []);
 
   const handleDismiss = (e: React.MouseEvent) => {
@@ -42,6 +57,7 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
 
   const handleClick = () => {
     setIsVisible(false);
+    openAppUpdateModal();
     onGoToUpdate();
   };
 

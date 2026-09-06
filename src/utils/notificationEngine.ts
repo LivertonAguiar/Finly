@@ -190,11 +190,9 @@ export async function sendLocalNotification(
     badge?: string;
     data?: any;
     id?: number;
+    force?: boolean;
   }
 ): Promise<boolean> {
-  const prefs = getStoredNotificationPrefs();
-  if (!prefs.enabled) return false;
-
   // Always emit an in-app notification event so active users see a visual toast immediately
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
@@ -208,8 +206,12 @@ export async function sendLocalNotification(
     );
   }
 
+  const prefs = getStoredNotificationPrefs();
+  const isPriorityAlert = options.force || options.tag === 'app_update' || options.tag === 'app_up_to_date' || options.tag === 'test-notification';
+  if (!prefs.enabled && !isPriorityAlert) return false;
+
   // Audio chime
-  if (prefs.sound) {
+  if (prefs.sound || isPriorityAlert) {
     playNotificationSound();
   }
 

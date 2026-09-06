@@ -29,6 +29,7 @@ import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
+import { AppUpdateModal } from './components/common/AppUpdateModal';
 import { setRootBackHandler } from './utils/backButtonManager';
 
 const TAB_TO_PATH: Record<string, string> = {
@@ -121,6 +122,7 @@ const AppContent: React.FC = () => {
       if (window.location.pathname !== targetPath) {
         window.history.pushState({ tab: 'mais' }, '', targetPath);
       }
+      setIsUpdateModalOpen(true);
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('finly_open_sobre'));
       }, 50);
@@ -139,6 +141,7 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleGoToUpdate = useCallback(() => {
+    setIsUpdateModalOpen(true);
     handleSelectTab('sobre');
   }, [handleSelectTab]);
 
@@ -197,9 +200,17 @@ const AppContent: React.FC = () => {
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
   const [newTxInitialType, setNewTxInitialType] = useState<'income' | 'expense' | 'transfer'>('expense');
   const [newTxPaymentMethod, setNewTxPaymentMethod] = useState<'account' | 'card'>('account');
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isNewCardOpen, setIsNewCardOpen] = useState(false);
   const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // Global listener to trigger AppUpdateModal
+  useEffect(() => {
+    const handleOpenUpdate = () => setIsUpdateModalOpen(true);
+    window.addEventListener('finly_open_update_modal', handleOpenUpdate);
+    return () => window.removeEventListener('finly_open_update_modal', handleOpenUpdate);
+  }, []);
 
   const handleOpenSpeedDialAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {
     if (actionType === 'income') {
@@ -277,7 +288,12 @@ const AppContent: React.FC = () => {
             {activeTab === 'relatorios' && <ReportsPage />}
             {activeTab === 'calendario' && <CalendarPage />}
             {activeTab === 'settings' && <SettingsPage />}
-            {activeTab === 'mais' && <MorePage setActiveTab={handleSelectTab} />}
+            {(activeTab === 'mais' || activeTab === 'sobre') && (
+              <MorePage
+                setActiveTab={handleSelectTab}
+                initialSubTab={activeTab === 'sobre' ? 'SOBRE' : undefined}
+              />
+            )}
             {activeTab === 'metas' && <GoalsPage />}
             {activeTab === 'dividas' && <DebtsPage />}
             {activeTab === 'investimentos' && <InvestmentsTab />}
@@ -313,6 +329,12 @@ const AppContent: React.FC = () => {
       <CardModal
         isOpen={isNewCardOpen}
         onClose={() => setIsNewCardOpen(false)}
+      />
+
+      {/* App Version & Update Modal */}
+      <AppUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
       />
     </div>
   );

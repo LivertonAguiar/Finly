@@ -37,14 +37,14 @@ app.use(express.json({ limit: '20mb' }));
 app.disable('x-powered-by');
 
 // App Version & Update Endpoint
-const APP_VERSION = '1.1.19';
+const APP_VERSION = '1.1.20';
 
 app.get('/api/app/version', (req, res) => {
   res.json({
     version: APP_VERSION,
     latestVersion: APP_VERSION,
     releaseDate: '2026-09-06',
-    notes: 'Novidades da v1.1.19: Correção do layout flexbox no card de Despesas por Categoria horizontal (duas colunas no Web), garantindo visibilidade total do gráfico Donut e da lista de categorias com barras de progresso e aderência.',
+    notes: 'Novidades da v1.1.20: Correção no botão de verificação de atualizações no aplicativo Android, notificações em tempo real de novas versões disponíveis, abertura direta da central de atualizações e download seguro do APK.',
     downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases/latest',
     isLatest: true,
   });
