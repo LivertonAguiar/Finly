@@ -350,21 +350,26 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Categoria
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div
-                className="w-6 h-6 rounded-lg flex items-center justify-center text-xs shrink-0"
+                className="w-7 h-7 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-2xs"
                 style={{
-                  backgroundColor: (category?.color || '#7c4dff') + '25',
+                  backgroundColor: (category?.color || '#7c4dff') + '20',
                   color: category?.color || '#7c4dff',
                 }}
               >
                 {category?.icon || '📁'}
               </div>
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                <span>{category?.name || 'Geral'}</span>
-                {subcategory && (
-                  <span className="text-slate-400 font-semibold"> • {subcategory.name}</span>
-                )}
+              <div className="min-w-0 flex-1 leading-snug" title={`${category?.name || 'Geral'}${subcategory ? ` • ${subcategory.name}` : ''}`}>
+                <div className="text-xs font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                  <span className="break-words">{category?.name || 'Geral'}</span>
+                  {subcategory && (
+                    <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 px-2 py-0.5 rounded-lg shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                      {subcategory.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
