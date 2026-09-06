@@ -5,7 +5,7 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
-## [1.1.20] - 2026-09-06
+## [1.1.21] - 2026-09-06
 
 ### 🐛 Correções e Melhorias no Aplicativo Mobile
 - **Correção da Verificação de Atualizações no App Android**:

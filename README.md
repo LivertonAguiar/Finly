@@ -1,9 +1,9 @@
-# 🚀 Finly (Pro Edition) `v1.1.20`
+# 🚀 Finly (Pro Edition) `v1.1.21`
 
 > Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade Web e Mobile Android.
 
 [![Build Android APK & Release](https://github.com/LivertonAguiar/planner-financeiro/actions/workflows/build-apk.yml/badge.svg)](https://github.com/LivertonAguiar/planner-financeiro/actions/workflows/build-apk.yml)
-[![Version](https://img.shields.io/badge/version-1.1.20-purple.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.1.21-purple.svg)](package.json)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
