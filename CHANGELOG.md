@@ -5,6 +5,21 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.23] - 2026-09-06
+
+### 🐛 Correções e Estabilidade
+- **Sincronização Definitiva de Versões (Fonte Única da Verdade)**:
+  - Criado o registro central `src/data/releases.ts` e endpoint dinâmico `server/data/version.json` no backend, eliminando discrepâncias onde o app, servidor e build ficavam em versões diferentes.
+  - O pipeline de CI/CD do GitHub Actions (`build-apk.yml`) agora deriva a versão e tags oficiais diretamente do `package.json`.
+- **Fim das Notificações Repetidas e Falsos Positivos**:
+  - Corrigida a condição em `UpdateNoticeCard.tsx` que interpretava qualquer versão diferente como atualização pendente mesmo se fosse mais antiga.
+  - Implementada deduplicação via `localStorage` em `appUpdateService.ts`: alertas só são disparados quando houver uma versão estritamente mais recente (`isNewerVersion`) e nunca se repetem na mesma versão.
+- **Notas de Versão Dinâmicas e Histórico Completo no App**:
+  - Substituídas as notas estáticas/chumbadas da aba Sobre (`MorePage.tsx`) por destaques reais gerados dinamicamente.
+  - Adicionado menu expansível de histórico de versões anteriores para que o usuário possa consultar todos os lançamentos passados diretamente no app.
+
+---
+
 ## [1.1.22] - 2026-09-06
 
 ### ✨ Novidades e Funcionalidades

@@ -36,18 +36,37 @@ app.use(express.json({ limit: '20mb' }));
 // Hide Server Information
 app.disable('x-powered-by');
 
-// App Version & Update Endpoint
-const APP_VERSION = '1.1.21';
+// App Version & Update Endpoint (Dynamic Single Source of Truth)
+const VERSION_FILE = path.join(__dirname, 'data/version.json');
+const PKG_FILE = path.join(__dirname, '../package.json');
 
-app.get('/api/app/version', (req, res) => {
-  res.json({
-    version: APP_VERSION,
-    latestVersion: APP_VERSION,
+const getAppVersionInfo = () => {
+  try {
+    if (fs.existsSync(VERSION_FILE)) {
+      return JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
+    }
+  } catch (_) {}
+
+  let fallbackVer = '1.1.23';
+  try {
+    if (fs.existsSync(PKG_FILE)) {
+      const pkg = JSON.parse(fs.readFileSync(PKG_FILE, 'utf8'));
+      if (pkg.version) fallbackVer = pkg.version;
+    }
+  } catch (_) {}
+
+  return {
+    version: fallbackVer,
+    latestVersion: fallbackVer,
     releaseDate: '2026-09-06',
-    notes: 'Novidades da v1.1.21: Correção no fluxo de verificação de atualizações no app Android, disparo automático de notificações em tempo real e abertura da central de download do APK.',
+    notes: `Novidades da v${fallbackVer}: Melhorias de desempenho e novas funcionalidades financeiras.`,
     downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases/latest',
     isLatest: true,
-  });
+  };
+};
+
+app.get('/api/app/version', (req, res) => {
+  res.json(getAppVersionInfo());
 });
 
 const DATA_DIR = path.join(__dirname, 'data');

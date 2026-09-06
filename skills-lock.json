@@ -7,6 +7,12 @@
       "skillPath": "skills/agent-browser/SKILL.md",
       "computedHash": "a674b7d81066e3cc471a7512ddb4ae724418cbfefa75cbb050b0dc430e4d57a0"
     },
+    "ai-agent-cost-optimizer": {
+      "source": "shipshitdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/ai-agent-cost-optimizer/SKILL.md",
+      "computedHash": "1f87edf57a23d37c9173b46f0b4caf1ba56b474ecfdc89f7e9b221498288c6b6"
+    },
     "browser-use": {
       "source": "browser-use/browser-use",
       "sourceType": "github",
@@ -25,6 +31,36 @@
       "skillPath": "skills/components/layout/card/SKILL.md",
       "computedHash": "50690ef34d6d4f334756f749fcf2f5e4b949d1b58f57ddd57e890b8a4963b7a2"
     },
+    "code-review": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/code-review/SKILL.md",
+      "computedHash": "b4f17857c85ca60af1df7d0b623dd03c2a48419f6123e714f3d9748ca744a1bf"
+    },
+    "codebase-design": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/codebase-design/SKILL.md",
+      "computedHash": "caea3cb8a8281ff829fd1a2b985044e77601b62f301adf43f689ccfc74c15f6f"
+    },
+    "context-compression": {
+      "source": "muratcankoylan/agent-skills-for-context-engineering",
+      "sourceType": "github",
+      "skillPath": "skills/context-compression/SKILL.md",
+      "computedHash": "76d3233ee719579b0e9ead7f33b8e055377ee0b9c303677a3532df551f91d85d"
+    },
+    "context-optimization": {
+      "source": "muratcankoylan/agent-skills-for-context-engineering",
+      "sourceType": "github",
+      "skillPath": "skills/context-optimization/SKILL.md",
+      "computedHash": "45e1ddc847beeecf6e35be7c619e753a36dcab6a0f441ceeb1af7058061c4f88"
+    },
+    "diagnosing-bugs": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
+      "computedHash": "dcaaa3eb81195329f65f27574d9a67dc776160dd2e4d7798d1afb1e4a5f3695a"
+    },
     "documentation-and-adrs": {
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
@@ -36,6 +72,12 @@
       "sourceType": "github",
       "skillPath": "skills/documentation-writer/SKILL.md",
       "computedHash": "ee53d65b163cd7eb953a930c95841cfe398cc2c0bd24c06508bbaa07c432be35"
+    },
+    "domain-modeling": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/domain-modeling/SKILL.md",
+      "computedHash": "336547f3ff285e822fc70b69b170dc58bceef9c8ed5fad18de0046287d6be837"
     },
     "find-skills": {
       "source": "vercel-labs/skills",
@@ -55,11 +97,29 @@
       "skillPath": "skills/productivity/grill-me/SKILL.md",
       "computedHash": "5e0c683385eafd83f106ac6c9d67dfbbfe5aa4b3fe65aad114eb1055a99c818f"
     },
+    "headroom": {
+      "source": "l3ad3r1/hermes-skills",
+      "sourceType": "github",
+      "skillPath": "skills/software-development/headroom/SKILL.md",
+      "computedHash": "0b7dbf0f700c68540beedc67699c73e84c75dcd7f41b97f96988808bb4039127"
+    },
     "imagegen-frontend-mobile": {
       "source": "leonxlnx/taste-skill",
       "sourceType": "github",
       "skillPath": "skills/imagegen-frontend-mobile/SKILL.md",
       "computedHash": "7c1d1dc59cd0df4063b8621af543bf5dea1d576b261507e17b0323c69680b048"
+    },
+    "implement": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/implement/SKILL.md",
+      "computedHash": "130cac2d72bfde8cd526bf3b754211e2fe00e84bc4d9f9c56f749b9541a3afad"
+    },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "016f12709bff30a27419e8add978a9be70f5ca1fb6738b3be6793038e0aba631"
     },
     "layout-grid": {
       "source": "owl-listener/designer-skills",
@@ -132,6 +192,24 @@
       "sourceType": "github",
       "skillPath": "plugins/tailwindcss-master/skills/tailwindcss-mobile-first/SKILL.md",
       "computedHash": "b57cdd86a0bc0bfb35e5e42e6adf79c5fece774cea7340f1d992ff6e93cdc002"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "c1ed8cd854c64d4d226097255d3fa662dae4a758a1462fadd63cc10e413d88d7"
+    },
+    "token-efficiency": {
+      "source": "delphine-l/claude_global",
+      "sourceType": "github",
+      "skillPath": "skills/claude-meta/token-efficiency/SKILL.md",
+      "computedHash": "0c1bcd0d1139fe6ebf4f2836d7baffcef02a494afec04556977b07eb8ab8af4f"
+    },
+    "token-optimizer": {
+      "source": "alexgreensh/token-optimizer",
+      "sourceType": "github",
+      "skillPath": "skills/token-optimizer/SKILL.md",
+      "computedHash": "464035a47e72fd154551a00707c54cd6c85664c4bd8e3e5320c3fae7728db54c"
     },
     "typeui-fundamentals": {
       "source": "bergside/typeui",

@@ -30,6 +30,7 @@ import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
 import { AppUpdateModal } from './components/common/AppUpdateModal';
+import { WebWhatsNewModal } from './components/common/WebWhatsNewModal';
 import { setRootBackHandler } from './utils/backButtonManager';
 
 const TAB_TO_PATH: Record<string, string> = {
@@ -331,10 +332,15 @@ const AppContent: React.FC = () => {
         onClose={() => setIsNewCardOpen(false)}
       />
 
-      {/* App Version & Update Modal */}
+      {/* App Version & Update Modal (Android Native) */}
       <AppUpdateModal
         isOpen={isUpdateModalOpen}
         onClose={() => setIsUpdateModalOpen(false)}
+      />
+
+      {/* Web First-Access What's New Modal */}
+      <WebWhatsNewModal
+        onNavigateToSobre={() => handleSelectTab('sobre')}
       />
     </div>
   );

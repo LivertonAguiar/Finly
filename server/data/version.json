@@ -1,0 +1,14 @@
+{
+  "version": "1.1.23",
+  "latestVersion": "1.1.23",
+  "releaseDate": "2026-09-06",
+  "notes": "Novidades da v1.1.23: Sincronização definitiva de versões, eliminação de alertas repetidos e notas de atualização dinâmicas.",
+  "downloadUrl": "https://github.com/LivertonAguiar/planner-financeiro/releases/latest",
+  "isLatest": true,
+  "highlights": [
+    "Sincronização unificada de versões entre app, backend e compilação",
+    "Fim dos alertas e notificações repetidas",
+    "Notas de atualização dinâmicas em tempo real na aba Sobre",
+    "Histórico interativo completo de lançamentos e versões anteriores"
+  ]
+}

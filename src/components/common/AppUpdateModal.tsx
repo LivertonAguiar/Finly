@@ -22,6 +22,7 @@ import {
   getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
+import { CURRENT_RELEASE } from '../../data/releases';
 import { useBackButton } from '../../hooks/useBackButton';
 
 interface AppUpdateModalProps {
@@ -134,42 +135,46 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-              {result.notes}
+              {result.notes || CURRENT_RELEASE.summary}
             </p>
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="space-y-2.5">
-          {/* Check Updates Button */}
-          <button
-            type="button"
-            onClick={handleCheck}
-            disabled={isChecking}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-lg shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
-            <span>{isChecking ? 'Verificando atualizações...' : 'Verificar Atualizações Agora'}</span>
-          </button>
+          {/* Check Updates Button (Apenas Android Nativo) */}
+          {isNativeCapacitor() && (
+            <button
+              type="button"
+              onClick={handleCheck}
+              disabled={isChecking}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-lg shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
+              <span>{isChecking ? 'Verificando atualizações...' : 'Verificar Atualizações Agora'}</span>
+            </button>
+          )}
 
-          {/* Download Latest APK Button */}
-          <button
-            type="button"
-            onClick={() => openExternalUrl(result?.downloadUrl || GITHUB_RELEASES_URL)}
-            className={`w-full py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${
-              result?.hasUpdate
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/25 animate-pulse'
-                : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200'
-            }`}
-          >
-            <Download className={`w-4 h-4 ${result?.hasUpdate ? 'text-white' : 'text-emerald-500'}`} />
-            <span>
-              {result?.hasUpdate
-                ? `Baixar Atualização v${result.latestVersion} (APK)`
-                : 'Baixar APK do Aplicativo (Android)'}
-            </span>
-            <ExternalLink className="w-3.5 h-3.5 opacity-70 ml-auto" />
-          </button>
+          {/* Download Latest APK Button (Apenas Android Nativo) */}
+          {isNativeCapacitor() && (
+            <button
+              type="button"
+              onClick={() => openExternalUrl(result?.downloadUrl || GITHUB_RELEASES_URL)}
+              className={`w-full py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${
+                result?.hasUpdate
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/25 animate-pulse'
+                  : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <Download className={`w-4 h-4 ${result?.hasUpdate ? 'text-white' : 'text-emerald-500'}`} />
+              <span>
+                {result?.hasUpdate
+                  ? `Baixar Atualização v${result.latestVersion} (APK)`
+                  : 'Baixar APK do Aplicativo (Android)'}
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70 ml-auto" />
+            </button>
+          )}
 
           {/* Force Reload / Cache Wipe */}
           <button

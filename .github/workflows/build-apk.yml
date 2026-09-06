@@ -15,7 +15,7 @@ jobs:
     name: Compilar Finly Android APK & Release
     runs-on: ubuntu-latest
     env:
-      VERSION: v1.1.${{ github.run_number }}
+      VERSION_CODE: ${{ github.run_number }}
 
     steps:
       - name: 📥 Clonar Repositório
@@ -28,6 +28,11 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: 🏷️ Obter Versão Oficial do package.json
+        run: |
+          PKG_VER=$(node -p "require('./package.json').version")
+          echo "VERSION=v${PKG_VER}" >> $GITHUB_ENV
 
       - name: 📦 Instalar Dependências Web
         run: npm ci

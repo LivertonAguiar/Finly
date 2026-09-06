@@ -16,7 +16,7 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
     // Listen for real-time app update detection event
     const handleUpdateAvailable = (e: any) => {
       const detail = e.detail;
-      if (detail && (detail.hasUpdate || detail.latestVersion !== APP_VERSION)) {
+      if (detail && detail.hasUpdate && detail.latestVersion) {
         setLatestVersion(detail.latestVersion);
         setIsVisible(true);
       }
@@ -31,12 +31,12 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
       const timer = setTimeout(async () => {
         try {
           const res = await checkForAppUpdates({ notifyIfFound: true });
-          if (res.hasUpdate || res.latestVersion !== APP_VERSION) {
+          if (res && res.hasUpdate && res.latestVersion) {
             setLatestVersion(res.latestVersion);
             setIsVisible(true);
           }
         } catch (_) {}
-      }, 1200);
+      }, 1500);
 
       return () => {
         clearTimeout(timer);
