@@ -462,6 +462,11 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
                           guide={activeGuide}
                           step={step}
                           stepIndex={activeStepIndex}
+                          onNextStep={() =>
+                            setActiveStepIndex(prev =>
+                              prev < activeGuide.steps.length - 1 ? prev + 1 : 0
+                            )
+                          }
                         />
                       </div>
                     ) : (
