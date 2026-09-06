@@ -13,7 +13,7 @@ interface PayInvoiceModalProps {
 }
 
 export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClose, initialCardId }) => {
-  const { cards, accounts, transactions, payCardInvoice, user } = useFinancial();
+  const { cards, accounts, transactions, categories, payCardInvoice, user } = useFinancial();
 
   const [selectedCardId, setSelectedCardId] = useState<string>(cards[0]?.id || '');
   const [selectedMonth, setSelectedMonth] = useState<string>('08');
@@ -237,27 +237,75 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
 
         {/* Invoice Transactions List */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-            Lançamentos da Fatura ({invoiceTransactions.length})
-          </label>
-          <div className="max-h-36 sm:max-h-44 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900 scrollbar-thin">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              Lançamentos da Fatura ({invoiceTransactions.length})
+            </label>
+            <span className="text-[11px] text-slate-400">
+              {months.find(m => m.num === selectedMonth)?.label} de {selectedYear}
+            </span>
+          </div>
+          <div className="max-h-52 sm:max-h-60 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80 bg-slate-50/60 dark:bg-slate-900/60 scrollbar-thin">
             {invoiceTransactions.length === 0 ? (
               <div className="py-8 text-center text-slate-400">
                 <p className="text-xs font-medium">Nenhuma transação lançada neste período.</p>
               </div>
             ) : (
-              invoiceTransactions.map(t => (
-                <div key={t.id} className="p-2.5 px-3 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-slate-400 text-[10px] font-mono shrink-0">{formatDate(t.date)}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{t.description}</span>
+              invoiceTransactions.map(t => {
+                const cat = categories.find(c => c.id === t.categoryId);
+                const sub = cat?.subcategories?.find(s => s.id === t.subcategoryId);
+                return (
+                  <div
+                    key={t.id}
+                    className="p-3 px-3.5 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black"
+                        style={{
+                          backgroundColor: (cat?.color || '#7c4dff') + '20',
+                          color: cat?.color || '#7c4dff',
+                        }}
+                      >
+                        {cat?.icon || '💳'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                            {t.description}
+                          </span>
+                          {t.installments && t.installments.total > 1 && (
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                              {t.installments.current}/{t.installments.total}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                          <span className="font-mono">{formatDate(t.date)}</span>
+                          {cat?.name && <span>• {cat.name}</span>}
+                          {sub?.name && <span>/ {sub.name}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="font-black text-xs text-rose-600 dark:text-rose-400 block">
+                      {formatCurrency(t.amount, user.currency, !user.showValues)}
+                    </span>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block mt-0.5 ${
+                        t.status === 'completed'
+                          ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {t.status === 'completed' ? 'Pago' : 'Aberto'}
+                    </span>
                   </div>
-                  <span className="font-extrabold text-rose-600 dark:text-rose-400 shrink-0">
-                    {formatCurrency(t.amount, user.currency, !user.showValues)}
-                  </span>
                 </div>
-              ))
-            )}
+              );
+            })
+          )}
           </div>
         </div>
 

@@ -75,21 +75,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             className="relative w-72 h-44 flex items-center justify-center select-none"
             onClick={e => e.stopPropagation()}
           >
-            {/* 1. Transferência (Bottom-Left) */}
-            <div className="absolute left-1 bottom-4 flex flex-col items-center animate-in zoom-in-50 duration-200">
-              <button
-                type="button"
-                onClick={() => handleAction('transfer')}
-                className="w-15 h-15 rounded-full bg-[#343438] hover:bg-[#3F3F44] active:scale-95 shadow-xl flex items-center justify-center text-purple-400 border border-slate-700/60 transition-transform cursor-pointer"
-              >
-                <ArrowLeftRight className="w-6 h-6 stroke-[2.5]" />
-              </button>
-              <span className="text-[11px] font-bold text-white mt-1.5 text-center drop-shadow-sm">
-                {t('action.transfer', 'Transferência')}
-              </span>
-            </div>
-
-            {/* 2. Receita (Top-Left) */}
+            {/* 1. Receita (Top-Left) */}
             <div className="absolute left-10 top-0 flex flex-col items-center animate-in zoom-in-50 duration-250">
               <button
                 type="button"
@@ -103,8 +89,22 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               </span>
             </div>
 
-            {/* 3. Despesa Cartão (Top-Right) */}
+            {/* 2. Despesa (Top-Right) */}
             <div className="absolute right-10 top-0 flex flex-col items-center animate-in zoom-in-50 duration-250">
+              <button
+                type="button"
+                onClick={() => handleAction('expense')}
+                className="w-15 h-15 rounded-full bg-[#343438] hover:bg-[#3F3F44] active:scale-95 shadow-xl flex items-center justify-center text-rose-400 border border-slate-700/60 transition-transform cursor-pointer"
+              >
+                <TrendingDown className="w-6 h-6 stroke-[2.5]" />
+              </button>
+              <span className="text-[11px] font-bold text-white mt-1.5 text-center drop-shadow-sm">
+                {t('action.new_expense', 'Despesa')}
+              </span>
+            </div>
+
+            {/* 3. Despesa Cartão (Bottom-Left) */}
+            <div className="absolute left-1 bottom-4 flex flex-col items-center animate-in zoom-in-50 duration-200">
               <button
                 type="button"
                 onClick={() => handleAction('card_expense')}
@@ -117,17 +117,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               </span>
             </div>
 
-            {/* 4. Despesa (Bottom-Right) */}
+            {/* 4. Transferência (Bottom-Right) */}
             <div className="absolute right-1 bottom-4 flex flex-col items-center animate-in zoom-in-50 duration-200">
               <button
                 type="button"
-                onClick={() => handleAction('expense')}
-                className="w-15 h-15 rounded-full bg-[#343438] hover:bg-[#3F3F44] active:scale-95 shadow-xl flex items-center justify-center text-rose-400 border border-slate-700/60 transition-transform cursor-pointer"
+                onClick={() => handleAction('transfer')}
+                className="w-15 h-15 rounded-full bg-[#343438] hover:bg-[#3F3F44] active:scale-95 shadow-xl flex items-center justify-center text-purple-400 border border-slate-700/60 transition-transform cursor-pointer"
               >
-                <TrendingDown className="w-6 h-6 stroke-[2.5]" />
+                <ArrowLeftRight className="w-6 h-6 stroke-[2.5]" />
               </button>
               <span className="text-[11px] font-bold text-white mt-1.5 text-center drop-shadow-sm">
-                {t('action.new_expense', 'Despesa')}
+                {t('action.transfer', 'Transferência')}
               </span>
             </div>
           </div>

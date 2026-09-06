@@ -5,7 +5,7 @@
 import { getApiUrl, PRODUCTION_API_URL } from '../services/apiConfig';
 import { sendLocalNotification } from './notificationEngine';
 
-export const APP_VERSION = '1.1.21';
+export const APP_VERSION = '1.1.22';
 export const APP_BUILD_DATE = '2026-09-06';
 export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/planner-financeiro';
 export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/planner-financeiro/actions';
