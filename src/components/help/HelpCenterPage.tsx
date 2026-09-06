@@ -36,8 +36,9 @@ import {
   HelpCategoryDef,
   GuideStep,
 } from '../../data/helpCenterData';
-import { APP_VERSION, isNativeCapacitor } from '../../utils/appUpdateService';
+import { APP_VERSION, isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
 import { useAuth } from '../../context/AuthContext';
+import { FinlyAndroidMockup } from './FinlyAndroidMockup';
 
 interface HelpCenterPageProps {
   onNavigateToTab?: (tab: string) => void;
@@ -45,11 +46,13 @@ interface HelpCenterPageProps {
 
 export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab }) => {
   const { currentUser } = useAuth();
+  const isAndroidApp = isNativeCapacitor() || isMobileDevice();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [platformMode, setPlatformMode] = useState<'web' | 'android'>(() =>
-    isNativeCapacitor() ? 'android' : 'web'
+    isAndroidApp ? 'android' : 'web'
   );
+  const currentPlatformMode: 'web' | 'android' = isAndroidApp ? 'android' : platformMode;
   const [activeGuide, setActiveGuide] = useState<HelpGuide | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
@@ -167,7 +170,9 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
           </h1>
 
           <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
-            Explore tutoriais visuais passo a passo, entenda as diferenças práticas entre o <strong>App Android</strong> e a <strong>Versão Web</strong>, tire dúvidas frequentes e domine o controle das suas finanças.
+            {isAndroidApp
+              ? 'Explore tutoriais visuais passo a passo do aplicativo Finly no seu celular Android, tire dúvidas frequentes e domine o controle das suas finanças na palma da mão.'
+              : 'Explore tutoriais visuais passo a passo, entenda as diferenças práticas entre o App Android e a Versão Web, tire dúvidas frequentes e domine o controle das suas finanças.'}
           </p>
 
           {/* Search Bar */}
@@ -193,41 +198,43 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
             </div>
           </div>
 
-          {/* Platform Toggle */}
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <span className="text-xs font-bold text-slate-300">Visão do Tutorial:</span>
-            <div className="inline-flex p-1 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md">
-              <button
-                type="button"
-                onClick={() => setPlatformMode('web')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  platformMode === 'web'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span>Computador / Web</span>
-              </button>
+          {/* Platform Toggle - Only on Desktop Web */}
+          {!isAndroidApp && (
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-slate-300">Visão do Tutorial:</span>
+              <div className="inline-flex p-1 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md">
+                <button
+                  type="button"
+                  onClick={() => setPlatformMode('web')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    currentPlatformMode === 'web'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Computador / Web</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setPlatformMode('android')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  platformMode === 'android'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>App Celular (Android)</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setPlatformMode('android')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    currentPlatformMode === 'android'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>App Celular (Android)</span>
+                </button>
+              </div>
+
+              <span className="text-[11px] text-purple-300 font-medium hidden sm:inline">
+                ✦ Alterna os apontamentos visuais e atalhos de tela
+              </span>
             </div>
-
-            <span className="text-[11px] text-purple-300 font-medium hidden sm:inline">
-              ✦ Alterna os apontamentos visuais e atalhos de tela
-            </span>
-          </div>
+          )}
         </div>
       </div>
 
@@ -248,6 +255,7 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
         {HELP_CATEGORIES.map(cat => {
           const IconComp = getCategoryIcon(cat.id);
           const isSelected = selectedCategory === cat.id;
+          const displayLabel = isAndroidApp && cat.id === 'mobile_web' ? 'Recursos Android' : cat.label;
           return (
             <button
               key={cat.id}
@@ -260,7 +268,7 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
               }`}
             >
               <IconComp className="w-3.5 h-3.5" />
-              <span>{cat.label}</span>
+              <span>{displayLabel}</span>
             </button>
           );
         })}
@@ -386,33 +394,40 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
 
             {/* Modal Sub-header: Platform toggle & Step selector */}
             <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#18181B]">
-              {/* Platform Switcher */}
-              <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
-                <button
-                  type="button"
-                  onClick={() => setPlatformMode('web')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    platformMode === 'web'
-                      ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-xs font-black'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>Modo Web / PC</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlatformMode('android')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    platformMode === 'android'
-                      ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-xs font-black'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Modo App Android</span>
-                </button>
-              </div>
+              {/* Platform Switcher or Android Indicator */}
+              {!isAndroidApp ? (
+                <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setPlatformMode('web')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      currentPlatformMode === 'web'
+                        ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-xs font-black'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>Modo Web / PC</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPlatformMode('android')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      currentPlatformMode === 'android'
+                        ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-xs font-black'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Modo App Android</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-black">
+                  <Smartphone className="w-4 h-4" />
+                  <span>Tutorial do App Android</span>
+                </div>
+              )}
 
               {/* Steps Indicator Pills */}
               <div className="flex items-center gap-1.5">
@@ -441,29 +456,34 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
                 return (
                   <div className="space-y-5">
                     {/* Visual Mockup Frame with Highlight & Pointer */}
-                    <div className="relative rounded-3xl bg-slate-900 border border-slate-700 p-5 overflow-hidden text-white shadow-xl">
-                      {/* Device Header Simulator */}
-                      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-[11px] text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                          <span className="font-mono text-slate-500 ml-2">
-                            {platformMode === 'web'
-                              ? 'https://finly.lpaguiar.com.br (Desktop)'
-                              : 'Finly Android APK (com.finly.app)'}
+                    {currentPlatformMode === 'android' ? (
+                      <div className="p-3 sm:p-5 rounded-3xl bg-slate-950/80 border border-slate-800/90 shadow-2xl flex justify-center">
+                        <FinlyAndroidMockup
+                          guide={activeGuide}
+                          step={step}
+                          stepIndex={activeStepIndex}
+                        />
+                      </div>
+                    ) : (
+                      <div className="relative rounded-3xl bg-slate-900 border border-slate-700 p-5 overflow-hidden text-white shadow-xl">
+                        {/* Device Header Simulator */}
+                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-[11px] text-slate-400">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                            <span className="font-mono text-slate-500 ml-2">
+                              https://finly.lpaguiar.com.br (Desktop)
+                            </span>
+                          </div>
+
+                          <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold">
+                            💻 Interface Desktop
                           </span>
                         </div>
 
-                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold">
-                          {platformMode === 'web' ? '💻 Interface Desktop' : '📱 Interface Mobile'}
-                        </span>
-                      </div>
-
-                      {/* Mockup Canvas */}
-                      <div className="relative min-h-[220px] rounded-2xl bg-slate-950/80 border border-slate-800/80 p-5 flex flex-col justify-between overflow-hidden">
-                        {/* Simulated UI Elements */}
-                        {platformMode === 'web' ? (
+                        {/* Mockup Canvas */}
+                        <div className="relative min-h-[220px] rounded-2xl bg-slate-950/80 border border-slate-800/80 p-5 flex flex-col justify-between overflow-hidden">
                           <div className="space-y-4">
                             {/* Simulated Desktop Navbar */}
                             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800">
@@ -509,66 +529,19 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
                               </div>
                             </div>
                           </div>
-                        ) : (
-                          <div className="space-y-4 max-w-sm mx-auto w-full">
-                            {/* Simulated Phone Screen */}
-                            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-                              <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-slate-300">Resumo do Mês</span>
-                                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px]">
-                                  R$ 4.850,00
-                                </span>
-                              </div>
+                        </div>
 
-                              <div className="p-3 rounded-xl bg-slate-950 border border-purple-500/40 text-xs space-y-1">
-                                <div className="text-[11px] text-purple-300 font-bold">
-                                  {step.title}
-                                </div>
-                                <div className="text-[10px] text-slate-400 leading-tight">
-                                  {step.androidInstruction}
-                                </div>
-                              </div>
-
-                              {/* Simulated Phone Bottom Nav with Speed Dial FAB */}
-                              <div className="relative pt-2 border-t border-slate-800 flex items-center justify-around text-slate-400 text-[10px]">
-                                <span>Início</span>
-                                <span>Contas</span>
-
-                                {/* Central FAB with Hotspot Pin */}
-                                <div className="relative -mt-6">
-                                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-purple-600/50">
-                                    +
-                                  </div>
-
-                                  {/* Hotspot Pin */}
-                                  <div className="absolute -top-2 -right-2 flex items-center justify-center">
-                                    <span className="relative flex h-5 w-5">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
-                                      <span className="relative inline-flex rounded-full h-5 w-5 bg-purple-500 text-white font-black text-[10px] items-center justify-center shadow-lg">
-                                        {activeStepIndex + 1}
-                                      </span>
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <span>Cartões</span>
-                                <span>Mais</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        {/* Callout Indicator Badge */}
+                        <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+                          <span className="px-2 py-0.5 rounded-md bg-purple-600 text-white font-black text-[10px]">
+                            Ponto {activeStepIndex + 1}
+                          </span>
+                          <span className="font-medium">
+                            {step.webInstruction}
+                          </span>
+                        </div>
                       </div>
-
-                      {/* Callout Indicator Badge */}
-                      <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
-                        <span className="px-2 py-0.5 rounded-md bg-purple-600 text-white font-black text-[10px]">
-                          Ponto {activeStepIndex + 1}
-                        </span>
-                        <span className="font-medium">
-                          {platformMode === 'web' ? step.webInstruction : step.androidInstruction}
-                        </span>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Step Explanations & Tip Box */}
                     <div className="space-y-3">
@@ -586,36 +559,48 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
                         </div>
                       </div>
 
-                      {/* Instructions by Platform */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                        <div className={`p-4 rounded-2xl border text-xs space-y-1.5 transition-all ${
-                          platformMode === 'web'
-                            ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800'
-                            : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75'
-                        }`}>
-                          <div className="flex items-center gap-1.5 font-black text-slate-900 dark:text-slate-100">
-                            <Monitor className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                            <span>No Computador (Web)</span>
+                      {/* Instructions: Android-only on mobile / Dual on desktop */}
+                      {isAndroidApp ? (
+                        <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-300 dark:border-purple-800 text-xs space-y-1.5 shadow-xs">
+                          <div className="flex items-center gap-2 font-black text-purple-600 dark:text-purple-400">
+                            <Smartphone className="w-4 h-4" />
+                            <span>Como executar no aplicativo Finly</span>
                           </div>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                            {step.webInstruction}
-                          </p>
-                        </div>
-
-                        <div className={`p-4 rounded-2xl border text-xs space-y-1.5 transition-all ${
-                          platformMode === 'android'
-                            ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800'
-                            : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75'
-                        }`}>
-                          <div className="flex items-center gap-1.5 font-black text-slate-900 dark:text-slate-100">
-                            <Smartphone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                            <span>No Celular (Android)</span>
-                          </div>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                          <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed font-medium">
                             {step.androidInstruction}
                           </p>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                          <div className={`p-4 rounded-2xl border text-xs space-y-1.5 transition-all ${
+                            currentPlatformMode === 'web'
+                              ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800'
+                              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75'
+                          }`}>
+                            <div className="flex items-center gap-1.5 font-black text-slate-900 dark:text-slate-100">
+                              <Monitor className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                              <span>No Computador (Web)</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                              {step.webInstruction}
+                            </p>
+                          </div>
+
+                          <div className={`p-4 rounded-2xl border text-xs space-y-1.5 transition-all ${
+                            currentPlatformMode === 'android'
+                              ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800'
+                              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75'
+                          }`}>
+                            <div className="flex items-center gap-1.5 font-black text-slate-900 dark:text-slate-100">
+                              <Smartphone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                              <span>No Celular (Android)</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                              {step.androidInstruction}
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Tip Alert */}
                       {step.tip && (
