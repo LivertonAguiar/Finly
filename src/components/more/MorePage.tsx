@@ -522,7 +522,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
 
               {/* Botoes de Acao: Android Nativo vs Web */}
               {isNativeCapacitor() ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
                   {/* 1. Verificar Atualizacoes Android */}
                   <button
                     type="button"
@@ -548,7 +548,17 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
                   </button>
 
-                  {/* 2. Baixar APK Atualizado */}
+                  {/* 2. Ver Novidades Desta Versao */}
+                  <button
+                    type="button"
+                    onClick={() => setShowWebWhatsNewModal(true)}
+                    className="w-full py-2.5 px-4 rounded-xl border border-purple-200 dark:border-purple-800/80 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Ver Novidades</span>
+                  </button>
+
+                  {/* 3. Baixar APK Atualizado */}
                   <button
                     type="button"
                     onClick={() => {
@@ -557,11 +567,11 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Baixar APK (Android)</span>
+                    <span>Baixar APK</span>
                     <ExternalLink className="w-3 h-3 text-slate-400 ml-auto" />
                   </button>
 
-                  {/* 3. Recarregar e Limpar Cache */}
+                  {/* 4. Recarregar e Limpar Cache */}
                   <button
                     type="button"
                     onClick={async () => {
@@ -572,7 +582,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
-                    <span>{isReloading ? 'Recarregando...' : 'Limpar Cache & Recarregar'}</span>
+                    <span>{isReloading ? 'Recarregando...' : 'Limpar Cache'}</span>
                   </button>
                 </div>
               ) : (

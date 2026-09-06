@@ -2,27 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, X, Check, ArrowRight, Layers, ShieldCheck, Zap } from 'lucide-react';
 import { CURRENT_VERSION, CURRENT_RELEASE } from '../../data/releases';
 import { isNativeCapacitor } from '../../utils/appUpdateService';
+import { useBackButton } from '../../hooks/useBackButton';
 
-interface WebWhatsNewModalProps {
+interface WhatsNewModalProps {
   isOpen?: boolean;
   onClose?: () => void;
   onNavigateToSobre?: () => void;
 }
 
-const SEEN_VERSION_KEY = 'finly_seen_web_version';
+export type WebWhatsNewModalProps = WhatsNewModalProps;
 
-export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
+export const WhatsNewModal: React.FC<WhatsNewModalProps> = ({
   isOpen: controlledIsOpen,
   onClose: controlledOnClose,
   onNavigateToSobre,
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
 
+  const getSeenVersionKey = () => (isNativeCapacitor() ? 'finly_seen_android_version' : 'finly_seen_web_version');
+
   useEffect(() => {
-    // Only automatically pop up on Web (non-native) on first access after update
-    if (!isNativeCapacitor() && controlledIsOpen === undefined) {
+    // Automatically pop up on first access after update (both Web and Native Android)
+    if (controlledIsOpen === undefined) {
       try {
-        const seenVersion = localStorage.getItem(SEEN_VERSION_KEY);
+        const key = getSeenVersionKey();
+        const seenVersion = localStorage.getItem(key);
         if (seenVersion !== CURRENT_VERSION) {
           // Small delay so the app finishes initial loading smoothly
           const timer = setTimeout(() => {
@@ -38,7 +42,8 @@ export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
 
   const handleDismiss = () => {
     try {
-      localStorage.setItem(SEEN_VERSION_KEY, CURRENT_VERSION);
+      const key = getSeenVersionKey();
+      localStorage.setItem(key, CURRENT_VERSION);
     } catch (_) {}
 
     if (controlledOnClose) {
@@ -47,6 +52,9 @@ export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
       setInternalIsOpen(false);
     }
   };
+
+  // Close modal on physical Android back gesture
+  useBackButton(isOpen, handleDismiss);
 
   const handleGoToSobre = () => {
     handleDismiss();
@@ -74,8 +82,8 @@ export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20 shrink-0">
             <Sparkles className="w-6 h-6 text-purple-200" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="pr-6">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                 Novidades da v{CURRENT_VERSION}
               </span>
@@ -86,14 +94,14 @@ export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
             <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 mt-1">
               O Finly foi atualizado! 🚀
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
               {CURRENT_RELEASE.summary}
             </p>
           </div>
         </div>
 
         {/* Highlights List */}
-        <div className="space-y-2.5 mb-6 max-h-[50vh] overflow-y-auto pr-1">
+        <div className="space-y-2.5 mb-6 max-h-[48vh] overflow-y-auto pr-1">
           {CURRENT_RELEASE.highlights.map((item, idx) => (
             <div
               key={idx}
@@ -115,7 +123,7 @@ export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
           <button
             type="button"
             onClick={handleGoToSobre}
@@ -138,3 +146,5 @@ export const WebWhatsNewModal: React.FC<WebWhatsNewModalProps> = ({
     </div>
   );
 };
+
+export const WebWhatsNewModal = WhatsNewModal;
