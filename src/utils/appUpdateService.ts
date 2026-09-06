@@ -8,9 +8,9 @@ import { CURRENT_VERSION, CURRENT_BUILD_DATE, CURRENT_RELEASE } from '../data/re
 
 export const APP_VERSION = CURRENT_VERSION;
 export const APP_BUILD_DATE = CURRENT_BUILD_DATE;
-export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/planner-financeiro';
-export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/planner-financeiro/actions';
-export const GITHUB_RELEASES_URL = 'https://github.com/LivertonAguiar/planner-financeiro/releases';
+export const GITHUB_REPO_URL = 'https://github.com/LivertonAguiar/Finly';
+export const GITHUB_ACTIONS_URL = 'https://github.com/LivertonAguiar/Finly/actions';
+export const GITHUB_RELEASES_URL = 'https://github.com/LivertonAguiar/Finly/releases';
 
 const LAST_NOTIFIED_VERSION_KEY = 'finly_last_notified_update_version';
 
@@ -188,7 +188,7 @@ const performCheck = async (options?: {
   try {
     const ghController = new AbortController();
     const ghTimeout = setTimeout(() => ghController.abort(), 3500);
-    const ghRes = await fetch('https://api.github.com/repos/LivertonAguiar/planner-financeiro/releases/latest', {
+    const ghRes = await fetch('https://api.github.com/repos/LivertonAguiar/Finly/releases/latest', {
       headers: { Accept: 'application/vnd.github.v3+json' },
       signal: ghController.signal,
     });

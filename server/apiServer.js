@@ -60,7 +60,7 @@ const getAppVersionInfo = () => {
     latestVersion: fallbackVer,
     releaseDate: '2026-09-06',
     notes: `Novidades da v${fallbackVer}: Melhorias de desempenho e novas funcionalidades financeiras.`,
-    downloadUrl: 'https://github.com/LivertonAguiar/planner-financeiro/releases/latest',
+    downloadUrl: 'https://github.com/LivertonAguiar/Finly/releases/latest',
     isLatest: true,
   };
 };
