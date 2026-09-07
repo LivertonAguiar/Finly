@@ -5,6 +5,29 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.28] - 2026-09-07
+
+### ✨ Novas Funcionalidades
+- **Bloqueio Biométrico & PIN Numérico Seguro**:
+  - Camada de segurança extra com PIN de 4 dígitos criptografado via Web Crypto API (SHA-256 com salt) e suporte a Biometria nativa/WebAuthn (TouchID, FaceID, impressão digital).
+  - Tela de desbloqueio responsiva com teclado numérico tátil, feedback de erro em shake, temporizador de bloqueio por inatividade e contingência por senha.
+- **Exportação para Excel (.xlsx) Formatado**:
+  - Geração nativa de pastas de trabalho corporativas utilizando SheetJS (`xlsx`) com abas de Resumo Executivo (KPIs e distribuição de despesas), Lançamentos Detalhados com fórmulas e Posição de Contas/Cartões.
+- **Desafios de Economia (Savings Challenges)**:
+  - Módulo gamificado em Metas para incentivar a disciplina de poupança (Desafio das 52 Semanas, 52 Semanas Turbo x2, Caixa Rápido 30 Dias e Detox Sem Delivery) com grade interativa de semanas/dias e animações de confetes.
+- **Categorização Automática com Aprendizado (Smart Auto-Categorization)**:
+  - Motor inteligente com dicionário pré-carregado de centenas de estabelecimentos brasileiros e algoritmo de aprendizado ativo sobre os lançamentos históricos do usuário. Sugestões em tempo real no cadastro e auto-classificação de extratos OFX/CSV.
+
+### ⚡ Melhorias & Refinamentos
+- **Interface de Transações Simplificada**:
+  - Remoção do botão redundante `+ NOVO` no topo da tela de Transações, centralizando a adição no botão flutuante `+` da barra inferior.
+- **Barra Superior Mais Limpa**:
+  - Remoção do botão de ajuda do header superior, mantendo o acesso disponível pelo menu do usuário e pela aba Mais.
+- **Compatibilidade Android & Gradle**:
+  - Configuração do runtime Java 17 LTS no ambiente de build do Android Gradle Plugin 8.x.
+
+---
+
 ## [1.1.27] - 2026-09-07
 
 ### ✨ Novas Funcionalidades

@@ -29,6 +29,7 @@ import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { Goal } from '../../types';
+import { SavingsChallengesSection } from './SavingsChallengesSection';
 
 export const GoalsPage: React.FC = () => {
   const { goals, addGoal, updateGoal, deleteGoal, depositToGoal, accounts, user } = useFinancial();
@@ -42,6 +43,7 @@ export const GoalsPage: React.FC = () => {
     }
   });
 
+  const [mainTab, setMainTab] = useState<'metas' | 'desafios'>('metas');
   const [activeSegment, setActiveSegment] = useState<'andamento' | 'concluidos'>('andamento');
 
   // Modal states
@@ -171,17 +173,49 @@ export const GoalsPage: React.FC = () => {
             }}
           />
 
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Criar Nova Meta</span>
-          </button>
+          {mainTab === 'metas' && (
+            <button
+              onClick={openCreateModal}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Criar Nova Meta</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. OVERALL GOALS SUMMARY CARD */}
+      {/* Main Tab Toggle: Metas Pessoais vs Desafios de Economia */}
+      <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-[#1C1C1E] border border-slate-200 dark:border-slate-800 w-fit shadow-xs">
+        <button
+          onClick={() => setMainTab('metas')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            mainTab === 'metas'
+              ? 'bg-white dark:bg-[#2C2C2E] text-purple-600 dark:text-purple-400 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Target className="w-4 h-4" />
+          <span>Metas & Objetivos</span>
+        </button>
+        <button
+          onClick={() => setMainTab('desafios')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            mainTab === 'desafios'
+              ? 'bg-white dark:bg-[#2C2C2E] text-purple-600 dark:text-purple-400 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Trophy className="w-4 h-4 text-yellow-400" />
+          <span>Desafios de Economia</span>
+        </button>
+      </div>
+
+      {mainTab === 'desafios' ? (
+        <SavingsChallengesSection />
+      ) : (
+        <>
+          {/* 2. OVERALL GOALS SUMMARY CARD */}
       <div className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
@@ -449,6 +483,8 @@ export const GoalsPage: React.FC = () => {
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* MODAL: CRIAR / EDITAR META (MATCHING USER SCREENSHOT) */}

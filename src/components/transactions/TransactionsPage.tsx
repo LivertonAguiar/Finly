@@ -40,6 +40,7 @@ import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from './TransactionModal';
 import { TransactionDetailModal } from './TransactionDetailModal';
 import { downloadCSV } from '../../utils/reportExportService';
+import { exportTransactionsToExcel } from '../../utils/excelExportService';
 
 export const TransactionsPage: React.FC = () => {
   const { confirm } = useConfirm();
@@ -378,6 +379,17 @@ export const TransactionsPage: React.FC = () => {
     setIsMoreOptionsOpen(false);
   };
 
+  const handleExportExcel = () => {
+    exportTransactionsToExcel(
+      displayTransactions,
+      categories,
+      accounts,
+      cards,
+      `Finly_Transacoes_${currentMonthPrefix}`
+    );
+    setIsMoreOptionsOpen(false);
+  };
+
   const filterOptions = [
     { id: 'all', label: 'Todas as transações', dotColor: 'bg-[#7c4dff]' },
     { id: 'expense', label: 'Despesas', dotColor: 'bg-[#ef5350]' },
@@ -447,91 +459,7 @@ export const TransactionsPage: React.FC = () => {
           )}
 
 
-          {/* Unified + Novo Dropdown Popover (Finly Standard) */}
-          <div className="relative">
-            <button
-              onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
-              className="flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Novo</span>
-            </button>
 
-            {isNovoMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-30"
-                  onClick={() => setIsNovoMenuOpen(false)}
-                />
-                <div
-                  onClick={e => e.stopPropagation()}
-                  className="absolute right-0 top-11 z-40 w-56 rounded-[22px] bg-[#1e222d] border border-slate-700 shadow-2xl py-2 animate-in fade-in zoom-in-95 divide-y divide-slate-800"
-                >
-                  <div className="py-1">
-                    {/* 1. Despesa */}
-                    <button
-                      onClick={() => {
-                        setIsNovoMenuOpen(false);
-                        setEditingTransaction(null);
-                        setModalInitialType('expense');
-                        setInitialPaymentMethod('account');
-                        setIsModalOpen(true);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
-                    >
-                      <TrendingDown className="w-4 h-4 text-[#ef5350]" />
-                      <span>Despesa</span>
-                    </button>
-
-                    {/* 2. Receita */}
-                    <button
-                      onClick={() => {
-                        setIsNovoMenuOpen(false);
-                        setEditingTransaction(null);
-                        setModalInitialType('income');
-                        setInitialPaymentMethod('account');
-                        setIsModalOpen(true);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
-                    >
-                      <TrendingUp className="w-4 h-4 text-[#66bb6a]" />
-                      <span>Receita</span>
-                    </button>
-
-                    {/* 3. Despesa cartão */}
-                    <button
-                      onClick={() => {
-                        setIsNovoMenuOpen(false);
-                        setEditingTransaction(null);
-                        setModalInitialType('expense');
-                        setInitialPaymentMethod('card');
-                        setIsModalOpen(true);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
-                    >
-                      <CreditCard className="w-4 h-4 text-[#26a69a]" />
-                      <span>Despesa Cartão</span>
-                    </button>
-
-                    {/* 4. Transferência */}
-                    <button
-                      onClick={() => {
-                        setIsNovoMenuOpen(false);
-                        setEditingTransaction(null);
-                        setModalInitialType('transfer');
-                        setInitialPaymentMethod('account');
-                        setIsModalOpen(true);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
-                    >
-                      <ArrowLeftRight className="w-4 h-4 text-[#42a5f5]" />
-                      <span>Transferência</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
 
 
           {/* Search Icon Button */}
@@ -576,6 +504,13 @@ export const TransactionsPage: React.FC = () => {
                 onClick={e => e.stopPropagation()}
                 className="absolute right-0 top-11 z-40 w-48 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-700 dark:text-slate-200"
               >
+                <button
+                  onClick={handleExportExcel}
+                  className="w-full px-3.5 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 cursor-pointer text-emerald-600 dark:text-emerald-400 font-bold"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Exportar Excel (.xlsx)</span>
+                </button>
                 <button
                   onClick={handleExportCSV}
                   className="w-full px-3.5 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-2 cursor-pointer"

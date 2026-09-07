@@ -199,19 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
           <RefreshCw className={`w-4 h-4 text-purple-500 ${isManualSyncing ? 'animate-spin' : ''}`} />
         </button>
 
-        {/* Central de Ajuda & Tutoriais */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('ajuda')}
-          title="Central de Ajuda & Tutoriais"
-          className={`p-2 rounded-xl transition-colors cursor-pointer ${
-            activeTab === 'ajuda'
-              ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300'
-              : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <LifeBuoy className="w-4.5 h-4.5" />
-        </button>
+
 
         {/* Notifications */}
         <div className="relative">

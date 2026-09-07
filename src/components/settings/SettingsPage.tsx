@@ -31,7 +31,20 @@ import {
   Database,
   Coins,
   RefreshCw,
+  Fingerprint,
 } from 'lucide-react';
+import { PinSetupModal } from '../common/PinSetupModal';
+import {
+  isSecurityLockEnabled,
+  isPinConfigured,
+  setSecurityLockEnabled,
+  removePinCode,
+  isBiometricSupported,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  getLockTimeoutMinutes,
+  setLockTimeoutMinutes,
+} from '../../utils/securityManager';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -105,6 +118,42 @@ export const SettingsPage: React.FC = () => {
   // Backup file ref & message
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupAlert, setBackupAlert] = useState<string | null>(null);
+
+  // Security PIN & Biometrics
+  const [pinEnabled, setPinEnabled] = useState(isSecurityLockEnabled());
+  const [pinConfigured, setPinConfigured] = useState(isPinConfigured());
+  const [biometricEnabled, setBiometricEnabledState] = useState(isBiometricEnabled());
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [lockTimeout, setLockTimeout] = useState(getLockTimeoutMinutes());
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+  useEffect(() => {
+    isBiometricSupported().then(supported => setBiometricSupported(supported));
+  }, []);
+
+  const handleTogglePin = (checked: boolean) => {
+    if (checked) {
+      if (!isPinConfigured()) {
+        setIsPinModalOpen(true);
+      } else {
+        setSecurityLockEnabled(true);
+        setPinEnabled(true);
+      }
+    } else {
+      setSecurityLockEnabled(false);
+      setPinEnabled(false);
+    }
+  };
+
+  const handleToggleBiometric = (checked: boolean) => {
+    setBiometricEnabled(checked);
+    setBiometricEnabledState(checked);
+  };
+
+  const handleChangeTimeout = (mins: number) => {
+    setLockTimeout(mins);
+    setLockTimeoutMinutes(mins);
+  };
 
   // Load saved settings
   useEffect(() => {
@@ -981,6 +1030,110 @@ export const SettingsPage: React.FC = () => {
               </div>
             </form>
           </div>
+
+          {/* 3. BLOQUEIO BIOMÉTRICO E PIN NUMÉRICO */}
+          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <Fingerprint className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                    Bloqueio Biométrico & PIN
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Proteja a abertura do Finly com código de 4 dígitos ou biometria
+                  </p>
+                </div>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={pinEnabled}
+                onChange={e => handleTogglePin(e.target.checked)}
+                className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
+              />
+            </div>
+
+            {pinEnabled && (
+              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      Código PIN de Acesso
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {pinConfigured ? 'PIN de 4 dígitos configurado' : 'Nenhum PIN definido ainda'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsPinModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 transition-colors cursor-pointer"
+                  >
+                    {pinConfigured ? 'Alterar PIN' : 'Definir PIN'}
+                  </button>
+                </div>
+
+                {/* Biometrics Toggle if supported */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Fingerprint className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                        Desbloqueio por Biometria
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {biometricSupported ? 'TouchID, FaceID ou impressão digital' : 'Sensor biométrico disponível no dispositivo'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={biometricEnabled}
+                    onChange={e => handleToggleBiometric(e.target.checked)}
+                    className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600"
+                  />
+                </div>
+
+                {/* Inactivity Timeout */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                        Bloquear Automaticamente
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Tempo de inatividade após sair do app
+                      </span>
+                    </div>
+                  </div>
+                  <select
+                    value={lockTimeout}
+                    onChange={e => handleChangeTimeout(parseInt(e.target.value, 10))}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200"
+                  >
+                    <option value={0}>Imediatamente</option>
+                    <option value={1}>Após 1 minuto</option>
+                    <option value={5}>Após 5 minutos</option>
+                    <option value={15}>Após 15 minutos</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <PinSetupModal
+            isOpen={isPinModalOpen}
+            onClose={() => setIsPinModalOpen(false)}
+            onSuccess={() => {
+              setPinConfigured(true);
+              setPinEnabled(true);
+              setBiometricEnabledState(isBiometricEnabled());
+            }}
+          />
 
           {/* 3. CRIPTOGRAFIA & RLS */}
           <div className="p-5 sm:p-6 rounded-[25px] bg-gradient-to-br from-slate-900 via-[#1C1C24] to-[#121218] border border-slate-800 text-white shadow-sm dark:shadow-2xl space-y-3.5">

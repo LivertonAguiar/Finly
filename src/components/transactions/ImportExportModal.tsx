@@ -1,10 +1,11 @@
-﻿import React, { useState } from 'react';
-import { UploadCloud, FileSpreadsheet, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { UploadCloud, FileSpreadsheet, CheckCircle2, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { useFinancial } from '../../context/FinancialContext';
 import { parseOFX } from '../../utils/ofxParser';
 import { parseCSV } from '../../utils/csvParser';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { predictCategory } from '../../utils/smartCategorizer';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ interface ImportExportModalProps {
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose }) => {
-  const { accounts, categories, importTransactions, user } = useFinancial();
+  const { accounts, categories, transactions, importTransactions, user } = useFinancial();
 
   const [fileType, setFileType] = useState<'ofx' | 'csv'>('ofx');
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
@@ -36,14 +37,21 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
         setFileType('ofx');
         const ofxItems = parseOFX(content);
         setParsedList(
-          ofxItems.map((item) => ({
-            description: item.memo,
-            amount: item.amount,
-            type: item.type === 'CREDIT' ? 'income' : 'expense',
-            date: item.date,
-            categoryId: categories.find(c => c.type === (item.type === 'CREDIT' ? 'income' : 'expense'))?.id || '',
-            selected: true,
-          }))
+          ofxItems.map((item) => {
+            const itemType = item.type === 'CREDIT' ? 'income' : 'expense';
+            const pred = predictCategory(item.memo, itemType, categories, transactions);
+            const fallbackCat = categories.find(c => c.type === itemType)?.id || '';
+            return {
+              description: item.memo,
+              amount: item.amount,
+              type: itemType,
+              date: item.date,
+              categoryId: pred?.categoryId || fallbackCat,
+              categoryName: pred?.categoryName || categories.find(c => c.id === fallbackCat)?.name,
+              isPredicted: !!pred,
+              selected: true,
+            };
+          })
         );
       } else {
         setFileType('csv');
@@ -55,13 +63,18 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
             const valStr = row['Valor'] || row['Quantia'] || row['Amount'] || Object.values(row)[2] || '0';
             const cleanVal = parseFloat(valStr.replace('R$', '').replace('.', '').replace(',', '.').trim()) || 0;
             const isInc = cleanVal >= 0;
+            const rowType = isInc ? 'income' : 'expense';
+            const pred = predictCategory(desc, rowType, categories, transactions);
+            const fallbackCat = categories.find(c => c.type === rowType)?.id || '';
 
             return {
               description: desc,
               amount: Math.abs(cleanVal),
-              type: isInc ? 'income' : 'expense',
+              type: rowType,
               date: new Date().toISOString().split('T')[0],
-              categoryId: categories.find(c => c.type === (isInc ? 'income' : 'expense'))?.id || '',
+              categoryId: pred?.categoryId || fallbackCat,
+              categoryName: pred?.categoryName || categories.find(c => c.id === fallbackCat)?.name,
+              isPredicted: !!pred,
               selected: true,
             };
           })
@@ -168,7 +181,15 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
                   />
                   <div>
                     <p className="font-bold text-slate-800 dark:text-slate-200">{item.description}</p>
-                    <p className="text-[10px] text-slate-400">{formatDate(item.date)}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-slate-400">{formatDate(item.date)}</span>
+                      {item.categoryName && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-bold flex items-center gap-0.5">
+                          {item.isPredicted && <Sparkles className="w-2.5 h-2.5 text-purple-500" />}
+                          <span>{item.categoryName}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

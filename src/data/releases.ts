@@ -34,10 +34,37 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.27';
+export const CURRENT_VERSION = '1.1.28';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.28',
+    releaseDate: '2026-09-07',
+    summary: 'Bloqueio biométrico por PIN/digital, exportação para Excel (.xlsx) com múltiplas abas, desafios de economia (52 semanas) e categorização preditiva inteligente.',
+    highlights: [
+      {
+        title: 'Bloqueio Biométrico & PIN Seguro',
+        description: 'Proteja a abertura do Finly com código de 4 dígitos criptografado (SHA-256) e biometria (TouchID/FaceID/Digital).',
+        type: 'feature',
+      },
+      {
+        title: 'Exportação para Excel (.xlsx) Formatado',
+        description: 'Geração nativa de pastas de trabalho em Excel com abas de Resumo Executivo, Lançamentos Detalhados e Contas.',
+        type: 'feature',
+      },
+      {
+        title: 'Desafios de Economia (Savings Challenges)',
+        description: 'Gamificação para poupar com Desafio das 52 Semanas, Caixa Rápido 30 Dias, Detox Sem Delivery e animações comemorativas.',
+        type: 'feature',
+      },
+      {
+        title: 'Categorização Automática com Aprendizado',
+        description: 'Reconhecimento preditivo de categorias por histórico e dicionário de estabelecimentos para lançamentos e extratos OFX/CSV.',
+        type: 'feature',
+      },
+    ],
+  },
   {
     version: '1.1.27',
     releaseDate: '2026-09-07',

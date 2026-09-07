@@ -34,6 +34,15 @@ import { AppUpdateModal } from './components/common/AppUpdateModal';
 import { WebWhatsNewModal } from './components/common/WebWhatsNewModal';
 import { HelpCenterPage } from './components/help/HelpCenterPage';
 import { setRootBackHandler } from './utils/backButtonManager';
+import { PinLockScreen } from './components/common/PinLockScreen';
+import {
+  isSecurityLockEnabled,
+  isAppLocked,
+  lockApp,
+  unlockApp,
+  recordActivity,
+  shouldLockDueToInactivity,
+} from './utils/securityManager';
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -88,6 +97,57 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(getInitialTabFromPath);
   const [cardsNavKey, setCardsNavKey] = useState<number>(0);
   const [selectedCardIdForDetail, setSelectedCardIdForDetail] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState<boolean>(() => isSecurityLockEnabled() && isAppLocked());
+
+  // Security Lock Monitor (Visibility, Inactivity, Activity recording)
+  useEffect(() => {
+    if (!currentUser || !isSecurityLockEnabled()) return;
+
+    // Check on mount
+    if (shouldLockDueToInactivity()) {
+      lockApp();
+      setIsLocked(true);
+    }
+
+    const handleLockStateChanged = (e: CustomEvent) => {
+      setIsLocked(e.detail.locked);
+    };
+    window.addEventListener('finly_lock_state_changed' as any, handleLockStateChanged);
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        recordActivity();
+      } else {
+        if (shouldLockDueToInactivity()) {
+          lockApp();
+          setIsLocked(true);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Throttled activity recorder
+    let lastRecorded = Date.now();
+    const handleUserInteraction = () => {
+      const now = Date.now();
+      if (now - lastRecorded > 15000) { // Record at most every 15s
+        lastRecorded = now;
+        recordActivity();
+      }
+    };
+
+    window.addEventListener('click', handleUserInteraction, { passive: true });
+    window.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    window.addEventListener('keydown', handleUserInteraction, { passive: true });
+
+    return () => {
+      window.removeEventListener('finly_lock_state_changed' as any, handleLockStateChanged);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, [currentUser]);
 
   // Background Financial Alerts Checker
   useEffect(() => {
@@ -349,6 +409,11 @@ const AppContent: React.FC = () => {
       <WebWhatsNewModal
         onNavigateToSobre={() => handleSelectTab('sobre')}
       />
+
+      {/* Security Vault PIN / Biometric Lock Screen */}
+      {isLocked && (
+        <PinLockScreen onUnlock={() => setIsLocked(false)} />
+      )}
     </div>
   );
 };

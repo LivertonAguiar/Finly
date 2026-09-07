@@ -1,32 +1,31 @@
 {
-  "version": "1.1.27",
-  "latestVersion": "1.1.27",
+  "version": "1.1.28",
+  "latestVersion": "1.1.28",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.27: Exportação de faturas em CSV/PDF com UTF-8 BOM, notificação com botão desfazer exclusão de 5s, edição de dívidas, configurações em 2 colunas e suporte a gestos preditivos de voltar no Android.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.27/finly-v1.1.27.apk",
+  "notes": "Novidades da v1.1.28: Bloqueio biométrico por PIN/digital, exportação completa para Excel (.xlsx), desafios de economia gamificados e categorização preditiva inteligente.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.28/finly-v1.1.28.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Exportação completa de faturas de cartão em CSV (UTF-8 BOM) e PDF corporativo",
-      "Notificação flutuante com botão Desfazer (Undo) de 5 segundos para restaurar qualquer item excluído",
-      "Edição completa de Dívidas e Financiamentos com modal detalhado e taxas de juros",
-      "Cartões de crédito na barra de navegação inferior mobile (substituindo planejamento)"
+      "Bloqueio Biométrico & PIN Seguro de 4 dígitos com criptografia SHA-256 e WebAuthn",
+      "Exportação nativa para Excel (.xlsx) com múltiplas abas formatadas e fórmulas automáticas",
+      "Desafios de Economia gamificados (52 Semanas, Caixa Rápido 30 Dias, Detox Sem Delivery)",
+      "Categorização Automática com Aprendizado preditivo em lançamentos e importação OFX/CSV"
     ],
     "fixes": [
-      "Navegação por gestos no Android: o gesto de voltar (edge swipe) fecha modais de adição sem resetar abas ou sair do app",
-      "Remoção dos botões de expandir/redimensionar cards no app mobile para toque mais limpo"
+      "Correção do runtime Gradle para Android com ambiente Java 17 LTS",
+      "Remoção do botão redundante '+ NOVO' no topo da tela de Transações"
     ],
     "improvements": [
-      "Configurações reorganizadas em 2 colunas diretas (Preferências vs Segurança/Login)",
-      "Aba Sobre enxuta e minimalista com Central de Ajuda expansível/recolhível no rodapé",
-      "Predictive Back Gestures nativos ativados no Android 13/14/15"
+      "Barra superior mais limpa com remoção do botão de ajuda do header (acessível pelo menu de usuário)",
+      "Animação comemorativa de confetes ao registrar progresso nos desafios de economia"
     ]
   },
   "highlights": [
-    "[Novidade] Botão Desfazer (Undo) de 5s para restaurar imediatamente qualquer exclusão acidental",
-    "[Novidade] Edição completa de contratos de dívidas, saldo devedor e parcelas",
-    "[Novidade] Exportação de lançamentos de fatura para CSV e PDF",
-    "[Melhoria] Suporte nativo a gestos de voltar no Android fechando janelas de adição",
-    "[Melhoria] Página de configurações em 2 colunas limpas e sem abas confusas"
+    "[Segurança] Bloqueio por PIN e Biometria (TouchID/FaceID/Digital)",
+    "[Produtividade] Exportação para Excel (.xlsx) oficial com abas executivas",
+    "[Gamificação] Desafios de Economia para poupar de forma interativa",
+    "[Inteligência] Reconhecimento preditivo de categorias por histórico e dicionário",
+    "[Design] Interface de transações mais limpa com foco no botão central da barra inferior"
   ]
 }

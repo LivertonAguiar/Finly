@@ -18,7 +18,9 @@ import {
   Upload,
   Trash2,
   FileText,
+  Sparkles,
 } from 'lucide-react';
+import { predictCategory, trainFromHistory } from '../../utils/smartCategorizer';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
@@ -50,9 +52,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   onNavigateToTab,
   onOpenNewCard,
 }) => {
-  const { categories, accounts, cards, addTransaction, updateTransaction, user } = useFinancial();
+  const { categories, accounts, cards, transactions, addTransaction, updateTransaction, user } = useFinancial();
 
   const [type, setType] = useState<TransactionType>(initialType);
+  const [autoPredictedBadge, setAutoPredictedBadge] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [centsAmount, setCentsAmount] = useState<number>(() => {
@@ -260,6 +263,23 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setAmount((cents / 100).toFixed(2));
   };
 
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDescription(val);
+
+    if (!editingTransaction && type !== 'transfer' && val.trim().length >= 3) {
+      const pred = predictCategory(val, type, categories, transactions);
+      if (pred) {
+        setCategoryId(pred.categoryId);
+        setAutoPredictedBadge(pred.categoryName);
+      } else {
+        setAutoPredictedBadge(null);
+      }
+    } else if (val.trim().length < 3) {
+      setAutoPredictedBadge(null);
+    }
+  };
+
   const handleAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       e.preventDefault();
@@ -383,9 +403,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             });
           }
         }
-      } else {
         addTransaction(txData);
       }
+
+      // Reinforce smart categorizer with new transaction
+      try {
+        trainFromHistory([...transactions, { ...txData, id: 'temp', createdAt: new Date().toISOString() } as Transaction]);
+      } catch (e) {}
     }
 
     if (saveAndNew) {
@@ -666,7 +690,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 : 'Ex: Conta de luz, Aluguel, Farmácia...'
             }
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={handleDescriptionChange}
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
           />
         </div>
@@ -677,12 +701,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         {type !== 'transfer' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Categoria *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Categoria *</label>
+                {autoPredictedBadge && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 font-bold flex items-center gap-1 animate-in fade-in">
+                    <Sparkles className="w-3 h-3 text-purple-500" />
+                    <span>Sugerido</span>
+                  </span>
+                )}
+              </div>
               <select
                 value={categoryId}
                 onChange={e => {
                   setCategoryId(e.target.value);
                   setSubcategoryId('');
+                  setAutoPredictedBadge(null);
                 }}
                 required
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"

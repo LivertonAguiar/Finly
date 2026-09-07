@@ -34,6 +34,7 @@ import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { Modal } from '../ui/Modal';
 import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
+import { exportReportExcel } from '../../utils/excelExportService';
 
 type TabType = 'donut' | 'line' | 'bar';
 
@@ -227,6 +228,31 @@ export const ReportsPage: React.FC = () => {
       });
     } catch (e) {
       console.error('Erro ao gerar relatório PDF:', e);
+    } finally {
+      setIsExporting(false);
+      setIsExportDropdownOpen(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    setIsExporting(true);
+    try {
+      exportReportExcel({
+        periodLabel: `${capitalizedMonth} de ${yearNum}`,
+        periodSlug: `${currentMonthPrefix}_${viewRegime}`,
+        viewRegime,
+        totalIncome: reportTotals.income,
+        totalExpense: reportTotals.expense,
+        netBalance: reportTotals.balance,
+        transactions: filteredTransactions,
+        categories,
+        accounts,
+        cards,
+        currency: user?.currency || 'BRL',
+        userEmail: user?.email,
+      });
+    } catch (e) {
+      console.error('Erro ao gerar relatório Excel:', e);
     } finally {
       setIsExporting(false);
       setIsExportDropdownOpen(false);
@@ -707,16 +733,34 @@ export const ReportsPage: React.FC = () => {
 
                 <button
                   type="button"
+                  onClick={handleExportExcel}
+                  disabled={isExporting}
+                  className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <span>Planilha Excel (.xlsx)</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">Oficial</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-normal">Múltiplas abas formatadas e fórmulas</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleExportCSV}
                   disabled={isExporting}
                   className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-                    <FileSpreadsheet className="w-4 h-4" />
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                    <Download className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-black text-slate-900 dark:text-slate-100">Planilha em CSV</div>
-                    <div className="text-[10px] text-slate-400 font-normal">Para Excel e Google Planilhas</div>
+                    <div className="font-black text-slate-900 dark:text-slate-100">Exportar em CSV</div>
+                    <div className="text-[10px] text-slate-400 font-normal">Formato bruto universal</div>
                   </div>
                 </button>
               </div>
