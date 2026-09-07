@@ -243,6 +243,8 @@ export async function sendLocalNotification(
             channelId: 'finly-alerts',
             schedule: { at: new Date(Date.now() + 150) },
             extra: options.data,
+            smallIcon: 'ic_stat_finly_notification',
+            iconColor: '#7C4DFF',
           },
         ],
       });
@@ -260,8 +262,8 @@ export async function sendLocalNotification(
       if (reg && reg.showNotification) {
         await reg.showNotification(title, {
           body: options.body,
-          icon: options.icon || '/favicon.ico',
-          badge: options.badge || '/favicon.ico',
+          icon: options.icon || '/finly-logo.png',
+          badge: options.badge || '/icon-192.png',
           tag: options.tag || 'finly-alert',
           data: options.data,
         });
@@ -275,7 +277,7 @@ export async function sendLocalNotification(
     try {
       const notif = new Notification(title, {
         body: options.body,
-        icon: options.icon || '/favicon.ico',
+        icon: options.icon || '/finly-logo.png',
         tag: options.tag || 'finly-alert',
         data: options.data,
       });

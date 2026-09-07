@@ -684,7 +684,7 @@ export const FinlyWebMockup: React.FC<FinlyWebMockupProps> = ({
           </div>
 
           <div className="p-1 rounded-lg bg-slate-900 border border-slate-800 text-[9px] text-slate-400 text-center">
-            v1.1.28 Cloud
+            v1.1.29 Cloud
           </div>
         </div>
 

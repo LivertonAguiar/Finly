@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <!-- Finly Stylized "F" -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,6 C8,4.895 8.895,4 10,4 H24 C25.105,4 26,4.895 26,6 C26,7.105 25.105,8 24,8 H13 V14 H22 C23.105,14 24,14.895 24,16 C24,17.105 23.105,18 22,18 H13 V25.8 C13,26.9 12.1,27.8 11,27.8 C9.9,27.8 9,26.9 9,25.8 V6 Z" />
+    <!-- Finly Financial Point -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22.5,23.5m-3.5,0a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0" />
+</vector>

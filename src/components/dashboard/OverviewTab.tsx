@@ -1736,21 +1736,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-[#141416] hover:bg-slate-100/90 dark:hover:bg-[#1E1E22] border border-slate-200/60 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
               title="Clique para ver extrato e composição da fatura"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1">
-                    {card.name}
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all" />
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1 min-w-0 truncate">
+                    <span className="truncate">{card.name}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all shrink-0" />
                   </h4>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-[#18181B] border border-slate-200/60 dark:border-slate-800/80 ${card.statusColor}`}>
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 inline-flex items-center border shadow-2xs ${card.statusColor}`}>
                     {card.statusLabel}
                   </span>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <span className={`text-xs font-black block ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
                     {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
                     {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
                   </span>
                 </div>

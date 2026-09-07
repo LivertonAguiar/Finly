@@ -3,6 +3,27 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.29] - 2026-09-07
+
+### ✨ Novas Funcionalidades & UI/UX
+- **Nova NavBar Ultra-Compacta & Responsiva (Micro Pílula Fina - 44px)**:
+  - Altura reduzida para 44px com largura auto-contida em cápsula de 310px centralizada.
+  - Libera mais de 90% da tela útil para gráficos, faturas e extratos, sem qualquer sobreposição de dados.
+  - 4 abas de navegação (Início, Transações, Cartões, Mais) com ícones lineares puros e micro-ponto de luz sob a aba selecionada.
+  - Botão de ação central `+` circular de 32px integrado com rotação suave em `X` para o menu Speed Dial.
+  - Total compatibilidade com safe-area insets (`env(safe-area-inset-bottom)`).
+- **Ícone Oficial do Finly nas Notificações Android**:
+  - Vetores monocromáticos com transparência (`ic_stat_finly_notification.xml` e `ic_stat_finly.xml`) em conformidade com as diretrizes do Android 5.0+.
+  - Resoluções de alta densidade geradas para mdpi, hdpi, xhdpi, xxhdpi e xxxhdpi.
+  - Accent color oficial configurada (`#7C4DFF`).
+
+### ⚡ Melhorias & Correções
+- **Contraste & Contorno dos Cards no Modo Claro (WEB)**:
+  - Fundo do modo claro elevado para `#F1F5F9`, criando 52 níveis de contraste contra os cartões brancos `#FFFFFF`.
+  - Contornos destacados em tom Slate-300 (`#CBD5E1`) no tema claro.
+- **Badge de Status da Fatura do Cartão de Crédito**:
+  - Formatação arredondada em pílula (`rounded-full`), prevenção de quebra de linha (`whitespace-nowrap`) e truncamento inteligente no título do cartão.
+
 ---
 
 ## [1.1.28] - 2026-09-07

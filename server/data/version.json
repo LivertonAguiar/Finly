@@ -1,9 +1,10 @@
 {
-  "version": "1.1.28",
-  "latestVersion": "1.1.28",
+  "version": "1.1.29",
+  "latestVersion": "1.1.29",
+  "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.28: Bloqueio biométrico por PIN/digital, exportação completa para Excel (.xlsx), desafios de economia gamificados e categorização preditiva inteligente.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.28/finly-v1.1.28.apk",
+  "notes": "Novidades da v1.1.29: Nova barra de navegação ultra-compacta e responsiva (Micro Pílula 44px), ícone de notificação oficial do Finly no Android, contornos aprimorados no modo claro e ajustes visuais de cartões.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.29/finly-v1.1.29.apk",
   "isLatest": true,
   "sections": {
     "features": [

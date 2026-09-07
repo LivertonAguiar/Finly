@@ -34,10 +34,37 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.28';
+export const CURRENT_VERSION = '1.1.29';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.29',
+    releaseDate: '2026-09-07',
+    summary: 'Nova barra de navegação ultra-compacta (Micro Pílula 44px), ícone de notificação oficial no Android, contornos aprimorados no modo claro e ajustes no badge de fatura.',
+    highlights: [
+      {
+        title: 'NavBar Ultra-Compacta (Micro Pílula 44px)',
+        description: 'Barra de navegação flutuante minimalista de 44px que libera mais de 90% da tela útil para gráficos e extratos com micro-indicador luminoso.',
+        type: 'feature',
+      },
+      {
+        title: 'Ícone Oficial nas Notificações Android',
+        description: 'Integração do símbolo oficial do Finly como ícone de status nativo monocromático em conformidade com as diretrizes do Android 5.0+.',
+        type: 'feature',
+      },
+      {
+        title: 'Contornos & Contraste no Modo Claro (WEB)',
+        description: 'Elevação do contraste dos cartões e contornos nítidos em tom Slate-300 no tema claro contra o canvas de fundo.',
+        type: 'improvement',
+      },
+      {
+        title: 'Badge de Fatura do Cartão de Crédito',
+        description: 'Formatação em pílula arredondada com prevenção de quebra de linha no indicador de fatura paga.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.28',
     releaseDate: '2026-09-07',

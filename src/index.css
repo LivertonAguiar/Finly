@@ -131,24 +131,63 @@ html, body, #root {
 /* ========================================================================= */
 /* LIGHT MODE: CRISP BORDERS, ELEVATED SURFACES & SHARP CONTRAST           */
 /* ========================================================================= */
+html:not(.dark) {
+  --app-bg: #F1F5F9;
+  --app-card-bg: #FFFFFF;
+}
+
 html:not(.dark) body {
   background-color: #F1F5F9 !important; /* Soft slate canvas for high card pop */
   color: #0F172A !important;
 }
 
-/* Crisp 1px border on all light mode cards, widgets and panels */
+/* Light mode screen canvas wrapper (Web / Desktop / Mobile) */
+html:not(.dark) .min-h-screen.bg-\[\#F8FAFC\],
+html:not(.dark) .bg-\[\#F8FAFC\] {
+  background-color: #F1F5F9 !important;
+}
+
+/* Crisp, visibly defined 1px borders on ALL light mode cards, widgets and panels */
 html:not(.dark) .rounded-\[25px\],
+html:not(.dark) .rounded-\[28px\],
+html:not(.dark) .rounded-\[24px\],
+html:not(.dark) .rounded-\[22px\],
 html:not(.dark) .rounded-3xl,
+html:not(.dark) .rounded-2xl,
+html:not(.dark) .rounded-xl,
 html:not(.dark) .rounded-theme-card {
-  border: 1px solid #E2E8F0 !important;
-  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+}
+
+/* Universal crisp borders for all slate/gray border utility classes in light mode */
+html:not(.dark) .border-slate-200,
+html:not(.dark) .border-slate-200\/80,
+html:not(.dark) .border-slate-200\/90,
+html:not(.dark) .border-slate-200\/70,
+html:not(.dark) .border-slate-200\/60,
+html:not(.dark) .border-slate-200\/50,
+html:not(.dark) .border-slate-200\/40,
+html:not(.dark) .border-slate-300,
+html:not(.dark) .border-slate-300\/80,
+html:not(.dark) .border-gray-200,
+html:not(.dark) .border-gray-300 {
+  border-color: #CBD5E1 !important;
+}
+
+/* Sub-borders and inner dividers inside cards */
+html:not(.dark) .border-slate-100,
+html:not(.dark) .border-slate-100\/80,
+html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #E2E8F0 !important;
 }
 
 /* Light mode Header, Sidebar & BottomNav borders */
 html:not(.dark) header,
 html:not(.dark) aside,
 html:not(.dark) nav {
-  border-color: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
   background-color: #FFFFFF !important;
 }
 
@@ -168,12 +207,11 @@ html:not(.dark) textarea:not(.borderless-money-input):focus {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent, #7C4DFF) 25%, transparent) !important;
 }
 
-/* Light mode Table Dividers and Separators */
-html:not(.dark) .border-slate-100,
-html:not(.dark) .border-slate-200,
-html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-html:not(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #E2E8F0 !important;
+/* Light mode popovers, dropdown menus and modals */
+html:not(.dark) [role="dialog"],
+html:not(.dark) .shadow-2xl:not([class*="bg-black"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not(.border-transparent),
+html:not(.dark) .shadow-xl:not([class*="bg-black"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not(.border-transparent) {
+  border-color: #CBD5E1 !important;
 }
 
 /* ========================================================================= */

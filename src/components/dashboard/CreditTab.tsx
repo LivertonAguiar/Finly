@@ -945,7 +945,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     </div>
                     <div>
                       <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white line-clamp-1">{card.name}</h4>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block mt-0.5 ${card.statusColor}`}>
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
                         {card.statusLabel}
                       </span>
                     </div>
@@ -1068,7 +1068,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                         <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                           {card.name}
                         </h4>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${card.statusColor}`}>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
                           {card.statusLabel}
                         </span>
                       </div>

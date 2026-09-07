@@ -67,7 +67,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       {/* Backdrop & Speed Dial Menu Overlay */}
       {isSpeedDialOpen && (
         <div
-          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex flex-col justify-end items-center pb-24 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 flex flex-col justify-end items-center pb-20 sm:pb-24 animate-in fade-in duration-200"
           onClick={() => setIsSpeedDialOpen(false)}
         >
           {/* Radial / Arc Action Buttons Container */}
@@ -181,95 +181,148 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </div>
       )}
 
-      {/* Main Bottom Navigation Bar */}
+      {/* Main Bottom Navigation Bar - Micro Pílula Fina (Opção B: 44px) */}
       <nav
-        className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-around px-2 z-40 md:hidden shadow-2xl transition-all select-none"
+        className="fixed left-0 right-0 z-50 flex justify-center items-center px-4 pointer-events-none md:hidden select-none transition-all duration-300"
         style={{
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px), 8px)',
-          height: 'calc(3.8rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))',
+          bottom: 'max(env(safe-area-inset-bottom, 0px) + 8px, 12px)',
         }}
+        aria-label="Navegação Mobile"
       >
-        {/* 1. Principal / Dashboard */}
-        <button
-          onClick={() => {
-            setIsSpeedDialOpen(false);
-            setActiveTab('dashboard');
-          }}
-          style={activeTab === 'dashboard' ? { color: accentColor } : undefined}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'dashboard' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
-          }`}
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-[10px] tracking-tight">{t('nav.dashboard', 'Principal')}</span>
-        </button>
+        <div className="pointer-events-auto flex items-center justify-between px-2 h-11 w-full max-w-[310px] rounded-full bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-2xl border border-slate-300/90 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+          {/* 1. Principal / Dashboard */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSpeedDialOpen(false);
+              setActiveTab('dashboard');
+            }}
+            style={activeTab === 'dashboard' ? { color: accentColor } : undefined}
+            className={`relative flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all active:scale-90 cursor-pointer ${
+              activeTab === 'dashboard'
+                ? 'font-bold'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+            title={t('nav.dashboard', 'Principal')}
+            aria-label={t('nav.dashboard', 'Principal')}
+          >
+            <Home className="w-5 h-5 stroke-[2.2]" />
+            {activeTab === 'dashboard' && (
+              <span
+                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
+                style={{
+                  backgroundColor: accentColor,
+                  boxShadow: `0 0 6px ${accentColor}`,
+                }}
+              />
+            )}
+          </button>
 
-        {/* 2. Transações */}
-        <button
-          onClick={() => {
-            setIsSpeedDialOpen(false);
-            setActiveTab('transacoes');
-          }}
-          style={activeTab === 'transacoes' ? { color: accentColor } : undefined}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'transacoes' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
-          }`}
-        >
-          <List className="w-5 h-5" />
-          <span className="text-[10px] tracking-tight">{t('nav.transactions', 'Transações')}</span>
-        </button>
+          {/* 2. Transações / Extrato */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSpeedDialOpen(false);
+              setActiveTab('transacoes');
+            }}
+            style={activeTab === 'transacoes' ? { color: accentColor } : undefined}
+            className={`relative flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all active:scale-90 cursor-pointer ${
+              activeTab === 'transacoes'
+                ? 'font-bold'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+            title={t('nav.transactions', 'Transações')}
+            aria-label={t('nav.transactions', 'Transações')}
+          >
+            <ArrowLeftRight className="w-5 h-5 stroke-[2.2]" />
+            {activeTab === 'transacoes' && (
+              <span
+                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
+                style={{
+                  backgroundColor: accentColor,
+                  boxShadow: `0 0 6px ${accentColor}`,
+                }}
+              />
+            )}
+          </button>
 
-        {/* 3. Central FAB Button (Toggles Speed Dial) */}
-        <div className="flex-1 flex items-center justify-center -mt-6 z-40">
+          {/* 3. Botão Central '+' (Ações Rápidas) */}
           <button
             type="button"
             onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
             style={{
               backgroundColor: accentColor,
-              boxShadow: `0 4px 14px 0 ${accentColor}40`,
+              boxShadow: `0 2px 10px ${accentColor}66`,
             }}
-            className={`w-14 h-14 rounded-full text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer border-4 border-white dark:border-[#121214] hover:brightness-110 ${
-              isSpeedDialOpen ? 'rotate-90 brightness-90' : ''
+            className={`w-8 h-8 rounded-full text-white flex items-center justify-center shrink-0 shadow-md active:scale-85 transition-transform duration-200 cursor-pointer hover:brightness-110 ${
+              isSpeedDialOpen ? 'rotate-90 brightness-95' : ''
             }`}
             title="Ações Rápidas"
+            aria-label="Ações Rápidas"
           >
             {isSpeedDialOpen ? (
-              <X className="w-6 h-6 stroke-[3]" />
+              <X className="w-4 h-4 stroke-[3]" />
             ) : (
-              <Plus className="w-6 h-6 stroke-[3]" />
+              <Plus className="w-4 h-4 stroke-[3]" />
+            )}
+          </button>
+
+          {/* 4. Cartões */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSpeedDialOpen(false);
+              setActiveTab('cartoes');
+            }}
+            style={activeTab === 'cartoes' ? { color: accentColor } : undefined}
+            className={`relative flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all active:scale-90 cursor-pointer ${
+              activeTab === 'cartoes'
+                ? 'font-bold'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+            title={t('nav.cards_short', 'Cartões')}
+            aria-label={t('nav.cards_short', 'Cartões')}
+          >
+            <CreditCard className="w-5 h-5 stroke-[2.2]" />
+            {activeTab === 'cartoes' && (
+              <span
+                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
+                style={{
+                  backgroundColor: accentColor,
+                  boxShadow: `0 0 6px ${accentColor}`,
+                }}
+              />
+            )}
+          </button>
+
+          {/* 5. Mais */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSpeedDialOpen(false);
+              setActiveTab('mais');
+            }}
+            style={activeTab === 'mais' ? { color: accentColor } : undefined}
+            className={`relative flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all active:scale-90 cursor-pointer ${
+              activeTab === 'mais'
+                ? 'font-bold'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+            title={t('nav.more', 'Mais')}
+            aria-label={t('nav.more', 'Mais')}
+          >
+            <MoreHorizontal className="w-5 h-5 stroke-[2.2]" />
+            {activeTab === 'mais' && (
+              <span
+                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
+                style={{
+                  backgroundColor: accentColor,
+                  boxShadow: `0 0 6px ${accentColor}`,
+                }}
+              />
             )}
           </button>
         </div>
-
-        {/* 4. Cartões */}
-        <button
-          onClick={() => {
-            setIsSpeedDialOpen(false);
-            setActiveTab('cartoes');
-          }}
-          style={activeTab === 'cartoes' ? { color: accentColor } : undefined}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'cartoes' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
-          }`}
-        >
-          <CreditCard className="w-5 h-5" />
-          <span className="text-[10px] tracking-tight">{t('nav.cards_short', 'Cartões')}</span>
-        </button>
-
-        {/* 5. Mais */}
-        <button
-          onClick={() => {
-            setIsSpeedDialOpen(false);
-            setActiveTab('mais');
-          }}
-          style={activeTab === 'mais' ? { color: accentColor } : undefined}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'mais' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
-          }`}
-        >
-          <MoreHorizontal className="w-5 h-5" />
-          <span className="text-[10px] tracking-tight">{t('nav.more', 'Mais')}</span>
-        </button>
       </nav>
     </>
   );
