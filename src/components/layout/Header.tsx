@@ -14,7 +14,6 @@ import {
   Crown,
   Cloud,
   CheckCircle2,
-  RefreshCw,
   CloudOff,
   Sparkles,
   LifeBuoy,
@@ -23,7 +22,6 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
-import { apiSync, SyncStatus } from '../../utils/apiSync';
 import { FinlyLogo } from '../ui/FinlyLogo';
 import { useTranslation } from '../../utils/i18n';
 import { isNativeCapacitor } from '../../utils/appUpdateService';
@@ -52,7 +50,6 @@ export const Header: React.FC<HeaderProps> = ({
     notifications,
     markAllNotificationsRead,
     exportBackupJSON,
-    refreshData,
   } = useFinancial();
 
   const { t } = useTranslation();
@@ -60,24 +57,27 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isManualSyncing, setIsManualSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
-
-  useEffect(() => {
-    return apiSync.subscribeStatus(setSyncStatus);
-  }, []);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setShowUserMenu(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotifications(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -186,27 +186,13 @@ export const Header: React.FC<HeaderProps> = ({
           {user.theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
         </button>
 
-        {/* Quick Data Sync Button */}
-        <button
-          onClick={async () => {
-            setIsManualSyncing(true);
-            await refreshData();
-            setTimeout(() => setIsManualSyncing(false), 600);
-          }}
-          title={isManualSyncing ? 'Sincronizando dados...' : 'Sincronizar e Atualizar Dados'}
-          className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        >
-          <RefreshCw className={`w-4 h-4 text-purple-500 ${isManualSyncing ? 'animate-spin' : ''}`} />
-        </button>
-
-
-
         {/* Notifications */}
-        <div className="relative">
+        <div className="relative" ref={notificationsRef}>
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={() => setShowNotifications(prev => !prev)}
             className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors cursor-pointer"
             title="Notificações"
+            aria-label="Abrir Notificações"
           >
             <Bell className="w-4.5 h-4.5" />
             {unreadCount > 0 && (
@@ -215,28 +201,52 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50 animate-in fade-in-50 zoom-in-95">
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="font-bold text-xs text-slate-800 dark:text-slate-100">Notificações</h4>
-                {unreadCount > 0 && (
-                  <button onClick={markAllNotificationsRead} className="text-[10px] text-emerald-600 font-bold hover:underline">
-                    Marcar lidas
-                  </button>
-                )}
+            <>
+              {/* Backdrop para fechar ao clicar/tocar fora em qualquer dispositivo */}
+              <div
+                className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40 backdrop-blur-[1px] md:bg-transparent md:backdrop-blur-none"
+                onClick={() => setShowNotifications(false)}
+                onTouchStart={() => setShowNotifications(false)}
+              />
+
+              <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 z-50 animate-in fade-in-50 zoom-in-95">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-purple-500" />
+                    <h4 className="font-bold text-xs text-slate-800 dark:text-slate-100">Notificações</h4>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllNotificationsRead}
+                        className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                      >
+                        Marcar lidas
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                      title="Fechar"
+                    >
+                      <span className="text-xs font-bold leading-none px-1">✕</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="py-2 divide-y divide-slate-100 dark:divide-slate-700/60 max-h-64 overflow-y-auto text-xs">
+                  {notifications.length === 0 ? (
+                    <p className="text-center text-slate-400 py-4">Sem notificações.</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className="py-2">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">{n.title}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{n.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="py-2 divide-y divide-slate-100 dark:divide-slate-700/60 max-h-64 overflow-y-auto text-xs">
-                {notifications.length === 0 ? (
-                  <p className="text-center text-slate-400 py-4">Sem notificações.</p>
-                ) : (
-                  notifications.map(n => (
-                    <div key={n.id} className="py-2">
-                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">{n.title}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{n.message}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -251,7 +261,15 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1">
+            <>
+              {/* Backdrop para fechar ao clicar/tocar fora em qualquer dispositivo */}
+              <div
+                className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40 backdrop-blur-[1px] md:bg-transparent md:backdrop-blur-none"
+                onClick={() => setShowUserMenu(false)}
+                onTouchStart={() => setShowUserMenu(false)}
+              />
+
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1">
               <div className="p-2.5 border-b border-slate-100 dark:border-slate-800">
                 <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
                   {currentUser?.name || user.name}
@@ -318,6 +336,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               </div>
             </div>
+          </>
           )}
         </div>
       </div>

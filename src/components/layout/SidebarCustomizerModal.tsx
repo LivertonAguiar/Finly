@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Check,
@@ -37,6 +37,14 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
   const [activeItems, setActiveItems] = useState<string[]>(getStoredSidebarItems);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const activeItemsRef = useRef<string[]>(activeItems);
+  activeItemsRef.current = activeItems;
+
+  const dragIndexRef = useRef<number | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
 
   // Sync on modal open
   useEffect(() => {
@@ -77,28 +85,83 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
     onItemsChange?.(reordered);
   };
 
-  // Drag and Drop
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  // Global safety listener to release drag if released anywhere
+  useEffect(() => {
+    const handleGlobalEnd = () => {
+      if (isDraggingRef.current) {
+        handleEndDrag();
+      }
+    };
+    window.addEventListener('pointerup', handleGlobalEnd);
+    window.addEventListener('touchend', handleGlobalEnd);
+    window.addEventListener('touchcancel', handleGlobalEnd);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalEnd);
+      window.removeEventListener('touchend', handleGlobalEnd);
+      window.removeEventListener('touchcancel', handleGlobalEnd);
+    };
+  }, []);
+
+  // Touch and Pointer Drag and Drop
+  const handleStartDrag = (index: number, clientY: number) => {
+    if (searchTerm) return;
+    dragIndexRef.current = index;
+    isDraggingRef.current = true;
     setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
+    if (navigator.vibrate) {
+      try {
+        navigator.vibrate(20);
+      } catch {}
+    }
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
+  const handleMoveDrag = (clientY: number) => {
+    if (!isDraggingRef.current || dragIndexRef.current === null || !listRef.current) return;
 
-    const reordered = [...activeItems];
-    const [moved] = reordered.splice(draggedIndex, 1);
-    reordered.splice(index, 0, moved);
+    // Auto-scroll modal container if near edges
+    if (scrollContainerRef.current) {
+      const containerRect = scrollContainerRef.current.getBoundingClientRect();
+      const threshold = 60;
+      if (clientY < containerRect.top + threshold) {
+        scrollContainerRef.current.scrollTop -= 8;
+      } else if (clientY > containerRect.bottom - threshold) {
+        scrollContainerRef.current.scrollTop += 8;
+      }
+    }
 
-    setDraggedIndex(index);
-    setActiveItems(reordered);
+    // Find hover index by inspecting children rects
+    const children = Array.from(listRef.current.children) as HTMLElement[];
+    for (let i = 0; i < children.length; i++) {
+      const rect = children[i].getBoundingClientRect();
+      if (clientY >= rect.top && clientY <= rect.bottom) {
+        const currentIndex = dragIndexRef.current;
+        if (currentIndex !== null && currentIndex !== i) {
+          const currentList = [...activeItemsRef.current];
+          const [moved] = currentList.splice(currentIndex, 1);
+          currentList.splice(i, 0, moved);
+
+          dragIndexRef.current = i;
+          setDraggedIndex(i);
+          setActiveItems(currentList);
+          if (navigator.vibrate) {
+            try {
+              navigator.vibrate(12);
+            } catch {}
+          }
+        }
+        break;
+      }
+    }
   };
 
-  const handleDragEnd = () => {
+  const handleEndDrag = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    dragIndexRef.current = null;
     setDraggedIndex(null);
-    saveStoredSidebarItems(activeItems);
-    onItemsChange?.(activeItems);
+
+    saveStoredSidebarItems(activeItemsRef.current);
+    onItemsChange?.(activeItemsRef.current);
   };
 
   const handleResetToDefault = () => {
@@ -186,7 +249,7 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-5 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
+        <div ref={scrollContainerRef} className="p-5 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
           {/* Section 1: Active in Sidebar */}
           <div>
             <div className="flex items-center justify-between mb-3 px-1">
@@ -197,11 +260,11 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
                 </span>
               </h4>
               <span className="text-[11px] text-slate-400 font-medium">
-                Arraste ou use as setas para reordenar
+                Arraste pelo ícone de mover ou use as setas
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div ref={listRef} className="space-y-2">
               {filteredActive.map((item, index) => {
                 const Icon = item.icon;
                 const isDragging = draggedIndex === index;
@@ -209,13 +272,10 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
                 return (
                   <div
                     key={item.id}
-                    draggable={!searchTerm}
-                    onDragStart={e => handleDragStart(e, index)}
-                    onDragOver={e => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
-                    className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                    data-index={index}
+                    className={`p-3 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-3 select-none ${
                       isDragging
-                        ? 'opacity-30 border-dashed border-purple-500 bg-purple-500/10'
+                        ? 'border-purple-500 bg-purple-50/90 dark:bg-purple-950/50 shadow-lg shadow-purple-500/10 scale-[1.01] z-20 ring-2 ring-purple-500/30'
                         : 'bg-white dark:bg-[#202023] border-slate-200 dark:border-slate-800 hover:border-purple-500/50 shadow-xs'
                     }`}
                   >
@@ -223,8 +283,48 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {!searchTerm && (
                         <div
-                          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
-                          title="Clique e arraste para reordenar"
+                          onPointerDown={e => {
+                            if (e.button !== 0) return;
+                            try {
+                              (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                            } catch {}
+                            handleStartDrag(index, e.clientY);
+                          }}
+                          onPointerMove={e => {
+                            if (isDraggingRef.current) {
+                              handleMoveDrag(e.clientY);
+                            }
+                          }}
+                          onPointerUp={e => {
+                            try {
+                              (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                            } catch {}
+                            handleEndDrag();
+                          }}
+                          onPointerCancel={e => {
+                            try {
+                              (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                            } catch {}
+                            handleEndDrag();
+                          }}
+                          onTouchStart={e => {
+                            handleStartDrag(index, e.touches[0].clientY);
+                          }}
+                          onTouchMove={e => {
+                            if (isDraggingRef.current) {
+                              if (e.cancelable) e.preventDefault();
+                              handleMoveDrag(e.touches[0].clientY);
+                            }
+                          }}
+                          onTouchEnd={handleEndDrag}
+                          onTouchCancel={handleEndDrag}
+                          style={{ touchAction: 'none' }}
+                          className={`p-2 -my-2 -ml-2 rounded-xl transition-all shrink-0 flex items-center justify-center touch-none select-none ${
+                            isDragging
+                              ? 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50 cursor-grabbing scale-110'
+                              : 'text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-grab active:cursor-grabbing'
+                          }`}
+                          title="Toque e arraste para reordenar"
                         >
                           <GripVertical className="w-4 h-4" />
                         </div>

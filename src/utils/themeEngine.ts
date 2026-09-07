@@ -109,23 +109,33 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   const savedAccent = localStorage.getItem('finly_accent_color') || '#06B6D4';
   const savedRadius = (localStorage.getItem('finly_card_radius') as CardRadius) || 'squircle';
 
-  const preset = config.preset || savedPreset;
+  let preset = config.preset || savedPreset;
   const accent = config.accentColor || savedAccent;
   const radius = config.cardRadius || savedRadius;
 
+  // Auto-heal: If document has class 'dark' and preset is 'clean-light' and config didn't explicitly request clean-light
+  if (root.classList.contains('dark') && preset === 'clean-light' && !config.preset) {
+    const lastDark = (localStorage.getItem('finly_last_dark_preset') as ThemePreset) || 'sleek-neo-glass';
+    preset = lastDark;
+  }
+
   const presetData = PRESET_COLORS[preset] || PRESET_COLORS['sleek-neo-glass'];
+  const isDark = presetData.mode === 'dark';
 
   // Save to localStorage
-  if (config.preset) localStorage.setItem('finly_theme_preset', config.preset);
+  localStorage.setItem('finly_theme_preset', preset);
+  if (isDark) {
+    localStorage.setItem('finly_last_dark_preset', preset);
+  }
   if (config.accentColor) localStorage.setItem('finly_accent_color', config.accentColor);
   if (config.cardRadius) localStorage.setItem('finly_card_radius', config.cardRadius);
 
-  // Set DOM attributes
+  // Set DOM attributes and classes
   root.setAttribute('data-theme-preset', preset);
   root.setAttribute('data-card-radius', radius);
   root.setAttribute('data-theme-mode', presetData.mode);
 
-  if (presetData.mode === 'dark') {
+  if (isDark) {
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
@@ -134,13 +144,23 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   // Set CSS Variables directly on root
   const radiusPx = RADIUS_MAP[radius] || '36px';
 
-  root.style.setProperty('--app-bg', presetData.bg);
-  root.style.setProperty('--app-card-bg', presetData.cardBg);
   root.style.setProperty('--primary-accent', accent);
   root.style.setProperty('--card-radius', radiusPx);
 
-  document.body.style.backgroundColor = presetData.bg;
-  document.body.style.color = presetData.text;
+  const darkBg = isDark ? presetData.bg : '#080B14';
+  const darkCardBg = isDark ? presetData.cardBg : '#121826';
+
+  if (isDark) {
+    root.style.setProperty('--app-bg', darkBg);
+    root.style.setProperty('--app-card-bg', darkCardBg);
+    document.body.style.backgroundColor = darkBg;
+    document.body.style.color = '#FFFFFF';
+  } else {
+    root.style.setProperty('--app-bg', '#F1F5F9');
+    root.style.setProperty('--app-card-bg', '#FFFFFF');
+    document.body.style.backgroundColor = '#F1F5F9';
+    document.body.style.color = '#0F172A';
+  }
 
   // Update dynamic style tag
   let dynamicStyleTag = document.getElementById('finly-dynamic-theme-style');
@@ -152,20 +172,26 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
 
   dynamicStyleTag.innerHTML = `
     :root {
-      --app-bg: ${presetData.bg} !important;
-      --app-card-bg: ${presetData.cardBg} !important;
       --primary-accent: ${accent} !important;
       --card-radius: ${radiusPx} !important;
     }
-    ${presetData.mode === 'light' ? `
-      body {
-        background-color: #F1F5F9 !important;
-        color: #0F172A !important;
+    html.dark, :root.dark {
+      --app-bg: ${darkBg} !important;
+      --app-card-bg: ${darkCardBg} !important;
+    }
+    html:not(.dark), :root:not(.dark) {
+      --app-bg: #F1F5F9 !important;
+      --app-card-bg: #FFFFFF !important;
+    }
+    ${isDark ? `
+      html.dark body {
+        background-color: ${darkBg} !important;
+        color: #FFFFFF !important;
       }
     ` : `
-      body {
-        background-color: ${presetData.bg} !important;
-        color: #FFFFFF !important;
+      html:not(.dark) body {
+        background-color: #F1F5F9 !important;
+        color: #0F172A !important;
       }
     `}
   `;
@@ -173,15 +199,22 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   // Notify active components immediately
   try {
     window.dispatchEvent(new CustomEvent('finly_theme_changed', {
-      detail: { preset, accentColor: accent, cardRadius: radius }
+      detail: { preset, accentColor: accent, cardRadius: radius, mode: presetData.mode }
     }));
   } catch (e) {}
 };
 
 export const initThemeEngine = () => {
   if (typeof window === 'undefined') return;
-  const preset = (localStorage.getItem('finly_theme_preset') as ThemePreset) || 'sleek-neo-glass';
+  let preset = (localStorage.getItem('finly_theme_preset') as ThemePreset) || 'sleek-neo-glass';
   const accent = localStorage.getItem('finly_accent_color') || '#06B6D4';
   const radius = (localStorage.getItem('finly_card_radius') as CardRadius) || 'squircle';
+
+  const isDocDark = document.documentElement.classList.contains('dark');
+  if (isDocDark && preset === 'clean-light') {
+    preset = (localStorage.getItem('finly_last_dark_preset') as ThemePreset) || 'sleek-neo-glass';
+    localStorage.setItem('finly_theme_preset', preset);
+  }
+
   applyTheme({ preset, accentColor: accent, cardRadius: radius });
 };

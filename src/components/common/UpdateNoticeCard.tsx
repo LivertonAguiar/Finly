@@ -24,27 +24,22 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
 
     window.addEventListener('finly_app_update_available', handleUpdateAvailable);
 
-    // Check if dismissed in this session
-    const dismissed = sessionStorage.getItem(DISMISS_KEY);
-    if (!dismissed) {
-      // Check updates after a short delay on app entry
-      const timer = setTimeout(async () => {
-        try {
-          const res = await checkForAppUpdates({ notifyIfFound: false });
-          if (res && res.hasUpdate && res.latestVersion) {
-            setLatestVersion(res.latestVersion);
+    // Check updates after a short delay on app entry
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkForAppUpdates({ notifyIfFound: true });
+        if (res && res.hasUpdate && res.latestVersion) {
+          setLatestVersion(res.latestVersion);
+          const dismissed = sessionStorage.getItem(DISMISS_KEY);
+          if (!dismissed) {
             setIsVisible(true);
           }
-        } catch (_) {}
-      }, 1500);
-
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('finly_app_update_available', handleUpdateAvailable);
-      };
-    }
+        }
+      } catch (_) {}
+    }, 1500);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('finly_app_update_available', handleUpdateAvailable);
     };
   }, []);
@@ -60,10 +55,15 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
     onGoToUpdate();
   };
 
-  if (!isNativeCapacitor() || !isVisible) return null;
+  if (!isVisible) return null;
 
   return (
-    <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 animate-in slide-in-from-top-4 duration-300">
+    <div
+      className="fixed left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 animate-in slide-in-from-top-4 duration-300"
+      style={{
+        top: 'max(calc(env(safe-area-inset-top, 0px) + 12px), 16px)',
+      }}
+    >
       <div
         onClick={handleClick}
         className="group relative p-4 rounded-2xl bg-gradient-to-r from-purple-900/90 to-indigo-900/90 dark:from-purple-950/95 dark:to-indigo-950/95 text-white shadow-2xl border border-purple-500/30 backdrop-blur-md cursor-pointer hover:border-purple-400/60 transition-all hover:scale-[1.01] active:scale-[0.99]"

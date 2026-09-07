@@ -191,7 +191,7 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
         {/* Footer Note */}
         <p className="text-[10px] text-center text-slate-400 mt-4 flex items-center justify-center gap-1">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Finly • Criptografia e sincronização contínua</span>
+          <span>Finly • Sincronização contínua</span>
         </p>
       </div>
     </div>

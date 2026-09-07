@@ -90,10 +90,10 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
     }, 400);
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (!selectedCard) return;
     const mLabel = months.find(m => m.num === selectedMonth)?.label || selectedMonth;
-    exportInvoiceCSV({
+    await exportInvoiceCSV({
       card: selectedCard,
       monthLabel: `${mLabel} de ${selectedYear}`,
       periodSlug: `${selectedCard.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${selectedYear}-${selectedMonth}`,

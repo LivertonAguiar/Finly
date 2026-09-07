@@ -14,6 +14,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const startXRef = useRef(0);
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
 
@@ -31,7 +32,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
     // 2. Never intercept if touch originates inside an inner scrollable element or form input
     const target = e.target as HTMLElement | null;
     if (target) {
-      const scrollable = target.closest('.overflow-y-auto, .overflow-auto, [data-scrollable], [role="dialog"], form');
+      const scrollable = target.closest('.overflow-y-auto, .overflow-auto, .overflow-x-auto, [data-scrollable], [role="dialog"], form');
       if (scrollable && scrollable !== document.documentElement && scrollable !== document.body) {
         isPullingRef.current = false;
         return;
@@ -41,6 +42,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
     // 3. Only allow pull-down if user is at the very top of page
     const scrollY = window.scrollY || document.documentElement.scrollTop;
     if (scrollY <= 0 && !isRefreshing) {
+      startXRef.current = e.touches[0].clientX;
       startYRef.current = e.touches[0].clientY;
       isPullingRef.current = true;
     }
@@ -60,15 +62,24 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
       return;
     }
 
+    const currentX = e.touches[0].clientX;
     const currentY = e.touches[0].clientY;
-    const diff = currentY - startYRef.current;
+    const diffX = currentX - startXRef.current;
+    const diffY = currentY - startYRef.current;
 
-    // Only handle pull down gestures
-    if (diff > 0) {
+    // Disregard if gesture is primarily horizontal (lateral swipe)
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      isPullingRef.current = false;
+      setPullDistance(0);
+      return;
+    }
+
+    // Only handle pull down gestures past intentional threshold
+    if (diffY > 12) {
       const scrollY = window.scrollY || document.documentElement.scrollTop;
       if (scrollY <= 0) {
         // Apply rubber-band damping (diminishing return)
-        const damped = Math.min(MAX_PULL, Math.pow(diff, 0.82) * 1.8);
+        const damped = Math.min(MAX_PULL, Math.pow(diffY - 12, 0.82) * 1.8);
         setPullDistance(damped);
 
         // Prevent native overscroll when pulling down
@@ -77,7 +88,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
         }
       }
     } else {
-      isPullingRef.current = false;
       setPullDistance(0);
     }
   }, [isRefreshing]);

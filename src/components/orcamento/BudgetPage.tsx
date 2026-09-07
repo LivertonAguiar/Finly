@@ -229,7 +229,7 @@ export const BudgetPage: React.FC = () => {
     setExpandedCategoryIds(newMap);
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const headers = ['Tipo', 'Categoria', 'Subcategoria'];
     matrixMonths.forEach(m => {
       headers.push(`${m.name} Plan`, `${m.name} Real`, `${m.name} Dif`);
@@ -273,7 +273,7 @@ export const BudgetPage: React.FC = () => {
 
     // CSV format
     const csvContent = rows.map(e => e.map(val => `"${val}"`).join(';')).join('\n');
-    downloadCSV(`matriz_orcamento_${selectedMatrixYear}.csv`, csvContent);
+    await downloadCSV(`matriz_orcamento_${selectedMatrixYear}.csv`, csvContent, 'Matriz Orçamentária (CSV)');
   };
 
   // Month transactions

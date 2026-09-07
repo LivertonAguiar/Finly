@@ -37,8 +37,6 @@ import {
   Lock,
   Fingerprint,
   Key,
-  Eye,
-  EyeOff,
   Clock,
   AlertTriangle,
 } from 'lucide-react';
@@ -103,7 +101,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   const [biometricStatus, setBiometricStatus] = useState<BiometricStatusInfo>({ supported: false, enrolled: false });
   const [lockTimeout, setLockTimeout] = useState(getLockTimeoutMinutes());
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const [hideValues, setHideValues] = useState(!user.showValues);
 
   // Password change states
   const [currentPass, setCurrentPass] = useState('');
@@ -638,54 +635,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </form>
             </div>
 
-            {/* 3. Modo Privacidade */}
-            <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-[#121215] border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
-                  {hideValues ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                    Modo Privacidade
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Ocultar valores monetários ao abrir o app
-                  </p>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={hideValues}
-                onChange={e => {
-                  setHideValues(e.target.checked);
-                  updateUser({ showValues: !e.target.checked });
-                }}
-                className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
-              />
-            </div>
-
-            {/* 4. Camadas de Proteção Ativas */}
-            <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-[#121215] border border-slate-200/80 dark:border-slate-800/80 space-y-3">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white block">
-                Camadas de Proteção Ativas
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div className="p-3 rounded-xl bg-white dark:bg-[#18181B] border border-slate-200/60 dark:border-slate-800 flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Criptografia SHA-256</span>
-                    <span className="text-[10px] text-slate-400">PIN com salt local seguro</span>
-                  </div>
-                </div>
-                <div className="p-3 rounded-xl bg-white dark:bg-[#18181B] border border-slate-200/60 dark:border-slate-800 flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Conexão TLS 1.3 / HTTPS</span>
-                    <span className="text-[10px] text-slate-400">Tráfego cifrado ponta a ponta</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -991,11 +940,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
             </div>
 
             {/* 4. Rodapé */}
-            <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-slate-400 dark:text-slate-500">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Criptografia de ponta a ponta (AES-256)</span>
-              </div>
+            <div className="flex items-center justify-center px-2 pt-1 text-[11px] text-slate-400 dark:text-slate-500">
               <span>Finly © 2026</span>
             </div>
           </div>

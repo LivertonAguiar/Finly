@@ -236,7 +236,7 @@ export const ReportsPage: React.FC = () => {
         }
       }
 
-      exportReportPDF({
+      await exportReportPDF({
         periodLabel: `${capitalizedMonth} de ${yearNum}`,
         periodSlug: `${currentMonthPrefix}_${viewRegime}`,
         viewRegime,
@@ -260,10 +260,10 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     setIsExporting(true);
     try {
-      exportReportExcel({
+      await exportReportExcel({
         periodLabel: `${capitalizedMonth} de ${yearNum}`,
         periodSlug: `${currentMonthPrefix}_${viewRegime}`,
         viewRegime,
@@ -285,10 +285,10 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     setIsExporting(true);
     try {
-      exportReportCSV({
+      await exportReportCSV({
         periodLabel: `${capitalizedMonth} de ${yearNum}`,
         periodSlug: `${currentMonthPrefix}_${viewRegime}`,
         viewRegime,

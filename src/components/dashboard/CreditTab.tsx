@@ -168,7 +168,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   }, [cards]);
 
   
-  const handleExportCardsCSV = () => {
+  const handleExportCardsCSV = async () => {
     const headers = ['Cartão', 'Bandeira', 'Limite Total', 'Limite Disponível', 'Fatura Atual', 'Fechamento', 'Vencimento', 'Status'];
     const rows = cardsData.map(c => [
       `"${c.name.replace(/"/g, '""')}"`,
@@ -181,13 +181,13 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       c.statusLabel
     ].join(';'));
 
-    downloadCSV(`cartoes_${currentMonthPrefix}.csv`, [headers.join(';'), ...rows].join('\n'));
+    await downloadCSV(`cartoes_${currentMonthPrefix}.csv`, [headers.join(';'), ...rows].join('\n'), 'Cartões de Crédito (CSV)');
   };
 
-  const handleExportInvoiceCSV = (targetCard?: typeof activeCardDetail) => {
+  const handleExportInvoiceCSV = async (targetCard?: typeof activeCardDetail) => {
     const target = targetCard || activeCardDetail;
     if (!target) return;
-    exportInvoiceCSV({
+    await exportInvoiceCSV({
       card: target,
       monthLabel: `${capitalizedMonth} de ${yearNum}`,
       periodSlug: `${target.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${currentMonthPrefix}`,
@@ -200,10 +200,10 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
     });
   };
 
-  const handleExportInvoicePDF = (targetCard?: typeof activeCardDetail) => {
+  const handleExportInvoicePDF = async (targetCard?: typeof activeCardDetail) => {
     const target = targetCard || activeCardDetail;
     if (!target) return;
-    exportInvoicePDF({
+    await exportInvoicePDF({
       card: target,
       monthLabel: `${capitalizedMonth} de ${yearNum}`,
       periodSlug: `${target.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${currentMonthPrefix}`,
@@ -281,7 +281,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in pb-16">
+    <div className="w-full max-w-6xl mx-auto space-y-5 sm:space-y-6 animate-in fade-in pb-16 overflow-x-hidden">
       {/* ========================================================================= */}
       {/* CASE 1: DETALHE DA FATURA DO CARTÃO (INVOICE EXTRATO SCREEN) */}
       {/* ========================================================================= */}
@@ -729,13 +729,97 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
         /* ========================================================================= */
         <div className="space-y-6">
           {/* Topbar: Title, Month Selector & Action Buttons */}
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Cartões de crédito
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                Cartões de crédito
+              </h2>
+
+              {/* Mobile-only Action Buttons */}
+              <div className="flex sm:hidden items-center gap-1.5 shrink-0">
+                <ViewModeToggle
+                  mode={viewMode}
+                  onChange={(m) => {
+                    setViewMode(m);
+                    try { localStorage.setItem('finly_cards_view_mode', m); } catch (e) {}
+                  }}
+                />
+
+                <button
+                  onClick={onOpenNewCard}
+                  className="w-9 h-9 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  title="Novo cartão"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
+                    className="w-9 h-9 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                    title="Mais opções"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+
+                  {isHeaderMenuOpen && (
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      className="absolute right-0 top-11 z-50 w-56 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-2xl py-2 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-800 dark:text-slate-100"
+                    >
+                      <button
+                        onClick={() => {
+                          onOpenNewCard();
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4 text-purple-600" />
+                        <span>Novo cartão de crédito</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleOpenPayModal();
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <CardIcon className="w-4 h-4 text-emerald-600" />
+                        <span>Pagar fatura</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsAddExpenseModalOpen(true);
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4 text-rose-500" />
+                        <span>Adicionar despesa no cartão</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <button
+                        onClick={() => {
+                          handleExportCardsCSV();
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 text-blue-500" />
+                        <span>Exportar para CSV</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Month Dropdown Pill */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center sm:justify-start gap-2 self-center sm:self-auto">
               <button
                 onClick={() => setSelectedMonthOffset(prev => prev - 1)}
                 className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
@@ -756,8 +840,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               </button>
             </div>
 
-            {/* Circular Action Buttons & ViewModeToggle */}
-            <div className="flex items-center gap-2">
+            {/* Desktop Circular Action Buttons & ViewModeToggle */}
+            <div className="hidden sm:flex items-center gap-2">
               <ViewModeToggle
                 mode={viewMode}
                 onChange={(m) => {
@@ -769,7 +853,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               {cardsData.length > 0 && (
                 <button
                   onClick={() => handleOpenPayModal()}
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                   title="Pagar fatura de cartão"
                 >
                   <CardIcon className="w-4 h-4" />
@@ -847,7 +931,6 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   </div>
                 )}
               </div>
-
             </div>
           </div>
 
@@ -936,15 +1019,15 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative cursor-pointer"
                 >
                   {/* Left: Brand Logo + Card Name + Status */}
-                  <div className="flex items-center gap-3 min-w-[200px]">
+                  <div className="flex items-center gap-3 min-w-0 sm:min-w-[180px] w-full sm:w-auto">
                     <div
                       className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs"
                       style={{ backgroundColor: card.color ? card.color + '25' : '#7c4dff25' }}
                     >
                       <CardBrandLogo brand={card.brand} size={22} />
                     </div>
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white line-clamp-1">{card.name}</h4>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">{card.name}</h4>
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
                         {card.statusLabel}
                       </span>
@@ -952,7 +1035,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   </div>
 
                   {/* Middle: Limits Progress Bar */}
-                  <div className="flex-1 max-w-xs space-y-1">
+                  <div className="flex-1 w-full sm:max-w-xs space-y-1">
                     <div className="flex justify-between text-[10px] font-bold">
                       <span className="text-slate-400">Disp: <span className="text-[#66bb6a] font-black">{formatCurrency(card.available, user.currency, !user.showValues)}</span></span>
                       <span className="text-slate-400 font-normal">Total: {formatCurrency(card.limit, user.currency, !user.showValues)}</span>
@@ -966,7 +1049,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   </div>
 
                   {/* Right: Invoice Amount & Dates */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 font-bold block">Fatura {capitalizedMonth}</span>
                       <span className={`text-xs sm:text-sm font-black ${card.isPaid ? 'text-[#66bb6a]' : 'text-slate-900 dark:text-white'}`}>
@@ -1188,7 +1271,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                    <div className="flex flex-wrap justify-between items-center text-[10px] font-bold text-slate-400 gap-1">
                       <span>
                         Disp: <strong className={card.available > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}>
                           {formatCurrency(card.available, user.currency, !user.showValues)}

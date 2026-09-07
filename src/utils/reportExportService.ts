@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { Transaction, Category, Account, CreditCard } from '../types';
 import { formatCurrency, formatDate } from './formatters';
 import { resolveCategory } from './categoryResolver';
+import { saveOrShareFile } from './fileDownloadHelper';
 
 export interface ReportExportData {
   periodLabel: string;
@@ -304,7 +305,7 @@ function createBarChartCanvas(
 /**
  * Generates and downloads an Executive PDF Financial Report with Charts & Tables
  */
-export function exportReportPDF(data: ReportExportData): void {
+export async function exportReportPDF(data: ReportExportData): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -640,14 +641,21 @@ export function exportReportPDF(data: ReportExportData): void {
     },
   });
 
-  // Save PDF
-  doc.save(`relatorio_finly_${data.periodSlug}.pdf`);
+  // Save / Share PDF (Mobile native, mobile web, or desktop)
+  const filename = `relatorio_finly_${data.periodSlug}.pdf`;
+  const blob = doc.output('blob');
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'application/pdf',
+    dialogTitle: 'Relatório Executivo Finly (PDF)',
+  });
 }
 
 /**
  * Generates and downloads a CSV Report with Summary and Transactions
  */
-export function exportReportCSV(data: ReportExportData): void {
+export async function exportReportCSV(data: ReportExportData): Promise<void> {
   const currency = data.currency || 'BRL';
   const now = new Date();
   const generationDateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
@@ -723,24 +731,21 @@ export function exportReportCSV(data: ReportExportData): void {
   });
 
   // UTF-8 BOM (\uFEFF) ensures Excel opens with special characters correctly formatted
-  downloadCSV(`relatorio_finly_${data.periodSlug}.csv`, lines.join('\n'));
+  await downloadCSV(`relatorio_finly_${data.periodSlug}.csv`, lines.join('\n'), 'Relatório Finly (CSV)');
 }
 
 /**
- * Triggers a robust file download in the browser using a UTF-8 BOM Blob.
- * Immune to URI length limits, and unencoded characters (#, %, &, etc.) that corrupt data URIs.
+ * Triggers a universal file download or share using a UTF-8 BOM Blob.
+ * Compatible with native Android/iOS (Capacitor), mobile web browsers, and desktop.
  */
-export function downloadCSV(filename: string, content: string): void {
+export async function downloadCSV(filename: string, content: string, dialogTitle?: string): Promise<void> {
   const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'text/csv;charset=utf-8;',
+    dialogTitle: dialogTitle || `Exportar ${filename}`,
+  });
 }
 
 export interface InvoiceExportData {
@@ -758,7 +763,7 @@ export interface InvoiceExportData {
 /**
  * Generates and downloads a detailed CSV of a Credit Card Invoice statement
  */
-export function exportInvoiceCSV(data: InvoiceExportData): void {
+export async function exportInvoiceCSV(data: InvoiceExportData): Promise<void> {
   const now = new Date();
   const generationDateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
 
@@ -823,13 +828,13 @@ export function exportInvoiceCSV(data: InvoiceExportData): void {
     lines.push('"-";"Nenhum lançamento nesta fatura";"-";"-";"-";"-";"0,00"');
   }
 
-  downloadCSV(`fatura_${data.periodSlug}.csv`, lines.join('\n'));
+  await downloadCSV(`fatura_${data.periodSlug}.csv`, lines.join('\n'), `Fatura ${data.card.name} (CSV)`);
 }
 
 /**
  * Generates and downloads a formatted PDF statement of a Credit Card Invoice
  */
-export function exportInvoicePDF(data: InvoiceExportData): void {
+export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -1042,5 +1047,13 @@ export function exportInvoicePDF(data: InvoiceExportData): void {
     },
   });
 
-  doc.save(`fatura_${data.periodSlug}.pdf`);
+  // Save / Share PDF (Mobile native, mobile web, or desktop)
+  const filename = `fatura_${data.periodSlug}.pdf`;
+  const blob = doc.output('blob');
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'application/pdf',
+    dialogTitle: `Fatura ${data.card.name} (PDF)`,
+  });
 }

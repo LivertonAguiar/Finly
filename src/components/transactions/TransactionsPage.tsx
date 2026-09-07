@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   TrendingDown,
   TrendingUp,
@@ -307,8 +307,9 @@ export const TransactionsPage: React.FC = () => {
 
   // Group by date for timeline view
   const groupedTransactions = useMemo(() => {
-    const groups: { date: string; displayDate: string; items: Transaction[]; dayTotal: number }[] = [];
+    const groups: { date: string; displayDate: string; items: Transaction[]; dayTotal: number; isToday: boolean }[] = [];
     const map: Record<string, Transaction[]> = {};
+    const todayStr = getTodayString();
 
     displayTransactions.forEach(t => {
       const card = cards.find(c => c.id === t.cardId);
@@ -337,11 +338,53 @@ export const TransactionsPage: React.FC = () => {
           displayDate: `${dayNum} ${monthShort}, ${dayOfWeek}`,
           items,
           dayTotal,
+          isToday: dateStr === todayStr,
         });
       });
 
     return groups;
   }, [displayTransactions, viewRegime, cards]);
+
+  // Ref & Callback to auto-scroll to today's transactions
+  const hasScrolledToTodayRef = useRef(false);
+
+  const scrollToToday = useCallback((smooth = true) => {
+    const todayStr = getTodayString();
+
+    // 1. Timeline View: try exact element
+    let targetEl = document.getElementById(`day-group-${todayStr}`);
+
+    // If today has no direct transactions, find the closest group (first group <= todayStr)
+    if (!targetEl && groupedTransactions.length > 0) {
+      const closestGroup = groupedTransactions.find(g => g.date <= todayStr) || groupedTransactions[groupedTransactions.length - 1];
+      if (closestGroup) {
+        targetEl = document.getElementById(`day-group-${closestGroup.date}`);
+      }
+    }
+
+    // 2. Table View fallback
+    if (!targetEl && viewMode === 'table') {
+      targetEl = document.getElementById('table-row-today');
+    }
+
+    if (targetEl) {
+      targetEl.scrollIntoView({
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'center',
+      });
+    }
+  }, [groupedTransactions, viewMode]);
+
+  useEffect(() => {
+    // Auto scroll to today on initial mount if viewing current month
+    if (!hasScrolledToTodayRef.current && selectedMonthOffset === 0 && (groupedTransactions.length > 0 || displayTransactions.length > 0)) {
+      const timer = setTimeout(() => {
+        scrollToToday(true);
+        hasScrolledToTodayRef.current = true;
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [groupedTransactions, displayTransactions, selectedMonthOffset, scrollToToday]);
 
   
   const handleDeleteTransaction = async (tx: Transaction) => {
@@ -356,7 +399,7 @@ export const TransactionsPage: React.FC = () => {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const headers = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta/Cartão', 'Valor', 'Status'];
     const rows = displayTransactions.map(t => {
       const cat = findCategory(t.categoryId, t.subcategoryId);
@@ -375,12 +418,16 @@ export const TransactionsPage: React.FC = () => {
       ].join(';');
     });
 
-    downloadCSV(`transacoes_${currentMonthPrefix}.csv`, [headers.join(';'), ...rows].join('\n'));
+    await downloadCSV(
+      `transacoes_${currentMonthPrefix}.csv`,
+      [headers.join(';'), ...rows].join('\n'),
+      'Lançamentos Finly (CSV)'
+    );
     setIsMoreOptionsOpen(false);
   };
 
-  const handleExportExcel = () => {
-    exportTransactionsToExcel(
+  const handleExportExcel = async () => {
+    await exportTransactionsToExcel(
       displayTransactions,
       categories,
       accounts,
@@ -667,10 +714,12 @@ export const TransactionsPage: React.FC = () => {
       </div>
 
       {/* 3. MONTH NAVIGATOR (PILL BAR) */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
         <button
+          type="button"
           onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+          title="Mês anterior"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -678,10 +727,34 @@ export const TransactionsPage: React.FC = () => {
           {capitalizedMonth} {yearNum}
         </span>
         <button
+          type="button"
           onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+          title="Próximo mês"
         >
           <ChevronRight className="w-5 h-5" />
+        </button>
+
+        {/* Quick jump to Today */}
+        <button
+          type="button"
+          onClick={() => {
+            if (selectedMonthOffset !== 0) {
+              setSelectedMonthOffset(0);
+              setTimeout(() => scrollToToday(true), 200);
+            } else {
+              scrollToToday(true);
+            }
+          }}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer shadow-xs active:scale-95 ${
+            selectedMonthOffset === 0
+              ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/25'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-purple-600 dark:hover:text-purple-400'
+          }`}
+          title="Ir para o dia de hoje"
+        >
+          <Calendar className="w-3.5 h-3.5 text-purple-500" />
+          <span>Hoje</span>
         </button>
       </div>
 
@@ -695,13 +768,25 @@ export const TransactionsPage: React.FC = () => {
           {groupedTransactions.map(group => (
             <div
               key={group.date}
-              className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-3"
+              id={`day-group-${group.date}`}
+              className={`p-5 rounded-[25px] border shadow-sm dark:shadow-2xl space-y-3 transition-all duration-300 ${
+                group.isToday
+                  ? 'bg-white dark:bg-[#2C2C2E] border-purple-500/70 dark:border-purple-500/60 ring-2 ring-purple-500/20 shadow-lg shadow-purple-500/5'
+                  : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80'
+              }`}
             >
               {/* Day Header */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-2.5">
-                <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                  {group.displayDate}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                    {group.displayDate}
+                  </span>
+                  {group.isToday && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-600 text-white shadow-xs">
+                      Hoje
+                    </span>
+                  )}
+                </div>
                 <span className={`text-xs font-extrabold ${group.dayTotal >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
                   {formatCurrency(group.dayTotal, user.currency, !user.showValues)}
                 </span>
@@ -840,24 +925,39 @@ export const TransactionsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold">
-              {displayTransactions.map(t => {
+              {displayTransactions.map((t, idx) => {
                 const cat = findCategory(t.categoryId, t.subcategoryId);
                 const acc = accounts.find(a => a.id === t.accountId);
                 const card = cards.find(c => c.id === t.cardId);
                 const isIncome = t.type === 'income';
                 const isExpense = t.type === 'expense';
+                const todayStr = getTodayString();
+                const isToday = t.date === todayStr;
+                const isFirstToday = isToday && !displayTransactions.slice(0, idx).some(x => x.date === todayStr);
 
                 return (
                   <tr
                     key={t.id}
+                    id={isFirstToday ? 'table-row-today' : undefined}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedDetailTx(t);
                     }}
-                    className="hover:bg-slate-50/80 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer"
+                    className={`hover:bg-slate-50/80 dark:hover:bg-[#343437]/50 transition-colors cursor-pointer ${
+                      isToday ? 'bg-purple-500/5 dark:bg-purple-500/10' : ''
+                    }`}
                   >
                     <td className="py-3 px-3" onClick={e => e.stopPropagation()}>{getStatusBadge(t)}</td>
-                    <td className="py-3 px-3 text-slate-500 dark:text-slate-400">{formatDate(t.date)}</td>
+                    <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <span>{formatDate(t.date)}</span>
+                        {isToday && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-purple-600 text-white shadow-xs">
+                            Hoje
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">{t.description}</td>
                     <td className="py-3 px-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">

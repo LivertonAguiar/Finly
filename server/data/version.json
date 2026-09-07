@@ -1,32 +1,34 @@
 {
-  "version": "1.1.31",
-  "latestVersion": "1.1.31",
+  "version": "1.1.32",
+  "latestVersion": "1.1.32",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.31: Suporte nativo oficial a biometria (impressão digital) no Android via BiometricPrompt, reorganização do menu Mais Opções em Geral, Segurança e Sobre, e diagnóstico inteligente de sensores biométricos.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.31/finly-v1.1.31.apk",
+  "notes": "Novidades da v1.1.32: Reordenação touch e pointer nativa na personalização do menu lateral, download e compartilhamento nativo de relatórios no Android, privacidade unificada no botão do topo, e foco automático nas transações do dia.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.32/finly-v1.1.32.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Bloqueio Biométrico & PIN Seguro de 4 dígitos com criptografia SHA-256 e WebAuthn",
-      "Exportação nativa para Excel (.xlsx) com múltiplas abas formatadas e fórmulas automáticas",
-      "Desafios de Economia gamificados (52 Semanas, Caixa Rápido 30 Dias, Detox Sem Delivery)",
-      "Categorização Automática com Aprendizado preditivo em lançamentos e importação OFX/CSV"
+      "Reordenação Touch Nativa: arrastar e soltar itens do menu lateral com captura de ponteiro, vibração háptica e auto-scroll",
+      "Download Nativo no Android: exportação de PDF, CSV e XLSX com integração direta ao Filesystem e Share nativo",
+      "Foco Inteligente de Transações: abertura da aba de transações direcionada automaticamente para o dia atual"
     ],
     "fixes": [
-      "Correção do runtime Gradle para Android com ambiente Java 17 LTS",
-      "Remoção do botão redundante '+ NOVO' no topo da tela de Transações"
+      "Correção do recurso de mover no menu lateral em dispositivos móveis e telas touch",
+      "Remoção da opção redundante de privacidade em Configurações e Mais Opções (unificada no botão de olho)",
+      "Correção de deslocamento lateral indesejado na aba de cartões em telas de smartphones",
+      "Fechamento automático do modal de notificações ao tocar ou clicar fora da janela"
     ],
     "improvements": [
-      "Barra superior mais limpa com remoção do botão de ajuda do header (acessível pelo menu de usuário)",
-      "Animação comemorativa de confetes ao registrar progresso nos desafios de economia"
+      "Área de toque aprimorada no manipulador de arrastar itens",
+      "Feedback visual de elevação e contorno no cartão em movimento",
+      "Novas skills de engenharia e testes integradas"
     ]
   },
   "highlights": [
-    "[Segurança] Bloqueio por PIN e Biometria (TouchID/FaceID/Digital)",
-    "[Produtividade] Exportação para Excel (.xlsx) oficial com abas executivas",
-    "[Gamificação] Desafios de Economia para poupar de forma interativa",
-    "[Inteligência] Reconhecimento preditivo de categorias por histórico e dicionário",
-    "[Design] Interface de transações mais limpa com foco no botão central da barra inferior"
+    "[Menu Lateral] Reordenação por toque e ponteiro com vibração háptica",
+    "[Android] Download e compartilhamento nativo de PDF, CSV e Excel",
+    "[Transações] Rolagem e foco automático nas transações do dia corrente",
+    "[Interface] Modo privacidade unificado no topo e correção de gestos no mobile",
+    "[Notificações] Fechamento confiável por toque fora do painel"
   ]
 }

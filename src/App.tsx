@@ -27,6 +27,7 @@ import { AuthPage } from './components/auth/AuthPage';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
+import { checkForAppUpdates } from './utils/appUpdateService';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
@@ -163,6 +164,49 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, transactions, cards, budgets, goals]);
 
+  // Proactive App Update Checker on Entry, Resume and Periodic Interval
+  useEffect(() => {
+    if (!currentUser) return;
+    let isCancelled = false;
+
+    const runAutoCheck = async () => {
+      try {
+        await new Promise(r => setTimeout(r, 2500));
+        if (isCancelled) return;
+
+        const result = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: false });
+        if (result && result.hasUpdate && !isCancelled) {
+          const sessionPrompted = sessionStorage.getItem(`finly_update_prompted_${result.latestVersion}`);
+          if (!sessionPrompted) {
+            sessionStorage.setItem(`finly_update_prompted_${result.latestVersion}`, 'true');
+            setIsUpdateModalOpen(true);
+          }
+        }
+      } catch (e) {
+        console.warn('Auto update check error:', e);
+      }
+    };
+
+    runAutoCheck();
+
+    // Periodic check every 1 hour
+    const interval = setInterval(runAutoCheck, 60 * 60 * 1000);
+
+    // Re-check when app returns from background
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        runAutoCheck();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentUser]);
+
   // Fullscreen configuration for Native Android with Notch / Cutout compensation
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
@@ -205,8 +249,8 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleGoToUpdate = useCallback(() => {
-    handleSelectTab('sobre');
-  }, [handleSelectTab]);
+    setIsUpdateModalOpen(true);
+  }, []);
 
   const handleOpenCardDetail = useCallback((cardId: string) => {
     setSelectedCardIdForDetail(cardId);
@@ -300,7 +344,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#121214] text-slate-900 dark:text-slate-100 flex flex-row">
+    <div className="min-h-screen bg-[#F1F5F9] dark:bg-transparent text-slate-900 dark:text-slate-100 flex flex-row">
       {/* Sidebar with Mobile Drawer & Unified Top-Right Toggle */}
       <Sidebar
         activeTab={activeTab}
@@ -332,8 +376,8 @@ const AppContent: React.FC = () => {
 
         {/* Main Content Area with Mobile Pull-to-Refresh */}
         <PullToRefresh onRefresh={refreshData}>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 w-full">
-            <div className="w-full max-w-[1600px] mx-auto">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 w-full max-w-full overflow-x-hidden">
+            <div className="w-full max-w-[1600px] mx-auto overflow-x-hidden">
             {activeTab === 'dashboard' && (
               <DashboardPage
                 onOpenNewTransaction={() => setIsNewTxOpen(true)}

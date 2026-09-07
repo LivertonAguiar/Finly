@@ -133,7 +133,7 @@ const performCheck = async (options?: {
     try {
       const apiEndpoint = getApiUrl('/api/app/version');
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
       apiRes = await fetch(apiEndpoint, { signal: controller.signal });
       clearTimeout(timeoutId);
     } catch (primaryErr) {
@@ -141,7 +141,7 @@ const performCheck = async (options?: {
       try {
         const fallbackUrl = `${PRODUCTION_API_URL}/api/app/version`;
         const controller2 = new AbortController();
-        const timeoutId2 = setTimeout(() => controller2.abort(), 4500);
+        const timeoutId2 = setTimeout(() => controller2.abort(), 7000);
         apiRes = await fetch(fallbackUrl, { signal: controller2.signal });
         clearTimeout(timeoutId2);
       } catch (_) {}
@@ -187,7 +187,7 @@ const performCheck = async (options?: {
   // 1.5 Fallback to GitHub Releases API if server is offline or unreachable
   try {
     const ghController = new AbortController();
-    const ghTimeout = setTimeout(() => ghController.abort(), 3500);
+    const ghTimeout = setTimeout(() => ghController.abort(), 6000);
     const ghRes = await fetch('https://api.github.com/repos/LivertonAguiar/Finly/releases/latest', {
       headers: { Accept: 'application/vnd.github.v3+json' },
       signal: ghController.signal,

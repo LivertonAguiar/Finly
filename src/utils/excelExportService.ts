@@ -3,6 +3,7 @@ import { Transaction, Category, Account, CreditCard } from '../types';
 import { formatDate } from './formatters';
 import { resolveCategory } from './categoryResolver';
 import { ReportExportData } from './reportExportService';
+import { saveOrShareFile } from './fileDownloadHelper';
 
 /**
  * Calculates optimal column widths for an Excel worksheet
@@ -24,7 +25,7 @@ function fitToColumn(data: any[][]): { wch: number }[] {
 /**
  * Exports a full executive financial report as a formatted multi-sheet Excel (.xlsx) file
  */
-export function exportReportExcel(data: ReportExportData): void {
+export async function exportReportExcel(data: ReportExportData): Promise<void> {
   const wb = XLSX.utils.book_new();
   const now = new Date();
   const dateStr = now.toLocaleDateString('pt-BR');
@@ -195,19 +196,29 @@ export function exportReportExcel(data: ReportExportData): void {
   const cleanPeriod = (data.periodSlug || 'completo').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `Finly_Relatorio_${cleanPeriod}_${now.toISOString().split('T')[0]}.xlsx`;
 
-  XLSX.writeFile(wb, filename);
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Exportar Relatório Excel (.xlsx)',
+  });
 }
 
 /**
  * Direct export of a list of transactions to Excel (.xlsx)
  */
-export function exportTransactionsToExcel(
+export async function exportTransactionsToExcel(
   transactions: Transaction[],
   categories: Category[],
   accounts: Account[],
   cards: CreditCard[],
   filenamePrefix: string = 'Transacoes_Finly'
-): void {
+): Promise<void> {
   const wb = XLSX.utils.book_new();
 
   const headers = [
@@ -260,5 +271,15 @@ export function exportTransactionsToExcel(
   XLSX.utils.book_append_sheet(wb, ws, 'Transações');
 
   const filename = `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.xlsx`;
-  XLSX.writeFile(wb, filename);
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Exportar Lançamentos Excel (.xlsx)',
+  });
 }

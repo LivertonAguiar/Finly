@@ -33,6 +33,7 @@ import { resolveCategory } from '../../utils/categoryResolver';
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { Modal } from '../ui/Modal';
 import { exportInvoiceCSV } from '../../utils/reportExportService';
+import { saveOrShareFile } from '../../utils/fileDownloadHelper';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -148,9 +149,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     };
   }, [isInvoicePayment, transaction, cards, transactions, categories]);
 
-  const handleExportInvoiceCSV = () => {
+  const handleExportInvoiceCSV = async () => {
     if (!invoiceComposingData?.card) return;
-    exportInvoiceCSV({
+    await exportInvoiceCSV({
       card: invoiceComposingData.card,
       monthLabel: invoiceComposingData.month,
       periodSlug: `${invoiceComposingData.card.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${invoiceComposingData.month}`,
@@ -662,14 +663,24 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               </div>
 
               {transaction.attachmentUrl && (
-                <a
-                  href={transaction.attachmentUrl}
-                  download={transaction.attachmentName || 'comprovante'}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ext = transaction.attachmentUrl?.split(';')[0]?.split('/')[1] || 'png';
+                    const filename = transaction.attachmentName || `comprovante_${transaction.id}.${ext}`;
+                    const mime = transaction.attachmentUrl?.split(';')[0]?.replace('data:', '') || 'image/png';
+                    await saveOrShareFile({
+                      filename,
+                      base64Data: transaction.attachmentUrl,
+                      mimeType: mime,
+                      dialogTitle: `Baixar ${filename}`,
+                    });
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Baixar</span>
-                </a>
+                </button>
               )}
             </div>
           </div>

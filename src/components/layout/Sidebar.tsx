@@ -186,10 +186,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }
                   className={`w-full flex items-center ${
                     collapsed ? 'justify-center px-0' : 'justify-start px-3.5'
-                  } py-3 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer overflow-hidden group border border-transparent ${
+                  } py-3 text-xs font-bold transition-all duration-200 cursor-pointer overflow-hidden group ${
                     isActive
-                      ? 'shadow-xs font-black'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#2C2C2E]'
+                      ? 'is-active rounded-2xl border shadow-xs font-black'
+                      : 'border-0 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/60 dark:hover:bg-white/5 rounded-lg'
                   }`}
                 >
                   <Icon
@@ -229,10 +229,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
               className={`w-full flex items-center ${
                 collapsed ? 'justify-center px-0' : 'justify-start px-3.5'
-              } py-3 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer overflow-hidden group border border-transparent ${
+              } py-3 text-xs font-bold transition-all duration-200 cursor-pointer overflow-hidden group ${
                 activeTab === 'mais'
-                  ? 'shadow-xs font-black'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#2C2C2E]'
+                  ? 'is-active rounded-2xl border shadow-xs font-black'
+                  : 'border-0 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/60 dark:hover:bg-white/5 rounded-lg'
               }`}
             >
               <MoreHorizontal

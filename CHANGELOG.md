@@ -3,6 +3,24 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.32] - 2026-09-07
+
+### ✨ Novas Funcionalidades & Experiência Móvel
+- **Reordenação Touch & Pointer no Menu Lateral**:
+  - Manipulação nativa por toque (`onTouchStart`, `onTouchMove`, `onTouchEnd`) e ponteiro (`setPointerCapture`) na personalização do menu lateral.
+  - Área touch confortável para dedos, destaque visual no cartão arrastado, feedback háptico com vibração suave e auto-scroll ao aproximar das bordas.
+- **Download e Compartilhamento Nativo no Android**:
+  - Exportação oficial de relatórios em PDF, planilhas Excel (.xlsx) e CSV diretamente no aplicativo Android utilizando o Capacitor Filesystem e Share API nativa.
+- **Navegação Inteligente no Dia Atual**:
+  - Ao entrar na aba de Transações, o aplicativo foca e centraliza automaticamente a visualização nas transações da data de hoje.
+
+### ⚡ Melhorias & Correções
+- **Modo Privacidade Unificado**:
+  - Remoção de opções redundantes em Configurações e Mais Opções, centralizando o controle no ícone de olho no cabeçalho superior.
+- **Estabilidade de Gestos no Mobile**:
+  - Correção de deslocamento horizontal indesejado na aba de cartões em telas estreitas de smartphones.
+  - Fechamento imediato do popover de notificações ao clicar ou tocar em qualquer ponto fora do modal.
+
 ## [1.1.31] - 2026-09-07
 
 ### ✨ Novas Funcionalidades & Segurança

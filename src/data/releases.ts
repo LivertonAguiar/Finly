@@ -34,10 +34,42 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.31';
+export const CURRENT_VERSION = '1.1.32';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.32',
+    releaseDate: '2026-09-07',
+    summary: 'Reordenação touch e pointer nativa na personalização do menu lateral, exportação e compartilhamento nativo de relatórios no Android (PDF, CSV, XLSX), modo de privacidade centralizado no topo e abertura inteligente de transações no dia atual.',
+    highlights: [
+      {
+        title: 'Reordenação Touch & Pointer no Menu Lateral',
+        description: 'Arrastar e soltar itens nativo em telas de toque (celular/tablet) e desktop com captura de ponteiro, resposta háptica imediata e auto-scroll.',
+        type: 'feature',
+      },
+      {
+        title: 'Download e Compartilhamento Nativo no Android',
+        description: 'Integração completa com o sistema de arquivos e share sheet do Android para exportação direta de relatórios em PDF, planilhas Excel (.xlsx) e CSV.',
+        type: 'feature',
+      },
+      {
+        title: 'Navegação Inteligente no Dia Atual',
+        description: 'Ao abrir a aba de transações, a visualização posiciona e destaca automaticamente as transações da data de hoje.',
+        type: 'improvement',
+      },
+      {
+        title: 'Privacidade e Telas Mais Limpas',
+        description: 'Remoção do toggle redundante em Configurações e Mais Opções, unificando o controle de visibilidade no botão de olho permanente do cabeçalho.',
+        type: 'improvement',
+      },
+      {
+        title: 'Gestos e Interações Aperfeiçoados',
+        description: 'Eliminação de deslocamento lateral na aba de cartões no mobile e fechamento de notificações por toque externo em qualquer dispositivo.',
+        type: 'fix',
+      },
+    ],
+  },
   {
     version: '1.1.31',
     releaseDate: '2026-09-07',

@@ -20,6 +20,8 @@ import { generateRealisticDemoStore } from '../utils/demoDataGenerator';
 import { supabaseDb } from '../services/supabaseDb';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import { useUndoToast } from './UndoToastContext';
+import { saveOrShareFile } from '../utils/fileDownloadHelper';
+import { applyTheme, ThemePreset, CardRadius } from '../utils/themeEngine';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -156,7 +158,7 @@ interface FinancialContextType {
   resetAllUserData: () => void;
   resetToCleanState: () => void;
   loadDemoData: () => void;
-  exportBackupJSON: () => void;
+  exportBackupJSON: () => Promise<void> | void;
   importBackupJSON: (jsonString: string) => boolean;
 
   // Calculated Metrics
@@ -255,18 +257,28 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
             ],
             notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
-            userProfile: {
-              themePreset: parsed.userProfile?.themePreset || 'sleek-neo-glass',
-              accentColor: parsed.userProfile?.accentColor || '#06B6D4',
-              cardRadius: parsed.userProfile?.cardRadius || 'squircle',
-              ...(parsed.userProfile || {}),
-              name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
-              email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
-              currency: parsed.userProfile?.currency || 'BRL',
-              role: parsed.userProfile?.role || 'admin',
-              theme: parsed.userProfile?.theme || 'dark',
-              showValues: parsed.userProfile?.showValues !== false,
-            },
+            userProfile: (() => {
+              const rawTheme = parsed.userProfile?.theme || 'dark';
+              let rawPreset = parsed.userProfile?.themePreset || 'sleek-neo-glass';
+              if (rawTheme === 'dark' && rawPreset === 'clean-light') {
+                const savedDark = (localStorage.getItem('finly_last_dark_preset') as ThemePreset);
+                rawPreset = (savedDark && savedDark !== 'clean-light') ? savedDark : 'sleek-neo-glass';
+              } else if (rawTheme === 'light' && rawPreset !== 'clean-light') {
+                rawPreset = 'clean-light';
+              }
+              return {
+                accentColor: parsed.userProfile?.accentColor || '#06B6D4',
+                cardRadius: parsed.userProfile?.cardRadius || 'squircle',
+                ...(parsed.userProfile || {}),
+                themePreset: rawPreset,
+                name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
+                email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
+                currency: parsed.userProfile?.currency || 'BRL',
+                role: parsed.userProfile?.role || 'admin',
+                theme: rawTheme,
+                showValues: parsed.userProfile?.showValues !== false,
+              };
+            })(),
           });
         }
       }
@@ -550,14 +562,37 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Apply Dark/Light Theme
+  // Apply Dark/Light Theme & Synchronize Theme Engine
   useEffect(() => {
-    if (user.theme === 'dark') {
+    const isDark = user.theme === 'dark';
+
+    if (isDark) {
       document.documentElement.classList.add('dark');
+      if (user.themePreset === 'clean-light') {
+        const savedLastDark = localStorage.getItem('finly_last_dark_preset') as ThemePreset;
+        const targetPreset: ThemePreset = (savedLastDark && savedLastDark !== 'clean-light') ? savedLastDark : 'sleek-neo-glass';
+        setUser(prev => ({ ...prev, themePreset: targetPreset }));
+        applyTheme({ preset: targetPreset });
+        return;
+      }
     } else {
       document.documentElement.classList.remove('dark');
+      if (user.themePreset !== 'clean-light') {
+        if (user.themePreset) {
+          localStorage.setItem('finly_last_dark_preset', user.themePreset);
+        }
+        setUser(prev => ({ ...prev, themePreset: 'clean-light' }));
+        applyTheme({ preset: 'clean-light' });
+        return;
+      }
     }
-  }, [user.theme]);
+
+    applyTheme({
+      preset: (user.themePreset as ThemePreset) || (isDark ? 'sleek-neo-glass' : 'clean-light'),
+      accentColor: user.accentColor,
+      cardRadius: user.cardRadius as CardRadius,
+    });
+  }, [user.theme, user.themePreset]);
 
   // =========================================================================
   // DERIVED BALANCE RECALCULATION
@@ -592,7 +627,27 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // User Actions
   const updateUser = (data: Partial<UserProfile>) => setUser(prev => ({ ...prev, ...data }));
   const toggleHideValues = () => setUser(prev => ({ ...prev, showValues: !prev.showValues }));
-  const toggleTheme = () => setUser(prev => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }));
+  const toggleTheme = () => {
+    setUser(prev => {
+      const newTheme: 'light' | 'dark' = prev.theme === 'dark' ? 'light' : 'dark';
+      let newPreset: ThemePreset;
+
+      if (newTheme === 'light') {
+        if (prev.themePreset && prev.themePreset !== 'clean-light') {
+          localStorage.setItem('finly_last_dark_preset', prev.themePreset);
+        }
+        newPreset = 'clean-light';
+      } else {
+        const savedLastDark = localStorage.getItem('finly_last_dark_preset') as ThemePreset;
+        newPreset = (savedLastDark && savedLastDark !== 'clean-light')
+          ? savedLastDark
+          : (prev.themePreset && prev.themePreset !== 'clean-light' ? (prev.themePreset as ThemePreset) : 'sleek-neo-glass');
+      }
+
+      applyTheme({ preset: newPreset });
+      return { ...prev, theme: newTheme, themePreset: newPreset };
+    });
+  };
 
   // Account Actions
   const addAccount = (acc: Omit<Account, 'id'>) => {
@@ -1142,7 +1197,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Backup & Restore
-  const exportBackupJSON = () => {
+  const exportBackupJSON = async () => {
     const dataToExport: UserStoreData = {
       accounts,
       cards,
@@ -1157,15 +1212,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       userProfile: user,
     };
     const jsonStr = JSON.stringify(dataToExport, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `finly-backup-${user.name.toLowerCase().replace(/\s+/g, '-')}-${getTodayString()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `finly-backup-${user.name.toLowerCase().replace(/\s+/g, '-')}-${getTodayString()}.json`;
+    await saveOrShareFile({
+      filename,
+      content: jsonStr,
+      mimeType: 'application/json',
+      dialogTitle: 'Backup Finly (JSON)',
+    });
   };
 
   

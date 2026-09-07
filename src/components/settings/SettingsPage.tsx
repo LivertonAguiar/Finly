@@ -5,8 +5,6 @@ import {
   Layout,
   Shield,
   Palette,
-  Eye,
-  EyeOff,
   Mail,
   Lock,
   Sparkles,
@@ -75,7 +73,6 @@ export const SettingsPage: React.FC = () => {
   const [selectedThemePreset, setSelectedThemePreset] = useState<ThemePreset>((user.themePreset as ThemePreset) || 'finly-dark');
   const [selectedAccentColor, setSelectedAccentColor] = useState(user.accentColor || '#7C4DFF');
   const [selectedCardRadius, setSelectedCardRadius] = useState<CardRadius>((user.cardRadius as CardRadius) || 'rounded');
-  const [hideValues, setHideValues] = useState(!user.showValues);
 
   // Notification Engine Preferences State
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(getStoredNotificationPrefs);
@@ -238,7 +235,6 @@ export const SettingsPage: React.FC = () => {
       themePreset: selectedThemePreset,
       accentColor: selectedAccentColor,
       cardRadius: selectedCardRadius,
-      showValues: !hideValues,
     });
 
     updateUserAccount({ name, email, phone });
@@ -584,26 +580,6 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Privacy: Hide Values Toggle */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                {hideValues ? <EyeOff className="w-4 h-4 text-purple-600" /> : <Eye className="w-4 h-4 text-slate-400" />}
-                <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Modo Privacidade (Ocultar Valores)</span>
-                  <span className="text-[10px] text-slate-400">Inicia o aplicativo com valores monetários censurados</span>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={hideValues}
-                onChange={e => {
-                  setHideValues(e.target.checked);
-                  updateUser({ showValues: !e.target.checked });
-                }}
-                className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
-              />
             </div>
           </div>
 
@@ -1169,38 +1145,7 @@ export const SettingsPage: React.FC = () => {
             }}
           />
 
-          {/* 3. CRIPTOGRAFIA & RLS */}
-          <div className="p-5 sm:p-6 rounded-[25px] bg-gradient-to-br from-slate-900 via-[#1C1C24] to-[#121218] border border-slate-800 text-white shadow-sm dark:shadow-2xl space-y-3.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider">
-                    Infraestrutura & Criptografia
-                  </h4>
-                  <p className="text-[10px] text-slate-400">Banco Relacional PostgreSQL + RLS</p>
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-[9px] font-bold border border-emerald-500/30">
-                AES-256
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-                <span className="text-[10px] text-slate-400 block font-semibold">Row Level Security</span>
-                <span className="font-bold text-emerald-400">✓ Isolamento por Usuário</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-                <span className="text-[10px] text-slate-400 block font-semibold">Sessão Criptografada</span>
-                <span className="font-bold text-purple-300">✓ Token JWT Seguro</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. CÓPIAS DE SEGURANÇA & DADOS */}
+          {/* 3. CÓPIAS DE SEGURANÇA & DADOS */}
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
