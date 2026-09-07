@@ -4,7 +4,8 @@ import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getCurrentMonth, getTodayString } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
-import { CreditCard as CardIcon, Calendar, CheckCircle2, AlertCircle, Clock, DollarSign, Wallet, Lightbulb, X } from 'lucide-react';
+import { CreditCard as CardIcon, Calendar, CheckCircle2, AlertCircle, Clock, DollarSign, Wallet, Lightbulb, X, Download } from 'lucide-react';
+import { exportInvoiceCSV } from '../../utils/reportExportService';
 
 interface PayInvoiceModalProps {
   isOpen: boolean;
@@ -87,6 +88,22 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
       setIsSubmitting(false);
       onClose();
     }, 400);
+  };
+
+  const handleExportCSV = () => {
+    if (!selectedCard) return;
+    const mLabel = months.find(m => m.num === selectedMonth)?.label || selectedMonth;
+    exportInvoiceCSV({
+      card: selectedCard,
+      monthLabel: `${mLabel} de ${selectedYear}`,
+      periodSlug: `${selectedCard.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${selectedYear}-${selectedMonth}`,
+      invoiceTotal: totalInvoice,
+      statusLabel: isInvoiceAlreadyPaid ? 'Fatura Paga' : 'Fatura Aberta',
+      transactions: invoiceTransactions,
+      categories,
+      currency: user?.currency || 'BRL',
+      userEmail: user?.email,
+    });
   };
 
   return (
@@ -241,9 +258,22 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
               Lançamentos da Fatura ({invoiceTransactions.length})
             </label>
-            <span className="text-[11px] text-slate-400">
-              {months.find(m => m.num === selectedMonth)?.label} de {selectedYear}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400">
+                {months.find(m => m.num === selectedMonth)?.label} de {selectedYear}
+              </span>
+              {selectedCard && invoiceTransactions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors cursor-pointer"
+                  title="Exportar lançamentos desta fatura para CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Exportar CSV</span>
+                </button>
+              )}
+            </div>
           </div>
           <div className="max-h-52 sm:max-h-60 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80 bg-slate-50/60 dark:bg-slate-900/60 scrollbar-thin">
             {invoiceTransactions.length === 0 ? (

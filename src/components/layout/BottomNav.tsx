@@ -241,19 +241,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </button>
         </div>
 
-        {/* 4. Planejamento */}
+        {/* 4. Cartões */}
         <button
           onClick={() => {
             setIsSpeedDialOpen(false);
-            setActiveTab('planejamento');
+            setActiveTab('cartoes');
           }}
-          style={activeTab === 'planejamento' || activeTab === 'orcamento' ? { color: accentColor } : undefined}
+          style={activeTab === 'cartoes' ? { color: accentColor } : undefined}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'planejamento' || activeTab === 'orcamento' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
+            activeTab === 'cartoes' ? 'font-black' : 'text-slate-400 dark:text-slate-500'
           }`}
         >
-          <Flag className="w-5 h-5" />
-          <span className="text-[10px] tracking-tight">{t('nav.planning', 'Planejamento')}</span>
+          <CreditCard className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">{t('nav.cards_short', 'Cartões')}</span>
         </button>
 
         {/* 5. Mais */}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   PieChart as PieIcon,
   BarChart3,
@@ -11,6 +11,8 @@ import {
   Calendar,
   X,
   Check,
+  FileText,
+  FileSpreadsheet,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -31,6 +33,7 @@ import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { Modal } from '../ui/Modal';
+import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
 
 type TabType = 'donut' | 'line' | 'bar';
 
@@ -65,6 +68,21 @@ export const ReportsPage: React.FC = () => {
 
   // Dropdown open state
   const [isSubtypeDropdownOpen, setIsSubtypeDropdownOpen] = useState(false);
+
+  // Export report dropdown state
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(e.target as Node)) {
+        setIsExportDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Month navigation
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
@@ -174,6 +192,71 @@ export const ReportsPage: React.FC = () => {
         return true;
       });
   }, [transactions, filters, viewRegime, cards, currentMonthPrefix, categories]);
+
+  // Executive totals for report exports
+  const reportTotals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    filteredTransactions.forEach(t => {
+      if (t.type === 'income') income += t.amount;
+      else if (t.type === 'expense') expense += t.amount;
+    });
+    return {
+      income,
+      expense,
+      balance: income - expense,
+    };
+  }, [filteredTransactions]);
+
+  const handleExportPDF = () => {
+    setIsExporting(true);
+    try {
+      exportReportPDF({
+        periodLabel: `${capitalizedMonth} de ${yearNum}`,
+        periodSlug: `${currentMonthPrefix}_${viewRegime}`,
+        viewRegime,
+        totalIncome: reportTotals.income,
+        totalExpense: reportTotals.expense,
+        netBalance: reportTotals.balance,
+        transactions: filteredTransactions,
+        categories,
+        accounts,
+        cards,
+        currency: user?.currency || 'BRL',
+        userEmail: user?.email,
+      });
+    } catch (e) {
+      console.error('Erro ao gerar relatório PDF:', e);
+    } finally {
+      setIsExporting(false);
+      setIsExportDropdownOpen(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    setIsExporting(true);
+    try {
+      exportReportCSV({
+        periodLabel: `${capitalizedMonth} de ${yearNum}`,
+        periodSlug: `${currentMonthPrefix}_${viewRegime}`,
+        viewRegime,
+        totalIncome: reportTotals.income,
+        totalExpense: reportTotals.expense,
+        netBalance: reportTotals.balance,
+        transactions: filteredTransactions,
+        categories,
+        accounts,
+        cards,
+        currency: user?.currency || 'BRL',
+        userEmail: user?.email,
+      });
+    } catch (e) {
+      console.error('Erro ao gerar relatório CSV:', e);
+    } finally {
+      setIsExporting(false);
+      setIsExportDropdownOpen(false);
+    }
+  };
 
   // Palette of colors
   const palette = [
@@ -589,6 +672,56 @@ export const ReportsPage: React.FC = () => {
             showStatus={true}
             customPeriodLabel={capitalizedMonth + ' ' + yearNum}
           />
+
+          {/* Export Report Dropdown (PDF & CSV) */}
+          <div className="relative" ref={exportDropdownRef}>
+            <button
+              onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 shadow-xs cursor-pointer active:scale-95 transition-all"
+              title="Exportar Relatório em PDF ou CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span className="hidden sm:inline">Exportar</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {isExportDropdownOpen && (
+              <div
+                onClick={e => e.stopPropagation()}
+                className="absolute right-0 mt-1.5 w-60 bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 text-xs font-bold divide-y divide-slate-100 dark:divide-slate-800/60"
+              >
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-black text-slate-900 dark:text-slate-100">Relatório em PDF</div>
+                    <div className="text-[10px] text-slate-400 font-normal">Documento executivo formatado</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  disabled={isExporting}
+                  className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-black text-slate-900 dark:text-slate-100">Planilha em CSV</div>
+                    <div className="text-[10px] text-slate-400 font-normal">Para Excel e Google Planilhas</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

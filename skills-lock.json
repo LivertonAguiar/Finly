@@ -187,6 +187,12 @@
       "skillPath": "skills/shopify-liquid-themes/SKILL.md",
       "computedHash": "4c4afe344d3e9b2b7da15a50aa9cb1863de01054e7e61f94119f3b4367bee67d"
     },
+    "sleek-design-mobile-apps": {
+      "source": "sleekdotdesign/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/design-mobile-apps/SKILL.md",
+      "computedHash": "f76a047e9746d7b507770ef14f8a0b86525816042cd0404e96be56b0542c3cea"
+    },
     "tailwindcss-mobile-first": {
       "source": "josiahsiegel/claude-plugin-marketplace",
       "sourceType": "github",

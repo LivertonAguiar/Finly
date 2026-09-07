@@ -58,6 +58,7 @@ import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
 import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 import { useTranslation } from '../../utils/i18n';
+import { isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
 
 interface OverviewTabProps {
   onOpenNewTransaction: () => void;
@@ -138,6 +139,7 @@ const DEFAULT_CARD_SIZES: Record<string, 'half' | 'full'> = {
 export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, onOpenNewCard, setActiveTab, onOpenCardDetail }) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
   const { lang, t, translateCategory } = useTranslation();
+  const isApp = isNativeCapacitor() || isMobileDevice();
 
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -2190,14 +2192,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             const renderer = cardRenderers[cardKey];
             if (!renderer) return null;
 
-            const isFull = (cardSizes[cardKey] || (cardKey === 'despesasCategoria' ? 'full' : 'half')) === 'full';
+            const isFull = !isApp && (cardSizes[cardKey] || (cardKey === 'despesasCategoria' ? 'full' : 'half')) === 'full';
             const isBeingDragged = draggedCardKey === cardKey;
             const isOver = dragOverCardKey === cardKey && !isBeingDragged;
 
             return (
               <div
                 key={cardKey}
-                draggable={draggableCardKey === cardKey}
+                draggable={!isApp && draggableCardKey === cardKey}
                 onDragStart={(e) => handleDragStart(e, cardKey)}
                 onDragOver={(e) => handleDragOver(e, cardKey)}
                 onDrop={(e) => handleDrop(e, cardKey)}
@@ -2212,48 +2214,50 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                     : ''
                 }`}
               >
-                {/* Dedicated Solid Action Bar: Resize Button + Drag Handle */}
-                <div className="absolute top-4 right-4 z-20 flex items-center gap-1 px-2 py-1 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 shadow-sm transition-all select-none opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100">
-                  {/* Resize Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCardSize(cardKey);
-                    }}
-                    className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
-                    title={isFull ? 'Reduzir para meia largura (1 coluna)' : 'Expandir para largura total horizontal (2 colunas)'}
-                  >
-                    {isFull ? (
-                      <>
-                        <Minimize2 className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Reduzir</span>
-                      </>
-                    ) : (
-                      <>
-                        <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Expandir</span>
-                      </>
-                    )}
-                  </button>
+                {/* Dedicated Solid Action Bar: Resize Button + Drag Handle (Desktop Web Only) */}
+                {!isApp && (
+                  <div className="hidden lg:flex absolute top-4 right-4 z-20 items-center gap-1 px-2 py-1 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 shadow-sm transition-all select-none opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100">
+                    {/* Resize Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCardSize(cardKey);
+                      }}
+                      className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                      title={isFull ? 'Reduzir para meia largura (1 coluna)' : 'Expandir para largura total horizontal (2 colunas)'}
+                    >
+                      {isFull ? (
+                        <>
+                          <Minimize2 className="w-3.5 h-3.5 shrink-0" />
+                          <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Reduzir</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                          <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Expandir</span>
+                        </>
+                      )}
+                    </button>
 
-                  <div className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+                    <div className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
 
-                  {/* Drag Handle */}
-                  <div
-                    onMouseDown={() => setDraggableCardKey(cardKey)}
-                    onMouseUp={() => setDraggableCardKey(null)}
-                    onTouchStart={() => setDraggableCardKey(cardKey)}
-                    onTouchEnd={() => setDraggableCardKey(null)}
-                    className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-grab active:cursor-grabbing py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
-                    title="Segure e arraste sobre outro card para inverter suas posições"
-                  >
-                    <GripVertical className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
-                      Mover
-                    </span>
+                    {/* Drag Handle */}
+                    <div
+                      onMouseDown={() => setDraggableCardKey(cardKey)}
+                      onMouseUp={() => setDraggableCardKey(null)}
+                      onTouchStart={() => setDraggableCardKey(cardKey)}
+                      onTouchEnd={() => setDraggableCardKey(null)}
+                      className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-grab active:cursor-grabbing py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                      title="Segure e arraste sobre outro card para inverter suas posições"
+                    >
+                      <GripVertical className="w-3.5 h-3.5 shrink-0" />
+                      <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
+                        Mover
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Swap Indicator Overlay when another card is hovered over this card */}
                 {isOver && (
@@ -2334,31 +2338,33 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleCardSize(item.key);
-                        }}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
-                          isFull
-                            ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
-                            : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
-                        }`}
-                        title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
-                      >
-                        {isFull ? (
-                          <>
-                            <Minimize2 className="w-3 h-3" />
-                            <span>2 cols</span>
-                          </>
-                        ) : (
-                          <>
-                            <Maximize2 className="w-3 h-3" />
-                            <span>1 col</span>
-                          </>
-                        )}
-                      </button>
+                      {!isApp && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCardSize(item.key);
+                          }}
+                          className={`hidden lg:flex px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all items-center gap-1 shrink-0 cursor-pointer ${
+                            isFull
+                              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
+                              : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
+                          }`}
+                          title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
+                        >
+                          {isFull ? (
+                            <>
+                              <Minimize2 className="w-3 h-3" />
+                              <span>2 cols</span>
+                            </>
+                          ) : (
+                            <>
+                              <Maximize2 className="w-3 h-3" />
+                              <span>1 col</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -2407,31 +2413,33 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleCardSize(item.key);
-                        }}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
-                          isFull
-                            ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
-                            : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
-                        }`}
-                        title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
-                      >
-                        {isFull ? (
-                          <>
-                            <Minimize2 className="w-3 h-3" />
-                            <span>2 cols</span>
-                          </>
-                        ) : (
-                          <>
-                            <Maximize2 className="w-3 h-3" />
-                            <span>1 col</span>
-                          </>
-                        )}
-                      </button>
+                      {!isApp && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCardSize(item.key);
+                          }}
+                          className={`hidden lg:flex px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all items-center gap-1 shrink-0 cursor-pointer ${
+                            isFull
+                              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
+                              : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
+                          }`}
+                          title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
+                        >
+                          {isFull ? (
+                            <>
+                              <Minimize2 className="w-3 h-3" />
+                              <span>2 cols</span>
+                            </>
+                          ) : (
+                            <>
+                              <Maximize2 className="w-3 h-3" />
+                              <span>1 col</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   );
                 })}

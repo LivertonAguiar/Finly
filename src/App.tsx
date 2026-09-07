@@ -5,6 +5,7 @@ import { AccountsPage } from './components/accounts/AccountsPage';
 import { MorePage } from './components/more/MorePage';
 import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { UndoToastProvider } from './context/UndoToastContext';
 import { FinancialProvider, useFinancial } from './context/FinancialContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import { Sidebar } from './components/layout/Sidebar';
@@ -77,6 +78,7 @@ const getInitialTabFromPath = (): string => {
   if (path === 'familia' || path === 'family') return 'familia';
   if (path === 'cadastro') return 'cadastro';
   if (path === 'perfil' || path === 'profile') return 'perfil';
+  if (path === 'ajuda' || path === 'help') return 'ajuda';
   return 'dashboard';
 };
 
@@ -158,7 +160,11 @@ const AppContent: React.FC = () => {
 
   // Sync URL with browser Back/Forward (popstate)
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      // If back gesture or popstate was for dismissing a modal, don't change tabs!
+      if (e.state?.modalStateId) {
+        return;
+      }
       const tab = getInitialTabFromPath();
       setActiveTab(tab);
     };
@@ -350,11 +356,13 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <FinancialProvider>
-        <ConfirmProvider>
-          <AppContent />
-        </ConfirmProvider>
-      </FinancialProvider>
+      <UndoToastProvider>
+        <FinancialProvider>
+          <ConfirmProvider>
+            <AppContent />
+          </ConfirmProvider>
+        </FinancialProvider>
+      </UndoToastProvider>
     </AuthProvider>
   );
 };

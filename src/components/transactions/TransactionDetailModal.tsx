@@ -26,11 +26,13 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import { useBackButton } from '../../hooks/useBackButton';
 import { Transaction } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { Modal } from '../ui/Modal';
+import { exportInvoiceCSV } from '../../utils/reportExportService';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -58,6 +60,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     user,
   } = useFinancial();
   const { confirm } = useConfirm();
+
+  // Intercept Android back button & swipe gestures
+  useBackButton(isOpen && !!transaction, onClose);
 
   if (!transaction) return null;
 
@@ -142,6 +147,21 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       categoryBreakdown,
     };
   }, [isInvoicePayment, transaction, cards, transactions, categories]);
+
+  const handleExportInvoiceCSV = () => {
+    if (!invoiceComposingData?.card) return;
+    exportInvoiceCSV({
+      card: invoiceComposingData.card,
+      monthLabel: invoiceComposingData.month,
+      periodSlug: `${invoiceComposingData.card.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${invoiceComposingData.month}`,
+      invoiceTotal: invoiceComposingData.totalPurchases,
+      statusLabel: 'Fatura Paga',
+      transactions: invoiceComposingData.items,
+      categories,
+      currency: user?.currency || 'BRL',
+      userEmail: user?.email,
+    });
+  };
 
   // If this transaction is an installment (e.g. "Geladeira (1/12)"), find sister installments
   const installmentSeriesData = useMemo(() => {
@@ -429,9 +449,20 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   Composição Desta Fatura ({invoiceComposingData.items.length} despesas)
                 </h4>
               </div>
-              <span className="text-xs font-black text-rose-600 dark:text-rose-400">
-                Total: {formatCurrency(invoiceComposingData.totalPurchases, user.currency, !user.showValues)}
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportInvoiceCSV}
+                  className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors cursor-pointer"
+                  title="Exportar itens desta fatura para CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>CSV</span>
+                </button>
+                <span className="text-xs font-black text-rose-600 dark:text-rose-400">
+                  Total: {formatCurrency(invoiceComposingData.totalPurchases, user.currency, !user.showValues)}
+                </span>
+              </div>
             </div>
 
             {/* Category breakdown mini progress bars */}
@@ -682,7 +713,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 message: `Deseja realmente excluir "${transaction.description}" de ${formatCurrency(
                   transaction.amount,
                   user.currency
-                )}? Esta ação não pode ser desfeita.`,
+                )}? Você poderá desfazer nos primeiros segundos.`,
                 confirmText: 'Excluir',
                 type: 'danger',
               });

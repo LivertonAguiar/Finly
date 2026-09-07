@@ -29,11 +29,9 @@ export const useBackButton = (
       return true;
     }, priority);
 
-    // 2. Web / PWA browser back-gesture fallback
-    // Only push history state on touch devices (mobile web/PWA) where back gestures are used
-    const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-
-    if (!isNativeAndroid() && isTouchDevice && typeof window !== 'undefined') {
+    // 2. Web / PWA / Android browser back-gesture fallback
+    // Pushes modal history state so Android edge-swipe gestures trigger popstate and close the modal
+    if (!isNativeAndroid() && typeof window !== 'undefined') {
       const modalStateId = `modal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       modalStateIdRef.current = modalStateId;
       window.history.pushState({ modalStateId }, '');
@@ -48,8 +46,8 @@ export const useBackButton = (
           return;
         }
 
-        // Ignore popstate events that fire prematurely (e.g. React StrictMode or event race)
-        if (Date.now() - mountTimestamp < 300) {
+        // Ignore popstate events that fire prematurely (e.g. React StrictMode)
+        if (Date.now() - mountTimestamp < 50) {
           return;
         }
 

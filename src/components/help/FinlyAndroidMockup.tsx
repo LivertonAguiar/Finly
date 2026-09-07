@@ -54,7 +54,6 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
   // Determine active tab on bottom nav based on guide and step
   const getActiveTab = () => {
     if (guide.id === 'como-gerenciar-cartoes-e-faturas') {
-      if (stepIndex === 0) return 'mais'; // Accessed via Mais or Speed Dial
       return 'cartoes';
     }
     if (guide.category === 'planejamento' || guide.id === 'como-configurar-orcamentos-e-metas') {
@@ -311,7 +310,7 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
               </div>
               <div className="text-xs font-black text-white">Como Abrir Cartões no Celular</div>
               <p className="text-[10px] text-slate-300 leading-relaxed">
-                Toque no botão circular <strong>(+)</strong> e escolha o atalho rápido <strong>💳 Cartões</strong>, ou acesse pela aba <strong>Mais</strong>.
+                Toque no <strong>4º ícone (Cartões)</strong> na barra inferior de navegação, ou acesse pelo atalho do botão circular <strong>(+)</strong>.
               </p>
             </div>
 
@@ -697,7 +696,7 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
                 <span>Ergonomia Mobile Nativa</span>
               </div>
               <p className="text-[10px] text-slate-300 leading-relaxed">
-                Barra inferior desenhada para alcance com o polegar: <strong>Principal</strong>, <strong>Transações</strong>, <strong>Menu (+)</strong>, <strong>Planejamento</strong> e <strong>Mais</strong>.
+                Barra inferior desenhada para alcance com o polegar: <strong>Principal</strong>, <strong>Transações</strong>, <strong>Menu (+)</strong>, <strong>Cartões</strong> e <strong>Mais</strong>.
               </p>
             </div>
 
@@ -949,10 +948,10 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
               </div>
             </div>
 
-            {/* 4. Planejamento */}
-            <div className={`flex-1 flex flex-col items-center justify-center gap-0.5 ${activeTab === 'planejamento' ? 'text-purple-400 font-bold' : ''}`}>
-              <Flag className="w-4 h-4" />
-              <span>Planejamento</span>
+            {/* 4. Cartões */}
+            <div className={`flex-1 flex flex-col items-center justify-center gap-0.5 ${activeTab === 'cartoes' ? 'text-purple-400 font-bold' : ''}`}>
+              <CreditCard className="w-4 h-4" />
+              <span>Cartões</span>
             </div>
 
             {/* 5. Mais */}

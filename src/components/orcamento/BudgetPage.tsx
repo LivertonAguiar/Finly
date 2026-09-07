@@ -28,6 +28,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
+import { downloadCSV } from '../../utils/reportExportService';
 import { Modal } from '../ui/Modal';
 
 export const BudgetPage: React.FC = () => {
@@ -271,14 +272,8 @@ export const BudgetPage: React.FC = () => {
     });
 
     // CSV format
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + rows.map(e => e.map(val => `"${val}"`).join(';')).join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `matriz_orcamento_${selectedMatrixYear}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = rows.map(e => e.map(val => `"${val}"`).join(';')).join('\n');
+    downloadCSV(`matriz_orcamento_${selectedMatrixYear}.csv`, csvContent);
   };
 
   // Month transactions

@@ -33,6 +33,7 @@ import {
   ChevronUp,
   History,
   LifeBuoy,
+  RotateCcw,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -43,9 +44,9 @@ import {
 } from '../../utils/sidebarConfig';
 import { SidebarCustomizerModal } from '../layout/SidebarCustomizerModal';
 import { WebWhatsNewModal } from '../common/WebWhatsNewModal';
-import { ReleaseLogView } from '../common/ReleaseLogView';
 import { useTranslation } from '../../utils/i18n';
 import { CURRENT_RELEASE, RELEASES } from '../../data/releases';
+import { HELP_GUIDES, HELP_FAQS } from '../../data/helpCenterData';
 import {
   APP_VERSION,
   APP_BUILD_DATE,
@@ -58,11 +59,6 @@ import {
   getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
-import {
-  getNotificationPermission,
-  requestNotificationPermission,
-  sendTestNotification,
-} from '../../utils/notificationEngine';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
@@ -81,12 +77,10 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
   const [isReloading, setIsReloading] = useState(false);
 
-  // Notification states
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(getNotificationPermission);
-  const [testSending, setTestSending] = useState(false);
-  const [testSuccess, setTestSuccess] = useState(false);
   const [showChangelogHistory, setShowChangelogHistory] = useState(false);
   const [showWebWhatsNewModal, setShowWebWhatsNewModal] = useState(false);
+  const [isHelpExpanded, setIsHelpExpanded] = useState(false);
+  const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialSubTab) {
@@ -370,379 +364,182 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
           </>
         )}
 
-        {/* ABA SOBRE COM CENTRAL DE ATUALIZAÇÕES */}
+        {/* ABA SOBRE COM EXIBIÇÃO ENXUTA E SUCINTA DE VERSÕES */}
         {segmentedTab === 'SOBRE' && (
-          <div className="p-4 sm:p-6 space-y-5">
-            {/* 1. Header do App */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-transparent border border-purple-500/20">
-              <div className="flex items-center gap-3.5 min-w-0">
-                <FinlyLogo size="lg" showText={false} />
+          <div className="p-4 sm:p-6 space-y-4">
+            {/* 1. Header Sucinto do Finly */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <FinlyLogo size="md" showText={false} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-base font-black text-slate-900 dark:text-white">Finly</h4>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30">
-                      v{APP_VERSION}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Build {APP_BUILD_DATE} • {getPlatformLabel()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
-                  isCheckingUpdate
-                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-                    : updateResult?.hasUpdate
-                    ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                }`}>
-                  {isCheckingUpdate ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Verificando...
-                    </>
-                  ) : updateResult?.hasUpdate ? (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Nova versão disponível
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Versão mais recente
-                    </>
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {/* 2. Card da Central de Versões & Atualizações (Unificado para Mobile & Web) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h5 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-500" />
-                    Central de Versões & Atualizações
-                  </h5>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {isNativeCapacitor()
-                      ? 'Mantenha o aplicativo Finly atualizado no seu celular Android'
-                      : 'Informações de versão da plataforma web, integridade do cache e sincronização contínua'}
-                  </p>
-                </div>
-
-                <span className="self-start sm:self-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  {getPlatformLabel()}
-                </span>
-              </div>
-
-              {/* Indicadores de Versao (Diferenciados Web vs Mobile) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 text-xs">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    {isNativeCapacitor() ? 'Versão Neste Celular' : 'Versão Web Instalada'}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-sm font-black text-slate-800 dark:text-slate-100">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                       v{APP_VERSION}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium">
                       ({APP_BUILD_DATE})
                     </span>
                   </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
+                    <span>{getPlatformLabel()}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Sincronizado
+                    </span>
+                  </p>
                 </div>
+              </div>
 
-                {isNativeCapacitor() ? (
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Versão Mais Recente (Nuvem)
-                    </span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-sm font-black ${
-                        isCheckingUpdate
-                          ? 'text-slate-400'
-                          : updateResult?.hasUpdate
-                          ? 'text-purple-600 dark:text-purple-400'
-                          : 'text-emerald-600 dark:text-emerald-400'
-                      }`}>
-                        {isCheckingUpdate ? 'Consultando...' : updateResult ? `v${updateResult.latestVersion}` : `v${APP_VERSION}`}
-                      </span>
-                      {!isCheckingUpdate && updateResult && (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                          updateResult.hasUpdate
-                            ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300'
-                            : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300'
-                        }`}>
-                          {updateResult.hasUpdate ? 'Disponível' : 'Atualizado'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Ambiente de Execução
-                    </span>
-                    <span className="text-sm font-black text-slate-800 dark:text-slate-100 mt-0.5 block">
-                      Navegador Web / PWA
-                    </span>
-                  </div>
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsCheckingUpdate(true);
+                    try {
+                      const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: true });
+                      setUpdateResult(res);
+                    } catch (e) {
+                      setUpdateResult({
+                        hasUpdate: false,
+                        latestVersion: APP_VERSION,
+                        notes: 'Você já está com a versão mais recente.',
+                      });
+                    } finally {
+                      setIsCheckingUpdate(false);
+                    }
+                  }}
+                  disabled={isCheckingUpdate}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                  <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
+                </button>
+
+                {isNativeCapacitor() && updateResult?.hasUpdate && (
+                  <button
+                    type="button"
+                    onClick={() => openExternalUrl(updateResult.downloadUrl || GITHUB_RELEASES_URL)}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Baixar APK</span>
+                  </button>
                 )}
 
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Status do Servidor
-                  </span>
-                  <span className="font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-1 text-xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Online & Sincronizado
-                  </span>
-                </div>
-              </div>
-
-              {/* Status do Update Android (Apenas no app nativo) */}
-              {isNativeCapacitor() && updateResult && (
-                <div
-                  className={`p-3.5 rounded-xl border text-xs ${
-                    updateResult.hasUpdate
-                      ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
-                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                  }`}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsReloading(true);
+                    await forceAppReload();
+                  }}
+                  disabled={isReloading}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  title="Recarregar aplicativo e limpar cache"
                 >
-                  <div className="flex items-center gap-2 font-black">
-                    {updateResult.hasUpdate ? (
-                      <Sparkles className="w-4 h-4 text-purple-500 shrink-0" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    )}
-                    <span>
-                      {updateResult.hasUpdate
-                        ? `Nova versão disponível na nuvem: v${updateResult.latestVersion}`
-                        : `Você já está com a versão mais recente instalada (v${APP_VERSION})!`}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                    {updateResult.notes || 'Todas as melhorias de desempenho, correções e novidades já estão ativas.'}
-                  </p>
-                </div>
-              )}
-
-              {/* Botoes de Acao: Android Nativo vs Web */}
-              {isNativeCapacitor() ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
-                  {/* 1. Verificar Atualizacoes Android */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsCheckingUpdate(true);
-                      try {
-                        const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: false });
-                        setUpdateResult(res);
-                      } catch (e) {
-                        setUpdateResult({
-                          hasUpdate: false,
-                          latestVersion: APP_VERSION,
-                          notes: 'Não foi possível verificar no momento.',
-                        });
-                      } finally {
-                        setIsCheckingUpdate(false);
-                      }
-                    }}
-                    disabled={isCheckingUpdate}
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
-                    <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
-                  </button>
-
-                  {/* 2. Ver Novidades Desta Versao */}
-                  <button
-                    type="button"
-                    onClick={() => setShowWebWhatsNewModal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl border border-purple-200 dark:border-purple-800/80 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Ver Novidades</span>
-                  </button>
-
-                  {/* 3. Baixar APK Atualizado */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      openExternalUrl(updateResult?.downloadUrl || GITHUB_RELEASES_URL);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Baixar APK</span>
-                    <ExternalLink className="w-3 h-3 text-slate-400 ml-auto" />
-                  </button>
-
-                  {/* 4. Recarregar e Limpar Cache */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsReloading(true);
-                      await forceAppReload();
-                    }}
-                    disabled={isReloading}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
-                    <span>{isReloading ? 'Recarregando...' : 'Limpar Cache'}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {/* Web: 1. Ver Novidades da Versão */}
-                  <button
-                    type="button"
-                    onClick={() => setShowWebWhatsNewModal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-purple-200" />
-                    <span>Ver Novidades Desta Versão</span>
-                  </button>
-
-                  {/* Web: 2. Recarregar & Limpar Cache */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsReloading(true);
-                      await forceAppReload();
-                    }}
-                    disabled={isReloading}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
-                    <span>{isReloading ? 'Recarregando...' : 'Recarregar & Limpar Cache'}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* 3. Card de Notificações no Aplicativo */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
-                    <Bell className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h5 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                        Notificações e Lembretes Móveis
-                      </h5>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        notifPermission === 'granted'
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                      }`}>
-                        {notifPermission === 'granted' ? 'Ativado' : 'Pendente'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Receba avisos de faturas, contas a vencer e controle de teto de gastos no celular.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                  {notifPermission !== 'granted' ? (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const res = await requestNotificationPermission();
-                        setNotifPermission(res);
-                      }}
-                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
-                    >
-                      <Bell className="w-3.5 h-3.5" />
-                      <span>Ativar Notificações</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={testSending}
-                      onClick={async () => {
-                        setTestSending(true);
-                        const sent = await sendTestNotification();
-                        setTestSuccess(sent);
-                        setTestSending(false);
-                        setTimeout(() => setTestSuccess(false), 4000);
-                      }}
-                      className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
-                    >
-                      {testSuccess ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          <span className="text-emerald-600 dark:text-emerald-400">Enviada!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5 text-purple-500" />
-                          <span>Testar Notificação</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+                  <RotateCcw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
+                  <span>{isReloading ? 'Recarregando...' : 'Recarregar'}</span>
+                </button>
               </div>
-
-              {testSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Notificação disparada com sucesso! Verifique o topo da tela ou a barra de notificações do Android.</span>
-                </div>
-              )}
             </div>
 
-            {/* 4. Novidades desta Versao (Dinamicas) */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                    O que há de novo na v{APP_VERSION}
-                  </h5>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    {CURRENT_RELEASE.summary}
-                  </p>
+            {/* Banner de Atualização Sutil (se verificado) */}
+            {updateResult && (
+              <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                updateResult.hasUpdate
+                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
+                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {updateResult.hasUpdate ? (
+                    <Sparkles className="w-4 h-4 text-purple-500 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  )}
+                  <span className="font-bold">
+                    {updateResult.hasUpdate
+                      ? `Nova versão disponível na nuvem: v${updateResult.latestVersion}`
+                      : `Você já está utilizando a versão mais recente (v${APP_VERSION}).`}
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                  {CURRENT_RELEASE.releaseDate}
+                {updateResult.hasUpdate && isNativeCapacitor() && (
+                  <button
+                    onClick={() => openExternalUrl(updateResult.downloadUrl || GITHUB_RELEASES_URL)}
+                    className="underline font-black text-[11px] cursor-pointer"
+                  >
+                    Baixar APK
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 2. Notas de Versão Sucintas */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Novidades da Versão v{CURRENT_RELEASE.version}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    • {CURRENT_RELEASE.releaseDate}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Atual
                 </span>
               </div>
 
-              <ReleaseLogView highlights={CURRENT_RELEASE.highlights} />
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                {CURRENT_RELEASE.summary}
+              </p>
 
-              {/* Botao para Expandir Historico de Versoes */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              {/* Destaques em linha única */}
+              <div className="space-y-2 pt-1">
+                {CURRENT_RELEASE.highlights.map((h, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs">
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 mt-0.5 ${
+                      h.type === 'feature'
+                        ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
+                        : h.type === 'fix'
+                        ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
+                        : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                    }`}>
+                      {h.type === 'feature' ? 'Novo' : h.type === 'fix' ? 'Fix' : 'Melhoria'}
+                    </span>
+                    <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-snug">
+                      <strong className="font-semibold text-slate-900 dark:text-slate-100">{h.title}:</strong>{' '}
+                      <span className="text-slate-500 dark:text-slate-400">{h.description}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Histórico Anterior Sucinto */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowChangelogHistory(!showChangelogHistory)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold transition-all flex items-center justify-between cursor-pointer"
+                  className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold transition-all flex items-center justify-between cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <History className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Histórico de Versões Anteriores ({RELEASES.length - 1})</span>
+                    <span>Versões Anteriores ({RELEASES.length - 1})</span>
                   </div>
                   {showChangelogHistory ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                 </button>
 
                 {showChangelogHistory && (
-                  <div className="mt-3 space-y-3 pt-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {RELEASES.slice(1).map((rel) => (
-                      <div key={rel.version} className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 space-y-2">
+                  <div className="mt-2.5 divide-y divide-slate-100 dark:divide-slate-800/60 text-xs animate-in fade-in duration-150">
+                    {RELEASES.slice(1).map(rel => (
+                      <div key={rel.version} className="py-2 space-y-0.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-slate-800 dark:text-slate-200">v{rel.version}</span>
+                          <span className="font-black text-slate-800 dark:text-slate-200">v{rel.version}</span>
                           <span className="text-[10px] text-slate-400">{rel.releaseDate}</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{rel.summary}</p>
-                        <div className="pt-1">
-                          <ReleaseLogView highlights={rel.highlights} compact />
-                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                          {rel.summary}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -750,13 +547,130 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </div>
             </div>
 
-            {/* 4. Segurança e Criptografia */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>Criptografia de ponta a ponta (AES-256 / SSL Seguro)</span>
+            {/* 3. Central de Ajuda (Recolhível / Expansível para economia de espaço) */}
+            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => setIsHelpExpanded(!isHelpExpanded)}
+                className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <LifeBuoy className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h5 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                        Central de Ajuda & Tutoriais
+                      </h5>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                        {HELP_GUIDES.length} Guias • FAQ
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {isHelpExpanded ? 'Toque para recolher' : 'Tutoriais passo a passo, simulador interativo e perguntas frequentes'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-slate-400 shrink-0 ml-2">
+                  <span className="text-[11px] font-bold hidden sm:inline">
+                    {isHelpExpanded ? 'Recolher' : 'Expandir'}
+                  </span>
+                  {isHelpExpanded ? <ChevronUp className="w-4 h-4 text-purple-600" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+
+              {isHelpExpanded && (
+                <div className="p-4 sm:p-5 pt-0 border-t border-slate-100 dark:border-slate-800/80 space-y-4 animate-in fade-in duration-150">
+                  {/* Botão de Acesso Completo à Central de Ajuda */}
+                  <div className="pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('ajuda')}
+                      className="w-full p-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-between cursor-pointer active:scale-98"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-200" />
+                        <span>Abrir Central de Ajuda Completa & Simulador</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-purple-200" />
+                    </button>
+                  </div>
+
+                  {/* Guias Populares */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                      Principais Tutoriais Passo a Passo
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {HELP_GUIDES.slice(0, 4).map(guide => (
+                        <button
+                          key={guide.id}
+                          type="button"
+                          onClick={() => setActiveTab('ajuda')}
+                          className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-slate-200/60 dark:border-slate-800 text-left transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-1">
+                              {guide.title}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 shrink-0 ml-1" />
+                          </div>
+                          <span className="text-[10px] text-slate-400 mt-1 block">
+                            {guide.steps.length} passos • {guide.readTime}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Perguntas Frequentes (FAQ Acordeão Rápido) */}
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                      Dúvidas Frequentes Rápidas
+                    </span>
+                    <div className="space-y-1.5">
+                      {HELP_FAQS.slice(0, 3).map(faq => {
+                        const isOpen = expandedFaqId === faq.id;
+                        return (
+                          <div
+                            key={faq.id}
+                            className="rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 overflow-hidden"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setExpandedFaqId(isOpen ? null : faq.id)}
+                              className="w-full p-2.5 flex items-center justify-between text-left text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer"
+                            >
+                              <span className="line-clamp-1 pr-2">{faq.question}</span>
+                              {isOpen ? (
+                                <ChevronUp className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              )}
+                            </button>
+                            {isOpen && (
+                              <p className="px-2.5 pb-2.5 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 pt-2 animate-in fade-in duration-100">
+                                {faq.answer}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Rodapé Enxuto */}
+            <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-slate-400 dark:text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Criptografia de ponta a ponta (AES-256)</span>
               </div>
-              <span className="text-[11px] font-bold text-slate-400">Finly Cloud Engine</span>
+              <span>Finly © 2026</span>
             </div>
           </div>
         )}

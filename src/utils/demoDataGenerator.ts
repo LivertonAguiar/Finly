@@ -16,6 +16,7 @@ export interface FullDemoStore {
     email: string;
     phone: string;
     currency: string;
+    showValues?: boolean;
   };
 }
 
@@ -754,6 +755,7 @@ export function generateRealisticDemoStore(): FullDemoStore {
       email: 'demo@finly.com',
       phone: '(11) 99999-8888',
       currency: 'BRL',
+      showValues: true,
     },
   };
 }

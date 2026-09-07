@@ -19,6 +19,7 @@ import {
   SidebarItemDef,
 } from '../../utils/sidebarConfig';
 import { useTranslation } from '../../utils/i18n';
+import { useBackButton } from '../../hooks/useBackButton';
 
 interface SidebarCustomizerModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
   onClose,
   onItemsChange,
 }) => {
+  useBackButton(isOpen, onClose);
   const { lang, t } = useTranslation();
   const [activeItems, setActiveItems] = useState<string[]>(getStoredSidebarItems);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);

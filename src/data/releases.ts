@@ -35,28 +35,43 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = '1.1.26';
-export const CURRENT_BUILD_DATE = '2026-09-06';
+export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: '1.1.26',
-    releaseDate: '2026-09-06',
-    summary: 'Arquitetura Supabase / PostgreSQL com Row Level Security (RLS), persistência híbrida em nuvem e suporte a migração de dados locais.',
+    releaseDate: '2026-09-07',
+    summary: 'Arquitetura Supabase / PostgreSQL, exportação completa de faturas em CSV/PDF, botão desfazer exclusão, edição de dívidas, novo layout de configurações e navegação por gestos no Android.',
     highlights: [
+      {
+        title: 'Desfazer Exclusão Instantâneo',
+        description: 'Notificação flutuante com barra de progresso de 5s para restaurar imediatamente qualquer transação, cartão, conta ou dívida excluída.',
+        type: 'feature',
+      },
+      {
+        title: 'Edição de Dívidas & Financiamentos',
+        description: 'Modal completo para editar contratos, valores contratados, saldo devedor, parcelas, taxa de juros e próximo vencimento.',
+        type: 'feature',
+      },
+      {
+        title: 'Exportação Completa de Faturas em CSV e PDF',
+        description: 'Geração de extrato detalhado de lançamentos por cartão com motor Blob UTF-8 BOM e relatório executivo em PDF.',
+        type: 'feature',
+      },
+      {
+        title: 'Navegação por Gestos no Android',
+        description: 'Suporte a Predictive Back Gestures e histórico LIFO, fechando modais de adição ao fazer o gesto de voltar.',
+        type: 'improvement',
+      },
+      {
+        title: 'Configurações em 2 Colunas & UI Otimizada',
+        description: 'Separação direta entre Preferências do Sistema e Segurança/Login, além de aba Sobre enxuta com Central de Ajuda expansível.',
+        type: 'improvement',
+      },
       {
         title: 'Integração Supabase PostgreSQL com RLS',
         description: 'Banco de dados relacional em nuvem com Row Level Security por usuário, preservando modo offline e fallback demo.',
         type: 'feature',
-      },
-      {
-        title: 'Migração Progressiva de Dados Locais',
-        description: 'Migração automatizada e sem perda de dados para contas, cartões, categorias e lançamentos.',
-        type: 'feature',
-      },
-      {
-        title: 'Segurança e Sincronização em Nuvem',
-        description: 'Isolamento multiusuário estrito, integridade relacional e sincronização resiliente.',
-        type: 'improvement',
       },
     ],
   },

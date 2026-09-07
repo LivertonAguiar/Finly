@@ -19,6 +19,7 @@ import { apiSync } from '../utils/apiSync';
 import { generateRealisticDemoStore } from '../utils/demoDataGenerator';
 import { supabaseDb } from '../services/supabaseDb';
 import { isSupabaseConfigured } from '../services/supabaseClient';
+import { useUndoToast } from './UndoToastContext';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -127,7 +128,7 @@ interface FinancialContextType {
 
   // Debts
   debts: Debt[];
-  addDebt: (debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'>) => void;
+  addDebt: (debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'> & { remainingAmount?: number; paidInstallments?: number }) => void;
   updateDebt: (id: string, data: Partial<Debt>) => void;
   deleteDebt: (id: string) => void;
   payDebtInstallment: (debtId: string, accountId?: string) => void;
@@ -202,6 +203,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const payingInvoiceLockRef = useRef<Record<string, number>>({});
   const isStoreLoadedForUserIdRef = useRef<string | null>(null);
 
+  const { showUndo } = useUndoToast();
   const { currentUser } = useAuth();
   const userId = currentUser ? currentUser.id : 'guest';
   const userStoreKey = `finly_user_${userId}_store`;
@@ -253,13 +255,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
             ],
             notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
-            userProfile: parsed.userProfile || {
-              name: currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
-              email: currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
-              currency: 'BRL',
-              role: 'admin',
-              theme: 'dark',
-              showValues: true,
+            userProfile: {
+              ...(parsed.userProfile || {}),
+              name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
+              email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
+              currency: parsed.userProfile?.currency || 'BRL',
+              role: parsed.userProfile?.role || 'admin',
+              theme: parsed.userProfile?.theme || 'dark',
+              showValues: parsed.userProfile?.showValues !== false,
             },
           });
         }
@@ -593,7 +596,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteAccount = (id: string) => {
+    const acc = accounts.find(a => a.id === id);
+    if (!acc) return;
     setAccounts(prev => prev.filter(a => a.id !== id));
+    showUndo({
+      message: `Conta "${acc.name}" excluída`,
+      onUndo: () => {
+        setAccounts(prev => [...prev, acc]);
+      },
+    });
   };
 
   // Card Actions
@@ -607,7 +618,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteCard = (id: string) => {
+    const card = cards.find(c => c.id === id);
+    if (!card) return;
     setCards(prev => prev.filter(c => c.id !== id));
+    showUndo({
+      message: `Cartão "${card.name}" excluído`,
+      onUndo: () => {
+        setCards(prev => [...prev, card]);
+      },
+    });
   };
 
   
@@ -718,7 +737,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteCategory = (id: string) => {
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return;
     setCategories(prev => prev.filter(c => c.id !== id));
+    showUndo({
+      message: `Categoria "${cat.name}" excluída`,
+      onUndo: () => {
+        setCategories(prev => [...prev, cat]);
+      },
+    });
   };
 
   const addSubcategory = (categoryId: string, name: string, icon?: string) => {
@@ -729,11 +756,22 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteSubcategory = (categoryId: string, subcategoryId: string) => {
+    const cat = categories.find(c => c.id === categoryId);
+    const sub = cat?.subcategories.find(s => s.id === subcategoryId);
+    if (!sub) return;
     setCategories(prev =>
       prev.map(c =>
         c.id === categoryId ? { ...c, subcategories: c.subcategories.filter(s => s.id !== subcategoryId) } : c
       )
     );
+    showUndo({
+      message: `Subcategoria "${sub.name}" excluída`,
+      onUndo: () => {
+        setCategories(prev =>
+          prev.map(c => (c.id === categoryId ? { ...c, subcategories: [...c.subcategories, sub] } : c))
+        );
+      },
+    });
   };
 
   const resetCategoriesToDefault = () => {
@@ -777,6 +815,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (tx.tags?.includes('fatura') || tx.description.toLowerCase().includes('pagamento fatura')) {
         const card = cards.find(c => tx.description.includes(c.name));
         if (card) {
+          const previousTransactions = transactions;
           setTransactions(prev =>
             prev.filter(t => t.id !== id).map(t => {
               if (t.cardId === card.id && t.type === 'expense') {
@@ -785,19 +824,42 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               return t;
             })
           );
+          showUndo({
+            message: `Transação "${tx.description}" excluída`,
+            onUndo: () => {
+              setTransactions(previousTransactions);
+            },
+          });
           return;
         }
       }
     }
     // Balance is auto-recalculated by the derived balance effect
+    const txToDelete = tx || transactions.find(t => t.id === id);
     setTransactions(prev => prev.filter(t => t.id !== id));
+    if (txToDelete) {
+      showUndo({
+        message: `Transação "${txToDelete.description}" excluída`,
+        onUndo: () => {
+          setTransactions(prev => [txToDelete, ...prev]);
+        },
+      });
+    }
   };
 
 
   const deleteMultipleTransactions = (ids: string[]) => {
     const idSet = new Set(ids);
+    const deletedTxs = transactions.filter(t => idSet.has(t.id));
+    if (deletedTxs.length === 0) return;
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.filter(t => !idSet.has(t.id)));
+    showUndo({
+      message: `${deletedTxs.length} transações excluídas`,
+      onUndo: () => {
+        setTransactions(prev => [...deletedTxs, ...prev]);
+      },
+    });
   };
 
   const toggleTransactionStatus = (id: string) => {
@@ -881,7 +943,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteGoal = (id: string) => {
-    setGoals(prev => prev.filter(g => g.id !== id));
+    const g = goals.find(item => item.id === id);
+    if (!g) return;
+    setGoals(prev => prev.filter(item => item.id !== id));
+    showUndo({
+      message: `Meta "${g.title}" excluída`,
+      onUndo: () => {
+        setGoals(prev => [...prev, g]);
+      },
+    });
   };
 
   const depositToGoal = (goalId: string, amount: number, accountId?: string, note?: string) => {
@@ -920,12 +990,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Debts
-  const addDebt = (debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'>) => {
+  const addDebt = (debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'> & { remainingAmount?: number; paidInstallments?: number }) => {
+    const paid = debt.paidInstallments ?? 0;
+    const remaining = debt.remainingAmount !== undefined ? debt.remainingAmount : Math.max(0, debt.totalAmount - paid * debt.installmentAmount);
     const newDebt: Debt = {
       ...debt,
-      id: `debt-${Date.now()}`,
-      remainingAmount: debt.totalAmount,
-      paidInstallments: 0,
+      id: `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      remainingAmount: remaining,
+      paidInstallments: paid,
       payments: [],
     };
     setDebts(prev => [...prev, newDebt]);
@@ -936,7 +1008,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteDebt = (id: string) => {
-    setDebts(prev => prev.filter(d => d.id !== id));
+    const d = debts.find(item => item.id === id);
+    if (!d) return;
+    setDebts(prev => prev.filter(item => item.id !== id));
+    showUndo({
+      message: `Dívida "${d.title}" excluída`,
+      onUndo: () => {
+        setDebts(prev => [...prev, d]);
+      },
+    });
   };
 
   const payDebtInstallment = (debtId: string, accountId?: string) => {
@@ -980,7 +1060,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteInvestment = (id: string) => {
-    setInvestments(prev => prev.filter(i => i.id !== id));
+    const inv = investments.find(item => item.id === id);
+    if (!inv) return;
+    setInvestments(prev => prev.filter(item => item.id !== id));
+    showUndo({
+      message: `Ativo "${inv.name}" excluído`,
+      onUndo: () => {
+        setInvestments(prev => [...prev, inv]);
+      },
+    });
   };
 
   // Family Members

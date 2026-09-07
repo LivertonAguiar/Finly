@@ -39,6 +39,7 @@ import { BankLogo } from '../../utils/bankLogos';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from './TransactionModal';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { downloadCSV } from '../../utils/reportExportService';
 
 export const TransactionsPage: React.FC = () => {
   const { confirm } = useConfirm();
@@ -360,25 +361,20 @@ export const TransactionsPage: React.FC = () => {
       const cat = findCategory(t.categoryId, t.subcategoryId);
       const acc = accounts.find(a => a.id === t.accountId);
       const card = cards.find(c => c.id === t.cardId);
+      const tipoStr = t.type === 'expense' ? 'Despesa' : t.type === 'income' ? 'Receita' : 'Transferência';
+      const statusStr = t.status === 'completed' ? 'Concluído' : 'Pendente';
       return [
-        t.date,
-        t.type,
+        formatDate(t.date),
+        tipoStr,
         `"${t.description.replace(/"/g, '""')}"`,
-        cat ? cat.name : 'Outros',
-        acc ? acc.name : card ? card.name : '',
-        t.amount.toString().replace('.', ','),
-        t.status,
+        `"${cat ? cat.name : 'Outros'}"`,
+        `"${acc ? acc.name : card ? card.name : ''}"`,
+        (t.type === 'expense' ? -t.amount : t.amount).toFixed(2).replace('.', ','),
+        statusStr,
       ].join(';');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,﻿' + [headers.join(';'), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `transacoes_${currentMonthPrefix}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCSV(`transacoes_${currentMonthPrefix}.csv`, [headers.join(';'), ...rows].join('\n'));
     setIsMoreOptionsOpen(false);
   };
 
