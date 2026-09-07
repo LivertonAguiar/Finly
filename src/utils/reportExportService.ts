@@ -17,10 +17,292 @@ export interface ReportExportData {
   cards: CreditCard[];
   currency?: string;
   userEmail?: string;
+  activeChartImage?: string;
+  activeChartTitle?: string;
 }
 
 /**
- * Generates and downloads an Executive PDF Financial Report
+ * Generates an executive Donut Chart for category expenses on a high-DPI canvas
+ */
+function createDonutChartCanvas(
+  categoriesMap: Record<string, { name: string; amount: number; count: number }>,
+  totalExpense: number,
+  currency: string
+): string | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 880;
+  canvas.height = 540;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // White Card Background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle Border
+  ctx.strokeStyle = '#E2E8F0';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+  // Card Header
+  ctx.fillStyle = '#1E293B';
+  ctx.font = 'bold 22px Helvetica, Arial, sans-serif';
+  ctx.fillText('DISTRIBUIÇÃO DE DESPESAS', 30, 44);
+
+  const entries = Object.values(categoriesMap).sort((a, b) => b.amount - a.amount);
+  const total = totalExpense > 0 ? totalExpense : entries.reduce((s, e) => s + e.amount, 0);
+
+  if (total <= 0 || entries.length === 0) {
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '16px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Nenhuma despesa registrada no período', canvas.width / 2, canvas.height / 2);
+    return canvas.toDataURL('image/png');
+  }
+
+  // Top 5 categories + Outras
+  const palette = ['#7C4DFF', '#0099CC', '#10B981', '#FF8A00', '#EC4899', '#6366F1', '#94A3B8'];
+  const topCount = 5;
+  const topItems: { name: string; amount: number; color: string; pct: number }[] = [];
+  let otherAmount = 0;
+
+  entries.forEach((entry, idx) => {
+    if (idx < topCount) {
+      topItems.push({
+        name: entry.name,
+        amount: entry.amount,
+        color: palette[idx % palette.length],
+        pct: (entry.amount / total) * 100,
+      });
+    } else {
+      otherAmount += entry.amount;
+    }
+  });
+
+  if (otherAmount > 0) {
+    topItems.push({
+      name: 'Outras Categorias',
+      amount: otherAmount,
+      color: palette[topCount % palette.length],
+      pct: (otherAmount / total) * 100,
+    });
+  }
+
+  // Draw Donut
+  const cx = 200;
+  const cy = 290;
+  const outerR = 150;
+  const innerR = 92;
+
+  let currentAngle = -Math.PI / 2;
+
+  topItems.forEach(item => {
+    const sliceAngle = (item.amount / total) * (Math.PI * 2);
+    const endAngle = currentAngle + sliceAngle;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, currentAngle, endAngle, false);
+    ctx.arc(cx, cy, innerR, endAngle, currentAngle, true);
+    ctx.closePath();
+    ctx.fillStyle = item.color;
+    ctx.fill();
+
+    // 2.5px white gap line
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    currentAngle = endAngle;
+  });
+
+  // Donut Center Text
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#64748B';
+  ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
+  ctx.fillText('TOTAL GASTO', cx, cy - 10);
+
+  ctx.fillStyle = '#0F172A';
+  ctx.font = 'bold 19px Helvetica, Arial, sans-serif';
+  ctx.fillText(formatCurrency(total, currency, false), cx, cy + 18);
+
+  // Legend on Right
+  const legendX = 410;
+  let legendY = 95;
+  const rowH = 68;
+
+  ctx.textAlign = 'left';
+  topItems.forEach(item => {
+    // Dot
+    ctx.fillStyle = item.color;
+    ctx.beginPath();
+    ctx.arc(legendX + 8, legendY + 12, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Category Name
+    ctx.fillStyle = '#1E293B';
+    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
+    const cleanName = item.name.length > 20 ? item.name.substring(0, 18) + '...' : item.name;
+    ctx.fillText(cleanName, legendX + 24, legendY + 16);
+
+    // Value
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
+    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 24, legendY + 40);
+
+    // Percentage Pill
+    ctx.fillStyle = '#F1F5F9';
+    const pillW = 68;
+    const pillH = 26;
+    const pillX = canvas.width - pillW - 30;
+    const pillY = legendY + 16;
+    ctx.fillRect(pillX, pillY, pillW, pillH);
+
+    ctx.fillStyle = item.color;
+    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 18);
+
+    ctx.textAlign = 'left';
+    legendY += rowH;
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
+/**
+ * Generates an executive Cash Flow Bar Chart on a high-DPI canvas
+ */
+function createBarChartCanvas(
+  totalIncome: number,
+  totalExpense: number,
+  netBalance: number,
+  currency: string
+): string | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 880;
+  canvas.height = 540;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // White Card Background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle Border
+  ctx.strokeStyle = '#E2E8F0';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+  // Title
+  ctx.fillStyle = '#1E293B';
+  ctx.font = 'bold 22px Helvetica, Arial, sans-serif';
+  ctx.fillText('BALANÇO FINANCEIRO', 30, 44);
+
+  ctx.fillStyle = '#64748B';
+  ctx.font = '13px Helvetica, Arial, sans-serif';
+  ctx.fillText('Comparativo de Entradas, Saídas e Resultado Líquido', 30, 72);
+
+  const maxVal = Math.max(totalIncome, totalExpense, Math.abs(netBalance), 100);
+  const chartBottom = 420;
+  const chartTop = 120;
+  const chartHeight = chartBottom - chartTop;
+
+  // Grid lines
+  ctx.strokeStyle = '#F1F5F9';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = chartTop + (chartHeight / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(30, y);
+    ctx.lineTo(canvas.width - 30, y);
+    ctx.stroke();
+
+    const gridVal = maxVal * (1 - i / 4);
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '12px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(formatCurrency(gridVal, currency, false), canvas.width - 35, y - 6);
+  }
+
+  // Baseline
+  ctx.strokeStyle = '#CBD5E1';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(30, chartBottom);
+  ctx.lineTo(canvas.width - 30, chartBottom);
+  ctx.stroke();
+
+  interface BarItem {
+    label: string;
+    amount: number;
+    displayAmount: number;
+    color: string;
+    x: number;
+  }
+
+  // 3 Bars: Receitas, Despesas, Saldo
+  const bars: BarItem[] = [
+    {
+      label: 'Receitas',
+      amount: totalIncome,
+      displayAmount: totalIncome,
+      color: '#10B981',
+      x: 100,
+    },
+    {
+      label: 'Despesas',
+      amount: totalExpense,
+      displayAmount: totalExpense,
+      color: '#E11D48',
+      x: 350,
+    },
+    {
+      label: 'Saldo Líquido',
+      amount: Math.max(0, netBalance),
+      displayAmount: netBalance,
+      color: netBalance >= 0 ? '#7C4DFF' : '#F59E0B',
+      x: 600,
+    },
+  ];
+
+  const barW = 160;
+
+  bars.forEach(b => {
+    const h = (b.amount / maxVal) * chartHeight;
+    const barY = chartBottom - h;
+
+    // Draw Bar
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x, barY, barW, h);
+
+    // Value label on top of bar
+    ctx.fillStyle = b.color;
+    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    const valStr = formatCurrency(b.displayAmount, currency, false);
+    ctx.fillText(valStr, b.x + barW / 2, Math.max(barY - 12, chartTop - 8));
+
+    // Label below bar
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
+    ctx.fillText(b.label, b.x + barW / 2, chartBottom + 35);
+
+    // Percentage of income (for expense and balance)
+    if (totalIncome > 0 && b.label !== 'Receitas') {
+      const pct = (b.displayAmount / totalIncome) * 100;
+      ctx.fillStyle = '#64748B';
+      ctx.font = '13px Helvetica, Arial, sans-serif';
+      ctx.fillText(`${pct.toFixed(1)}% das receitas`, b.x + barW / 2, chartBottom + 58);
+    }
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
+/**
+ * Generates and downloads an Executive PDF Financial Report with Charts & Tables
  */
 export function exportReportPDF(data: ReportExportData): void {
   const doc = new jsPDF({
@@ -76,7 +358,7 @@ export function exportReportPDF(data: ReportExportData): void {
 
   let currentY = 46;
 
-  // --- EXECUTIVE SUMMARY CARDS ---
+  // --- 1. EXECUTIVE SUMMARY CARDS ---
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
@@ -138,16 +420,9 @@ export function exportReportPDF(data: ReportExportData): void {
     doc.text(c.value, x + 3, currentY + 16);
   });
 
-  currentY += cardHeight + 10;
+  currentY += cardHeight + 8;
 
-  // --- SECTION 2: CATEGORY BREAKDOWN TABLE ---
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('2. Despesas por Categoria', 14, currentY);
-  currentY += 3;
-
-  // Aggregate expenses by category
+  // Aggregate expenses by category for charts & tables
   const expenseCategoriesMap: Record<string, { name: string; amount: number; count: number }> = {};
   data.transactions
     .filter(t => t.type === 'expense')
@@ -177,6 +452,67 @@ export function exportReportPDF(data: ReportExportData): void {
     categoryRows.push(['Nenhuma despesa registrada no período', '0', formatCurrency(0, currency, false), '0%']);
   }
 
+  // --- 2. SECTION: VISUAL CHARTS & ANALYTICS ---
+  doc.setTextColor(30, 41, 59);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('2. Panorama Visual e Gráficos Analíticos', 14, currentY);
+  currentY += 4;
+
+  // Generate Programmatic Donut & Bar Charts
+  const donutChartDataUrl = createDonutChartCanvas(expenseCategoriesMap, data.totalExpense, currency);
+  const barChartDataUrl = createBarChartCanvas(data.totalIncome, data.totalExpense, data.netBalance, currency);
+
+  const chartCardWidth = 88;
+  const chartCardHeight = 55;
+
+  if (donutChartDataUrl && barChartDataUrl) {
+    // 1. Donut Chart on Left (X: 14)
+    doc.addImage(donutChartDataUrl, 'PNG', 14, currentY, chartCardWidth, chartCardHeight);
+    // 2. Bar Chart on Right (X: 108)
+    doc.addImage(barChartDataUrl, 'PNG', 108, currentY, chartCardWidth, chartCardHeight);
+    currentY += chartCardHeight + 8;
+  }
+
+  // If activeChartImage is provided from screen capture, embed it as featured visual
+  if (data.activeChartImage) {
+    if (currentY > 195) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`2.1 Visualização da Análise: ${data.activeChartTitle || 'Gráfico Interativo'}`, 14, currentY);
+    currentY += 4;
+
+    const activeChartW = 182;
+    const activeChartH = 75;
+
+    // Card Frame
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14, currentY, activeChartW, activeChartH, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(14, currentY, activeChartW, activeChartH, 2, 2, 'S');
+
+    doc.addImage(data.activeChartImage, 'PNG', 15, currentY + 1, activeChartW - 2, activeChartH - 2);
+    currentY += activeChartH + 8;
+  }
+
+  // --- 3. SECTION: CATEGORY BREAKDOWN TABLE ---
+  if (currentY > 210) {
+    doc.addPage();
+    currentY = 20;
+  }
+
+  doc.setTextColor(30, 41, 59);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('3. Despesas por Categoria', 14, currentY);
+  currentY += 3;
+
   autoTable(doc, {
     startY: currentY,
     head: [['Categoria', 'Qtd. Lançamentos', 'Total Gasto', '% do Total']],
@@ -190,23 +526,42 @@ export function exportReportPDF(data: ReportExportData): void {
     },
     styles: {
       fontSize: 8,
-      cellPadding: 2,
+      cellPadding: 2.5,
     },
     columnStyles: {
-      0: { cellWidth: 80 },
-      1: { halign: 'center', cellWidth: 35 },
-      2: { halign: 'right', cellWidth: 40 },
-      3: { halign: 'right', cellWidth: 25 },
+      0: { cellWidth: 70 },
+      1: { halign: 'center', cellWidth: 30 },
+      2: { halign: 'right', cellWidth: 42 },
+      3: { halign: 'right', cellWidth: 40 },
     },
     margin: { left: 14, right: 14 },
+    didDrawCell: (hookData) => {
+      if (hookData.section === 'body' && hookData.column.index === 3) {
+        const raw = hookData.cell.raw as string;
+        const pct = parseFloat(raw.replace('%', '')) || 0;
+        const barX = hookData.cell.x + 3;
+        const barY = hookData.cell.y + hookData.cell.height - 3;
+        const maxW = hookData.cell.width - 6;
+        const fillW = Math.max(0, Math.min(maxW, (pct / 100) * maxW));
+
+        // Background progress rail
+        doc.setFillColor(226, 232, 240); // Slate 200
+        doc.roundedRect(barX, barY, maxW, 1.6, 0.8, 0.8, 'F');
+        // Filled bar
+        if (fillW > 0) {
+          doc.setFillColor(124, 58, 237); // Purple 600
+          doc.roundedRect(barX, barY, fillW, 1.6, 0.8, 0.8, 'F');
+        }
+      }
+    },
   });
 
-  // --- SECTION 3: DETAILED STATEMENT TABLE ---
+  // --- 4. SECTION: DETAILED STATEMENT TABLE ---
   // @ts-ignore
   currentY = doc.lastAutoTable.finalY + 10;
 
   // If close to page bottom, add page
-  if (currentY > 240) {
+  if (currentY > 230) {
     doc.addPage();
     currentY = 20;
   }
@@ -214,7 +569,7 @@ export function exportReportPDF(data: ReportExportData): void {
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('3. Demonstrativo Detalhado de Lançamentos', 14, currentY);
+  doc.text('4. Demonstrativo Detalhado de Lançamentos', 14, currentY);
   currentY += 3;
 
   const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));

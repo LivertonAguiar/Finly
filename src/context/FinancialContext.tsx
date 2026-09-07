@@ -256,6 +256,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             ],
             notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
             userProfile: {
+              themePreset: parsed.userProfile?.themePreset || 'sleek-neo-glass',
+              accentColor: parsed.userProfile?.accentColor || '#06B6D4',
+              cardRadius: parsed.userProfile?.cardRadius || 'squircle',
               ...(parsed.userProfile || {}),
               name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
               email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
@@ -294,6 +297,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           currency: 'BRL',
           role: 'admin',
           theme: 'dark',
+          themePreset: 'sleek-neo-glass',
+          accentColor: '#06B6D4',
+          cardRadius: 'squircle',
           showValues: true,
         },
       });
@@ -319,6 +325,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         currency: 'BRL',
         role: 'admin',
         theme: 'dark',
+        themePreset: 'sleek-neo-glass',
+        accentColor: '#06B6D4',
+        cardRadius: 'squircle',
         showValues: true,
       },
     };

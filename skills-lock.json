@@ -205,6 +205,12 @@
       "skillPath": "skills/engineering/tdd/SKILL.md",
       "computedHash": "c1ed8cd854c64d4d226097255d3fa662dae4a758a1462fadd63cc10e413d88d7"
     },
+    "tech-green-dark-mode-modern": {
+      "source": "mengto/skills",
+      "sourceType": "github",
+      "skillPath": "agent-skills/web-design/tech-green-dark-mode-modern/SKILL.md",
+      "computedHash": "c67fac11de09e5393200d30ec7295cd3d7454b1fea2ecce92b12b6d880588679"
+    },
     "token-efficiency": {
       "source": "delphine-l/claude_global",
       "sourceType": "github",

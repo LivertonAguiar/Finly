@@ -3,6 +3,28 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.30] - 2026-09-07
+
+### ✨ Novas Funcionalidades & UI/UX
+- **Novo Sistema de Design Oficial Sleek Neo-Glass Prism**:
+  - Nova identidade visual baseada no Sleek Design (`sleek.design`) com fundo escuro profundo (`#080B14`), cartões em vidro translúcido acrílico (*frosted glassmorphism*), iluminação ambiente de malha violeta/ciano e cor de destaque Ciano Neon (`#06B6D4`).
+- **5 Novos Presets de Aparência Selecionáveis em Configurações**:
+  - `Sleek Obsidian` (Preto nobre `#07080A` com Âmbar Elétrico).
+  - `Sleek Neo-Glass` (Vidro translúcido acrílico com Ciano Neon).
+  - `Tech Green Terminal` (Preto fosco carbono `#0A0D0C` com Verde Esmeralda Neon).
+  - `Swiss Luxury` (Azul marinho nobre `#071026` com Ouro Champanhe fosco).
+  - `Linear Mono` (Preto absoluto OLED com alto contraste puro).
+- **Geometria de Bordas Sleek Squircle (36px)**:
+  - Curvatura ultra-orgânica nos cartões e modais, complementando os estilos arredondado (25px), moderno (16px) e reto (8px).
+- **Novas Cores de Destaque**:
+  - Âmbar Sleek (`#FF8A00`), Ciano Neon (`#06B6D4`), Verde Tech (`#00FF88`), Ouro Champanhe (`#D4AF37`).
+
+### ⚡ Melhorias & Correções
+- **Exportação de Relatórios PDF com Gráficos e Visuais**:
+  - Incorporação de gráficos visuais executivos, métricas consolidadas e formatação profissional nos relatórios gerados.
+
+---
+
 ## [1.1.29] - 2026-09-07
 
 ### ✨ Novas Funcionalidades & UI/UX

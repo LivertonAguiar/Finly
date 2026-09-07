@@ -1,10 +1,10 @@
 {
-  "version": "1.1.29",
-  "latestVersion": "1.1.29",
+  "version": "1.1.30",
+  "latestVersion": "1.1.30",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.29: Nova barra de navegação ultra-compacta e responsiva (Micro Pílula 44px), ícone de notificação oficial do Finly no Android, contornos aprimorados no modo claro e ajustes visuais de cartões.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.29/finly-v1.1.29.apk",
+  "notes": "Novidades da v1.1.30: Novo Sistema de Design Sleek Neo-Glass Prism, presets visuais de temas selecionáveis em Configurações (Sleek Obsidian, Tech Green, Swiss Luxury, Linear Mono), curvatura Sleek Squircle 36px e exportação de relatórios PDF com gráficos visuais.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.30/finly-v1.1.30.apk",
   "isLatest": true,
   "sections": {
     "features": [

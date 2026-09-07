@@ -152,9 +152,20 @@ export interface InvestmentAsset {
 
 export interface UserProfile {
   language?: 'pt-BR' | 'en-US' | 'es-ES';
-  themePreset?: 'finly-dark' | 'finly-deep-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light' | 'warm-sand';
+  themePreset?:
+    | 'sleek-obsidian'
+    | 'sleek-neo-glass'
+    | 'tech-green'
+    | 'swiss-navy'
+    | 'linear-mono'
+    | 'finly-dark'
+    | 'finly-deep-dark'
+    | 'midnight-oled'
+    | 'emerald-slate'
+    | 'clean-light'
+    | 'warm-sand';
   accentColor?: string;
-  cardRadius?: 'sharp' | 'medium' | 'rounded';
+  cardRadius?: 'sharp' | 'medium' | 'rounded' | 'squircle';
   name: string;
   email: string;
   phone?: string;

@@ -34,10 +34,37 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.29';
+export const CURRENT_VERSION = '1.1.30';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.30',
+    releaseDate: '2026-09-07',
+    summary: 'Novo Sistema de Design Sleek Neo-Glass Prism, presets visuais selecionáveis em Configurações (Sleek Obsidian, Tech Green, Swiss Luxury, Linear Mono), geometria Sleek Squircle 36px e exportação de relatórios em PDF com gráficos.',
+    highlights: [
+      {
+        title: 'Design Sleek Neo-Glass Prism',
+        description: 'Nova identidade visual baseada no Sleek Design com fundo escuro profundo, cartões em vidro translúcido acrílico, gradientes de malha e cor de destaque Ciano Neon.',
+        type: 'feature',
+      },
+      {
+        title: '5 Novos Presets de Aparência',
+        description: 'Seleção em 1 clique com prévia instantânea: Sleek Obsidian, Sleek Neo-Glass, Tech Green Terminal, Swiss Luxury e Linear Mono.',
+        type: 'feature',
+      },
+      {
+        title: 'Geometria Sleek Squircle (36px)',
+        description: 'Nova opção de curvatura ultra-orgânica nos cards e modais para estética premium moderna.',
+        type: 'feature',
+      },
+      {
+        title: 'Relatórios PDF com Gráficos e Visuais',
+        description: 'Nova exportação executiva em PDF incorporando métricas visuais, gráficos de pizza e resumos consolidados.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.29',
     releaseDate: '2026-09-07',

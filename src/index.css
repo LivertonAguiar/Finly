@@ -218,21 +218,50 @@ html:not(.dark) .shadow-xl:not([class*="bg-black"]):not([class*="bg-purple"]):no
 /* DARK MODE: HIGH CONTRAST SURFACES (Finly Dark, Midnight, Emerald)        */
 /* ========================================================================= */
 html.dark body {
-  background-color: var(--app-bg, #1C1C1E) !important;
+  background-color: var(--app-bg, #080B14) !important;
   color: #FFFFFF !important;
+}
+
+html[data-theme-preset="sleek-neo-glass"].dark body {
+  background-color: #080B14 !important;
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.10) 0%, transparent 45%) !important;
+  background-attachment: fixed !important;
 }
 
 html.dark .dark\:bg-\[\#2C2C2E\],
 html.dark .bg-\[\#2C2C2E\],
 html.dark .dark\:bg-\[\#1e222d\],
-html.dark .dark\:bg-\[\#252b38\] {
-  background-color: var(--app-card-bg, #2C2C2E) !important;
+html.dark .dark\:bg-\[\#252b38\],
+html.dark .dark\:bg-\[\#18181B\],
+html.dark .dark\:bg-slate-800 {
+  background-color: var(--app-card-bg, #121826) !important;
+}
+
+html[data-theme-preset="sleek-neo-glass"].dark .dark\:bg-\[\#2C2C2E\],
+html[data-theme-preset="sleek-neo-glass"].dark .bg-\[\#2C2C2E\],
+html[data-theme-preset="sleek-neo-glass"].dark .dark\:bg-\[\#18181B\],
+html[data-theme-preset="sleek-neo-glass"].dark .dark\:bg-slate-800 {
+  background-color: rgba(18, 24, 38, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-theme-preset="sleek-neo-glass"].dark nav > div {
+  background-color: rgba(14, 20, 35, 0.88) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(6, 182, 212, 0.22) !important;
 }
 
 html.dark .dark\:bg-slate-950,
 html.dark .dark\:bg-\[\#1C1C1E\],
 html.dark .dark\:bg-slate-900 {
-  background-color: var(--app-bg, #1C1C1E) !important;
+  background-color: var(--app-bg, #080B14) !important;
 }
 
 /* ========================================================================= */

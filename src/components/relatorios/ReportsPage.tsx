@@ -35,6 +35,7 @@ import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { Modal } from '../ui/Modal';
 import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
 import { exportReportExcel } from '../../utils/excelExportService';
+import html2canvas from 'html2canvas';
 
 type TabType = 'donut' | 'line' | 'bar';
 
@@ -74,6 +75,7 @@ export const ReportsPage: React.FC = () => {
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const chartCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -209,9 +211,31 @@ export const ReportsPage: React.FC = () => {
     };
   }, [filteredTransactions]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     setIsExporting(true);
     try {
+      let activeChartImage: string | undefined = undefined;
+      const activeChartTitle =
+        activeTab === 'donut'
+          ? (donutSubtype === 'despesas_categoria' ? 'Despesas por categorias' : donutSubtype === 'despesas_contas' ? 'Despesas por contas' : donutSubtype === 'receitas_categoria' ? 'Receitas por categorias' : donutSubtype === 'receitas_contas' ? 'Receitas por contas' : 'Saldos por conta')
+          : activeTab === 'line'
+          ? (lineSubtype === 'despesas_mes' ? 'Despesas do mês (diário)' : lineSubtype === 'despesas_semana' ? 'Despesas da semana' : 'Despesas por ano (mensal)')
+          : (barSubtype === 'balanco_mensal' ? 'Balanço mensal (6 meses)' : barSubtype === 'fluxo_caixa_anual' ? 'Fluxo de caixa anual' : 'Despesas x dia da semana');
+
+      if (chartCardRef.current) {
+        try {
+          const canvas = await html2canvas(chartCardRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true,
+          });
+          activeChartImage = canvas.toDataURL('image/png');
+        } catch (err) {
+          console.warn('Erro ao capturar elemento do gráfico DOM:', err);
+        }
+      }
+
       exportReportPDF({
         periodLabel: `${capitalizedMonth} de ${yearNum}`,
         periodSlug: `${currentMonthPrefix}_${viewRegime}`,
@@ -225,6 +249,8 @@ export const ReportsPage: React.FC = () => {
         cards,
         currency: user?.currency || 'BRL',
         userEmail: user?.email,
+        activeChartImage,
+        activeChartTitle,
       });
     } catch (e) {
       console.error('Erro ao gerar relatório PDF:', e);
@@ -871,7 +897,10 @@ export const ReportsPage: React.FC = () => {
       </div>
 
       {/* 3. MAIN CARD CONTAINER (2-COLUMN RESPONSIVE LAYOUT) */}
-      <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl">
+      <div
+        ref={chartCardRef}
+        className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl"
+      >
         {/* ========================================================================= */}
         {/* TAB 1: DONUT / PIE VIEW */}
         {/* ========================================================================= */}

@@ -49,7 +49,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { t, SupportedLanguage } from '../../utils/i18n';
-import { applyTheme, ThemePreset, CardRadius } from '../../utils/themeEngine';
+import { applyTheme, ThemePreset, CardRadius, PRESET_COLORS } from '../../utils/themeEngine';
 import {
   getStoredNotificationPrefs,
   saveNotificationPrefs,
@@ -179,8 +179,10 @@ export const SettingsPage: React.FC = () => {
   // Instant live preview on clicking theme preset
   const handleSelectPreset = (preset: ThemePreset) => {
     setSelectedThemePreset(preset);
-    applyTheme({ preset, accentColor: selectedAccentColor, cardRadius: selectedCardRadius });
-    updateUser({ themePreset: preset, theme: preset === 'clean-light' ? 'light' : 'dark' });
+    const defAccent = PRESET_COLORS[preset]?.defaultAccent || selectedAccentColor;
+    setSelectedAccentColor(defAccent);
+    applyTheme({ preset, accentColor: defAccent, cardRadius: selectedCardRadius });
+    updateUser({ themePreset: preset, accentColor: defAccent, theme: preset === 'clean-light' ? 'light' : 'dark' });
   };
 
   // Instant live preview on clicking accent color
@@ -326,18 +328,24 @@ export const SettingsPage: React.FC = () => {
   };
 
   const accentOptions = [
+    { color: '#FF8A00', label: 'Âmbar Sleek' },
+    { color: '#06B6D4', label: 'Ciano Neon' },
+    { color: '#00FF88', label: 'Verde Tech' },
+    { color: '#D4AF37', label: 'Ouro Champanhe' },
     { color: '#7C4DFF', label: 'Púrpura / Indigo' },
     { color: '#00A884', label: 'Verde Esmeralda' },
     { color: '#0091FF', label: 'Azul Elétrico' },
-    { color: '#FF8A00', label: 'Laranja Solar' },
     { color: '#EC4899', label: 'Rosa Neon' },
-    { color: '#EF4444', label: 'Vermelho Carmim' },
   ];
 
   const themePresets = [
-    { id: 'finly-dark', label: 'Finly Dark', desc: 'Preto suave #1C1C1E e cartões #2C2C2E', bg: 'bg-[#1C1C1E]' },
-    { id: 'midnight-oled', label: 'Midnight OLED', desc: 'Preto absoluto #000000 para economia máxima', bg: 'bg-black' },
-    { id: 'emerald-slate', label: 'Emerald Slate', desc: 'Azul petróleo marinho #0F172A', bg: 'bg-[#0F172A]' },
+    { id: 'sleek-obsidian', label: 'Sleek Obsidian', desc: 'Preto nobre #07080A e Âmbar Elétrico', bg: 'bg-[#07080A]' },
+    { id: 'sleek-neo-glass', label: 'Sleek Neo-Glass', desc: 'Vidro translúcido espacial e Ciano', bg: 'bg-[#080B14]' },
+    { id: 'tech-green', label: 'Tech Green', desc: 'Preto fosco #0A0D0C e Esmeralda Neon', bg: 'bg-[#0A0D0C]' },
+    { id: 'swiss-navy', label: 'Swiss Luxury', desc: 'Azul marinho nobre e Ouro Champanhe', bg: 'bg-[#071026]' },
+    { id: 'linear-mono', label: 'Linear Mono', desc: 'Preto absoluto e alto contraste puro', bg: 'bg-black' },
+    { id: 'finly-dark', label: 'Finly Dark', desc: 'Preto suave padrão e cartões #2C2C2E', bg: 'bg-[#1C1C1E]' },
+    { id: 'midnight-oled', label: 'Midnight OLED', desc: 'Preto absoluto para economia máxima', bg: 'bg-black' },
     { id: 'clean-light', label: 'Clean Light', desc: 'Branco puro e minimalista', bg: 'bg-slate-100' },
   ];
 
@@ -532,9 +540,10 @@ export const SettingsPage: React.FC = () => {
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                 {t('settings.radius.title', selectedLang)}
               </span>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { id: 'rounded', label: 'Ultra-Redondo', desc: '25px (Finly)' },
+                  { id: 'squircle', label: 'Sleek Squircle', desc: '36px (Sleek Design)' },
+                  { id: 'rounded', label: 'Ultra-Redondo', desc: '25px (Finly Padrão)' },
                   { id: 'medium', label: 'Moderno', desc: '16px suave' },
                   { id: 'sharp', label: 'Reto', desc: '8px sóbrio' },
                 ].map(r => (
