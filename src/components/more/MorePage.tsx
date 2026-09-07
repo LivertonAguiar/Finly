@@ -223,23 +223,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       icon: Settings,
       colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
     },
-    {
-      id: 'ajuda',
-      label: 'Central de Ajuda & Tutoriais',
-      description: 'Guias visuais passo a passo para Web e Android, FAQ e suporte',
-      icon: LifeBuoy,
-      colorClass: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60',
-    },
-    {
-      id: 'sobre',
-      label: 'Atualizações & Sobre o Finly',
-      description: `Versão instalada v${APP_VERSION} • Verificar atualizações e novidades`,
-      icon: Sparkles,
-      colorClass: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60',
-      customAction: () => {
-        setSegmentedTab('SOBRE');
-      },
-    },
   ];
 
   // Filter out any items that are already active in the sidebar (ZERO DUPLICITY)
