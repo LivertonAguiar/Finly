@@ -34,14 +34,14 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.26';
+export const CURRENT_VERSION = '1.1.27';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
   {
-    version: '1.1.26',
+    version: '1.1.27',
     releaseDate: '2026-09-07',
-    summary: 'Arquitetura Supabase / PostgreSQL, exportação completa de faturas em CSV/PDF, botão desfazer exclusão, edição de dívidas, novo layout de configurações e navegação por gestos no Android.',
+    summary: 'Exportação completa de faturas em CSV/PDF, botão desfazer exclusão de 5s, edição de dívidas, novo layout de configurações em 2 colunas e navegação por gestos no Android.',
     highlights: [
       {
         title: 'Desfazer Exclusão Instantâneo',
@@ -69,9 +69,31 @@ export const RELEASES: ReleaseInfo[] = [
         type: 'improvement',
       },
       {
+        title: 'Cartões na Barra Inferior Mobile',
+        description: 'Substituição do botão Planejamento por Cartões na barra de navegação rápida do aplicativo móvel.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.26',
+    releaseDate: '2026-09-06',
+    summary: 'Arquitetura Supabase / PostgreSQL com Row Level Security (RLS), persistência híbrida em nuvem e suporte a migração de dados locais.',
+    highlights: [
+      {
         title: 'Integração Supabase PostgreSQL com RLS',
         description: 'Banco de dados relacional em nuvem com Row Level Security por usuário, preservando modo offline e fallback demo.',
         type: 'feature',
+      },
+      {
+        title: 'Migração Progressiva de Dados Locais',
+        description: 'Migração automatizada e sem perda de dados para contas, cartões, categorias e lançamentos.',
+        type: 'feature',
+      },
+      {
+        title: 'Segurança e Sincronização em Nuvem',
+        description: 'Isolamento multiusuário estrito, integridade relacional e sincronização resiliente.',
+        type: 'improvement',
       },
     ],
   },

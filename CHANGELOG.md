@@ -5,6 +5,32 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.27] - 2026-09-07
+
+### ✨ Novas Funcionalidades
+- **Notificação com Botão Desfazer Exclusão (Undo Toast)**:
+  - Sistema universal de restauração com janela de 5 segundos e barra de progresso visual para recuperar transações, contas, cartões, dívidas ou categorias deletadas acidentalmente.
+- **Edição Completa de Dívidas e Financiamentos**:
+  - Novo modal com suporte a alteração de valor financiado, saldo restante, parcelas pagas/totais, taxa de juros (% a.m./a.a.), próximo vencimento e credor.
+- **Exportação Completa de Faturas em CSV e PDF**:
+  - Exportação fiel dos lançamentos de faturas individuais via `Blob` com codificação `UTF-8 BOM` e relatório executivo em PDF corporativo.
+- **Cartões na Barra de Navegação Inferior**:
+  - Acesso direto e prioritário aos cartões de crédito na `BottomNav` mobile, substituindo a aba de planejamento.
+
+### 📱 Experiência Mobile & Android
+- **Predictive Back Gestures & Fechamento de Modais**:
+  - Suporte nativo a gestos de voltar do Android 13/14/15 (`enableOnBackInvokedCallback="true"`). Ao realizar o gesto de voltar (swipe da borda), qualquer modal de adição é dispensado instantaneamente sem sair do app nem trocar de tela.
+- **Remoção de Redimensionamento Indesejado no App**:
+  - Ocultados os botões de expandir e arrastar cards na visualização móvel, preservando rolagem touch suave.
+
+### ⚡ Melhorias & Refinamentos
+- **Configurações em 2 Colunas**:
+  - Redesenho da tela de configurações separando claramente **Preferências do Sistema** (Idioma, Aparência, Notificações, Widgets) de **Segurança & Login** (Dados cadastrais, Senha, Criptografia, Backup).
+- **Aba Sobre Enxuta**:
+  - Design limpo com Central de Ajuda recolhível no rodapé para máxima economia de espaço.
+
+---
+
 ## [1.1.26] - 2026-09-06
 
 ### ✨ Novas Funcionalidades

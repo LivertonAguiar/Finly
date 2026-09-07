@@ -1,27 +1,32 @@
 {
-  "version": "1.1.26",
-  "latestVersion": "1.1.26",
-  "releaseDate": "2026-09-06",
-  "notes": "Novidades da v1.1.26: Arquitetura Supabase / PostgreSQL com Row Level Security (RLS), persistência híbrida em nuvem e suporte a migração de dados locais.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.26/finly-v1.1.26.apk",
+  "version": "1.1.27",
+  "latestVersion": "1.1.27",
+  "releaseDate": "2026-09-07",
+  "notes": "Novidades da v1.1.27: Exportação de faturas em CSV/PDF com UTF-8 BOM, notificação com botão desfazer exclusão de 5s, edição de dívidas, configurações em 2 colunas e suporte a gestos preditivos de voltar no Android.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.27/finly-v1.1.27.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Integração com Supabase (PostgreSQL + Auth + RLS)",
-      "Migração progressiva sem perda de dados para contas, cartões, categorias e lançamentos",
-      "Script automatizado para importação de stores locais para o PostgreSQL do Supabase"
+      "Exportação completa de faturas de cartão em CSV (UTF-8 BOM) e PDF corporativo",
+      "Notificação flutuante com botão Desfazer (Undo) de 5 segundos para restaurar qualquer item excluído",
+      "Edição completa de Dívidas e Financiamentos com modal detalhado e taxas de juros",
+      "Cartões de crédito na barra de navegação inferior mobile (substituindo planejamento)"
     ],
     "fixes": [
-      "Persistência transacional resiliente com fallback local offline e modo demonstração preservado"
+      "Navegação por gestos no Android: o gesto de voltar (edge swipe) fecha modais de adição sem resetar abas ou sair do app",
+      "Remoção dos botões de expandir/redimensionar cards no app mobile para toque mais limpo"
     ],
     "improvements": [
-      "Camada de serviços Supabase tipada com isolamento estrito multiusuário via RLS",
-      "Sincronização bidirecional em tempo real com eventos de foco e heartbeat seguro"
+      "Configurações reorganizadas em 2 colunas diretas (Preferências vs Segurança/Login)",
+      "Aba Sobre enxuta e minimalista com Central de Ajuda expansível/recolhível no rodapé",
+      "Predictive Back Gestures nativos ativados no Android 13/14/15"
     ]
   },
   "highlights": [
-    "[Novidade] Integração completa com Supabase PostgreSQL e Row Level Security (RLS)",
-    "[Novidade] Supabase Auth integrado com fallback offline e modo demo preservado",
-    "[Melhoria] Migração progressiva automatizada das bases locais para o banco relacional"
+    "[Novidade] Botão Desfazer (Undo) de 5s para restaurar imediatamente qualquer exclusão acidental",
+    "[Novidade] Edição completa de contratos de dívidas, saldo devedor e parcelas",
+    "[Novidade] Exportação de lançamentos de fatura para CSV e PDF",
+    "[Melhoria] Suporte nativo a gestos de voltar no Android fechando janelas de adição",
+    "[Melhoria] Página de configurações em 2 colunas limpas e sem abas confusas"
   ]
 }

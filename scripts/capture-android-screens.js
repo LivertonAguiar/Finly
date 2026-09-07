@@ -49,8 +49,8 @@ async function run() {
 
   // Pre-seed localStorage to prevent release notes modal from ever appearing
   await page.evaluateOnNewDocument(() => {
-    localStorage.setItem('finly_seen_web_version', '1.1.26');
-    localStorage.setItem('finly_seen_android_version', '1.1.26');
+    localStorage.setItem('finly_seen_web_version', '1.1.27');
+    localStorage.setItem('finly_seen_android_version', '1.1.27');
   });
 
   console.log('🌐 Conectando em http://localhost:3000/...');
