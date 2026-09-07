@@ -3,6 +3,19 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.31] - 2026-09-07
+
+### ✨ Novas Funcionalidades & Segurança
+- **Suporte Nativo a Biometria (Digital) no App Android**:
+  - Implementação do plugin nativo `FinlyBiometricPlugin` utilizando `androidx.biometric:biometric:1.2.0-alpha05` (`BiometricPrompt` e `BiometricManager`).
+  - Desbloqueio instantâneo do app via sensor de impressão digital (TouchID/FaceID) ao abrir o app ou ao tocar no botão de digital da tela de bloqueio PIN.
+  - Permissões `USE_BIOMETRIC` e `USE_FINGERPRINT` adicionadas no `AndroidManifest.xml`.
+  - Diagnóstico em tempo real de hardware biométrico e impressões digitais cadastradas no aparelho.
+- **Validação de Biometria ao Ativar**:
+  - Solicitação imediata de toque no sensor ao ativar o toggle de biometria nas configurações para certificar o funcionamento antes de salvar.
+- **Menu Mais Opções Simplificado**:
+  - Restringido estritamente para as 3 abas essenciais: **Geral**, **Segurança** e **Sobre**.
+
 ## [1.1.30] - 2026-09-07
 
 ### ✨ Novas Funcionalidades & UI/UX

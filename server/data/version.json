@@ -1,10 +1,10 @@
 {
-  "version": "1.1.30",
-  "latestVersion": "1.1.30",
+  "version": "1.1.31",
+  "latestVersion": "1.1.31",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.30: Novo Sistema de Design Sleek Neo-Glass Prism, presets visuais de temas selecionáveis em Configurações (Sleek Obsidian, Tech Green, Swiss Luxury, Linear Mono), curvatura Sleek Squircle 36px e exportação de relatórios PDF com gráficos visuais.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.30/finly-v1.1.30.apk",
+  "notes": "Novidades da v1.1.31: Suporte nativo oficial a biometria (impressão digital) no Android via BiometricPrompt, reorganização do menu Mais Opções em Geral, Segurança e Sobre, e diagnóstico inteligente de sensores biométricos.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.31/finly-v1.1.31.apk",
   "isLatest": true,
   "sections": {
     "features": [

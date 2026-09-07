@@ -24,6 +24,25 @@ allprojects {
     }
 }
 
+subprojects {
+    afterEvaluate { project ->
+        def currentJvmMajor = Integer.parseInt(JavaVersion.current().getMajorVersion())
+        if (project.plugins.hasPlugin("org.jetbrains.kotlin.android") || project.plugins.hasPlugin("kotlin-android")) {
+            project.kotlin {
+                jvmToolchain(currentJvmMajor >= 21 ? 21 : 17)
+            }
+        }
+        if (project.plugins.hasPlugin("com.android.application") || project.plugins.hasPlugin("com.android.library")) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility(currentJvmMajor >= 21 ? JavaVersion.VERSION_21 : JavaVersion.VERSION_17)
+                    targetCompatibility(currentJvmMajor >= 21 ? JavaVersion.VERSION_21 : JavaVersion.VERSION_17)
+                }
+            }
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

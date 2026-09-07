@@ -34,10 +34,32 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.30';
+export const CURRENT_VERSION = '1.1.31';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.31',
+    releaseDate: '2026-09-07',
+    summary: 'Suporte nativo oficial a biometria (impressão digital) no Android via BiometricPrompt, reorganização do menu Mais Opções em Geral, Segurança e Sobre, e diagnóstico inteligente de sensores biométricos.',
+    highlights: [
+      {
+        title: 'Biometria Nativa no App Android',
+        description: 'Integração direta com o sensor de impressão digital e biometria do Android (BiometricPrompt), permitindo desbloqueio instantâneo do app.',
+        type: 'feature',
+      },
+      {
+        title: 'Menu Mais Opções Simplificado',
+        description: 'Estruturação do menu em 3 abas essenciais: Geral, Segurança e Sobre, com todos os módulos complementares centralizados.',
+        type: 'improvement',
+      },
+      {
+        title: 'Diagnóstico e Validação de Biometria',
+        description: 'Validação ao vivo do sensor ao ativar a biometria e mensagens explicativas caso nenhuma digital esteja cadastrada no aparelho.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.30',
     releaseDate: '2026-09-07',

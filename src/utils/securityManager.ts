@@ -1,3 +1,5 @@
+import { registerPlugin, Capacitor } from '@capacitor/core';
+
 /**
  * Finly Security & Biometric Lock Manager
  * Provides SHA-256 hashed PIN protection and WebAuthn / Capacitor biometric authentication.
@@ -84,6 +86,30 @@ export function setLockTimeoutMinutes(minutes: number): void {
   localStorage.setItem(LOCK_TIMEOUT_KEY, minutes.toString());
 }
 
+export interface FinlyBiometricPlugin {
+  isAvailable(): Promise<{
+    isAvailable: boolean;
+    hasEnrolledBiometrics: boolean;
+    code?: string;
+    reason?: string;
+    error?: string;
+  }>;
+  authenticate(options?: {
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    negativeButtonText?: string;
+  }): Promise<{ success: boolean; error?: string; errorCode?: number }>;
+}
+
+const FinlyBiometric = registerPlugin<FinlyBiometricPlugin>('FinlyBiometric');
+
+export interface BiometricStatusInfo {
+  supported: boolean;
+  enrolled: boolean;
+  reason?: string;
+}
+
 export function isBiometricEnabled(): boolean {
   try {
     return localStorage.getItem(BIOMETRIC_ENABLED_KEY) === 'true';
@@ -97,15 +123,26 @@ export function setBiometricEnabled(enabled: boolean): void {
 }
 
 /**
- * Checks if device supports biometric authentication (WebAuthn or Capacitor)
+ * Checks detailed device biometric capabilities (sensor availability & enrolled fingerprints)
  */
-export async function isBiometricSupported(): Promise<boolean> {
-  // 1. Check Native Capacitor platform
-  if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
-    return true;
+export async function getBiometricStatus(): Promise<BiometricStatusInfo> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const res = await FinlyBiometric.isAvailable();
+      return {
+        supported: !!res.isAvailable,
+        enrolled: !!res.hasEnrolledBiometrics,
+        reason: res.reason,
+      };
+    } catch (e: any) {
+      return {
+        supported: false,
+        enrolled: false,
+        reason: e?.message || 'Falha ao acessar o sensor biométrico nativo.',
+      };
+    }
   }
 
-  // 2. Check WebAuthn platform authenticator (TouchID, FaceID, Windows Hello, Android Fingerprint)
   if (
     typeof window !== 'undefined' &&
     window.PublicKeyCredential &&
@@ -113,22 +150,46 @@ export async function isBiometricSupported(): Promise<boolean> {
   ) {
     try {
       const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      return !!available;
-    } catch (e) {
-      return false;
+      return { supported: !!available, enrolled: !!available };
+    } catch (e: any) {
+      return { supported: false, enrolled: false, reason: e?.message };
     }
   }
 
-  return false;
+  return { supported: false, enrolled: false, reason: 'Dispositivo sem suporte a biometria.' };
 }
 
 /**
- * Performs biometric authentication via WebAuthn or native sensor
+ * Checks if device supports biometric authentication (Native Android BiometricPrompt or WebAuthn)
+ */
+export async function isBiometricSupported(): Promise<boolean> {
+  const status = await getBiometricStatus();
+  return status.supported;
+}
+
+/**
+ * Performs biometric authentication via Native Android BiometricPrompt or WebAuthn
  */
 export async function authenticateWithBiometrics(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
 
-  // WebAuthn prompt
+  // 1. Native Capacitor platform (Android BiometricPrompt)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const res = await FinlyBiometric.authenticate({
+        title: 'Finly',
+        subtitle: 'Toque no sensor biométrico',
+        description: 'Autentique com sua impressão digital para desbloquear',
+        negativeButtonText: 'Usar PIN',
+      });
+      return !!res.success;
+    } catch (err: any) {
+      console.warn('[FinlyBiometric] Native authentication error:', err);
+      return false;
+    }
+  }
+
+  // 2. Web fallback (WebAuthn prompt)
   if (window.PublicKeyCredential) {
     try {
       const challenge = new Uint8Array(32);
@@ -145,7 +206,6 @@ export async function authenticateWithBiometrics(): Promise<boolean> {
 
       return !!credential;
     } catch (err: any) {
-      // If user cancelled or simulated
       console.warn('WebAuthn biometric failed or dismissed:', err?.message);
       return false;
     }

@@ -44,6 +44,9 @@ import {
   setBiometricEnabled,
   getLockTimeoutMinutes,
   setLockTimeoutMinutes,
+  authenticateWithBiometrics,
+  getBiometricStatus,
+  BiometricStatusInfo,
 } from '../../utils/securityManager';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
@@ -124,11 +127,19 @@ export const SettingsPage: React.FC = () => {
   const [pinConfigured, setPinConfigured] = useState(isPinConfigured());
   const [biometricEnabled, setBiometricEnabledState] = useState(isBiometricEnabled());
   const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricStatus, setBiometricStatus] = useState<BiometricStatusInfo>({ supported: false, enrolled: false });
   const [lockTimeout, setLockTimeout] = useState(getLockTimeoutMinutes());
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
   useEffect(() => {
-    isBiometricSupported().then(supported => setBiometricSupported(supported));
+    getBiometricStatus().then(status => {
+      setBiometricStatus(status);
+      setBiometricSupported(status.supported && status.enrolled);
+      if (!status.supported || !status.enrolled) {
+        setBiometricEnabledState(false);
+        setBiometricEnabled(false);
+      }
+    });
   }, []);
 
   const handleTogglePin = (checked: boolean) => {
@@ -145,9 +156,20 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleToggleBiometric = (checked: boolean) => {
-    setBiometricEnabled(checked);
-    setBiometricEnabledState(checked);
+  const handleToggleBiometric = async (checked: boolean) => {
+    if (checked) {
+      const success = await authenticateWithBiometrics();
+      if (success) {
+        setBiometricEnabled(true);
+        setBiometricEnabledState(true);
+      } else {
+        setBiometricEnabled(false);
+        setBiometricEnabledState(false);
+      }
+    } else {
+      setBiometricEnabled(false);
+      setBiometricEnabledState(false);
+    }
   };
 
   const handleChangeTimeout = (mins: number) => {
@@ -1094,15 +1116,18 @@ export const SettingsPage: React.FC = () => {
                         Desbloqueio por Biometria
                       </span>
                       <span className="text-[10px] text-slate-400">
-                        {biometricSupported ? 'TouchID, FaceID ou impressão digital' : 'Sensor biométrico disponível no dispositivo'}
+                        {biometricSupported
+                          ? 'TouchID, FaceID ou impressão digital ativa'
+                          : biometricStatus.reason || 'Sensor biométrico não disponível'}
                       </span>
                     </div>
                   </div>
                   <input
                     type="checkbox"
+                    disabled={!biometricSupported}
                     checked={biometricEnabled}
                     onChange={e => handleToggleBiometric(e.target.checked)}
-                    className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600"
+                    className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600 disabled:opacity-40"
                   />
                 </div>
 
