@@ -53,7 +53,9 @@ jobs:
         run: npx cap sync android
 
       - name: ⚙️ Permissões no Gradle Wrapper
-        run: chmod +x android/gradlew
+        run: |
+          sed -i '/org.gradle.java.home/d' android/gradle.properties || true
+          chmod +x android/gradlew
 
       - name: 🚀 Compilar APK (Debug)
         run: |
