@@ -18,6 +18,8 @@ import {
   CloudOff,
   Sparkles,
   LifeBuoy,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
@@ -32,6 +34,7 @@ interface HeaderProps {
   onOpenMobileMenu?: () => void;
   setActiveTab: (tab: string) => void;
   collapsed: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   setActiveTab,
   collapsed,
+  onToggleCollapse,
 }) => {
   const {
     user,
@@ -89,8 +93,8 @@ export const Header: React.FC<HeaderProps> = ({
         height: 'calc(4rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)))',
       }}
     >
-      {/* Left: Mobile Hamburger + User Profile Badge / Brand */}
-      <div className="flex items-center gap-3">
+      {/* Left: Mobile Hamburger + Desktop Sidebar Toggle + Brand / Section Title */}
+      <div className="flex items-center gap-2.5">
         <button
           onClick={onOpenMobileMenu}
           className="p-1.5 -ml-1.5 rounded-xl text-slate-600 dark:text-slate-300 md:hidden hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -98,6 +102,22 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {/* Desktop Sidebar Toggle */}
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden md:flex p-1.5 -ml-1.5 rounded-xl text-slate-400 hover:text-purple-500 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors cursor-pointer items-center justify-center"
+            title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="w-5 h-5 text-purple-500" />
+            ) : (
+              <PanelLeftClose className="w-5 h-5" />
+            )}
+          </button>
+        )}
 
         {/* Mobile Brand / Avatar */}
         <div className="flex md:hidden items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>

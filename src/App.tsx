@@ -254,11 +254,12 @@ const AppContent: React.FC = () => {
         {/* Real-time In-App Notification Toast */}
         <InAppNotificationToast />
 
-        {/* Main Top Header with Mobile Hamburger */}
+        {/* Main Top Header with Mobile Hamburger & Desktop Sidebar Toggle */}
         <Header
           activeTab={activeTab}
           setActiveTab={handleSelectTab}
           collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
           onOpenNewTransaction={() => setIsNewTxOpen(true)}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />

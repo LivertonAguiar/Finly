@@ -99,46 +99,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {/* Brand & Toggle */}
           <div
-            className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 transition-all"
+            className={`border-b border-slate-100 dark:border-slate-800/80 transition-all flex items-center ${
+              collapsed ? 'justify-center p-2' : 'justify-between p-4'
+            }`}
             style={{
               paddingTop: 'max(1rem, calc(1rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px))))',
               height: 'calc(4rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)))',
             }}
           >
-            <div className="flex items-center gap-2.5 min-w-0 overflow-hidden cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-              <FinlyLogo size="md" showText={!collapsed} />
-            </div>
+            {collapsed ? (
+              <button
+                type="button"
+                onClick={() => setCollapsed(false)}
+                className="w-11 h-11 rounded-2xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all cursor-pointer group"
+                title="Expandir menu lateral"
+              >
+                <FinlyLogo size="md" showText={false} className="shrink-0 group-hover:scale-105 transition-transform" />
+              </button>
+            ) : (
+              <>
+                <div
+                  className="flex items-center gap-2.5 min-w-0 overflow-hidden cursor-pointer"
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <FinlyLogo size="md" showText={true} />
+                </div>
 
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="hidden md:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-              title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-            >
-              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
+                <button
+                  onClick={() => setCollapsed(true)}
+                  className="hidden md:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  title="Recolher menu lateral"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
 
           {/* Quick Action: Novo (Positioned above Dashboard) */}
-          <div className="p-3 pb-1.5">
+          <div className="p-3 pb-1.5 flex justify-center">
             <button
               onClick={onOpenNewTransaction}
-              title={collapsed ? t('action.new_transaction', 'Novo') : undefined}
+              title={collapsed ? t('action.new_transaction', 'Novo Lançamento') : undefined}
               style={{
                 backgroundColor: accentColor,
                 boxShadow: `0 4px 14px 0 ${accentColor}35`,
               }}
-              className={`w-full py-3 rounded-2xl text-white text-xs font-black uppercase tracking-wider flex items-center justify-center transition-all duration-300 cursor-pointer hover:brightness-110 active:scale-[0.98] overflow-hidden ${
-                collapsed ? 'px-0' : 'px-3.5 gap-2'
+              className={`text-white font-black uppercase tracking-wider flex items-center justify-center transition-all duration-300 cursor-pointer hover:brightness-110 active:scale-[0.98] overflow-hidden ${
+                collapsed
+                  ? 'w-11 h-11 rounded-2xl p-0'
+                  : 'w-full py-3 px-3.5 gap-2 rounded-2xl text-xs'
               }`}
             >
-              <Plus className="w-4 h-4 stroke-[3] shrink-0" />
-              <span
-                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                  collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-xs opacity-100'
-                }`}
-              >
-                {t('action.new_transaction', 'Novo')}
-              </span>
+              <Plus className="w-4.5 h-4.5 stroke-[3] shrink-0" />
+              {!collapsed && (
+                <span className="whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-xs">
+                  {t('action.new_transaction', 'Novo')}
+                </span>
+              )}
             </button>
           </div>
 

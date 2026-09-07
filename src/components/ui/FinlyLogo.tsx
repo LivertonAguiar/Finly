@@ -25,7 +25,7 @@ export const FinlyLogo: React.FC<FinlyLogoProps> = ({
   const current = sizeMap[size] || sizeMap.md;
 
   return (
-    <div className={`flex items-center gap-2.5 min-w-0 select-none ${className}`}>
+    <div className={`flex items-center gap-2.5 min-w-0 select-none shrink-0 ${className}`}>
       {useImage && !imgError ? (
         <div
           className={`${current.box} overflow-hidden rounded-2xl bg-black border border-purple-500/30 shadow-md shadow-purple-600/20 shrink-0 flex items-center justify-center`}
