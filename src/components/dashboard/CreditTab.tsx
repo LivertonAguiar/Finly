@@ -665,7 +665,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
         </div>
       ) : (
         /* ========================================================================= */
-        /* CASE 2: VISÃO GERAL DE TODOS OS CARTÕES (MOBILLS OVERVIEW SPEC) */
+        /* CASE 2: VISÃO GERAL DE TODOS OS CARTÕES (FINLY OVERVIEW) */
         /* ========================================================================= */
         <div className="space-y-6">
           {/* Topbar: Title, Month Selector & Action Buttons */}
@@ -791,7 +791,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             </div>
           </div>
 
-          {/* Consolidated KPI Summary Cards (PlannerFin Top Row) */}
+          {/* Consolidated KPI Summary Cards (Finly Top Row) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1: Total das Faturas */}
             <div className="p-5 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">

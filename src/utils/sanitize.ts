@@ -121,7 +121,7 @@ export function autoHealLocalStorage(): void {
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('plannerfin_')) {
+      if (key && key.startsWith('finly_')) {
         const raw = localStorage.getItem(key);
         if (raw && (raw.includes('Ã') || raw.includes('ðŸ') || raw.includes('â'))) {
           try {

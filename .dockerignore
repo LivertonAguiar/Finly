@@ -7,7 +7,5 @@ android
 *.bat
 *.ps1
 *.log
-.env
-.env.example
 scratch_minha_grana
 .github

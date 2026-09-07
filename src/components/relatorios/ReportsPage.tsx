@@ -458,7 +458,7 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOP HEADER (MOBILLS SPEC: TITLE + 3 TABS + SUBTYPE DROPDOWN + FILTER) */}
+      {/* 1. TOP HEADER (FINLY REPORTS SPEC: TITLE + 3 TABS + SUBTYPE DROPDOWN + FILTER) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
           Relatórios

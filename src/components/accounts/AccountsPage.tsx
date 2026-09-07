@@ -182,7 +182,7 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOPBAR (MOBILLS CONTAS EXACT SPEC FROM SCREENSHOT) */}
+      {/* 1. TOPBAR (FINLY ACCOUNTS HEADER) */}
       <div className="flex items-center justify-between gap-4">
         {/* Left: Heading */}
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -224,7 +224,7 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
               <span>Novo</span>
             </button>
 
-            {/* Mobills Replica Dark Popover Menu */}
+            {/* Dark Popover Menu */}
             {isNovoMenuOpen && (
               <>
                 <div

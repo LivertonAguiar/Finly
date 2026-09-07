@@ -156,7 +156,7 @@ export const DEFAULT_SIDEBAR_ORDER: string[] = [
   'settings',
 ];
 
-export const SIDEBAR_STORAGE_KEY = 'plannerfin_sidebar_custom_order_v1';
+export const SIDEBAR_STORAGE_KEY = 'finly_sidebar_custom_order_v1';
 
 import { SupportedLanguage, t } from './i18n';
 
@@ -205,7 +205,7 @@ export const getStoredSidebarItems = (): string[] => {
 export const saveStoredSidebarItems = (items: string[]) => {
   try {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new Event('plannerfin_sidebar_changed'));
+    window.dispatchEvent(new Event('finly_sidebar_changed'));
   } catch (e) {
     console.error('Error saving sidebar order to localStorage:', e);
   }

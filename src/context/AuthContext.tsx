@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, AuthContextType } from '../types/auth';
 import { getApiUrl } from '../services/apiConfig';
+import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 interface ExtendedAuthContextType extends AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; debugCode?: string }>;
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
       if (activeId) {
+        if (activeId === DEFAULT_DEMO_USER.id) return DEFAULT_DEMO_USER;
         const savedUsersStr = localStorage.getItem(AUTH_USERS_KEY);
         const usersList: AuthUser[] = savedUsersStr ? sanitizeUsersList(JSON.parse(savedUsersStr)) : [DEFAULT_ADMIN_USER];
         const found = usersList.find(u => u.id === activeId);
@@ -76,6 +78,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return null;
   });
+
+  // Listen to Supabase Auth state changes
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    // Check existing active Supabase session on startup
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
+      // Don't overwrite explicit demo user session
+      if (activeId === DEFAULT_DEMO_USER.id) return;
+
+      if (session?.user) {
+        const u = session.user;
+        const mappedUser: AuthUser = {
+          id: u.id,
+          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+          email: u.email || '',
+          phone: u.user_metadata?.phone,
+          role: u.user_metadata?.role || 'admin',
+          avatarUrl: u.user_metadata?.avatar_url,
+          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+        setCurrentUser(mappedUser);
+        localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const u = session.user;
+        const mappedUser: AuthUser = {
+          id: u.id,
+          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+          email: u.email || '',
+          phone: u.user_metadata?.phone,
+          role: u.user_metadata?.role || 'admin',
+          avatarUrl: u.user_metadata?.avatar_url,
+          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+        setCurrentUser(mappedUser);
+        localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
+      } else if (event === 'SIGNED_OUT') {
+        const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
+        if (activeId !== DEFAULT_DEMO_USER.id) {
+          setCurrentUser(null);
+          localStorage.removeItem(ACTIVE_SESSION_KEY);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Sync users database to localStorage (clean of passwords)
   useEffect(() => {
@@ -119,7 +175,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: 'Por favor, digite sua senha para entrar.' };
     }
 
-    // 2. Cryptographic Authentication via Backend API
+    // 2. Primary: Supabase Authentication
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+
+        if (error) {
+          // If Supabase returns invalid login credentials or error
+          if (error.message.includes('Invalid login credentials')) {
+            return { success: false, message: 'E-mail ou senha incorretos.' };
+          }
+          console.warn('Supabase login warning:', error.message);
+        } else if (data.user) {
+          const u = data.user;
+          const loggedUser: AuthUser = {
+            id: u.id,
+            name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+            email: u.email || '',
+            phone: u.user_metadata?.phone,
+            role: u.user_metadata?.role || 'admin',
+            avatarUrl: u.user_metadata?.avatar_url,
+            createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          };
+          setAllUsers(prev => [loggedUser, ...prev.filter(usr => usr.id !== loggedUser.id)]);
+          setCurrentUser(loggedUser);
+          if (remember) {
+            localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
+          } else {
+            sessionStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
+          }
+          return { success: true };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase auth network error, trying fallback:', sbErr);
+      }
+    }
+
+    // 3. Fallback: Node/Express API Authentication
     try {
       const res = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
@@ -187,6 +282,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: 'Senha é obrigatória para cadastro.' };
     }
 
+    // 1. Primary: Supabase Auth
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              name: name.trim(),
+              phone: phone ? phone.trim() : undefined,
+              role: 'admin',
+            },
+          },
+        });
+
+        if (error) {
+          return { success: false, message: error.message };
+        }
+
+        if (data.user) {
+          const newUser: AuthUser = {
+            id: data.user.id,
+            name: name.trim(),
+            email: cleanEmail,
+            phone: phone ? phone.trim() : undefined,
+            role: 'admin',
+            createdAt: new Date().toISOString().split('T')[0],
+          };
+          setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
+          setCurrentUser(newUser);
+          localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
+          return { success: true };
+        }
+      } catch (sbErr: any) {
+        console.warn('Supabase register error, trying fallback:', sbErr);
+      }
+    }
+
+    // 2. Fallback: Node/Express API
     try {
       const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
@@ -222,6 +356,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    if (isSupabaseConfigured()) {
+      supabase.auth.signOut().catch(() => {});
+    }
     setCurrentUser(null);
     localStorage.removeItem(ACTIVE_SESSION_KEY);
   };
@@ -244,6 +381,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 1. Request Password Reset via SMTP Backend
   const requestPasswordReset = async (email: string) => {
     const cleanEmail = email.trim().toLowerCase();
+
+    // If Supabase is configured, trigger Supabase reset password email
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail);
+        if (!error) {
+          return { success: true, message: 'Link de redefinição de senha enviado para seu e-mail!' };
+        }
+      } catch (_) {}
+    }
 
     try {
       const response = await fetch(getApiUrl('/api/send-recovery-code'), {
@@ -295,6 +442,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     const cleanEmail = email.trim().toLowerCase();
 
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (!error) {
+          return { success: true, message: 'Senha atualizada com sucesso no Supabase!' };
+        }
+      } catch (_) {}
+    }
+
     try {
       const response = await fetch(getApiUrl('/api/reset-password'), {
         method: 'POST',
@@ -321,6 +477,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser) return { success: false, message: 'Usuário não autenticado.' };
     if (newPassword.length < 3) {
       return { success: false, message: 'A nova senha deve ter no mínimo 3 caracteres.' };
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+          return { success: false, message: error.message };
+        }
+      } catch (e) {
+        console.warn('Supabase change password fallback');
+      }
     }
 
     try {

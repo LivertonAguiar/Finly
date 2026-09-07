@@ -288,7 +288,7 @@ export const CalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. MAIN 2-COLUMN RESPONSIVE LAYOUT (MOBILLS CALENDARIO SPEC) */}
+      {/* 2. MAIN 2-COLUMN RESPONSIVE LAYOUT (FINLY CALENDAR LAYOUT) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT COLUMN: CALENDAR GRID (COL-SPAN-8) */}
         <div className="lg:col-span-8 p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
@@ -362,7 +362,7 @@ export const CalendarPage: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: DETALHES DO DIA (COL-SPAN-4 - MOBILLS SPEC) */}
+        {/* RIGHT COLUMN: DETALHES DO DIA (COL-SPAN-4 - FINLY SPEC) */}
         <div className="lg:col-span-4 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
             {/* Header & Filter Toggle */}

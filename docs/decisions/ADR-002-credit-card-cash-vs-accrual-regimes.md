@@ -18,5 +18,5 @@ Implementamos a biblioteca especializada `src/utils/invoiceCalculator.ts`:
 3. **Rastreamento de Séries de Parcelamento**: Parcelas utilizam metadados `installments: { current, total, parentId }` permitindo visualização de progresso e cálculo correto de limite disponível.
 
 ## Consequências
-* Paridade completa com a lógica oficial do Mobills.
+* Alinhamento estrito com princípios contábeis de conciliação bancária e faturas.
 * Elimina divergências entre o extrato bancário e o saldo previsto de fechamento de mês.

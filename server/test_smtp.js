@@ -41,7 +41,7 @@ async function testSMTP() {
 
     const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
     const info = await transporter.sendMail({
-      from: `"PlannerFin - Suporte & Segurança" <${senderEmail}>`,
+      from: `"Finly - Suporte & Segurança" <${senderEmail}>`,
       to: senderEmail,
       subject: 'Teste de Disparo de E-mail Finly',
       text: 'Se você recebeu este e-mail, o envio via SMTP está funcionando 100%!',

@@ -1,6 +1,6 @@
 # 💎 Finly — Regras de Negócio e Funcionalidades
 
-O Finly foi arquitetado com base no padrão de experiência de usuário e excelência contábil de plataformas líderes (como **Mobills** e **DrFinance**), adaptado para máxima produtividade.
+O Finly foi arquitetado com base nas melhores práticas de experiência do usuário e excelência contábil do mercado financeiro, adaptado para máxima produtividade.
 
 ---
 
@@ -16,7 +16,7 @@ Cada cartão de crédito possui:
 * Se a compra for feita **antes do dia do fechamento**, ela entra na **fatura do mês corrente**.
 * Se a compra for feita **no dia ou após o fechamento** (melhor dia de compra), ela é alocada para a **fatura do mês seguinte**.
 
-### 📊 Regime de Caixa vs Regime de Competência (Filtro do Mobills)
+### 📊 Regime de Caixa vs Regime de Competência
 O usuário pode alternar a visualização das transações entre:
 1. **Regime de Caixa (Data do Vencimento)**: As despesas de cartão aparecem agrupadas no dia em que o dinheiro realmente sai da conta bancária (dia do vencimento da fatura).
 2. **Regime de Competência (Data da Compra)**: As despesas aparecem no exato dia em que o cartão foi passado na maquininha.

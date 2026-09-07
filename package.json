@@ -1,7 +1,7 @@
 {
   "name": "finly",
   "private": true,
-  "version": "1.1.25",
+  "version": "1.1.26",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,8 +21,8 @@
     "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@supabase/supabase-js": "^2.115.0",
     "canvas-confetti": "^1.9.4",
-    "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "date-fns": "^3.6.0",
     "express": "^5.2.1",
@@ -31,10 +31,7 @@
     "react": "^18.3.1",
     "react-bancos": "^0.11.0",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
-    "recharts": "^2.15.0",
-    "ssh2": "^1.17.0",
-    "tailwind-merge": "^2.5.5"
+    "recharts": "^2.15.0"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

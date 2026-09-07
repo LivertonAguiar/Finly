@@ -18,7 +18,7 @@ O sistema opera no modelo **Single Page Application (SPA)** com persistência h�
 |                                                                             |
 |  +------------------+  +------------------+  +---------------------------+  |
 |  |  React UI Views  |  | FinancialContext |  | LocalStorage Cache Engine |  |
-|  |  (Mobills-Style) |  | (Reactive State) |  | (Offline First Resilient) |  |
+|  |  |  | (Reactive State) |  | (Offline First Resilient) |  |
 |  +--------+---------+  +--------+---------+  +-------------+-------------+  |
 +-----------|---------------------|--------------------------|----------------+
             |                     |                          |
@@ -57,7 +57,7 @@ planner-financeiro/
 │   │   ├── cadastros/         # Modais de Contas, Cartões e Categorias
 │   │   ├── calendario/        # Visão Mensal e Diária de Movimentações
 │   │   ├── configuracoes/     # Personalização de Tema, Moeda e Família
-│   │   ├── dashboard/         # Dashboard Mobills (KPIs, Donut, Cartões, Contas)
+│   │   ├── dashboard/         # Dashboard (KPIs, Donut, Cartões, Contas)
 │   │   ├── layout/            # Topbar, Sidebar, Floating Action Button (+)
 │   │   ├── relatorios/        # Gráficos de Evolução, Categorias e Balanço
 │   │   ├── transactions/      # Listagem Timeline/Table, Modal (+) e Ficha Detalhe

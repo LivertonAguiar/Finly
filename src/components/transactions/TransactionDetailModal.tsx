@@ -563,7 +563,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 6. LEMBRETE, RECORRÊNCIA, ANEXO & TAGS/NOTAS (MOBILLS SPEC) */}
+        {/* 6. LEMBRETE, RECORRÊNCIA, ANEXO & TAGS/NOTAS */}
         {/* ========================================================================= */}
         {/* Lembrete Ativo */}
         {transaction.reminder?.enabled && (

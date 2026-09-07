@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { lang, t } = useTranslation();
   const [activeItemIds, setActiveItemIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('plannerfin_accent_color') || '#7C4DFF');
+  const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('finly_accent_color') || '#7C4DFF');
 
   // Close mobile sidebar drawer on Android back gesture
   useBackButton(mobileOpen, () => setMobileOpen(false));
@@ -55,12 +55,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       if (e?.detail?.accentColor) {
         setAccentColor(e.detail.accentColor);
       } else {
-        const saved = localStorage.getItem('plannerfin_accent_color');
+        const saved = localStorage.getItem('finly_accent_color');
         if (saved) setAccentColor(saved);
       }
     };
-    window.addEventListener('plannerfin_theme_changed', handleThemeChange);
-    return () => window.removeEventListener('plannerfin_theme_changed', handleThemeChange);
+    window.addEventListener('finly_theme_changed', handleThemeChange);
+    return () => window.removeEventListener('finly_theme_changed', handleThemeChange);
   }, [user.accentColor]);
 
   // Listen to sidebar changes from customizer or other tabs
@@ -68,8 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const handleSidebarChange = () => {
       setActiveItemIds(getStoredSidebarItems());
     };
-    window.addEventListener('plannerfin_sidebar_changed', handleSidebarChange);
-    return () => window.removeEventListener('plannerfin_sidebar_changed', handleSidebarChange);
+    window.addEventListener('finly_sidebar_changed', handleSidebarChange);
+    return () => window.removeEventListener('finly_sidebar_changed', handleSidebarChange);
   }, []);
 
   const itemMap = new Map(ALL_SIDEBAR_ITEMS.map(item => [item.id, item]));

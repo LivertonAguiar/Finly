@@ -783,7 +783,7 @@ export const BudgetPage: React.FC = () => {
             </div>
           )}
 
-          {/* 2. 4 TOP SUMMARY KPIS (MOBILLS ORÇAMENTOS SPEC) */}
+          {/* 2. 4 TOP SUMMARY KPIS */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* KPI 1: Receitas do mês */}
             <div className="p-4 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-1">
@@ -882,7 +882,7 @@ export const BudgetPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. DETAILED CATEGORY BUDGETS (MOBILLS SPEC) */}
+          {/* 4. DETAILED CATEGORY BUDGETS (FINLY SPEC) */}
           <div className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Orçamento por Categoria</h3>
@@ -954,7 +954,7 @@ export const BudgetPage: React.FC = () => {
         </div>
       )}
 
-      {/* 5. WIZARD: "CRIAÇÃO DO PLANEJAMENTO MENSAL" (3 ETAPAS MOBILLS SPEC) */}
+      {/* 5. WIZARD: "CRIAÇÃO DO PLANEJAMENTO MENSAL" (3 ETAPAS) */}
       {isWizardOpen && (
         <Modal
           isOpen={isWizardOpen}

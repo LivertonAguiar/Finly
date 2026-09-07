@@ -203,8 +203,7 @@ const AppContent: React.FC = () => {
   const [newTxPaymentMethod, setNewTxPaymentMethod] = useState<'account' | 'card'>('account');
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isNewCardOpen, setIsNewCardOpen] = useState(false);
-  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
 
   // Global listener to trigger AppUpdateModal
   useEffect(() => {

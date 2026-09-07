@@ -393,7 +393,7 @@ export const TransactionsPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOPBAR HEADER (MOBILLS REPLICA MATCHING EXACT SCREENSHOT) */}
+      {/* 1. TOPBAR HEADER (FINLY HEADER LAYOUT) */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Left: Type Dropdown Popover */}
         <div className="relative">
@@ -406,7 +406,7 @@ export const TransactionsPage: React.FC = () => {
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
-          {/* Floating Dropdown Popover (PlannerFin Exact Style) */}
+          {/* Floating Dropdown Popover (Finly Design) */}
           {isTypeDropdownOpen && (
             <div
               onClick={e => e.stopPropagation()}
@@ -451,7 +451,7 @@ export const TransactionsPage: React.FC = () => {
           )}
 
 
-          {/* Unified + Novo Dropdown Popover (Mobills Exact Replica) */}
+          {/* Unified + Novo Dropdown Popover (Finly Standard) */}
           <div className="relative">
             <button
               onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
@@ -603,7 +603,7 @@ export const TransactionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 4 TOP SUMMARY KPIS (INTERACTIVE FILTER BUTTONS + MOBILLS SPEC) */}
+      {/* 2. 4 TOP SUMMARY KPIS (INTERACTIVE FILTER BUTTONS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* KPI 1: Saldo atual */}
         <button
@@ -702,7 +702,7 @@ export const TransactionsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 2.5 VIEW REGIME TOGGLE (MOBILLS CAIXA VS COMPETÊNCIA) */}
+      {/* 2.5 VIEW REGIME TOGGLE (CAIXA VS COMPETÊNCIA) */}
       <div className="flex items-center justify-center">
         <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-xs font-bold shadow-xs">
           <button
@@ -754,7 +754,7 @@ export const TransactionsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 4. TRANSACTION LIST / TIMELINE (MOBILLS REPLICA) */}
+      {/* 4. TRANSACTION LIST / TIMELINE (FINLY TIMELINE) */}
       {displayTransactions.length === 0 ? (
         <div className="p-12 text-center rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm text-slate-400 text-xs space-y-2">
           <p>Nenhuma transação encontrada para os filtros selecionados.</p>

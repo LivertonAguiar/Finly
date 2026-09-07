@@ -192,7 +192,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const selectedCategory = categories.find(c => c.id === categoryId);
 
-  // Dynamic modal title based on Mobills specification
+  // Dynamic modal title based on transaction type
   const modalTitle = useMemo(() => {
     if (editingTransaction) return 'Editar Lançamento';
     if (type === 'transfer') return 'Nova Transferência';
@@ -819,7 +819,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* COMPRA DE TERCEIROS (CARTÃO EMPRESTADO) & IGNORAR TRANSAÇÃO (MOBILLS SPEC) */}
+        {/* COMPRA DE TERCEIROS (CARTÃO EMPRESTADO) & IGNORAR TRANSAÇÃO (FINLY SPEC) */}
         {/* ========================================================================= */}
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-3">
           {/* Switch: Compra de Terceiro */}
@@ -898,7 +898,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         {showMoreDetails && (
           <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
-            {/* 1. TAGS COM SUGESTÕES RÁPIDAS (MOBILLS SPEC) */}
+            {/* 1. TAGS COM SUGESTÕES RÁPIDAS (FINLY SPEC) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -963,7 +963,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               />
             </div>
 
-            {/* 3. ANEXAR COMPROVANTE / RECIBO / NOTA FISCAL (MOBILLS SPEC) */}
+            {/* 3. ANEXAR COMPROVANTE / RECIBO / NOTA FISCAL (FINLY SPEC) */}
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
@@ -1028,7 +1028,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               )}
             </div>
 
-            {/* 4. LEMBRETE DE NOTIFICAÇÃO (MOBILLS SPEC) */}
+            {/* 4. LEMBRETE DE NOTIFICAÇÃO (FINLY SPEC) */}
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1E222D] border border-slate-200/80 dark:border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
                 <div>

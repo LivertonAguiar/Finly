@@ -127,8 +127,8 @@ const DEFAULT_CARDS_ORDER: string[] = [
   'perfil',
 ];
 
-const CARDS_STORAGE_KEY = 'plannerfin_dashboard_cards_v5';
-const CARDS_ORDER_STORAGE_KEY = 'plannerfin_dashboard_cards_order_v2';
+const CARDS_STORAGE_KEY = 'finly_dashboard_cards_v5';
+const CARDS_ORDER_STORAGE_KEY = 'finly_dashboard_cards_order_v2';
 const CARDS_SIZES_STORAGE_KEY = 'finly_dashboard_card_sizes_v2';
 
 const DEFAULT_CARD_SIZES: Record<string, 'half' | 'full'> = {
@@ -224,7 +224,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         }
       }
       // Migrate from v1 legacy columns if present
-      const legacy = localStorage.getItem('plannerfin_dashboard_cards_order_v1');
+      const legacy = localStorage.getItem('finly_dashboard_cards_order_v1');
       if (legacy) {
         const parsed = JSON.parse(legacy);
         if (parsed && (Array.isArray(parsed.left) || Array.isArray(parsed.right))) {
@@ -1355,7 +1355,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     );
   };
 
-  // Left 8: Minhas Contas (Mobills Exact Style)
+  // Left 8: Minhas Contas (Finly Style)
   const renderContas = () => (
     <div key="contas" className="p-6 rounded-[28px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
@@ -1968,7 +1968,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
         <div className="min-w-0">
           <p className="text-sm font-black text-slate-900 dark:text-white truncate">{user.name}</p>
-          <p className="text-xs text-slate-400 truncate">{user.email || 'Usuário PlannerFin'}</p>
+          <p className="text-xs text-slate-400 truncate">{user.email || 'Usuário Finly'}</p>
         </div>
       </div>
 
@@ -2007,7 +2007,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 2. MOBILLS EXACT HERO BALANCE CARD */}
+      {/* 2. HERO BALANCE CARD */}
       <div className="p-6 rounded-[28px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 text-center">
         <div className="space-y-1">
           <span className="text-xs text-slate-400 dark:text-slate-400 font-semibold tracking-wide block">
@@ -2070,7 +2070,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 3. PENDÊNCIAS E ALERTAS (MOBILLS STYLE HORIZONTAL CAROUSEL) */}
+      {/* 3. PENDÊNCIAS E ALERTAS (HORIZONTAL CAROUSEL) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">

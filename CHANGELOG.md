@@ -5,6 +5,26 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ---
 
+## [1.1.26] - 2026-09-06
+
+### ✨ Novas Funcionalidades
+- **Arquitetura Supabase / PostgreSQL com Row Level Security (RLS)**:
+  - Migração de persistência para Supabase com banco de dados PostgreSQL estruturado e isolado por usuário (`auth.uid() = user_id`).
+  - Criação de migration SQL reprodutível (`supabase/migrations/20260906000000_initial_schema.sql`) contemplando `profiles`, `accounts`, `credit_cards`, `categories`, `transactions`, `budgets`, `goals`, `debts`, `investments`, `family_members` e `notifications`.
+- **Autenticação com Supabase Auth**:
+  - Integração nativa do `AuthContext` com o Supabase Auth para login, cadastro e recuperação de conta.
+  - Modo híbrido com preservação do modo Demonstração (`demo@finly.com`) e resiliência offline.
+- **Script de Migração Automatizada de Dados Locais**:
+  - Script executável (`scripts/migrate-stores-to-supabase.js`) para ler os arquivos JSON em `server/data/stores/` e fazer o upsert estruturado no PostgreSQL do Supabase.
+
+### ⚡ Melhorias & Otimizações
+- **Camada de Repositório Tipada (`supabaseDb.ts`)**:
+  - Métodos fortemente tipados para sincronização completa e granular de lançamentos, contas, cartões e categorias.
+- **Compatibilidade 100% Preservada com Capacitor & Android**:
+  - Persistência e tokens armazenados localmente garantindo funcionamento transparente tanto na Web quanto no aplicativo Android.
+
+---
+
 ## [1.1.25] - 2026-09-06
 
 ### ✨ Novas Funcionalidades

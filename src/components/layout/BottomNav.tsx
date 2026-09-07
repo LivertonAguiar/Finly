@@ -31,7 +31,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const { user } = useFinancial();
   const { t } = useTranslation();
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
-  const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('plannerfin_accent_color') || '#7C4DFF');
+  const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('finly_accent_color') || '#7C4DFF');
 
   // Close speed dial on Android back gesture
   useBackButton(isSpeedDialOpen, () => setIsSpeedDialOpen(false));
@@ -45,12 +45,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       if (e?.detail?.accentColor) {
         setAccentColor(e.detail.accentColor);
       } else {
-        const saved = localStorage.getItem('plannerfin_accent_color');
+        const saved = localStorage.getItem('finly_accent_color');
         if (saved) setAccentColor(saved);
       }
     };
-    window.addEventListener('plannerfin_theme_changed', handleThemeChange);
-    return () => window.removeEventListener('plannerfin_theme_changed', handleThemeChange);
+    window.addEventListener('finly_theme_changed', handleThemeChange);
+    return () => window.removeEventListener('finly_theme_changed', handleThemeChange);
   }, [user.accentColor]);
 
   const handleAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {

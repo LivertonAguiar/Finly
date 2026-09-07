@@ -1,4 +1,4 @@
-export type ThemePreset = 'planner-dark' | 'plannerfin-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light';
+export type ThemePreset = 'finly-dark' | 'finly-deep-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light';
 export type CardRadius = 'rounded' | 'medium' | 'sharp';
 
 export interface ThemeConfig {
@@ -8,13 +8,13 @@ export interface ThemeConfig {
 }
 
 const PRESET_COLORS: Record<ThemePreset, { bg: string; cardBg: string; text: string; mode: 'dark' | 'light' }> = {
-  'planner-dark': {
+  'finly-dark': {
     bg: '#121214',
     cardBg: '#18181B',
     text: '#FFFFFF',
     mode: 'dark',
   },
-  'plannerfin-dark': {
+  'finly-deep-dark': {
     bg: '#121214',
     cardBg: '#18181B',
     text: '#FFFFFF',
@@ -50,20 +50,20 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
-  const savedPreset = (localStorage.getItem('plannerfin_theme_preset') as ThemePreset) || 'planner-dark';
-  const savedAccent = localStorage.getItem('plannerfin_accent_color') || '#7C4DFF';
-  const savedRadius = (localStorage.getItem('plannerfin_card_radius') as CardRadius) || 'rounded';
+  const savedPreset = (localStorage.getItem('finly_theme_preset') as ThemePreset) || 'finly-dark';
+  const savedAccent = localStorage.getItem('finly_accent_color') || '#7C4DFF';
+  const savedRadius = (localStorage.getItem('finly_card_radius') as CardRadius) || 'rounded';
 
   const preset = config.preset || savedPreset;
   const accent = config.accentColor || savedAccent;
   const radius = config.cardRadius || savedRadius;
 
-  const presetData = PRESET_COLORS[preset] || PRESET_COLORS['planner-dark'];
+  const presetData = PRESET_COLORS[preset] || PRESET_COLORS['finly-dark'];
 
   // Save to localStorage
-  if (config.preset) localStorage.setItem('plannerfin_theme_preset', config.preset);
-  if (config.accentColor) localStorage.setItem('plannerfin_accent_color', config.accentColor);
-  if (config.cardRadius) localStorage.setItem('plannerfin_card_radius', config.cardRadius);
+  if (config.preset) localStorage.setItem('finly_theme_preset', config.preset);
+  if (config.accentColor) localStorage.setItem('finly_accent_color', config.accentColor);
+  if (config.cardRadius) localStorage.setItem('finly_card_radius', config.cardRadius);
 
   // Set DOM attributes
   root.setAttribute('data-theme-preset', preset);
@@ -88,10 +88,10 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   document.body.style.color = presetData.text;
 
   // Update dynamic style tag
-  let dynamicStyleTag = document.getElementById('plannerfin-dynamic-theme-style');
+  let dynamicStyleTag = document.getElementById('finly-dynamic-theme-style');
   if (!dynamicStyleTag) {
     dynamicStyleTag = document.createElement('style');
-    dynamicStyleTag.id = 'plannerfin-dynamic-theme-style';
+    dynamicStyleTag.id = 'finly-dynamic-theme-style';
     document.head.appendChild(dynamicStyleTag);
   }
 
@@ -117,7 +117,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
 
   // Notify active components immediately
   try {
-    window.dispatchEvent(new CustomEvent('plannerfin_theme_changed', {
+    window.dispatchEvent(new CustomEvent('finly_theme_changed', {
       detail: { preset, accentColor: accent, cardRadius: radius }
     }));
   } catch (e) {}
@@ -125,8 +125,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
 
 export const initThemeEngine = () => {
   if (typeof window === 'undefined') return;
-  const preset = (localStorage.getItem('plannerfin_theme_preset') as ThemePreset) || 'planner-dark';
-  const accent = localStorage.getItem('plannerfin_accent_color') || '#7C4DFF';
-  const radius = (localStorage.getItem('plannerfin_card_radius') as CardRadius) || 'rounded';
+  const preset = (localStorage.getItem('finly_theme_preset') as ThemePreset) || 'finly-dark';
+  const accent = localStorage.getItem('finly_accent_color') || '#7C4DFF';
+  const radius = (localStorage.getItem('finly_card_radius') as CardRadius) || 'rounded';
   applyTheme({ preset, accentColor: accent, cardRadius: radius });
 };

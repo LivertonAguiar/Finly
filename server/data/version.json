@@ -1,28 +1,27 @@
 {
-  "version": "1.1.25",
-  "latestVersion": "1.1.25",
+  "version": "1.1.26",
+  "latestVersion": "1.1.26",
   "releaseDate": "2026-09-06",
-  "notes": "Novidades da v1.1.25: Central de Ajuda com visualização idêntica ao app Android, modo móvel sem poluição desktop e separação estruturada dos logs de versão.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.25/finly-v1.1.25.apk",
+  "notes": "Novidades da v1.1.26: Arquitetura Supabase / PostgreSQL com Row Level Security (RLS), persistência híbrida em nuvem e suporte a migração de dados locais.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.26/finly-v1.1.26.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Visualização 100% idêntica ao app Android no simulador da Central de Ajuda",
-      "Central de Ajuda mobile sem referências ou poluição de telas desktop"
+      "Integração com Supabase (PostgreSQL + Auth + RLS)",
+      "Migração progressiva sem perda de dados para contas, cartões, categorias e lançamentos",
+      "Script automatizado para importação de stores locais para o PostgreSQL do Supabase"
     ],
     "fixes": [
-      "Navegação direta na aba Sobre sem modais saltando desnecessariamente",
-      "Zero notificações intrusivas na barra de status para versões já atualizadas"
+      "Persistência transacional resiliente com fallback local offline e modo demonstração preservado"
     ],
     "improvements": [
-      "Separação estruturada dos logs de versão (Novidades, Fixes e Melhorias)",
-      "Trava de concorrência Promise para checagem rápida e segura de atualizações"
+      "Camada de serviços Supabase tipada com isolamento estrito multiusuário via RLS",
+      "Sincronização bidirecional em tempo real com eventos de foco e heartbeat seguro"
     ]
   },
   "highlights": [
-    "[Novidade] Visualização 100% idêntica ao app Android no simulador da Central de Ajuda",
-    "[Novidade] Central de Ajuda mobile sem referências ou poluição de telas desktop",
-    "[Melhoria] Separação estruturada dos logs de versão (Novidades, Fixes e Melhorias)",
-    "[Correção] Navegação direta na aba Sobre sem modais saltando desnecessariamente"
+    "[Novidade] Integração completa com Supabase PostgreSQL e Row Level Security (RLS)",
+    "[Novidade] Supabase Auth integrado com fallback offline e modo demo preservado",
+    "[Melhoria] Migração progressiva automatizada das bases locais para o banco relacional"
   ]
 }

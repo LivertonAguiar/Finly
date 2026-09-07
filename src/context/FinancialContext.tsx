@@ -17,8 +17,8 @@ import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
 import { generateRealisticDemoStore } from '../utils/demoDataGenerator';
-
-
+import { supabaseDb } from '../services/supabaseDb';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -360,42 +360,60 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   
-  // CONTINUOUS SERVER AUTO-SYNC
+  // CONTINUOUS SERVER AUTO-SYNC (SUPABASE & BACKEND)
   useEffect(() => {
     if (!currentUser) return;
     apiSync.setUserId(currentUser.id);
 
-    // Initial pull from server
-    apiSync.fetchServerStore(currentUser.id).then(serverStore => {
-      if (serverStore && serverStore.accounts) {
-        setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-        setCards(serverStore.cards || []);
-        setCategories(mergeCategories(serverStore.categories));
-        setBudgets(serverStore.budgets || []);
-        setGoals(serverStore.goals || []);
-        setDebts(serverStore.debts || []);
-        setInvestments(serverStore.investments || []);
-        setTransactions(serverStore.transactions || []);
-        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
-        if (serverStore.userProfile) setUser(serverStore.userProfile);
-      }
-    });
+    const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
 
-    // Sync on window focus (e.g. when user switches from mobile to PC)
-    const handleFocus = () => {
+    const pullData = async () => {
+      if (isDemo) return;
+
+      // 1. Primary: Supabase PostgreSQL
+      if (isSupabaseConfigured()) {
+        try {
+          const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          if (sbStore && sbStore.accounts) {
+            setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+            setCards(sbStore.cards || []);
+            setCategories(mergeCategories(sbStore.categories));
+            setBudgets(sbStore.budgets || []);
+            setGoals(sbStore.goals || []);
+            setDebts(sbStore.debts || []);
+            setInvestments(sbStore.investments || []);
+            setTransactions(sbStore.transactions || []);
+            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+            if (sbStore.userProfile) setUser(sbStore.userProfile);
+            return;
+          }
+        } catch (sbErr) {
+          console.warn('Supabase store fetch notice:', sbErr);
+        }
+      }
+
+      // 2. Fallback: Node/Express Server Store
       apiSync.fetchServerStore(currentUser.id).then(serverStore => {
         if (serverStore && serverStore.accounts) {
-          setAccounts(serverStore.accounts || []);
+          setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
           setCards(serverStore.cards || []);
-          if (serverStore.categories) setCategories(mergeCategories(serverStore.categories));
-          setTransactions(serverStore.transactions || []);
+          setCategories(mergeCategories(serverStore.categories));
           setBudgets(serverStore.budgets || []);
           setGoals(serverStore.goals || []);
           setDebts(serverStore.debts || []);
           setInvestments(serverStore.investments || []);
+          setTransactions(serverStore.transactions || []);
           if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+          if (serverStore.userProfile) setUser(serverStore.userProfile);
         }
       });
+    };
+
+    pullData();
+
+    // Sync on window focus (e.g. when user switches from mobile to PC)
+    const handleFocus = () => {
+      pullData();
     };
 
     window.addEventListener('focus', handleFocus);
@@ -409,7 +427,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [currentUser?.id]);
 
-  // Automatic Real-Time Persistence (local offline cache + debounced server sync)
+  // Automatic Real-Time Persistence (local offline cache + debounced Supabase & server sync)
   useEffect(() => {
     // Only save if the store has actually been loaded for the CURRENT user (prevents wiping out data on switch)
     if (!currentUser || isStoreLoadedForUserIdRef.current !== currentUser.id) return;
@@ -428,14 +446,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       userProfile: user,
     };
 
-    // Save to local storage as offline cache
+    // 1. Save to local storage as instant offline cache
     try {
       localStorage.setItem(userStoreKey, JSON.stringify(currentStore));
     } catch (e) {
       console.error('Error saving user store to localStorage:', e);
     }
 
-    // Push to backend server
+    const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
+
+    // 2. Primary: Supabase PostgreSQL Persistence
+    if (!isDemo && isSupabaseConfigured()) {
+      supabaseDb.saveEntireStore(currentUser.id, currentStore).catch(e => {
+        console.warn('Supabase save error:', e);
+      });
+    }
+
+    // 3. Fallback: Push to backend server
     apiSync.pushStore(currentUser.id, currentStore);
   }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, familyMembers, notifications, user, userStoreKey, currentUser?.id]);
 
@@ -460,7 +487,25 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      // 2. Pull latest server store
+      // 2. Primary: Supabase
+      if (isSupabaseConfigured()) {
+        const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+        if (sbStore && sbStore.accounts) {
+          setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+          setCards(sbStore.cards || []);
+          setCategories(mergeCategories(sbStore.categories));
+          setBudgets(sbStore.budgets || []);
+          setGoals(sbStore.goals || []);
+          setDebts(sbStore.debts || []);
+          setInvestments(sbStore.investments || []);
+          setTransactions(sbStore.transactions || []);
+          if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+          if (sbStore.userProfile) setUser(sbStore.userProfile);
+          return;
+        }
+      }
+
+      // 3. Pull latest server store
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
       if (serverStore && serverStore.accounts) {
         setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);

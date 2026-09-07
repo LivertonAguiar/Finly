@@ -121,7 +121,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
       }
     >
       <form id="pay-invoice-form" onSubmit={handlePay} className="space-y-3.5 pb-1">
-        {/* Callout Banner (Mobills exact parity) */}
+        {/* Callout Banner */}
         {showCallout && (
           <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 flex items-start gap-2.5 relative">
             <div className="w-7 h-7 rounded-xl bg-purple-100 dark:bg-purple-900/60 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-300">

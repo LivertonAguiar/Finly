@@ -122,8 +122,8 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
     const handleSidebarChange = () => {
       setActiveSidebarIds(getStoredSidebarItems());
     };
-    window.addEventListener('plannerfin_sidebar_changed', handleSidebarChange);
-    return () => window.removeEventListener('plannerfin_sidebar_changed', handleSidebarChange);
+    window.addEventListener('finly_sidebar_changed', handleSidebarChange);
+    return () => window.removeEventListener('finly_sidebar_changed', handleSidebarChange);
   }, []);
 
   // Define potential items for each section in MorePage

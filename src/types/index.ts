@@ -152,7 +152,7 @@ export interface InvestmentAsset {
 
 export interface UserProfile {
   language?: 'pt-BR' | 'en-US' | 'es-ES';
-  themePreset?: 'planner-dark' | 'plannerfin-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light' | 'warm-sand';
+  themePreset?: 'finly-dark' | 'finly-deep-dark' | 'midnight-oled' | 'emerald-slate' | 'clean-light' | 'warm-sand';
   accentColor?: string;
   cardRadius?: 'sharp' | 'medium' | 'rounded';
   name: string;
@@ -176,29 +176,6 @@ export interface FamilyMember {
   type?: 'linked' | 'unlinked';
   isOwner?: boolean;
   joinedAt: string;
-}
-
-export interface CourseLesson {
-  id: string;
-  title: string;
-  videoUrl?: string;
-  durationMinutes: number;
-  completed: boolean;
-  description?: string;
-}
-
-export interface CourseModule {
-  id: string;
-  title: string;
-  lessons: CourseLesson[];
-}
-
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  thumbnailUrl: string;
-  modules: CourseModule[];
 }
 
 export interface NotificationItem {

@@ -43,7 +43,7 @@ export const SettingsPage: React.FC = () => {
   // Preference fields
   const [selectedLang, setSelectedLang] = useState<SupportedLanguage>((user.language as SupportedLanguage) || 'pt-BR');
   const [selectedCurrency, setSelectedCurrency] = useState(user.currency || 'BRL');
-  const [selectedThemePreset, setSelectedThemePreset] = useState<ThemePreset>((user.themePreset as ThemePreset) || 'planner-dark');
+  const [selectedThemePreset, setSelectedThemePreset] = useState<ThemePreset>((user.themePreset as ThemePreset) || 'finly-dark');
   const [selectedAccentColor, setSelectedAccentColor] = useState(user.accentColor || '#7C4DFF');
   const [selectedCardRadius, setSelectedCardRadius] = useState<CardRadius>((user.cardRadius as CardRadius) || 'rounded');
   const [hideValues, setHideValues] = useState(!user.showValues);
@@ -79,7 +79,7 @@ export const SettingsPage: React.FC = () => {
   // Load saved settings & apply current theme
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('plannerfin_dash_widgets');
+      const saved = localStorage.getItem('finly_dash_widgets');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.left) setDashLeftWidgets(parsed.left);
@@ -127,7 +127,7 @@ export const SettingsPage: React.FC = () => {
     });
 
     localStorage.setItem(
-      'plannerfin_dash_widgets',
+      'finly_dash_widgets',
       JSON.stringify({ left: dashLeftWidgets, right: dashRightWidgets })
     );
 
@@ -167,7 +167,7 @@ export const SettingsPage: React.FC = () => {
   ];
 
   const themePresets = [
-    { id: 'planner-dark', label: 'Planner Dark (Elegance)', desc: 'Preto suave #1C1C1E e cartões #2C2C2E', bg: 'bg-[#1C1C1E]' },
+    { id: 'finly-dark', label: 'Finly Dark', desc: 'Preto suave #1C1C1E e cartões #2C2C2E', bg: 'bg-[#1C1C1E]' },
     { id: 'midnight-oled', label: 'Midnight OLED', desc: 'Preto absoluto #000000 para economia máxima', bg: 'bg-black' },
     { id: 'emerald-slate', label: 'Emerald Slate', desc: 'Azul petróleo marinho #0F172A', bg: 'bg-[#0F172A]' },
     { id: 'clean-light', label: 'Clean Light', desc: 'Branco puro e minimalista', bg: 'bg-slate-100' },
