@@ -34,8 +34,16 @@ import {
   History,
   LifeBuoy,
   RotateCcw,
+  Lock,
+  Fingerprint,
+  Key,
+  Eye,
+  EyeOff,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
+import { useAuth } from '../../context/AuthContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
 import {
   ALL_SIDEBAR_ITEMS,
@@ -44,6 +52,7 @@ import {
 } from '../../utils/sidebarConfig';
 import { SidebarCustomizerModal } from '../layout/SidebarCustomizerModal';
 import { WebWhatsNewModal } from '../common/WebWhatsNewModal';
+import { PinSetupModal } from '../common/PinSetupModal';
 import { useTranslation } from '../../utils/i18n';
 import { CURRENT_RELEASE, RELEASES } from '../../data/releases';
 import { HELP_GUIDES, HELP_FAQS } from '../../data/helpCenterData';
@@ -59,18 +68,45 @@ import {
   getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
+import {
+  isSecurityLockEnabled,
+  isPinConfigured,
+  setSecurityLockEnabled,
+  isBiometricSupported,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  getLockTimeoutMinutes,
+  setLockTimeoutMinutes,
+} from '../../utils/securityManager';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
-  initialSubTab?: 'GERAL' | 'GERENCIAR' | 'SOBRE';
+  initialSubTab?: 'GERAL' | 'SEGURANÇA' | 'SOBRE';
 }
 
 export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab }) => {
-  const { exportBackupJSON, user } = useFinancial();
+  const { user, updateUser, exportBackupJSON } = useFinancial();
+  const { currentUser, changePassword } = useAuth();
   const { lang, t } = useTranslation();
-  const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'GERENCIAR' | 'SOBRE'>(initialSubTab || 'GERAL');
+  const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'SEGURANÇA' | 'SOBRE'>(initialSubTab || 'GERAL');
   const [activeSidebarIds, setActiveSidebarIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+
+  // Security States
+  const [pinEnabled, setPinEnabled] = useState(isSecurityLockEnabled());
+  const [pinConfigured, setPinConfigured] = useState(isPinConfigured());
+  const [biometricEnabled, setBiometricEnabledState] = useState(isBiometricEnabled());
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [lockTimeout, setLockTimeout] = useState(getLockTimeoutMinutes());
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [hideValues, setHideValues] = useState(!user.showValues);
+
+  // Password change states
+  const [currentPass, setCurrentPass] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [passAlert, setPassAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isChangingPass, setIsChangingPass] = useState(false);
 
   // Update check states
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
@@ -83,6 +119,10 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
 
   useEffect(() => {
+    isBiometricSupported().then(supported => setBiometricSupported(supported));
+  }, []);
+
+  useEffect(() => {
     if (initialSubTab) {
       setSegmentedTab(initialSubTab);
     }
@@ -90,8 +130,13 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
 
   useEffect(() => {
     const handleOpenSobre = () => setSegmentedTab('SOBRE');
+    const handleOpenSeguranca = () => setSegmentedTab('SEGURANÇA');
     window.addEventListener('finly_open_sobre', handleOpenSobre);
-    return () => window.removeEventListener('finly_open_sobre', handleOpenSobre);
+    window.addEventListener('finly_open_seguranca', handleOpenSeguranca);
+    return () => {
+      window.removeEventListener('finly_open_sobre', handleOpenSobre);
+      window.removeEventListener('finly_open_seguranca', handleOpenSeguranca);
+    };
   }, []);
 
   // Auto-check for updates only on native Android
@@ -120,7 +165,68 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
     return () => window.removeEventListener('finly_sidebar_changed', handleSidebarChange);
   }, []);
 
-  // Define potential items for each section in MorePage
+  // Security actions
+  const handleTogglePin = (checked: boolean) => {
+    if (checked) {
+      if (!isPinConfigured()) {
+        setIsPinModalOpen(true);
+      } else {
+        setSecurityLockEnabled(true);
+        setPinEnabled(true);
+      }
+    } else {
+      setSecurityLockEnabled(false);
+      setPinEnabled(false);
+    }
+  };
+
+  const handleToggleBiometric = (checked: boolean) => {
+    setBiometricEnabled(checked);
+    setBiometricEnabledState(checked);
+  };
+
+  const handleChangeTimeout = (mins: number) => {
+    setLockTimeout(mins);
+    setLockTimeoutMinutes(mins);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassAlert(null);
+
+    if (!currentPass) {
+      setPassAlert({ type: 'error', message: 'Informe sua senha atual.' });
+      return;
+    }
+    if (newPass.length < 6) {
+      setPassAlert({ type: 'error', message: 'A nova senha deve ter pelo menos 6 caracteres.' });
+      return;
+    }
+    if (newPass !== confirmPass) {
+      setPassAlert({ type: 'error', message: 'A nova senha e a confirmação não coincidem.' });
+      return;
+    }
+
+    setIsChangingPass(true);
+    try {
+      const res = await changePassword(currentPass, newPass);
+      if (res.success) {
+        setPassAlert({ type: 'success', message: res.message });
+        setCurrentPass('');
+        setNewPass('');
+        setConfirmPass('');
+      } else {
+        setPassAlert({ type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setPassAlert({ type: 'error', message: err.message || 'Erro ao alterar senha.' });
+    } finally {
+      setIsChangingPass(false);
+      setTimeout(() => setPassAlert(null), 5000);
+    }
+  };
+
+  // Define potential items for Geral in MorePage (Zero duplication with sidebar)
   const generalMoreItems = [
     {
       id: 'dividas',
@@ -199,9 +305,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       icon: List,
       colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
     },
-  ];
-
-  const manageMoreItems = [
     {
       id: 'cadastro',
       label: getSidebarItemLabel('cadastro', lang),
@@ -227,7 +330,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
 
   // Filter out any items that are already active in the sidebar (ZERO DUPLICITY)
   const visibleGeneralItems = generalMoreItems.filter(item => !activeSidebarIds.includes(item.id));
-  const visibleManageItems = manageMoreItems.filter(item => !activeSidebarIds.includes(item.id));
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in pb-16">
@@ -236,7 +338,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white">{t('more.title', 'Mais opções')}</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {t('more.subtitle', 'Ferramentas adicionais, gestão de categorias, automações e segurança')}
+            {t('more.subtitle', 'Ferramentas adicionais, segurança da conta e dados do sistema')}
           </p>
         </div>
 
@@ -250,33 +352,39 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         </button>
       </div>
 
-      {/* Segmented Switcher */}
+      {/* Segmented Switcher - SOMENTE GERAL, SEGURANÇA E SOBRE */}
       <div className="p-1 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 flex items-center gap-1 shadow-xs">
         {[
-          { id: 'GERAL' as const, label: t('more.tab.general', 'GERAL') },
-          { id: 'GERENCIAR' as const, label: t('more.tab.manage', 'GERENCIAR') },
-          { id: 'SOBRE' as const, label: t('more.tab.about', 'SOBRE') },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setSegmentedTab(tab.id)}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-              segmentedTab === tab.id
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { id: 'GERAL' as const, label: 'Geral', icon: SlidersHorizontal },
+          { id: 'SEGURANÇA' as const, label: 'Segurança', icon: ShieldCheck },
+          { id: 'SOBRE' as const, label: 'Sobre', icon: Info },
+        ].map(tab => {
+          const TabIcon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSegmentedTab(tab.id)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                segmentedTab === tab.id
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <TabIcon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* List Container */}
-      <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden">
-        {/* ABA GERAL */}
+      <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl overflow-hidden">
+        {/* ========================================================================= */}
+        {/* 1. ABA GERAL */}
+        {/* ========================================================================= */}
         {segmentedTab === 'GERAL' && (
-          <>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {visibleGeneralItems.length === 0 ? (
               <div className="p-8 text-center space-y-2">
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -313,41 +421,252 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                 );
               })
             )}
-          </>
+          </div>
         )}
 
-        {/* ABA GERENCIAR */}
-        {segmentedTab === 'GERENCIAR' && (
-          <>
-            {visibleManageItems.map(item => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => ((item as any).customAction ? (item as any).customAction() : setActiveTab(item.id))}
-                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#1E1E22] transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className={`w-10 h-10 rounded-2xl ${item.colorClass} flex items-center justify-center shrink-0`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
+        {/* ========================================================================= */}
+        {/* 2. ABA SEGURANÇA */}
+        {/* ========================================================================= */}
+        {segmentedTab === 'SEGURANÇA' && (
+          <div className="p-4 sm:p-6 space-y-6">
+            {/* 1. Bloqueio Biométrico e PIN */}
+            <div className="p-5 rounded-2xl bg-slate-50/50 dark:bg-[#121215] border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                    <Fingerprint className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                      Bloqueio Biométrico & PIN
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Proteja a abertura do Finly com código numérico ou biometria
+                    </p>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={pinEnabled}
+                  onChange={e => handleTogglePin(e.target.checked)}
+                  className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {pinEnabled && (
+                <div className="space-y-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 animate-in fade-in">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-sm font-bold text-slate-900 dark:text-white block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        {item.label}
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                        Código PIN de Acesso
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {item.description}
+                      <span className="text-[10px] text-slate-400">
+                        {pinConfigured ? 'PIN de 4 dígitos configurado' : 'Nenhum PIN definido ainda'}
                       </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsPinModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors cursor-pointer"
+                    >
+                      {pinConfigured ? 'Alterar PIN' : 'Definir PIN'}
+                    </button>
+                  </div>
+
+                  {/* Biometria */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <Fingerprint className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                          Desbloqueio por Biometria
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {biometricSupported ? 'TouchID, FaceID ou impressão digital' : 'Sensor biométrico disponível no dispositivo'}
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={biometricEnabled}
+                      onChange={e => handleToggleBiometric(e.target.checked)}
+                      className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600"
+                    />
+                  </div>
+
+                  {/* Timeout */}
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/80">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Bloquear após inatividade
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[
+                        { mins: 0, label: 'Imediato' },
+                        { mins: 1, label: '1 min' },
+                        { mins: 5, label: '5 min' },
+                        { mins: 15, label: '15 min' },
+                        { mins: 30, label: '30 min' },
+                      ].map(opt => (
+                        <button
+                          key={opt.mins}
+                          type="button"
+                          onClick={() => handleChangeTimeout(opt.mins)}
+                          className={`py-1.5 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                            lockTimeout === opt.mins
+                              ? 'border-purple-600 bg-purple-600 text-white shadow-xs'
+                              : 'border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors shrink-0" />
-                </button>
-              );
-            })}
-          </>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Alteração de Senha */}
+            <div className="p-5 rounded-2xl bg-slate-50/50 dark:bg-[#121215] border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                    Alteração de Senha
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Mantenha suas credenciais de acesso sempre seguras
+                  </p>
+                </div>
+              </div>
+
+              {passAlert && (
+                <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in ${
+                  passAlert.type === 'success'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                }`}>
+                  {passAlert.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
+                  <span>{passAlert.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Senha Atual
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      value={currentPass}
+                      onChange={e => setCurrentPass(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#18181B] text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Nova Senha
+                    </label>
+                    <input
+                      type="password"
+                      value={newPass}
+                      onChange={e => setNewPass(e.target.value)}
+                      placeholder="Mínimo 6 dígitos"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#18181B] text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Confirmar Senha
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPass}
+                      onChange={e => setConfirmPass(e.target.value)}
+                      placeholder="Repita a nova senha"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#18181B] text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={isChangingPass}
+                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                  >
+                    {isChangingPass ? 'Atualizando...' : 'Atualizar Senha'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* 3. Modo Privacidade */}
+            <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-[#121215] border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  {hideValues ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                    Modo Privacidade
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Ocultar valores monetários ao abrir o app
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={hideValues}
+                onChange={e => {
+                  setHideValues(e.target.checked);
+                  updateUser({ showValues: !e.target.checked });
+                }}
+                className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
+              />
+            </div>
+
+            {/* 4. Camadas de Proteção Ativas */}
+            <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-[#121215] border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white block">
+                Camadas de Proteção Ativas
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-xl bg-white dark:bg-[#18181B] border border-slate-200/60 dark:border-slate-800 flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Criptografia SHA-256</span>
+                    <span className="text-[10px] text-slate-400">PIN com salt local seguro</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-white dark:bg-[#18181B] border border-slate-200/60 dark:border-slate-800 flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Conexão TLS 1.3 / HTTPS</span>
+                    <span className="text-[10px] text-slate-400">Tráfego cifrado ponta a ponta</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* ABA SOBRE COM EXIBIÇÃO ENXUTA E SUCINTA DE VERSÕES */}
+        {/* ========================================================================= */}
+        {/* 3. ABA SOBRE */}
+        {/* ========================================================================= */}
         {segmentedTab === 'SOBRE' && (
           <div className="p-4 sm:p-6 space-y-4">
             {/* 1. Header Sucinto do Finly */}
@@ -427,7 +746,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </div>
             </div>
 
-            {/* Banner de Atualização Sutil (se verificado) */}
+            {/* Banner de Atualização Sutil */}
             {updateResult && (
               <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
                 updateResult.hasUpdate
@@ -457,7 +776,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </div>
             )}
 
-            {/* 2. Notas de Versão Sucintas */}
+            {/* 2. Notas da Versão */}
             <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
@@ -498,7 +817,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                 ))}
               </div>
 
-              {/* Histórico Anterior Sucinto */}
+              {/* Histórico Anterior */}
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
@@ -530,7 +849,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </div>
             </div>
 
-            {/* 3. Central de Ajuda (Recolhível / Expansível para economia de espaço) */}
+            {/* 3. Central de Ajuda & Tutoriais */}
             <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden transition-all">
               <button
                 type="button"
@@ -566,7 +885,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
 
               {isHelpExpanded && (
                 <div className="p-4 sm:p-5 pt-0 border-t border-slate-100 dark:border-slate-800/80 space-y-4 animate-in fade-in duration-150">
-                  {/* Botão de Acesso Completo à Central de Ajuda */}
                   <div className="pt-3">
                     <button
                       type="button"
@@ -608,7 +926,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     </div>
                   </div>
 
-                  {/* Perguntas Frequentes (FAQ Acordeão Rápido) */}
+                  {/* FAQ */}
                   <div className="space-y-2 pt-1">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                       Dúvidas Frequentes Rápidas
@@ -647,7 +965,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               )}
             </div>
 
-            {/* 4. Rodapé Enxuto */}
+            {/* 4. Rodapé */}
             <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-slate-400 dark:text-slate-500">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
@@ -659,6 +977,18 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         )}
       </div>
 
+      {/* Pin Setup Modal */}
+      <PinSetupModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={() => {
+          setIsPinModalOpen(false);
+          setPinConfigured(true);
+          setSecurityLockEnabled(true);
+          setPinEnabled(true);
+        }}
+      />
+
       {/* Sidebar Customizer Modal */}
       <SidebarCustomizerModal
         isOpen={isCustomizerOpen}
@@ -666,7 +996,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         onItemsChange={items => setActiveSidebarIds(items)}
       />
 
-      {/* Web Whats New Modal (Manually triggerable on web) */}
+      {/* Web Whats New Modal */}
       <WebWhatsNewModal
         isOpen={showWebWhatsNewModal}
         onClose={() => setShowWebWhatsNewModal(false)}
@@ -674,4 +1004,3 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
     </div>
   );
 };
-

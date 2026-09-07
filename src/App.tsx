@@ -355,10 +355,10 @@ const AppContent: React.FC = () => {
             {activeTab === 'relatorios' && <ReportsPage />}
             {activeTab === 'calendario' && <CalendarPage />}
             {activeTab === 'settings' && <SettingsPage />}
-            {(activeTab === 'mais' || activeTab === 'sobre') && (
+            {(activeTab === 'mais' || activeTab === 'sobre' || activeTab === 'seguranca') && (
               <MorePage
                 setActiveTab={handleSelectTab}
-                initialSubTab={activeTab === 'sobre' ? 'SOBRE' : undefined}
+                initialSubTab={activeTab === 'sobre' ? 'SOBRE' : activeTab === 'seguranca' ? 'SEGURANÇA' : undefined}
               />
             )}
             {activeTab === 'metas' && <GoalsPage />}
