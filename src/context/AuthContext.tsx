@@ -16,10 +16,9 @@ const AUTH_USERS_KEY = 'finly_auth_users_db';
 const ACTIVE_SESSION_KEY = 'finly_active_session_id';
 
 const DEFAULT_ADMIN_USER: AuthUser = {
-  id: 'usr-default-liverton',
-  name: 'Liverton',
-  email: 'liverton.aguiar@hotmail.com',
-  phone: '85985949115',
+  id: 'usr-default-admin',
+  name: 'Administrador',
+  email: 'admin@finly.com',
   role: 'admin',
   createdAt: '2026-01-01',
 };
@@ -224,6 +223,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await res.json();
       if (data.success && data.user) {
+        if (data.token) {
+          localStorage.setItem('finly_auth_token', data.token);
+        }
         const loggedUser: AuthUser = data.user;
         setAllUsers(prev => [loggedUser, ...prev.filter(u => u.id !== loggedUser.id)]);
         setCurrentUser(loggedUser);
@@ -257,12 +259,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsDemo = () => {
+  const loginAsDemo = async () => {
     let demoUser = allUsers.find(u => u.id === DEFAULT_DEMO_USER.id);
     if (!demoUser) {
       demoUser = DEFAULT_DEMO_USER;
       setAllUsers(prev => [demoUser!, ...prev]);
     }
+
+    try {
+      const res = await fetch(getApiUrl('/api/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'demo@finly.com', password: 'demo' }),
+      });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('finly_auth_token', data.token);
+      }
+    } catch (_) {}
+
     try {
       const demoStoreRaw = localStorage.getItem('finly_user_usr-demo-financeiro_store');
       if (demoStoreRaw) {
@@ -330,6 +345,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await res.json();
       if (data.success && data.user) {
+        if (data.token) {
+          localStorage.setItem('finly_auth_token', data.token);
+        }
         const newUser: AuthUser = data.user;
         setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
         setCurrentUser(newUser);
@@ -361,6 +379,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setCurrentUser(null);
     localStorage.removeItem(ACTIVE_SESSION_KEY);
+    localStorage.removeItem('finly_auth_token');
   };
 
   const updateUserAccount = (data: Partial<AuthUser>) => {
@@ -491,9 +510,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      const token = localStorage.getItem('finly_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch(getApiUrl('/api/auth/change-password'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ email: currentUser.email, oldPassword, newPassword }),
       });
 

@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 import { hashPassword, verifyPassword, isHashed } from './security/crypto.js';
+import { generateSessionToken, verifySessionToken } from './security/token.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,13 +29,132 @@ if (fs.existsSync(envPath)) {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const APP_SECRET = process.env.APP_SECRET || 'finly_super_secure_vault_secret_2026_k9x2';
 
-// Security & Parsing Middleware
-app.use(cors());
+// 1. HTTP Security Headers (OWASP Hardening)
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  next();
+});
+
+// 2. Strict CORS Configuration
+const allowedOrigins = [
+  'https://finly.lpaguiar.com.br',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'capacitor://localhost',
+  'http://localhost',
+  'https://localhost',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests without Origin (native mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origem não permitida por política de segurança CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-auth-token'],
+}));
+
+// Body parser with 20MB limit
 app.use(express.json({ limit: '20mb' }));
 
-// Hide Server Information
-app.disable('x-powered-by');
+// 3. Lightweight In-Memory Rate Limiting (Anti-Brute Force & Anti-DoS)
+const rateLimitMap = new Map();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
+const createRateLimiter = (options) => {
+  const { windowMs, max, message, prefix = 'rl' } = options;
+  return (req, res, next) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const key = `${prefix}:${ip}`;
+    const now = Date.now();
+
+    const record = rateLimitMap.get(key) || { count: 0, resetTime: now + windowMs };
+
+    if (now > record.resetTime) {
+      record.count = 0;
+      record.resetTime = now + windowMs;
+    }
+
+    record.count++;
+    rateLimitMap.set(key, record);
+
+    if (record.count > max) {
+      const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+      res.setHeader('Retry-After', retryAfter);
+      return res.status(429).json({
+        success: false,
+        message: message || `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`,
+      });
+    }
+
+    next();
+  };
+};
+
+const loginLimiter = createRateLimiter({
+  prefix: 'login',
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 15,
+  message: 'Muitas tentativas de login. Por favor, aguarde alguns minutos antes de tentar novamente.',
+});
+
+const recoveryLimiter = createRateLimiter({
+  prefix: 'recovery',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: 'Limite de solicitações de recuperação atingido. Tente novamente em 15 minutos.',
+});
+
+// 4. Token Authentication Middleware (Closes BOLA / IDOR)
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer '))
+    ? authHeader.slice(7).trim()
+    : req.headers['x-auth-token'];
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      code: 'UNAUTHORIZED',
+      message: 'Acesso negado: Token de autenticação ausente. Faça login novamente.',
+    });
+  }
+
+  const verification = verifySessionToken(token, APP_SECRET);
+  if (!verification.valid || !verification.payload) {
+    return res.status(401).json({
+      success: false,
+      code: 'TOKEN_INVALID_OR_EXPIRED',
+      message: `Sessão inválida ou expirada (${verification.error || 'Token não autorizado'}). Faça login novamente.`,
+    });
+  }
+
+  req.user = verification.payload;
+  next();
+};
 
 // App Version & Update Endpoint (Dynamic Single Source of Truth)
 const VERSION_FILE = path.join(__dirname, 'data/version.json');
@@ -47,7 +167,7 @@ const getAppVersionInfo = () => {
     }
   } catch (_) {}
 
-  let fallbackVer = '1.1.23';
+  let fallbackVer = '1.1.36';
   try {
     if (fs.existsSync(PKG_FILE)) {
       const pkg = JSON.parse(fs.readFileSync(PKG_FILE, 'utf8'));
@@ -58,8 +178,8 @@ const getAppVersionInfo = () => {
   return {
     version: fallbackVer,
     latestVersion: fallbackVer,
-    releaseDate: '2026-09-06',
-    notes: `Novidades da v${fallbackVer}: Melhorias de desempenho e novas funcionalidades financeiras.`,
+    releaseDate: '2026-09-08',
+    notes: `Novidades da v${fallbackVer}: Blindagem de segurança e melhorias de performance.`,
     downloadUrl: 'https://github.com/LivertonAguiar/Finly/releases/latest',
     isLatest: true,
   };
@@ -110,18 +230,9 @@ const getUsers = () => {
   }
 };
 
-// Initial Users Database Setup (Securely Hashed)
+// Initial Users Database Setup
 if (!fs.existsSync(USERS_FILE)) {
   const initialUsers = [
-    {
-      id: 'usr-default-liverton',
-      name: 'Liverton',
-      email: 'liverton.aguiar@hotmail.com',
-      password: hashPassword('123'),
-      phone: '85985949115',
-      role: 'admin',
-      createdAt: '2026-01-01',
-    },
     {
       id: 'usr-demo-financeiro',
       name: 'Conta Demonstração',
@@ -168,8 +279,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', serverTime: new Date().toISOString() });
 });
 
-// 1. AUTH: LOGIN (Cryptographic Verification)
-app.post('/api/auth/login', (req, res) => {
+// 1. AUTH: LOGIN (Cryptographic Verification + Token Issuance)
+app.post('/api/auth/login', loginLimiter, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'E-mail e senha são obrigatórios.' });
@@ -189,6 +300,13 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Senha incorreta.' });
   }
 
+  // Generate cryptographic session token (valid for 30 days)
+  const token = generateSessionToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role || 'member',
+  }, APP_SECRET);
+
   // Check if store exists
   const storePath = getUserStorePath(user.id);
   let store = null;
@@ -201,6 +319,7 @@ app.post('/api/auth/login', (req, res) => {
   // Sanitize user object (never expose password hash)
   return res.json({
     success: true,
+    token,
     user: {
       id: user.id,
       name: user.name,
@@ -213,8 +332,8 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-// 2. AUTH: REGISTER (Hashed Salted Storage)
-app.post('/api/auth/register', (req, res) => {
+// 2. AUTH: REGISTER (Hashed Salted Storage + Token Issuance)
+app.post('/api/auth/register', loginLimiter, (req, res) => {
   const { name, email, password, phone } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ success: false, message: 'Nome, e-mail e senha são obrigatórios.' });
@@ -241,8 +360,16 @@ app.post('/api/auth/register', (req, res) => {
   users.push(newUser);
   saveUsers(users);
 
+  // Generate cryptographic session token
+  const token = generateSessionToken({
+    userId: newUser.id,
+    email: newUser.email,
+    role: newUser.role,
+  }, APP_SECRET);
+
   return res.json({
     success: true,
+    token,
     user: {
       id: newUser.id,
       name: newUser.name,
@@ -254,16 +381,15 @@ app.post('/api/auth/register', (req, res) => {
   });
 });
 
-// 2.1 AUTH: CHANGE PASSWORD (Hashed)
-app.post('/api/auth/change-password', (req, res) => {
-  const { email, oldPassword, newPassword } = req.body;
-  if (!email || !newPassword) {
-    return res.status(400).json({ success: false, message: 'E-mail e nova senha são obrigatórios.' });
+// 2.1 AUTH: CHANGE PASSWORD (Protected by Token)
+app.post('/api/auth/change-password', authenticateToken, (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!newPassword) {
+    return res.status(400).json({ success: false, message: 'Nova senha é obrigatória.' });
   }
 
-  const cleanEmail = email.trim().toLowerCase();
   const users = getUsers();
-  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+  const user = users.find(u => u.id === req.user.userId);
 
   if (!user) {
     return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
@@ -279,11 +405,11 @@ app.post('/api/auth/change-password', (req, res) => {
   return res.json({ success: true, message: 'Senha alterada com sucesso no servidor!' });
 });
 
-// 3. CONTINUOUS AUTO-SYNC: GET USER STORE
-app.get('/api/user/store', (req, res) => {
-  const userId = req.headers['x-user-id'] || req.query.userId;
+// 3. CONTINUOUS AUTO-SYNC: GET USER STORE (PROTECTED AGAINST BOLA / IDOR)
+app.get('/api/user/store', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
   if (!userId) {
-    return res.status(400).json({ success: false, message: 'x-user-id header obrigatório.' });
+    return res.status(400).json({ success: false, message: 'Identificador de usuário ausente no token.' });
   }
 
   const storePath = getUserStorePath(userId);
@@ -305,13 +431,13 @@ app.get('/api/user/store', (req, res) => {
   }
 });
 
-// 4. CONTINUOUS AUTO-SYNC: SAVE / SYNC USER STORE (ATOMIC)
-app.post('/api/user/store', (req, res) => {
-  const userId = req.headers['x-user-id'] || req.body.userId;
+// 4. CONTINUOUS AUTO-SYNC: SAVE / SYNC USER STORE (PROTECTED & ATOMIC)
+app.post('/api/user/store', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
   const { store } = req.body;
 
   if (!userId || !store) {
-    return res.status(400).json({ success: false, message: 'userId e store são obrigatórios.' });
+    return res.status(400).json({ success: false, message: 'Dados da store são obrigatórios.' });
   }
 
   const storePath = getUserStorePath(userId);
@@ -323,7 +449,7 @@ app.post('/api/user/store', (req, res) => {
       _serverTimestamp: new Date().toISOString(),
     };
 
-    // Atomic write
+    // Atomic write to prevent file corruption
     fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
     fs.renameSync(tempPath, storePath);
 
@@ -338,23 +464,25 @@ app.post('/api/user/store', (req, res) => {
   }
 });
 
-// 5. MAIL RECOVERY
-app.post('/api/send-recovery-code', async (req, res) => {
+// 5. MAIL RECOVERY WITH RATE LIMITING & ATTEMPT THROTTLING
+app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ success: false, message: 'E-mail é obrigatório.' });
   }
 
+  const cleanEmail = email.toLowerCase().trim();
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  verificationCodes.set(email.toLowerCase().trim(), {
+  verificationCodes.set(cleanEmail, {
     code,
+    attempts: 0,
     expiresAt: Date.now() + 15 * 60 * 1000,
   });
 
   const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
     from: `"Finly - Suporte & Segurança" <${senderEmail}>`,
-    to: email,
+    to: cleanEmail,
     subject: `Seu código de recuperação Finly: ${code}`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0f172a; border-radius: 24px; color: #f8fafc; border: 1px solid #1e293b;">
@@ -369,7 +497,7 @@ app.post('/api/send-recovery-code', async (req, res) => {
           <p style="font-size: 11px; color: #64748b; margin: 10px 0 0 0;">Válido por 15 minutos</p>
         </div>
         <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
-          Digite o código de 6 dígitos no aplicativo para continuar com a alteração da sua senha.
+          Digite o código de 6 dígitos no aplicativo para continuar com a alteração da sua senha. Se você não solicitou, ignore esta mensagem.
         </p>
       </div>
     `,
@@ -390,9 +518,27 @@ app.post('/api/verify-code', (req, res) => {
     return res.status(400).json({ success: false, message: 'E-mail e código são obrigatórios.' });
   }
 
-  const record = verificationCodes.get(email.toLowerCase().trim());
-  if (!record || Date.now() > record.expiresAt || record.code !== code.trim()) {
+  const cleanEmail = email.toLowerCase().trim();
+  const record = verificationCodes.get(cleanEmail);
+  if (!record || Date.now() > record.expiresAt) {
+    verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Código inválido ou expirado.' });
+  }
+
+  record.attempts = (record.attempts || 0) + 1;
+
+  if (record.code !== code.trim()) {
+    if (record.attempts >= 5) {
+      verificationCodes.delete(cleanEmail);
+      return res.status(429).json({
+        success: false,
+        message: 'Número excessivo de tentativas incorretas. Código cancelado por segurança. Solicite um novo código.',
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: `Código incorreto. Tentativa ${record.attempts} de 5.`,
+    });
   }
 
   return res.json({ success: true, message: 'Código validado com sucesso!' });
@@ -406,8 +552,25 @@ app.post('/api/reset-password', (req, res) => {
 
   const cleanEmail = email.toLowerCase().trim();
   const record = verificationCodes.get(cleanEmail);
-  if (!record || Date.now() > record.expiresAt || record.code !== code.trim()) {
+  if (!record || Date.now() > record.expiresAt) {
+    verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Código de verificação inválido ou expirado.' });
+  }
+
+  record.attempts = (record.attempts || 0) + 1;
+
+  if (record.code !== code.trim()) {
+    if (record.attempts >= 5) {
+      verificationCodes.delete(cleanEmail);
+      return res.status(429).json({
+        success: false,
+        message: 'Número excessivo de tentativas incorretas. Código cancelado por segurança.',
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: `Código incorreto. Tentativa ${record.attempts} de 5.`,
+    });
   }
 
   const users = getUsers();

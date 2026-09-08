@@ -27,14 +27,29 @@ class ApiSyncService {
     this.statusListeners.forEach(l => l(status));
   }
 
-  // Pull latest data from server
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('finly_auth_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      if (this.currentUserId) {
+        headers['x-user-id'] = this.currentUserId;
+      }
+    }
+    return headers;
+  }
+
+  // Pull latest data from server (Authenticated)
   public async fetchServerStore(userId: string): Promise<any | null> {
     try {
       this.setStatus('syncing');
+      this.currentUserId = userId;
+
+      const authHeaders = this.getAuthHeaders();
       const res = await fetch(getApiUrl('/api/user/store'), {
-        headers: {
-          'x-user-id': userId,
-        },
+        headers: authHeaders,
       });
 
       if (!res.ok) {
@@ -62,7 +77,7 @@ class ApiSyncService {
     }
   }
 
-  // Push local data to server with continuous debounce
+  // Push local data to server with continuous debounce (Authenticated)
   public pushStore(userId: string, store: any, immediate = false) {
     this.currentUserId = userId;
     this.pendingPayload = store;
@@ -93,7 +108,7 @@ class ApiSyncService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': userId,
+          ...this.getAuthHeaders(),
         },
         body: JSON.stringify({ userId, store }),
       });
