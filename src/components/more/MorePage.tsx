@@ -33,7 +33,6 @@ import {
   ChevronUp,
   History,
   LifeBuoy,
-  RotateCcw,
   Lock,
   Fingerprint,
   Key,
@@ -59,7 +58,6 @@ import {
   APP_BUILD_DATE,
   checkForAppUpdates,
   openExternalUrl,
-  forceAppReload,
   GITHUB_RELEASES_URL,
   isNativeCapacitor,
   isMobileDevice,
@@ -113,7 +111,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   // Update check states
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
-  const [isReloading, setIsReloading] = useState(false);
 
   const [showChangelogHistory, setShowChangelogHistory] = useState(false);
   const [showWebWhatsNewModal, setShowWebWhatsNewModal] = useState(false);
@@ -725,6 +722,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
                 </button>
 
+                {isNativeCapacitor() && (
                 <button
                   type="button"
                   onClick={() => openExternalUrl(updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${updateResult?.latestVersion || APP_VERSION}/finly-v${updateResult?.latestVersion || APP_VERSION}.apk` || GITHUB_RELEASES_URL)}
@@ -742,20 +740,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                       : `Baixar APK Android`}
                   </span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsReloading(true);
-                    await forceAppReload();
-                  }}
-                  disabled={isReloading}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                  title="Recarregar aplicativo e limpar cache"
-                >
-                  <RotateCcw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin' : ''}`} />
-                  <span>{isReloading ? 'Recarregando...' : 'Recarregar'}</span>
-                </button>
+                )}
               </div>
             </div>
 
