@@ -835,9 +835,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
               isFullWidth ? "w-full lg:w-[320px] my-auto" : "w-full"
             }`}>
-              <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
+              <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none" style={{ WebkitTapHighlightColor: 'transparent', outline: 'none' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart style={{ outline: 'none' }}>
                     <Pie
                       data={filteredCategoryChartData}
                       cx="50%"
@@ -850,15 +850,26 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                       stroke="transparent"
                       activeIndex={activeIndex >= 0 ? activeIndex : undefined}
                       activeShape={renderActiveDonutShape}
-                      onClick={(entry) => setSelectedCategoryFilter(selectedCategoryFilter === entry.id ? null : entry.id)}
+                      onClick={(entry, index) => {
+                        const cat = filteredCategoryChartData[index];
+                        if (selectedCategoryFilter === entry.id) {
+                          setSelectedCategoryFilter(null);
+                          setHoveredCategory(null);
+                        } else {
+                          setSelectedCategoryFilter(entry.id);
+                          setHoveredCategory(cat);
+                        }
+                      }}
                       onMouseEnter={(_, index) => setHoveredCategory(filteredCategoryChartData[index])}
-                      onMouseLeave={() => setHoveredCategory(null)}
+                      onMouseLeave={() => { if (!selectedCategoryFilter) setHoveredCategory(null); }}
+                      style={{ outline: 'none' }}
                     >
                       {filteredCategoryChartData.map((entry, index) => (
                         <Cell
                           key={`cell-overview-cat-${entry.id || index}`}
                           fill={entry.color || '#7c4dff'}
                           className="cursor-pointer transition-opacity hover:opacity-90"
+                          style={{ outline: 'none' }}
                         />
                       ))}
                     </Pie>
@@ -955,7 +966,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   </span>
                   <button
                     type="button"
-                    onClick={() => setSelectedCategoryFilter(null)}
+                    onClick={() => { setSelectedCategoryFilter(null); setHoveredCategory(null); }}
                     className="text-[11px] font-black uppercase hover:underline cursor-pointer shrink-0 ml-2"
                   >
                     Limpar ✕

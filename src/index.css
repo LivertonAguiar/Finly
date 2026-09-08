@@ -38,6 +38,24 @@ html.dark input.borderless-money-input:focus-visible {
   appearance: none !important;
 }
 
+/* Recharts: Remove focus outline / highlight on SVG sectors and paths (fixes mobile tap rectangle) */
+.recharts-wrapper svg,
+.recharts-wrapper svg *,
+.recharts-sector,
+.recharts-pie-sector,
+.recharts-sector:focus,
+.recharts-pie-sector:focus,
+.recharts-wrapper path:focus,
+.recharts-wrapper g:focus,
+.recharts-wrapper svg:focus,
+.recharts-wrapper *:focus,
+.recharts-wrapper *:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
 :root {
   --app-bg: #121214;
   --app-card-bg: #18181B;
