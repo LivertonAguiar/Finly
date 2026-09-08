@@ -42,6 +42,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
   BarChart,
   Bar,
   XAxis,
@@ -136,6 +137,24 @@ const DEFAULT_CARD_SIZES: Record<string, 'half' | 'full'> = {
   despesasCategoria: 'full',
 };
 
+const renderActiveDonutShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius - 3}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        cornerRadius={8}
+      />
+    </g>
+  );
+};
+
 export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, onOpenNewCard, setActiveTab, onOpenCardDetail }) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
   const { lang, t, translateCategory } = useTranslation();
@@ -147,6 +166,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const [hoveredCategory, setHoveredCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string; id?: string } | null>(null);
   const [hoveredIncomeCategory, setHoveredIncomeCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string; id?: string } | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
+  const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | 'fixed' | 'variable'>('all');
+  const [isExpandedCategoriesMobile, setIsExpandedCategoriesMobile] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<string | null>(null);
   const [selectedFrequencyDay, setSelectedFrequencyDay] = useState<number | null>(null);
   const [budgetViewMode, setBudgetViewMode] = useState<'total' | 'categories'>('total');
@@ -451,6 +472,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     });
   }, [categoryChartData, budgets, currentMonthPrefix]);
 
+  // Filtered lists for the Donut Chart & Category Breakdown based on categoryTypeFilter
+  const filteredCategoryAdherenceList = useMemo(() => {
+    if (categoryTypeFilter === 'fixed') {
+      return categoryAdherenceList.filter(c => c.isFixed);
+    }
+    if (categoryTypeFilter === 'variable') {
+      return categoryAdherenceList.filter(c => !c.isFixed);
+    }
+    return categoryAdherenceList;
+  }, [categoryAdherenceList, categoryTypeFilter]);
+
+  const filteredCategoryChartData = useMemo(() => {
+    const total = filteredCategoryAdherenceList.reduce((sum, c) => sum + c.value, 0);
+    return filteredCategoryAdherenceList.map(c => ({
+      ...c,
+      percentage: total > 0 ? (c.value / total) * 100 : 0,
+    }));
+  }, [filteredCategoryAdherenceList]);
+
+  const filteredExpenseTotal = useMemo(() => {
+    return filteredCategoryChartData.reduce((sum, c) => sum + c.value, 0);
+  }, [filteredCategoryChartData]);
+
   // Autonomia de Reserva (Runway / Burn Rate)
   const runwayData = useMemo(() => {
     const totalLiquidBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -697,18 +741,25 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // CARD RENDERERS: LEFT COLUMN
   // ==========================================
 
-  // Left 1: Despesas por Categoria (Elevated Layout matching screenshot)
+  // Left 1: Despesas por Categoria (Modern, Responsive & Interactive Donut)
   const renderDespesasCategoria = (isFullWidth: boolean = true) => {
     const filteredTxsForCategory = selectedCategoryFilter
       ? monthTransactions.filter(t => t.categoryId === selectedCategoryFilter && t.type === 'expense' && t.status === 'completed')
       : [];
 
+    const activeCat = hoveredCategory || (selectedCategoryFilter ? categoryChartData.find(c => c.id === selectedCategoryFilter) : null);
+    const activeIndex = filteredCategoryChartData.findIndex(c => c.id === activeCat?.id);
+
+    const displayedCategoriesList = (!isFullWidth && !isExpandedCategoriesMobile && filteredCategoryAdherenceList.length > 5)
+      ? filteredCategoryAdherenceList.slice(0, 5)
+      : filteredCategoryAdherenceList;
+
     return (
       <div key="despesasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
-        {/* Header: 🍩 DESPESAS POR CATEGORIA ⓘ */}
-        <div className="flex items-center justify-between">
+        {/* Header: 🍩 DESPESAS POR CATEGORIA ⓘ + [Todas | Fixas | Variáveis] + Mês */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm font-bold select-none">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm font-bold select-none shadow-2xs">
               <PieIcon className="w-4 h-4" />
             </div>
             <div className="flex items-center gap-1.5">
@@ -725,121 +776,197 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               </div>
             </div>
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full">
-            {capitalizedMonth}
-          </span>
+
+          <div className="flex items-center gap-2">
+            {/* Quick Segment Filter Tabs */}
+            <div className="inline-flex p-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-[10px] font-black shadow-xs">
+              <button
+                type="button"
+                onClick={() => setCategoryTypeFilter('all')}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                  categoryTypeFilter === 'all'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryTypeFilter('fixed')}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                  categoryTypeFilter === 'fixed'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Fixas
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryTypeFilter('variable')}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                  categoryTypeFilter === 'variable'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Variáveis
+              </button>
+            </div>
+
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full shrink-0">
+              {capitalizedMonth}
+            </span>
+          </div>
         </div>
 
-        {categoryChartData.length === 0 ? (
+        {filteredCategoryChartData.length === 0 ? (
           <div className="py-12 text-center text-slate-400 text-xs">
-            Nenhuma despesa registrada neste mês.
+            {categoryTypeFilter === 'fixed'
+              ? 'Nenhuma despesa fixa registrada neste mês.'
+              : categoryTypeFilter === 'variable'
+              ? 'Nenhuma despesa variável registrada neste mês.'
+              : 'Nenhuma despesa registrada neste mês.'}
           </div>
         ) : (
-          <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-10 pt-2" : "space-y-4 pt-2"}>
-            {/* Column 1: Donut Chart with Macro Split in the center and Persistent Emoji Badges */}
-            <div className={`relative flex items-center justify-center shrink-0 self-center ${
-              isFullWidth ? "w-full lg:w-[320px] h-64 my-auto" : "w-full h-64"
+          <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10 pt-2" : "space-y-4 pt-2"}>
+            {/* Column 1: Donut Chart with Interactive Center Hub and Macro Split Pills */}
+            <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
+              isFullWidth ? "w-full lg:w-[320px] my-auto" : "w-full"
             }`}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={74}
-                    outerRadius={98}
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="transparent"
-                    labelLine={false}
-                    label={(props) => {
-                      const { cx, cy, midAngle, outerRadius: oRad, index } = props;
-                      const entry = categoryChartData[index];
-                      if (!entry || !entry.icon) return null;
-                      const RADIAN = Math.PI / 180;
-                      const radius = oRad + 7;
-                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+              <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={filteredCategoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={68}
+                      outerRadius={94}
+                      paddingAngle={filteredCategoryChartData.length > 1 ? 4 : 0}
+                      cornerRadius={6}
+                      dataKey="value"
+                      stroke="transparent"
+                      activeIndex={activeIndex >= 0 ? activeIndex : undefined}
+                      activeShape={renderActiveDonutShape}
+                      onClick={(entry) => setSelectedCategoryFilter(selectedCategoryFilter === entry.id ? null : entry.id)}
+                      onMouseEnter={(_, index) => setHoveredCategory(filteredCategoryChartData[index])}
+                      onMouseLeave={() => setHoveredCategory(null)}
+                    >
+                      {filteredCategoryChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-overview-cat-${entry.id || index}`}
+                          fill={entry.color || '#7c4dff'}
+                          className="cursor-pointer transition-opacity hover:opacity-90"
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
 
-                      return (
-                        <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
-                          <circle
-                            cx="0"
-                            cy="0"
-                            r="11"
-                            className="fill-white dark:fill-[#222226] stroke-slate-200/90 dark:stroke-slate-700 shadow-sm"
-                            strokeWidth="1.5"
-                          />
-                          <text
-                            x="0"
-                            y="0.5"
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            fontSize="11"
-                          >
-                            {entry.icon}
-                          </text>
-                        </g>
-                      );
-                    }}
-                    onClick={(entry) => setSelectedCategoryFilter(selectedCategoryFilter === entry.id ? null : entry.id)}
-                    onMouseEnter={(_, index) => setHoveredCategory(categoryChartData[index])}
-                    onMouseLeave={() => setHoveredCategory(null)}
-                  >
-                    {categoryChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-overview-cat-${index}`}
-                        fill={entry.color}
-                        className={`cursor-pointer transition-all ${
-                          selectedCategoryFilter === entry.id ? 'stroke-purple-600 stroke-2 scale-105' : 'hover:opacity-90'
-                        }`}
-                      />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+                {/* Donut Center Hub */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+                  {activeCat ? (
+                    <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[135px] text-center px-1 select-none">
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-base mb-1 shadow-2xs transition-transform"
+                        style={{ backgroundColor: `${activeCat.color || '#7c4dff'}25` }}
+                      >
+                        {activeCat.icon || '🏷️'}
+                      </div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
+                        {activeCat.name}
+                      </span>
+                      <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 tracking-tight mt-0.5 whitespace-nowrap">
+                        {formatCurrency(activeCat.value, user.currency, !user.showValues)}
+                      </span>
+                      <span
+                        className="text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-1 border shadow-2xs"
+                        style={{
+                          backgroundColor: `${activeCat.color || '#7c4dff'}15`,
+                          borderColor: `${activeCat.color || '#7c4dff'}35`,
+                          color: activeCat.color || '#7c4dff',
+                        }}
+                      >
+                        {activeCat.percentage.toFixed(1)}% do total
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center max-w-[140px] px-1 select-none">
+                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-0.5">
+                        {categoryTypeFilter === 'fixed' ? 'Total Fixas' : categoryTypeFilter === 'variable' ? 'Total Variáveis' : 'Total Gasto'}
+                      </span>
+                      <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                        {formatCurrency(filteredExpenseTotal, user.currency, !user.showValues)}
+                      </strong>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full mt-1.5 border border-slate-200/60 dark:border-slate-700/60">
+                        {filteredCategoryChartData.length} categorias
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-                {hoveredCategory ? (
-                  <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[145px] text-center px-1">
-                    <span className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase leading-tight line-clamp-2">
-                      {hoveredCategory.icon} {hoveredCategory.name}
-                    </span>
-                    <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
-                      {formatCurrency(hoveredCategory.value, user.currency, !user.showValues)}
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                      {hoveredCategory.percentage.toFixed(1)}% do total
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center space-y-1.5 text-center max-w-[150px] px-1 select-none">
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 block leading-tight">
-                        Variáveis ({fixedVsVariable.variablePct.toFixed(0)}%)
-                      </span>
-                      <strong className="block text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
-                        {formatCompactCurrency(fixedVsVariable.variable, user.currency, !user.showValues)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 block leading-tight">
-                        Fixas ({fixedVsVariable.fixedPct.toFixed(0)}%)
-                      </span>
-                      <strong className="block text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
-                        {formatCompactCurrency(fixedVsVariable.fixed, user.currency, !user.showValues)}
-                      </strong>
-                    </div>
-                  </div>
-                )}
+              {/* Macro Split Pills (Fixas vs Variáveis) */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2 select-none">
+                <button
+                  type="button"
+                  onClick={() => setCategoryTypeFilter(categoryTypeFilter === 'fixed' ? 'all' : 'fixed')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
+                    categoryTypeFilter === 'fixed'
+                      ? 'bg-blue-500/15 border-blue-500/40 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30 shadow-2xs'
+                      : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:border-blue-400'
+                  }`}
+                  title="Filtrar por despesas fixas"
+                >
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                  <span>Fixas: <strong>{fixedVsVariable.fixedPct.toFixed(0)}%</strong></span>
+                  <span className="text-[10px] text-slate-400">({formatCompactCurrency(fixedVsVariable.fixed, user.currency, !user.showValues)})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCategoryTypeFilter(categoryTypeFilter === 'variable' ? 'all' : 'variable')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
+                    categoryTypeFilter === 'variable'
+                      ? 'bg-purple-500/15 border-purple-500/40 text-purple-600 dark:text-purple-400 ring-1 ring-purple-500/30 shadow-2xs'
+                      : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:border-purple-400'
+                  }`}
+                  title="Filtrar por despesas variáveis"
+                >
+                  <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                  <span>Variáveis: <strong>{fixedVsVariable.variablePct.toFixed(0)}%</strong></span>
+                  <span className="text-[10px] text-slate-400">({formatCompactCurrency(fixedVsVariable.variable, user.currency, !user.showValues)})</span>
+                </button>
               </div>
             </div>
 
             {/* Column 2: Category Progress & Adherence Bars + Action Footer */}
-            <div className={isFullWidth ? "flex-1 min-w-0 w-full flex flex-col justify-between space-y-4" : "space-y-4"}>
-              <div className={isFullWidth ? "space-y-3.5 max-h-[350px] overflow-y-auto scrollbar-thin pr-2" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-56 overflow-y-auto scrollbar-thin pr-1"}>
-                {categoryAdherenceList.map((c) => {
+            <div className={isFullWidth ? "flex-1 min-w-0 w-full flex flex-col justify-between space-y-3" : "space-y-3"}>
+              {/* Category Filter active bar */}
+              {selectedCategoryFilter && (
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 text-xs text-purple-700 dark:text-purple-300">
+                  <span className="font-bold flex items-center gap-1.5 truncate">
+                    <span>Filtrando por:</span>
+                    <span className="underline truncate">
+                      {categoryChartData.find(c => c.id === selectedCategoryFilter)?.name}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategoryFilter(null)}
+                    className="text-[11px] font-black uppercase hover:underline cursor-pointer shrink-0 ml-2"
+                  >
+                    Limpar ✕
+                  </button>
+                </div>
+              )}
+
+              <div className={isFullWidth ? "space-y-2.5 max-h-[380px] overflow-y-auto scrollbar-thin pr-2" : "space-y-2 max-h-64 overflow-y-auto scrollbar-thin pr-1"}>
+                {displayedCategoriesList.map((c, index) => {
                   const isSelected = selectedCategoryFilter === c.id;
+                  const isHovered = activeCat?.id === c.id;
                   const hasBudget = c.budgetAmount > 0;
                   const progressPct = hasBudget ? Math.min(100, (c.value / c.budgetAmount) * 100) : 100;
                   const isOverBudget = hasBudget && c.value > c.budgetAmount;
@@ -849,51 +976,92 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                     <div
                       key={c.id}
                       onClick={() => setSelectedCategoryFilter(isSelected ? null : c.id)}
-                      className={`group/cat cursor-pointer transition-all space-y-1.5 p-2 rounded-2xl ${
+                      onMouseEnter={() => setHoveredCategory(c)}
+                      onMouseLeave={() => setHoveredCategory(null)}
+                      className={`group/cat cursor-pointer transition-all space-y-1.5 p-2.5 rounded-2xl border ${
                         isSelected
-                          ? 'bg-purple-500/10 ring-1 ring-purple-500/30'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                          ? 'bg-purple-500/10 border-purple-500/40 ring-2 ring-purple-500/20 shadow-sm'
+                          : isHovered
+                          ? 'bg-slate-50 dark:bg-slate-800/60 border-purple-400/40 shadow-2xs'
+                          : 'bg-white dark:bg-[#1E1E22] border-slate-100 dark:border-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
                       }`}
                     >
-                      {/* Top Row: Icon + Name + Value | Budget, and Percentage */}
+                      {/* Top Row: Rank + Icon + Name + Type Tag, and Amount + Percentage */}
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Soft square icon badge */}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {/* Rank badge */}
+                          <span className="text-[10px] font-mono font-bold text-slate-400 shrink-0 w-4 text-center">
+                            #{index + 1}
+                          </span>
+
+                          {/* Category Icon */}
                           <div
                             className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 shadow-2xs transition-transform group-hover/cat:scale-105"
                             style={{
-                              backgroundColor: c.color ? `${c.color}18` : '#f1f5f9',
+                              backgroundColor: c.color ? `${c.color}20` : '#f1f5f9',
                             }}
                           >
                             {c.icon || '🏷️'}
                           </div>
 
-                          {/* Category Name & Amount | Budget */}
+                          {/* Category Name & Type Tag */}
                           <div className="min-w-0">
-                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                              {c.name}
-                            </h4>
-                            <p className="text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                              {formatCurrency(c.value, user.currency, !user.showValues)}
-                              <span className="mx-1 text-slate-300 dark:text-slate-600">|</span>
-                              {formatCurrency(c.budgetAmount, user.currency, !user.showValues)}
+                            <div className="flex items-center gap-1.5 truncate">
+                              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                {c.name}
+                              </h4>
+                              <span
+                                className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md shrink-0 uppercase ${
+                                  c.isFixed
+                                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50'
+                                    : 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-800/50'
+                                }`}
+                              >
+                                {c.isFixed ? 'Fixa' : 'Var'}
+                              </span>
+                            </div>
+
+                            {/* Budget or share detail */}
+                            <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 dark:text-slate-400 whitespace-nowrap">
+                              {hasBudget ? (
+                                <>
+                                  <span>{formatCurrency(c.value, user.currency, !user.showValues)}</span>
+                                  <span className="mx-1 text-slate-300 dark:text-slate-600">de</span>
+                                  <span>{formatCurrency(c.budgetAmount, user.currency, !user.showValues)}</span>
+                                </>
+                              ) : (
+                                <span>{c.percentage.toFixed(1)}% do total</span>
+                              )}
                             </p>
                           </div>
                         </div>
 
-                        {/* Percentage on the right */}
+                        {/* Amount & Right Percentage / Budget adherence */}
                         <div className="text-right shrink-0">
-                          <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200">
-                            {adherenceLabel}
+                          <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white block">
+                            {formatCurrency(c.value, user.currency, !user.showValues)}
+                          </span>
+                          <span
+                            className={`text-[10px] font-black inline-block ${
+                              isOverBudget
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-slate-500 dark:text-slate-400'
+                            }`}
+                          >
+                            {hasBudget ? (
+                              isOverBudget ? `Estourado (${adherenceLabel})` : `${adherenceLabel} meta`
+                            ) : (
+                              `${c.percentage.toFixed(1)}%`
+                            )}
                           </span>
                         </div>
                       </div>
 
-                      {/* Full-width horizontal colored progress bar */}
+                      {/* Smooth Progress bar */}
                       <div className="w-full bg-slate-100 dark:bg-slate-800/90 h-1.5 rounded-full overflow-hidden">
                         <div
                           style={{
-                            width: `${Math.min(100, Math.max(3, progressPct))}%`,
+                            width: `${Math.min(100, Math.max(3, hasBudget ? progressPct : c.percentage))}%`,
                             backgroundColor: isOverBudget ? '#ef5350' : c.color || '#7C4DFF',
                           }}
                           className="h-full rounded-full transition-all duration-500"
@@ -904,24 +1072,45 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 })}
               </div>
 
+              {/* Mobile / Compact toggle if > 5 categories */}
+              {filteredCategoryAdherenceList.length > 5 && !isFullWidth && (
+                <button
+                  type="button"
+                  onClick={() => setIsExpandedCategoriesMobile(!isExpandedCategoriesMobile)}
+                  className="w-full py-2 rounded-xl text-center text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors cursor-pointer"
+                >
+                  {isExpandedCategoriesMobile ? 'Recolher categorias ▴' : `Ver todas as ${filteredCategoryAdherenceList.length} categorias ▾`}
+                </button>
+              )}
+
+              {/* Drill-down transactions for selected category */}
               {selectedCategoryFilter && (
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-200 dark:border-slate-800/80 space-y-2 animate-in fade-in w-full">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1C1C20] border border-slate-200/80 dark:border-slate-800/80 space-y-2 animate-in fade-in w-full">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      Transações ({filteredTxsForCategory.length})
+                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <span>Lançamentos</span>
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300">
+                        {filteredTxsForCategory.length}
+                      </span>
                     </span>
                     <button
+                      type="button"
                       onClick={() => setSelectedCategoryFilter(null)}
-                      className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+                      className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
                     >
-                      Limpar filtro
+                      Fechar
                     </button>
                   </div>
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-32 overflow-y-auto pr-1">
-                    {filteredTxsForCategory.map(tx => (
-                      <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
-                        <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
-                        <span className="font-black text-[#ef5350] shrink-0">{formatCurrency(tx.amount, user.currency)}</span>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-36 overflow-y-auto pr-1">
+                    {filteredTxsForCategory.slice(0, 10).map(tx => (
+                      <div key={tx.id} className="py-2 flex items-center justify-between text-xs gap-2">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{tx.description}</p>
+                          <span className="text-[10px] text-slate-400 font-medium">{formatDate(tx.date)}</span>
+                        </div>
+                        <span className="font-black text-rose-600 dark:text-rose-400 shrink-0">
+                          -{formatCurrency(tx.amount, user.currency, !user.showValues)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -933,7 +1122,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   onClick={() => setActiveTab('relatorios')}
                   className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
                 >
-                  VER MAIS RELATÓRIOS <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Ver Relatório Completo</span>
+                  <span>→</span>
                 </button>
               </div>
             </div>
@@ -1530,108 +1720,119 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           Nenhuma receita registrada neste mês.
         </div>
       ) : (
-        <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-10 pt-2" : "space-y-4"}>
-          <div className={`relative flex items-center justify-center shrink-0 self-center ${
-            isFullWidth ? "w-full lg:w-[320px] h-64 my-auto" : "w-full h-60"
+        <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10 pt-2" : "space-y-4 pt-2"}>
+          <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
+            isFullWidth ? "w-full lg:w-[320px] my-auto" : "w-full"
           }`}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={incomeCategoryChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={68}
-                  outerRadius={92}
-                  paddingAngle={3}
-                  dataKey="value"
-                  stroke="transparent"
-                  labelLine={false}
-                  label={(props) => {
-                    const { cx, cy, midAngle, outerRadius: oRad, index } = props;
-                    const entry = incomeCategoryChartData[index];
-                    if (!entry || !entry.icon) return null;
-                    const RADIAN = Math.PI / 180;
-                    const radius = oRad + 7;
-                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+            <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={incomeCategoryChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={68}
+                    outerRadius={94}
+                    paddingAngle={incomeCategoryChartData.length > 1 ? 4 : 0}
+                    cornerRadius={6}
+                    dataKey="value"
+                    stroke="transparent"
+                    activeIndex={hoveredIncomeCategory ? incomeCategoryChartData.findIndex(c => c.id === hoveredIncomeCategory.id) : undefined}
+                    activeShape={renderActiveDonutShape}
+                    onMouseEnter={(_, index) => setHoveredIncomeCategory(incomeCategoryChartData[index])}
+                    onMouseLeave={() => setHoveredIncomeCategory(null)}
+                  >
+                    {incomeCategoryChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-overview-inc-cat-${entry.id || index}`}
+                        fill={entry.color || '#10b981'}
+                        className="cursor-pointer transition-opacity hover:opacity-90"
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
 
-                    return (
-                      <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
-                        <circle
-                          cx="0"
-                          cy="0"
-                          r="11"
-                          className="fill-white dark:fill-[#222226] stroke-slate-200/90 dark:stroke-slate-700 shadow-sm"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="0"
-                          y="0.5"
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          fontSize="11"
-                        >
-                          {entry.icon}
-                        </text>
-                      </g>
-                    );
-                  }}
-                  onMouseEnter={(_, index) => setHoveredIncomeCategory(incomeCategoryChartData[index])}
-                  onMouseLeave={() => setHoveredIncomeCategory(null)}
-                >
-                  {incomeCategoryChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-overview-inc-cat-${index}`}
-                      fill={entry.color}
-                      className="cursor-pointer transition-all hover:opacity-90"
-                    />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-              {hoveredIncomeCategory ? (
-                <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[145px] text-center px-1">
-                  <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase leading-tight line-clamp-2">
-                    {hoveredIncomeCategory.icon} {hoveredIncomeCategory.name}
-                  </span>
-                  <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
-                    {formatCurrency(hoveredIncomeCategory.value, user.currency, !user.showValues)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                    {hoveredIncomeCategory.percentage.toFixed(1)}% do total
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center max-w-[145px] text-center px-1">
-                  <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
-                    {formatCurrency(totalIncomeCategorySum, user.currency, !user.showValues)}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    Total Receitas
-                  </span>
-                </div>
-              )}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+                {hoveredIncomeCategory ? (
+                  <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[135px] text-center px-1 select-none">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-base mb-1 shadow-2xs transition-transform"
+                      style={{ backgroundColor: `${hoveredIncomeCategory.color || '#10b981'}25` }}
+                    >
+                      {hoveredIncomeCategory.icon || '💰'}
+                    </div>
+                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
+                      {hoveredIncomeCategory.name}
+                    </span>
+                    <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 tracking-tight mt-0.5 whitespace-nowrap">
+                      {formatCurrency(hoveredIncomeCategory.value, user.currency, !user.showValues)}
+                    </span>
+                    <span
+                      className="text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-1 border shadow-2xs"
+                      style={{
+                        backgroundColor: `${hoveredIncomeCategory.color || '#10b981'}15`,
+                        borderColor: `${hoveredIncomeCategory.color || '#10b981'}35`,
+                        color: hoveredIncomeCategory.color || '#10b981',
+                      }}
+                    >
+                      {hoveredIncomeCategory.percentage.toFixed(1)}% do total
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center max-w-[140px] text-center px-1 select-none">
+                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-0.5">
+                      Total Receitas
+                    </span>
+                    <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                      {formatCurrency(totalIncomeCategorySum, user.currency, !user.showValues)}
+                    </strong>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full mt-1.5 border border-emerald-200/60 dark:border-emerald-800/60">
+                      {incomeCategoryChartData.length} fontes
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className={isFullWidth ? "flex-1 min-w-0 w-full flex flex-col justify-between space-y-4" : "space-y-4"}>
-            <div className={isFullWidth ? "space-y-2.5 max-h-[350px] overflow-y-auto scrollbar-thin pr-2" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-40 overflow-y-auto scrollbar-thin pr-1"}>
-              {(isFullWidth ? incomeCategoryChartData : incomeCategoryChartData.slice(0, 5)).map((c, i) => (
-                <div key={i} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                  <div className="flex items-center gap-2 truncate min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
-                      {c.icon} {c.name}
-                    </span>
+          <div className={isFullWidth ? "flex-1 min-w-0 w-full flex flex-col justify-between space-y-3" : "space-y-3"}>
+            <div className={isFullWidth ? "space-y-2 max-h-[350px] overflow-y-auto scrollbar-thin pr-2" : "space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 max-h-48 overflow-y-auto scrollbar-thin pr-1"}>
+              {(isFullWidth ? incomeCategoryChartData : incomeCategoryChartData.slice(0, 6)).map((c, i) => {
+                const isHovered = hoveredIncomeCategory?.id === c.id;
+                return (
+                  <div
+                    key={i}
+                    onMouseEnter={() => setHoveredIncomeCategory(c)}
+                    onMouseLeave={() => setHoveredIncomeCategory(null)}
+                    className={`flex items-center justify-between text-xs py-2 px-3 rounded-2xl border transition-all cursor-pointer ${
+                      isHovered
+                        ? 'bg-slate-50 dark:bg-slate-800/60 border-emerald-400/40 shadow-2xs'
+                        : 'bg-white dark:bg-[#1E1E22] border-slate-100 dark:border-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-2xs"
+                        style={{ backgroundColor: `${c.color || '#10b981'}20` }}
+                      >
+                        {c.icon || '💰'}
+                      </div>
+                      <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
+                        {c.name}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-slate-900 dark:text-white font-black block">
+                        {formatCurrency(c.value, user.currency, !user.showValues)}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">
+                        {c.percentage.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(c.value, user.currency)}</span>
-                    <span className="text-[10px] text-slate-400 block font-semibold">{c.percentage.toFixed(1)}%</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
@@ -1639,7 +1840,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 onClick={() => setActiveTab('relatorios')}
                 className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
               >
-                VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+                <span>Ver Mais Relatórios</span>
+                <span>→</span>
               </button>
             </div>
           </div>

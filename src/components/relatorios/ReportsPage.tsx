@@ -19,6 +19,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
   BarChart,
   Bar,
   LineChart,
@@ -55,6 +56,24 @@ type BarSubtype =
   | 'balanco_mensal'
   | 'fluxo_caixa_anual'
   | 'despesas_dia_semana';
+
+const renderActiveDonutShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius - 3}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        cornerRadius={8}
+      />
+    </g>
+  );
+};
 
 export const ReportsPage: React.FC = () => {
   const { transactions, categories, accounts, cards, user } = useFinancial();
@@ -563,11 +582,11 @@ export const ReportsPage: React.FC = () => {
 
   // Labels mappings
   const donutSubtypeLabels: Record<DonutSubtype, string> = {
-    despesas_categoria: 'Despesas por categorias',
-    despesas_contas: 'Despesas por contas',
-    receitas_categoria: 'Receitas por categorias',
-    receitas_contas: 'Receitas por contas',
-    saldos_contas: 'Saldos por conta',
+    despesas_categoria: 'Despesas por Categorias',
+    despesas_contas: 'Despesas por Contas',
+    receitas_categoria: 'Receitas por Categorias',
+    receitas_contas: 'Receitas por Contas',
+    saldos_contas: 'Saldos por Conta',
   };
 
   const lineSubtypeLabels: Record<LineSubtype, string> = {
@@ -913,57 +932,29 @@ export const ReportsPage: React.FC = () => {
                   Nenhuma transação encontrada no período.
                 </div>
               ) : (
-                <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+                <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={donutData.items}
                         cx="50%"
                         cy="50%"
-                        innerRadius={74}
-                        outerRadius={98}
-                        paddingAngle={3}
+                        innerRadius={68}
+                        outerRadius={94}
+                        paddingAngle={donutData.items.length > 1 ? 4 : 0}
+                        cornerRadius={6}
                         dataKey="amount"
                         stroke="transparent"
-                        labelLine={false}
-                        label={(props) => {
-                          const { cx, cy, midAngle, outerRadius: oRad, index } = props;
-                          const entry = donutData.items[index];
-                          if (!entry || !entry.icon) return null;
-                          const RADIAN = Math.PI / 180;
-                          const radius = oRad + 7;
-                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                          return (
-                            <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
-                              <circle
-                                cx="0"
-                                cy="0"
-                                r="11"
-                                className="fill-white dark:fill-[#222226] stroke-slate-200/90 dark:stroke-slate-700 shadow-sm"
-                                strokeWidth="1.5"
-                              />
-                              <text
-                                x="0"
-                                y="0.5"
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                fontSize="11"
-                              >
-                                {entry.icon}
-                              </text>
-                            </g>
-                          );
-                        }}
+                        activeIndex={hoveredDonutItem ? donutData.items.findIndex(item => item.id === hoveredDonutItem.id) : undefined}
+                        activeShape={renderActiveDonutShape}
                         onMouseEnter={(_, index) => setHoveredDonutItem(donutData.items[index])}
                         onMouseLeave={() => setHoveredDonutItem(null)}
                       >
                         {donutData.items.map((entry, index) => (
                           <Cell
-                            key={`cell-donut-${index}`}
-                            fill={entry.color}
-                            className="cursor-pointer transition-all hover:opacity-90"
+                            key={`cell-donut-${entry.id || index}`}
+                            fill={entry.color || '#7c4dff'}
+                            className="cursor-pointer transition-opacity hover:opacity-90"
                           />
                         ))}
                       </Pie>
@@ -973,24 +964,40 @@ export const ReportsPage: React.FC = () => {
                   {/* Interactive Center (No Overlapping Tooltip & Multi-line Wrap) */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
                     {hoveredDonutItem ? (
-                      <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[155px] text-center px-1">
-                        <span className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase leading-tight line-clamp-2">
-                          {hoveredDonutItem.icon} {hoveredDonutItem.name}
+                      <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[135px] text-center px-1 select-none">
+                        <div
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-base mb-1 shadow-2xs"
+                          style={{ backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}25` }}
+                        >
+                          {hoveredDonutItem.icon || '🏷️'}
+                        </div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
+                          {hoveredDonutItem.name}
                         </span>
-                        <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 whitespace-nowrap">
+                        <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 tracking-tight mt-0.5 whitespace-nowrap">
                           {formatCurrency(hoveredDonutItem.amount, user.currency, !user.showValues)}
                         </span>
-                        <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">
+                        <span
+                          className="text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-1 border shadow-2xs"
+                          style={{
+                            backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}15`,
+                            borderColor: `${hoveredDonutItem.color || '#7c4dff'}35`,
+                            color: hoveredDonutItem.color || '#7c4dff',
+                          }}
+                        >
                           {hoveredDonutItem.percentage.toFixed(1)}% do total
                         </span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center max-w-[155px] text-center px-1">
-                        <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
-                          {formatCurrency(donutData.total, user.currency, !user.showValues)}
+                      <div className="flex flex-col items-center justify-center max-w-[140px] text-center px-1 select-none">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">
+                          Total do Período
                         </span>
-                        <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                          Total Geral
+                        <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                          {formatCurrency(donutData.total, user.currency, !user.showValues)}
+                        </strong>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full mt-1.5 border border-slate-200/60 dark:border-slate-700/60">
+                          {donutData.items.length} categorias
                         </span>
                       </div>
                     )}
