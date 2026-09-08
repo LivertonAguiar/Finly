@@ -35,6 +35,7 @@ import {
   GripVertical,
   Maximize2,
   Minimize2,
+  Move,
   Info,
 } from 'lucide-react';
 import {
@@ -313,10 +314,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     const sourceIdx = newOrder.indexOf(draggedCardKey);
     const targetIdx = newOrder.indexOf(targetKey);
 
-    if (sourceIdx !== -1 && targetIdx !== -1) {
-      const temp = newOrder[sourceIdx];
-      newOrder[sourceIdx] = newOrder[targetIdx];
-      newOrder[targetIdx] = temp;
+    if (sourceIdx !== -1 && targetIdx !== -1 && sourceIdx !== targetIdx) {
+      // Splice & Shift: remove from original position and insert into target position
+      const [movedCard] = newOrder.splice(sourceIdx, 1);
+      newOrder.splice(targetIdx, 0, movedCard);
       saveCardsOrder(newOrder);
     }
 
@@ -2378,8 +2379,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 4. RESPONSIVE MODULAR GRID (DRAG AND DROP MODULAR GRID WITH RESIZABLE CARDS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* 4. RESPONSIVE MODULAR GRID (DRAG AND DROP MODULAR GRID WITH RESIZABLE CARDS & DENSE PACKING) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start grid-flow-row-dense">
         {dashboardCardsOrder
           .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
           .map((cardKey) => {
@@ -2412,71 +2413,55 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             return (
               <div
                 key={cardKey}
-                draggable={!isApp && draggableCardKey === cardKey}
-                onDragStart={(e) => handleDragStart(e, cardKey)}
+                draggable={!isApp}
+                onDragStart={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.closest('button, input, select, textarea, a, .recharts-surface, .no-drag, [role="button"], [role="tab"]')) {
+                    e.preventDefault();
+                    return;
+                  }
+                  handleDragStart(e, cardKey);
+                }}
                 onDragOver={(e) => handleDragOver(e, cardKey)}
                 onDrop={(e) => handleDrop(e, cardKey)}
                 onDragEnd={handleDragEnd}
                 className={`relative group/draggable transition-all duration-200 ${
-                  isFull ? 'col-span-1 lg:col-span-2' : 'col-span-1'
+                  isFull ? 'col-span-1 md:col-span-2' : 'col-span-1'
+                } ${
+                  !isApp ? 'cursor-grab active:cursor-grabbing' : ''
                 } ${
                   isBeingDragged
-                    ? 'opacity-40 scale-[0.98] border-2 border-dashed border-purple-500 rounded-[28px]'
+                    ? 'opacity-30 scale-[0.98] border-2 border-dashed border-purple-500/80 rounded-[28px]'
                     : isOver
-                    ? 'ring-2 ring-purple-500 ring-offset-4 dark:ring-offset-[#121214] scale-[1.01] shadow-2xl bg-purple-500/5 rounded-[28px]'
+                    ? 'ring-2 ring-purple-500/80 ring-offset-2 dark:ring-offset-[#121214] scale-[1.01] shadow-2xl bg-purple-500/5 rounded-[28px]'
                     : ''
                 }`}
               >
-                {/* Dedicated Solid Action Bar: Resize Button + Drag Handle (Desktop Web Only) */}
+                {/* Discrete Expand / Collapse Micro Button (Desktop Web Only) */}
                 {!isApp && (
-                  <div className="hidden lg:flex absolute top-4 right-4 z-20 items-center gap-1 px-2 py-1 rounded-xl bg-white/95 dark:bg-[#1E1E22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-400 shadow-sm transition-all select-none opacity-0 group-hover/draggable:opacity-100 focus-within:opacity-100">
-                    {/* Resize Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCardSize(cardKey);
-                      }}
-                      className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
-                      title={isFull ? 'Reduzir para meia largura (1 coluna)' : 'Expandir para largura total horizontal (2 colunas)'}
-                    >
-                      {isFull ? (
-                        <>
-                          <Minimize2 className="w-3.5 h-3.5 shrink-0" />
-                          <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Reduzir</span>
-                        </>
-                      ) : (
-                        <>
-                          <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-                          <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Expandir</span>
-                        </>
-                      )}
-                    </button>
-
-                    <div className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
-
-                    {/* Drag Handle */}
-                    <div
-                      onMouseDown={() => setDraggableCardKey(cardKey)}
-                      onMouseUp={() => setDraggableCardKey(null)}
-                      onTouchStart={() => setDraggableCardKey(cardKey)}
-                      onTouchEnd={() => setDraggableCardKey(null)}
-                      className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-grab active:cursor-grabbing py-1 px-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40"
-                      title="Segure e arraste sobre outro card para inverter suas posições"
-                    >
-                      <GripVertical className="w-3.5 h-3.5 shrink-0" />
-                      <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
-                        Mover
-                      </span>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCardSize(cardKey);
+                    }}
+                    className="hidden md:flex absolute top-3.5 right-3.5 z-20 w-7 h-7 rounded-lg items-center justify-center bg-white/75 dark:bg-[#18181B]/75 hover:bg-white dark:hover:bg-[#222226] border border-slate-200/60 dark:border-white/10 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 shadow-2xs opacity-0 group-hover/draggable:opacity-75 hover:!opacity-100 transition-all cursor-pointer backdrop-blur-md"
+                    title={isFull ? 'Reduzir para meia largura (1 coluna)' : 'Expandir para largura total (2 colunas)'}
+                  >
+                    {isFull ? (
+                      <Minimize2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 )}
 
-                {/* Swap Indicator Overlay when another card is hovered over this card */}
+                {/* Fluid Reorder Insertion Indicator Overlay */}
                 {isOver && (
-                  <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xs">
-                    <span className="px-4 py-2 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-lg">
-                      ⇄ Solte para inverter posição
+                  <div className="absolute inset-0 z-10 pointer-events-none rounded-[28px] border-2 border-purple-500 bg-purple-500/10 flex items-center justify-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-[1px]">
+                    <span className="px-3.5 py-1.5 rounded-full bg-purple-600 text-white text-xs font-black tracking-wide shadow-xl flex items-center gap-1.5">
+                      <Move className="w-3.5 h-3.5" />
+                      <span>Mover para esta posição</span>
                     </span>
                   </div>
                 )}
