@@ -539,45 +539,29 @@ export function generateRealisticDemoStore(): FullDemoStore {
     },
   ];
 
-  // 5. BUDGETS (Orçamentos por Categoria)
-  const budgets: Budget[] = [
-    {
-      id: 'bud-alim',
-      categoryId: 'cat-desp-alimentacao',
-      limit: 1800.00,
-      month: currentMonthPrefix,
-    },
-    {
-      id: 'bud-moradia',
-      categoryId: 'cat-desp-moradia',
-      limit: 3400.00,
-      month: currentMonthPrefix,
-    },
-    {
-      id: 'bud-transporte',
-      categoryId: 'cat-desp-transporte',
-      limit: 1200.00,
-      month: currentMonthPrefix,
-    },
-    {
-      id: 'bud-lazer',
-      categoryId: 'cat-desp-lazer',
-      limit: 800.00,
-      month: currentMonthPrefix,
-    },
-    {
-      id: 'bud-saude',
-      categoryId: 'cat-desp-saude',
-      limit: 900.00,
-      month: currentMonthPrefix,
-    },
-    {
-      id: 'bud-compras-pessoal',
-      categoryId: 'cat-desp-compras-pessoal',
-      limit: 2000.00,
-      month: currentMonthPrefix,
-    },
+  // 5. BUDGETS (Orçamentos por Categoria para os 12 meses do ano)
+  const baseBudgets = [
+    { catId: 'cat-rec-trabalho', limit: 9800.00 },
+    { catId: 'cat-desp-alimentacao', limit: 1800.00 },
+    { catId: 'cat-desp-moradia', limit: 3400.00 },
+    { catId: 'cat-desp-transporte', limit: 1200.00 },
+    { catId: 'cat-desp-lazer', limit: 800.00 },
+    { catId: 'cat-desp-saude', limit: 900.00 },
+    { catId: 'cat-desp-compras-pessoal', limit: 2000.00 },
   ];
+
+  const budgets: Budget[] = [];
+  for (let m = 1; m <= 12; m++) {
+    const monthStr = `${year}-${String(m).padStart(2, '0')}`;
+    baseBudgets.forEach(b => {
+      budgets.push({
+        id: `bud-${b.catId}-${monthStr}`,
+        categoryId: b.catId,
+        limit: b.limit,
+        month: monthStr,
+      });
+    });
+  }
 
   // 6. METAS FINANCEIRAS (Goals)
   const goals: Goal[] = [

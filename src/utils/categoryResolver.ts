@@ -21,6 +21,10 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'mercado': { categoryId: 'cat-desp-alimentacao', subcategoryId: 'sub-alim-mercado', name: 'Alimentação', icon: '🍽️' },
   'combustivel': { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-combustivel', name: 'Transporte', icon: '🚗' },
   'aluguel': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-aluguel', name: 'Moradia', icon: '🏠' },
+  'cat-rec-salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-sal-mensal', name: 'Salário & Trabalho', icon: '💼' },
+  'salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-sal-mensal', name: 'Salário & Trabalho', icon: '💼' },
+  'cat-rec-outras': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
+  'outras-receitas': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
 };
 
 /**

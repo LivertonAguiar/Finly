@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Target,
   Plus,
@@ -54,6 +54,7 @@ export const BudgetPage: React.FC = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [selectedCatId, setSelectedCatId] = useState(categories[0]?.id || '');
   const [categoryBudgetLimit, setCategoryBudgetLimit] = useState('');
+  const [applyToAllMonths, setApplyToAllMonths] = useState(true);
 
   // Copy Alert
   const [copySuccessAlert, setCopySuccessAlert] = useState(false);
@@ -68,7 +69,7 @@ export const BudgetPage: React.FC = () => {
   const monthName = viewDate.toLocaleDateString('pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const yearNum = viewDate.getFullYear();
-  const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
+  const currentMonthPrefix = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
 
   // Previous month prefix for benchmark / copying
   const prevDate = useMemo(() => {
@@ -76,7 +77,7 @@ export const BudgetPage: React.FC = () => {
     d.setMonth(d.getMonth() - 1);
     return d;
   }, [viewDate]);
-  const prevMonthPrefix = prevDate.toISOString().substring(0, 7);
+  const prevMonthPrefix = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
   const prevMonthName = prevDate.toLocaleDateString('pt-BR', { month: 'short' });
 
   // 12 Months for the Matrix View
@@ -104,6 +105,84 @@ export const BudgetPage: React.FC = () => {
     return resolveCategory(categories, catId, subId, 'expense');
   };
 
+  // Helper to get planned value for a category with intelligent fallback
+  const getCategoryPlanned = useCallback((categoryId: string, monthPrefix: string, type: 'income' | 'expense') => {
+    // 1. Exact match for this category and month (without subcategory)
+    const exact = budgets.find(bg => bg.categoryId === categoryId && !bg.subcategoryId && bg.month === monthPrefix);
+    if (exact && exact.limit > 0) return exact.limit;
+
+    // 2. Exact match without month (legacy global)
+    const global = budgets.find(bg => bg.categoryId === categoryId && !bg.subcategoryId && !bg.month);
+    if (global && global.limit > 0) return global.limit;
+
+    // 3. Match within the same year (most recent)
+    const yearPrefix = monthPrefix.split('-')[0];
+    const sameYear = budgets
+      .filter(bg => bg.categoryId === categoryId && !bg.subcategoryId && bg.month && bg.month.startsWith(yearPrefix) && bg.limit > 0)
+      .sort((a, b) => b.month.localeCompare(a.month));
+    if (sameYear.length > 0) {
+      return sameYear[0].limit;
+    }
+
+    // 4. Any budget defined for this category across any month
+    const anyBudget = budgets
+      .filter(bg => bg.categoryId === categoryId && !bg.subcategoryId && bg.limit > 0)
+      .sort((a, b) => (b.month || '').localeCompare(a.month || ''));
+    if (anyBudget.length > 0) {
+      return anyBudget[0].limit;
+    }
+
+    // 5. For income categories, if no budget exists, fallback to recurring income transactions
+    if (type === 'income') {
+      const recurringTx = transactions
+        .filter(t => t.type === 'income' && (t.recurring || (t as any).isRecurring) && !t.ignored)
+        .filter(t => {
+          const found = resolveCategory(categories, t.categoryId, t.subcategoryId, 'income');
+          return found ? found.id === categoryId : t.categoryId === categoryId;
+        });
+      if (recurringTx.length > 0) {
+        return recurringTx.reduce((sum, t) => sum + t.amount, 0);
+      }
+    }
+
+    return 0;
+  }, [budgets, transactions, categories]);
+
+  // Helper to get planned value for a subcategory with intelligent fallback
+  const getSubcategoryPlanned = useCallback((categoryId: string, subcategoryId: string, monthPrefix: string, type: 'income' | 'expense') => {
+    // 1. Exact match
+    const exact = budgets.find(bg => bg.categoryId === categoryId && bg.subcategoryId === subcategoryId && bg.month === monthPrefix);
+    if (exact && exact.limit > 0) return exact.limit;
+
+    // 2. Global
+    const global = budgets.find(bg => bg.categoryId === categoryId && bg.subcategoryId === subcategoryId && !bg.month);
+    if (global && global.limit > 0) return global.limit;
+
+    // 3. Same year
+    const yearPrefix = monthPrefix.split('-')[0];
+    const sameYear = budgets
+      .filter(bg => bg.categoryId === categoryId && bg.subcategoryId === subcategoryId && bg.month && bg.month.startsWith(yearPrefix) && bg.limit > 0)
+      .sort((a, b) => b.month.localeCompare(a.month));
+    if (sameYear.length > 0) return sameYear[0].limit;
+
+    // 4. Any budget
+    const anyBudget = budgets
+      .filter(bg => bg.categoryId === categoryId && bg.subcategoryId === subcategoryId && bg.limit > 0)
+      .sort((a, b) => (b.month || '').localeCompare(a.month || ''));
+    if (anyBudget.length > 0) return anyBudget[0].limit;
+
+    // 5. Recurring for income subcategories
+    if (type === 'income') {
+      const recurringTx = transactions
+        .filter(t => t.type === 'income' && (t.recurring || (t as any).isRecurring) && !t.ignored && t.subcategoryId === subcategoryId);
+      if (recurringTx.length > 0) {
+        return recurringTx.reduce((sum, t) => sum + t.amount, 0);
+      }
+    }
+
+    return 0;
+  }, [budgets, transactions]);
+
   // Matrix Calculations (MGO Style: Plan vs Real vs Dif across 12 months)
   const matrixData = useMemo(() => {
     // 1. Incomes by Category per Month
@@ -117,8 +196,7 @@ export const BudgetPage: React.FC = () => {
           })
           .reduce((sum, t) => sum + t.amount, 0);
 
-        const b = budgets.find(bg => bg.categoryId === cat.id && (bg.month === m.prefix || !bg.month));
-        const plan = b ? b.limit : 0;
+        const plan = getCategoryPlanned(cat.id, m.prefix, 'income');
         const dif = spent - plan;
         return { plan, real: spent, dif };
       });
@@ -130,7 +208,9 @@ export const BudgetPage: React.FC = () => {
             .filter(t => t.type === 'income' && t.date.startsWith(m.prefix) && !t.ignored)
             .filter(t => t.subcategoryId === sub.id)
             .reduce((sum, t) => sum + t.amount, 0);
-          return { plan: 0, real: spent, dif: spent };
+          const plan = getSubcategoryPlanned(cat.id, sub.id, m.prefix, 'income');
+          const dif = spent - plan;
+          return { plan, real: spent, dif };
         });
         return { id: sub.id, name: sub.name, icon: sub.icon || '🏷️', monthlyValues: subMonthlyValues };
       });
@@ -156,8 +236,7 @@ export const BudgetPage: React.FC = () => {
           })
           .reduce((sum, t) => sum + t.amount, 0);
 
-        const b = budgets.find(bg => bg.categoryId === cat.id && (bg.month === m.prefix || !bg.month));
-        const plan = b ? b.limit : 0;
+        const plan = getCategoryPlanned(cat.id, m.prefix, 'expense');
         const dif = plan - spent; // Positive = economy, Negative = overbudget
         return { plan, real: spent, dif };
       });
@@ -169,7 +248,9 @@ export const BudgetPage: React.FC = () => {
             .filter(t => t.type === 'expense' && t.date.startsWith(m.prefix) && !t.ignored)
             .filter(t => t.subcategoryId === sub.id)
             .reduce((sum, t) => sum + t.amount, 0);
-          return { plan: 0, real: spent, dif: -spent };
+          const plan = getSubcategoryPlanned(cat.id, sub.id, m.prefix, 'expense');
+          const dif = plan - spent;
+          return { plan, real: spent, dif };
         });
         return { id: sub.id, name: sub.name, icon: sub.icon || '🏷️', monthlyValues: subMonthlyValues };
       });
@@ -210,7 +291,7 @@ export const BudgetPage: React.FC = () => {
       totalExpenses,
       netBalance,
     };
-  }, [incomeCategories, expenseCategories, matrixMonths, transactions, categories, budgets]);
+  }, [incomeCategories, expenseCategories, matrixMonths, transactions, categories, budgets, getCategoryPlanned, getSubcategoryPlanned]);
 
   const toggleCategoryExpand = (catId: string) => {
     setExpandedCategoryIds(prev => ({
@@ -305,8 +386,7 @@ export const BudgetPage: React.FC = () => {
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      const b = budgets.find(bg => bg.categoryId === cat.id && bg.month === currentMonthPrefix);
-      const limit = b ? b.limit : 0;
+      const limit = getCategoryPlanned(cat.id, currentMonthPrefix, 'expense');
       const percentage = limit > 0 ? (spent / limit) * 100 : 0;
       const remaining = Math.max(0, limit - spent);
       const exceeded = spent > limit && limit > 0;
@@ -333,7 +413,7 @@ export const BudgetPage: React.FC = () => {
         statusLabel,
       };
     });
-  }, [expenseCategories, budgets, monthTransactions, transactions, currentMonthPrefix, prevMonthPrefix, categories]);
+  }, [expenseCategories, budgets, monthTransactions, transactions, currentMonthPrefix, prevMonthPrefix, categories, getCategoryPlanned]);
 
   // 4 Top KPIs for Planning
   const totalBudgetLimit = useMemo(() => {
@@ -360,8 +440,8 @@ export const BudgetPage: React.FC = () => {
     const initialMap: Record<string, string> = {};
     const avg = expenseCategories.length > 0 ? Math.round(wizardPlannedExpenses / expenseCategories.length) : 0;
     expenseCategories.forEach(c => {
-      const existing = budgets.find(b => b.categoryId === c.id && b.month === currentMonthPrefix);
-      initialMap[c.id] = existing ? existing.limit.toString() : avg.toString();
+      const existingLimit = getCategoryPlanned(c.id, currentMonthPrefix, 'expense');
+      initialMap[c.id] = existingLimit > 0 ? existingLimit.toString() : avg.toString();
     });
     setCustomCatBudgets(initialMap);
     setWizardStep(1);
@@ -375,19 +455,34 @@ export const BudgetPage: React.FC = () => {
   const unallocatedDifference = wizardPlannedExpenses - totalCustomAllocated;
 
   const handleFinishWizard = () => {
+    const targetYear = viewDate.getFullYear();
     Object.entries(customCatBudgets).forEach(([catId, val]) => {
       const limitNum = parseFloat(val) || 0;
-      setCategoryBudget(catId, limitNum, currentMonthPrefix);
+      // Replicate to all 12 months so the whole year has this baseline
+      for (let i = 1; i <= 12; i++) {
+        const mm = String(i).padStart(2, '0');
+        setCategoryBudget(catId, limitNum, `${targetYear}-${mm}`);
+      }
     });
+
+    // Also set planned income for the main salary / income category if available
+    const primaryIncomeCat = incomeCategories.find(c => c.name.toLowerCase().includes('salário') || c.name.toLowerCase().includes('salario')) || incomeCategories[0];
+    if (primaryIncomeCat && wizardIncome > 0) {
+      for (let i = 1; i <= 12; i++) {
+        const mm = String(i).padStart(2, '0');
+        setCategoryBudget(primaryIncomeCat.id, wizardIncome, `${targetYear}-${mm}`);
+      }
+    }
+
     setIsWizardOpen(false);
   };
 
   const handleCopyPreviousMonth = () => {
     let copiedCount = 0;
     expenseCategories.forEach(cat => {
-      const prev = budgets.find(b => b.categoryId === cat.id && b.month === prevMonthPrefix);
-      if (prev && prev.limit > 0) {
-        setCategoryBudget(cat.id, prev.limit, currentMonthPrefix);
+      const prevLimit = getCategoryPlanned(cat.id, prevMonthPrefix, 'expense');
+      if (prevLimit > 0) {
+        setCategoryBudget(cat.id, prevLimit, currentMonthPrefix);
         copiedCount++;
       }
     });
@@ -583,17 +678,32 @@ export const BudgetPage: React.FC = () => {
                                 <span className="shrink-0">{cat.icon}</span>
                                 <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{cat.name}</span>
                               </div>
-                              {hasSubs && (
+                              <div className="flex items-center gap-1 shrink-0 ml-1">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    toggleCategoryExpand(cat.id);
+                                    setSelectedCatId(cat.id);
+                                    const currentPlan = getCategoryPlanned(cat.id, `${selectedMatrixYear}-01`, 'income');
+                                    setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
+                                    setIsCategoryModalOpen(true);
                                   }}
-                                  className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer shrink-0 ml-1"
+                                  className="p-1 text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                  title={`Editar Planejado (${cat.name})`}
                                 >
-                                  {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  <Edit2 className="w-3.5 h-3.5" />
                                 </button>
-                              )}
+                                {hasSubs && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleCategoryExpand(cat.id);
+                                    }}
+                                    className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                                  >
+                                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             {cat.monthlyValues.map((v, idx) => (
                               <React.Fragment key={`inc-${cat.id}-${idx}`}>
@@ -619,11 +729,15 @@ export const BudgetPage: React.FC = () => {
                                 </td>
                                 {sub.monthlyValues.map((sv, sIdx) => (
                                   <React.Fragment key={`sub-val-${sub.id}-${sIdx}`}>
-                                    <td className="p-1.5 text-right text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums">-</td>
+                                    <td className="p-1.5 text-right text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums">
+                                      {sv.plan > 0 ? formatCurrency(sv.plan, user.currency, !user.showValues) : '-'}
+                                    </td>
                                     <td className="p-1.5 text-right text-slate-600 dark:text-slate-300 font-bold min-w-[90px] whitespace-nowrap tabular-nums">
                                       {formatCurrency(sv.real, user.currency, !user.showValues)}
                                     </td>
-                                    <td className="p-1.5 text-right text-slate-400 min-w-[90px] whitespace-nowrap tabular-nums">-</td>
+                                    <td className="p-1.5 text-right text-slate-400 min-w-[90px] whitespace-nowrap tabular-nums">
+                                      {sv.plan > 0 ? formatCurrency(sv.dif, user.currency, !user.showValues) : '-'}
+                                    </td>
                                   </React.Fragment>
                                 ))}
                               </tr>
@@ -671,17 +785,32 @@ export const BudgetPage: React.FC = () => {
                                 <span className="shrink-0">{cat.icon}</span>
                                 <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{cat.name}</span>
                               </div>
-                              {hasSubs && (
+                              <div className="flex items-center gap-1 shrink-0 ml-1">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    toggleCategoryExpand(cat.id);
+                                    setSelectedCatId(cat.id);
+                                    const currentPlan = getCategoryPlanned(cat.id, `${selectedMatrixYear}-01`, 'expense');
+                                    setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
+                                    setIsCategoryModalOpen(true);
                                   }}
-                                  className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer shrink-0 ml-1"
+                                  className="p-1 text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                  title={`Editar Teto (${cat.name})`}
                                 >
-                                  {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  <Edit2 className="w-3.5 h-3.5" />
                                 </button>
-                              )}
+                                {hasSubs && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleCategoryExpand(cat.id);
+                                    }}
+                                    className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                                  >
+                                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             {cat.monthlyValues.map((v, idx) => (
                               <React.Fragment key={`exp-${cat.id}-${idx}`}>
@@ -707,11 +836,15 @@ export const BudgetPage: React.FC = () => {
                                 </td>
                                 {sub.monthlyValues.map((sv, sIdx) => (
                                   <React.Fragment key={`sub-val-exp-${sub.id}-${sIdx}`}>
-                                    <td className="p-1.5 text-right text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums">-</td>
+                                    <td className="p-1.5 text-right text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums">
+                                      {sv.plan > 0 ? formatCurrency(sv.plan, user.currency, !user.showValues) : '-'}
+                                    </td>
                                     <td className="p-1.5 text-right text-slate-600 dark:text-slate-300 font-bold min-w-[90px] whitespace-nowrap tabular-nums">
                                       {formatCurrency(sv.real, user.currency, !user.showValues)}
                                     </td>
-                                    <td className="p-1.5 text-right text-slate-400 min-w-[90px] whitespace-nowrap tabular-nums">-</td>
+                                    <td className="p-1.5 text-right text-slate-400 min-w-[90px] whitespace-nowrap tabular-nums">
+                                      {sv.plan > 0 ? formatCurrency(sv.dif, user.currency, !user.showValues) : '-'}
+                                    </td>
                                   </React.Fragment>
                                 ))}
                               </tr>
@@ -1218,13 +1351,22 @@ export const BudgetPage: React.FC = () => {
         <Modal
           isOpen={isCategoryModalOpen}
           onClose={() => setIsCategoryModalOpen(false)}
-          title="Definir Teto da Categoria"
+          title="Definir Planejado / Teto da Categoria"
         >
           <form
             onSubmit={e => {
               e.preventDefault();
               const limitNum = parseFloat(categoryBudgetLimit) || 0;
-              setCategoryBudget(selectedCatId, limitNum, currentMonthPrefix);
+              const targetYear = viewMode === 'matrix' ? selectedMatrixYear : viewDate.getFullYear();
+              if (applyToAllMonths) {
+                // Replicate to all 12 months of the year
+                for (let i = 1; i <= 12; i++) {
+                  const mm = String(i).padStart(2, '0');
+                  setCategoryBudget(selectedCatId, limitNum, `${targetYear}-${mm}`);
+                }
+              } else {
+                setCategoryBudget(selectedCatId, limitNum, currentMonthPrefix);
+              }
               setIsCategoryModalOpen(false);
             }}
             className="space-y-4"
@@ -1233,17 +1375,29 @@ export const BudgetPage: React.FC = () => {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
               <select
                 value={selectedCatId}
-                onChange={e => setSelectedCatId(e.target.value)}
+                onChange={e => {
+                  setSelectedCatId(e.target.value);
+                  const cat = categories.find(c => c.id === e.target.value);
+                  const currentPlan = getCategoryPlanned(e.target.value, currentMonthPrefix, cat?.type === 'income' ? 'income' : 'expense');
+                  setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
+                }}
                 className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
               >
-                {expenseCategories.map(c => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
+                <optgroup label="Despesas (Saídas)">
+                  {expenseCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Receitas (Entradas)">
+                  {incomeCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Limite Máximo para o Mês</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Planejado Mensal (R$)</label>
               <input
                 type="number"
                 step="10"
@@ -1255,12 +1409,32 @@ export const BudgetPage: React.FC = () => {
               />
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+              <input
+                type="checkbox"
+                id="applyAllMonths"
+                checked={applyToAllMonths}
+                onChange={e => setApplyToAllMonths(e.target.checked)}
+                className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600"
+              />
+              <label htmlFor="applyAllMonths" className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                Replicar planejado para todos os 12 meses de {viewMode === 'matrix' ? selectedMatrixYear : viewDate.getFullYear()}
+              </label>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="px-4 py-2.5 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
                 className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
               >
-                Salvar Limite
+                Salvar Planejamento
               </button>
             </div>
           </form>

@@ -1026,7 +1026,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (existing) {
         return prev.map(b => (b.id === existing.id ? { ...b, limit: round2(limit) } : b));
       }
-      return [...prev, { id: `bdg-${Date.now()}`, categoryId, limit: round2(limit), month: targetMonth }];
+      return [...prev, { id: `bdg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, categoryId, limit: round2(limit), month: targetMonth }];
     });
   };
 
