@@ -1,25 +1,25 @@
 {
-  "version": "1.1.38",
-  "latestVersion": "1.1.38",
+  "version": "1.1.39",
+  "latestVersion": "1.1.39",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-08",
-  "notes": "Novidades da v1.1.38: Persistência permanente em disco dos códigos de recuperação, intercompatibilidade de e-mail (Hotmail/Gmail) e blindagem contra envios inválidos.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.38/finly-v1.1.38.apk",
+  "notes": "Novidades da v1.1.39: Limpeza atômica e definitiva de dados financeiros sincronizada entre dispositivo, Supabase (banco de dados) e servidor, com trava anti-reversão de auto-sync.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.39/finly-v1.1.39.apk",
   "isLatest": true,
   "sections": {
     "features": [
+      "Limpeza Definitiva de Dados: apaga de forma atômica e coordenada todas as transações, orçamentos, metas e contas bancárias no armazenamento local, na nuvem e no servidor VPS",
+      "Trava de Sincronização: bloqueio contra ressurgimento de dados antigos por pulso em segundo plano após o reset",
       "Histórico Permanente de Notificações: suas notificações ficam salvas no histórico até você clicar em limpar tudo ou apagar individualmente",
-      "Som Interno no Celular: áudio finly_chime.wav integrado ao canal de notificação nativo do Android",
-      "Donut Chart Moderno: cantos arredondados, hub central interativo com filtros de gastos Fixos e Variáveis",
-      "Padronização de Datas: formato estritamente brasileiro DD/MM e DD/MM/AAAA em todas as listas e detalhes"
+      "Som Interno no Celular: áudio finly_chime.wav integrado ao canal de notificação nativo do Android"
     ],
     "fixes": [
-      "Tutorial Mobile: orientação correta de acesso ao Planejamento pela aba Mais na barra de navegação",
-      "Sincronização Remota: preservação das notificações do usuário durante sync com Supabase e API"
+      "Limpar Dados Financeiros: resolvido o problema em que os dados voltavam após a limpeza devido ao auto-sync em segundo plano",
+      "Sincronização Remota: sincronização atômica e sequencial de tabelas no Supabase para evitar conflitos de integridade"
     ],
     "improvements": [
-      "Lixeira individual em cada notificação e filtros por abas Todas e Não Lidas",
-      "Card de acesso rápido ao Histórico de Notificações na aba Mais do app móvel"
+      "Feedback visual com spinner animado e toast de confirmação ao limpar dados",
+      "Diferenciação clara entre Limpar Cache do Navegador e Limpar Dados Financeiros em Configurações"
     ]
   },
   "highlights": [

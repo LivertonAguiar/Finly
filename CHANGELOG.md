@@ -3,6 +3,25 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.39] - 2026-09-08
+
+### 🛡️ Atomicidade da Limpeza de Dados & Sincronização em 3 Camadas
+- **Limpeza Completa em 3 Camadas Persistentes (Local, Banco e Servidor)**:
+  - Implementação da exclusão coordenada de dados financeiros em:
+    1. **LocalStorage / Cache do Navegador**: Limpeza cirúrgica das chaves locais com inicialização atômica da conta padrão.
+    2. **Banco de Dados Supabase**: Exclusão sequencial relacional no cliente e bypass administrativo via `supabaseAdmin` no servidor (8 tabelas: transações, cartões de crédito, orçamentos, metas, dívidas, investimentos, notificações e contas).
+    3. **Servidor VPS (Oracle Cloud)**: Criação do endpoint `DELETE /api/user/store` com reescrita atômica em disco (`stores/{userId}.json`), garantindo que os dados remotos não voltem a ser servidos.
+- **Trava Anti-Reversão de Sincronização (`isResettingRef`)**:
+  - Prevenção definitiva de *race conditions*: o polling em segundo plano (`pullData` a cada 20 segundos) e a revalidação por foco de janela (`refreshData`) são bloqueados durante e imediatamente após a limpeza.
+  - Elimina o problema onde os dados sumiam momentaneamente da tela e reapareciam logo em seguida ao serem repuxados da nuvem.
+- **Distinção Clara na Interface de Configurações (`SettingsPage.tsx`)**:
+  - Renomeação da ação para **"Limpar Dados Financeiros"** com descrição objetiva: *"Apaga transações, metas, dívidas e orçamentos para recomeçar do zero"*, separando-a de "Limpar Cache" da aplicação.
+  - Feedback visual aprimorado com indicador de progresso (spinner) no botão de confirmação e toast de sucesso verde.
+- **Exportação e Backup de Segurança**:
+  - Implementação do método `exportBackupJSON` exportando o estado financeiro consolidado antes de qualquer operação destrutiva.
+- **Documentação e Central de Ajuda (`helpCenterData.ts`)**:
+  - Nova pergunta frequente adicionada (`faq-limpar-dados-recomecar`) detalhando passo a passo a diferença entre limpeza de cache do navegador e redefinição total dos dados financeiros para recomeçar do zero.
+
 ## [1.1.38] - 2026-09-08
 
 ### 🔒 Persistência de Recuperação, Intercompatibilidade & Blindagem de E-mail

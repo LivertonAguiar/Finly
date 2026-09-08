@@ -34,10 +34,49 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.37';
+export const CURRENT_VERSION = '1.1.39';
 export const CURRENT_BUILD_DATE = '2026-09-08';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.39',
+    releaseDate: '2026-09-08',
+    summary: 'Limpeza atômica e definitiva de dados financeiros sincronizada entre dispositivo, Supabase (banco de dados) e servidor, com trava anti-reversão de auto-sync.',
+    highlights: [
+      {
+        title: 'Limpeza Definitiva de Dados',
+        description: 'Exclusão coordenada de transações, orçamentos, metas e contas no LocalStorage, Supabase e no arquivo do servidor VPS, impedindo o retorno dos dados.',
+        type: 'fix',
+      },
+      {
+        title: 'Trava Anti-Reversão de Auto-Sync',
+        description: 'Bloqueio do ciclo em segundo plano para não recarregar dados antigos durante e após a execução do reset.',
+        type: 'improvement',
+      },
+      {
+        title: 'Feedback Visual de Limpeza',
+        description: 'Spinner animado de progresso no modal de exclusão e alerta de confirmação em Configurações -> Dados & Sistema.',
+        type: 'visual',
+      },
+    ],
+  },
+  {
+    version: '1.1.38',
+    releaseDate: '2026-09-08',
+    summary: 'Persistência permanente em disco dos códigos de recuperação, intercompatibilidade de e-mail (Hotmail/Gmail) e blindagem contra envios inválidos.',
+    highlights: [
+      {
+        title: 'Persistência de Códigos em Disco',
+        description: 'Armazenamento dos tokens de recuperação no arquivo verification_codes.json no servidor, garantindo sobrevivência a reinicializações.',
+        type: 'fix',
+      },
+      {
+        title: 'Intercompatibilidade Hotmail e Gmail',
+        description: 'Vinculação automática de contas para envio confiável via SMTP Gmail oficial.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.37',
     releaseDate: '2026-09-08',

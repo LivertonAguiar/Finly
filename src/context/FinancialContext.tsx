@@ -163,9 +163,9 @@ interface FinancialContextType {
 
   // Data Management & Backups
   refreshData: () => Promise<void>;
-  clearAppCache: () => void;
-  resetAllUserData: () => void;
-  resetToCleanState: () => void;
+  clearAppCache: () => Promise<void> | void;
+  resetAllUserData: () => Promise<void>;
+  resetToCleanState: () => Promise<void>;
   loadDemoData: () => void;
   exportBackupJSON: () => Promise<void> | void;
   importBackupJSON: (jsonString: string) => boolean;
@@ -213,6 +213,7 @@ function sanitizeStoredData<T>(obj: T): T {
 export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const payingInvoiceLockRef = useRef<Record<string, number>>({});
   const isStoreLoadedForUserIdRef = useRef<string | null>(null);
+  const isResettingRef = useRef<boolean>(false);
 
   const { showUndo } = useUndoToast();
   const { currentUser } = useAuth();
@@ -401,7 +402,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
 
     const pullData = async () => {
-      if (isDemo) return;
+      if (isDemo || isResettingRef.current) return;
 
       // 1. Primary: Supabase PostgreSQL
       if (isSupabaseConfigured()) {
@@ -501,7 +502,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Pull-to-refresh & In-app manual sync handler
   const refreshData = async (): Promise<void> => {
-    if (!currentUser) return;
+    if (!currentUser || isResettingRef.current) return;
     try {
       // 1. Demo account handling: guarantee full realistic demo data
       if (currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com') {
@@ -1267,75 +1268,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return () => window.removeEventListener('finly_in_app_notification', handleInAppNotif);
   }, []);
 
-  // Reset / Clear Data
-  const resetAllUserData = () => {
-    setAccounts([DEFAULT_WALLET_ACCOUNT]);
-    setCards([]);
-    setTransactions([]);
-    setGoals([]);
-    setDebts([]);
-    setBudgets([]);
-    setInvestments([]);
-    localStorage.setItem(userStoreKey, JSON.stringify({
-      accounts: [],
-      cards: [],
-      categories: DEFAULT_CATEGORIES,
-      budgets: [],
-      goals: [],
-      debts: [],
-      investments: [],
-      transactions: [],
-      familyMembers,
-      notifications: [],
-      userProfile: user,
-    }));
-  };
-
-  const clearAppCache = () => {
-    resetAllUserData();
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
-      });
-    }
-    window.location.reload();
-  };
-
-  // Backup & Restore
-  const exportBackupJSON = async () => {
-    const dataToExport: UserStoreData = {
-      accounts,
-      cards,
-      categories,
-      budgets,
-      goals,
-      debts,
-      investments,
-      transactions,
-      familyMembers,
-      notifications,
-      userProfile: user,
-    };
-    const jsonStr = JSON.stringify(dataToExport, null, 2);
-    const filename = `finly-backup-${user.name.toLowerCase().replace(/\s+/g, '-')}-${getTodayString()}.json`;
-    await saveOrShareFile({
-      filename,
-      content: jsonStr,
-      mimeType: 'application/json',
-      dialogTitle: 'Backup Finly (JSON)',
-    });
-  };
-
-  
-  const resetToCleanState = () => {
-    setAccounts([]);
-    setCards([]);
-    setTransactions([]);
-    setBudgets([]);
-    setGoals([]);
-    setDebts([]);
-    setInvestments([]);
-    setCategories(DEFAULT_CATEGORIES);
+  // Reset / Clear Data (hard reset locally, in Supabase and on the server)
+  const resetAllUserData = async () => {
+    isResettingRef.current = true;
 
     const cleanStore: UserStoreData = {
       accounts: [DEFAULT_WALLET_ACCOUNT],
@@ -1347,13 +1282,75 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       investments: [],
       transactions: [],
       familyMembers: [
-        { id: 'fam-1', name: currentUser?.name || 'Liverton', email: currentUser?.email || 'liverton.aguiar@hotmail.com', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
+        { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
       ],
       notifications: [],
       userProfile: user,
     };
 
-    localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
+    // 1. Update React state immediately
+    setAccounts([DEFAULT_WALLET_ACCOUNT]);
+    setCards([]);
+    setTransactions([]);
+    setGoals([]);
+    setDebts([]);
+    setBudgets([]);
+    setInvestments([]);
+    setNotifications([]);
+
+    // 2. Overwrite local storage immediately
+    try {
+      localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
+    } catch (e) {
+      console.error('Error saving clean store to localStorage:', e);
+    }
+
+    if (currentUser) {
+      // 3. Prevent in-flight sync from reviving old data
+      isStoreLoadedForUserIdRef.current = currentUser.id;
+
+      // 4. Wipe all records in Supabase tables
+      if (isSupabaseConfigured()) {
+        try {
+          await supabaseDb.clearUserStore(currentUser.id);
+        } catch (sbErr) {
+          console.warn('Supabase clear store error:', sbErr);
+        }
+      }
+
+      // 5. Reset store on backend server (atomic file write on disk)
+      try {
+        await apiSync.resetServerStore(currentUser.id);
+        apiSync.pushStore(currentUser.id, cleanStore, true);
+      } catch (srvErr) {
+        console.warn('Server reset store error:', srvErr);
+      }
+    }
+
+    // Keep reset lock active for 1.5 seconds to ensure in-flight requests or interval ticks do not revive stale data
+    setTimeout(() => {
+      isResettingRef.current = false;
+    }, 1500);
+  };
+
+  const clearAppCache = async () => {
+    if ('caches' in window) {
+      try {
+        const names = await caches.keys();
+        await Promise.all(names.map(name => caches.delete(name)));
+      } catch (_) {}
+    }
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(r => r.unregister()));
+      } catch (_) {}
+    }
+    window.location.reload();
+  };
+
+  const resetToCleanState = async () => {
+    await resetAllUserData();
   };
 
   const loadDemoData = () => {
@@ -1368,6 +1365,33 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setInvestments(demo.investments);
     setFamilyMembers(demo.familyMembers);
     if (demo.userProfile) setUser(prev => ({ ...prev, ...demo.userProfile }));
+  };
+
+  // Backup & Restore
+  const exportBackupJSON = () => {
+    const dataToExport: UserStoreData = {
+      accounts,
+      cards,
+      categories,
+      budgets,
+      goals,
+      debts,
+      investments,
+      transactions,
+      familyMembers,
+      notifications,
+      userProfile: user,
+    };
+    const jsonStr = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finly-backup-${(user.name || 'usuario').toLowerCase().replace(/\s+/g, '-')}-${getTodayString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const importBackupJSON = (jsonString: string): boolean => {

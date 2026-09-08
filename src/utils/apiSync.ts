@@ -122,6 +122,37 @@ class ApiSyncService {
       this.setStatus('offline');
     }
   }
+
+  // Delete / Reset server store immediately on disk
+  public async resetServerStore(userId: string): Promise<boolean> {
+    try {
+      this.currentUserId = userId;
+      this.pendingPayload = null;
+      if (this.syncTimer) {
+        clearTimeout(this.syncTimer);
+        this.syncTimer = null;
+      }
+
+      this.setStatus('syncing');
+      const res = await fetch(getApiUrl('/api/user/store'), {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+      });
+
+      if (res.ok) {
+        this.setStatus('synced');
+        return true;
+      }
+      this.setStatus('offline');
+      return false;
+    } catch (e) {
+      this.setStatus('offline');
+      return false;
+    }
+  }
 }
 
 export const apiSync = new ApiSyncService();

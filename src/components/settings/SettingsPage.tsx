@@ -69,6 +69,8 @@ export const SettingsPage: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [cacheClearedSuccess, setCacheClearedSuccess] = useState(false);
+  const [isResettingData, setIsResettingData] = useState(false);
+  const [resetSuccessAlert, setResetSuccessAlert] = useState(false);
 
   const handleClearCache = () => {
     setCacheClearedSuccess(true);
@@ -77,9 +79,19 @@ export const SettingsPage: React.FC = () => {
     }, 600);
   };
 
-  const handleConfirmResetData = () => {
-    resetAllUserData();
-    setShowResetConfirmModal(false);
+  const handleConfirmResetData = async () => {
+    setIsResettingData(true);
+    try {
+      await resetAllUserData();
+      setShowResetConfirmModal(false);
+      setResetSuccessAlert(true);
+      setTimeout(() => setResetSuccessAlert(false), 5000);
+    } catch (err) {
+      console.error('Erro ao resetar dados:', err);
+      setShowResetConfirmModal(false);
+    } finally {
+      setIsResettingData(false);
+    }
   };
 
   // Preference fields
@@ -1241,6 +1253,13 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
 
+            {resetSuccessAlert && (
+              <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 border border-emerald-200 dark:border-emerald-800 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Todos os dados financeiros foram limpos com sucesso no dispositivo, na nuvem e no servidor!</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               {/* Limpar Cache */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-between">
@@ -1257,20 +1276,20 @@ export const SettingsPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Excluir Meus Dados */}
+              {/* Limpar Meus Dados */}
               <div className="p-4 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-between">
                 <div>
-                  <h5 className="text-xs font-bold text-rose-800 dark:text-rose-300">Excluir Meus Dados</h5>
+                  <h5 className="text-xs font-bold text-rose-800 dark:text-rose-300">Limpar Dados Financeiros</h5>
                   <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">
-                    Remove transações, metas, dívidas e orçamentos
+                    Apaga transações, metas, dívidas e orçamentos para recomeçar do zero
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowResetConfirmModal(true)}
-                  className="px-3.5 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer shrink-0 ml-2"
                 >
-                  Excluir
+                  Limpar Dados
                 </button>
               </div>
             </div>
@@ -1298,8 +1317,8 @@ export const SettingsPage: React.FC = () => {
       {/* Confirm Reset Data Modal */}
       <Modal
         isOpen={showResetConfirmModal}
-        onClose={() => setShowResetConfirmModal(false)}
-        title="Confirmar Exclusão de Dados"
+        onClose={() => !isResettingData && setShowResetConfirmModal(false)}
+        title="Confirmar Limpeza de Dados"
         maxWidth="md"
       >
         <div className="space-y-4">
@@ -1310,23 +1329,32 @@ export const SettingsPage: React.FC = () => {
 
           <p className="text-xs text-slate-600 dark:text-slate-400">
             Você tem certeza que deseja excluir todas as suas transações, orçamentos, metas e dívidas?
-            As suas contas bancárias serão zeradas para um novo recomeço.
+            As informações serão limpas permanentemente do seu dispositivo, da nuvem e do servidor para um recomeço limpo.
           </p>
 
           <div className="pt-2 flex justify-end gap-2">
             <button
               type="button"
+              disabled={isResettingData}
               onClick={() => setShowResetConfirmModal(false)}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleConfirmResetData}
-              className="px-5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md cursor-pointer"
+              disabled={isResettingData}
+              className="flex items-center gap-2 px-5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white rounded-xl shadow-md cursor-pointer transition-all"
             >
-              Confirmar Exclusão
+              {isResettingData ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Limpando Dados...</span>
+                </>
+              ) : (
+                <span>Confirmar Limpeza</span>
+              )}
             </button>
           </div>
         </div>

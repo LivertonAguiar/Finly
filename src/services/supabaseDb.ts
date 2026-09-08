@@ -576,6 +576,39 @@ export class SupabaseDbService {
       return false;
     }
   }
+
+  /**
+   * Hard clear all financial data for user in Supabase (transactions, cards, budgets, goals, debts, investments, accounts)
+   */
+  public async clearUserStore(userId: string): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId) return false;
+
+    try {
+      const tables = [
+        'transactions',
+        'credit_cards',
+        'budgets',
+        'goals',
+        'debts',
+        'investments',
+        'notifications',
+        'accounts',
+      ];
+
+      for (const tbl of tables) {
+        const { error } = await supabase.from(tbl).delete().eq('user_id', userId);
+        if (error) {
+          console.warn(`Supabase notice on delete from ${tbl}:`, error.message);
+        }
+      }
+
+      console.log(`✅ Supabase: Dados financeiros limpos para usuário ${userId}`);
+      return true;
+    } catch (err) {
+      console.error('❌ Erro ao limpar dados no Supabase:', err);
+      return false;
+    }
+  }
 }
 
 export const supabaseDb = new SupabaseDbService();

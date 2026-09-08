@@ -501,4 +501,11 @@ export const HELP_FAQS: HelpFaqItem[] = [
     category: 'configuracoes',
     tags: ['recuperar', 'senha', 'codigo', 'token', 'login', 'email'],
   },
+  {
+    id: 'faq-limpar-dados-recomecar',
+    question: 'Como limpar todos os dados para recomeçar do zero? Qual a diferença de Limpar Cache?',
+    answer: 'Em Configurações -> Dados & Sistema, você tem duas opções distintas: 1) "Limpar Cache", que apaga apenas arquivos temporários do navegador/PWA e recarrega a página sem tocar em seus lançamentos; e 2) "Limpar Dados Financeiros", que apaga com segurança e de forma atômica todas as transações, cartões, dívidas, metas e orçamentos no aparelho, no banco de dados da nuvem e no servidor, zerando as contas para você recomeçar do zero.',
+    category: 'configuracoes',
+    tags: ['limpar dados', 'excluir dados', 'reset', 'recomecar', 'cache', 'sistema'],
+  },
 ];

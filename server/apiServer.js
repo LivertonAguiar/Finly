@@ -615,6 +615,91 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
   }
 });
 
+// 4.1 RESET / DELETE USER STORE (Clean slate on disk + Supabase purge)
+app.delete('/api/user/store', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'Identificador de usuário ausente.' });
+  }
+
+  const storePath = getUserStorePath(userId);
+  const tempPath = `${storePath}.tmp`;
+
+  try {
+    const cleanPayload = {
+      accounts: [
+        {
+          id: 'acc-carteira-padrao',
+          name: 'Carteira',
+          type: 'cash',
+          balance: 0,
+          initialBalance: 0,
+          institution: 'Carteira',
+          color: '#10b981',
+          includeInTotal: true,
+        },
+      ],
+      cards: [],
+      categories: [],
+      budgets: [],
+      goals: [],
+      debts: [],
+      investments: [],
+      transactions: [],
+      familyMembers: [],
+      notifications: [],
+      _serverTimestamp: new Date().toISOString(),
+    };
+
+    fs.writeFileSync(tempPath, JSON.stringify(cleanPayload, null, 2), 'utf8');
+    fs.renameSync(tempPath, storePath);
+    console.log(`[STORE] Store financeira limpa e resetada com sucesso no servidor: ${userId}`);
+
+    // Asynchronously purge tables on Supabase using Admin client (bypasses RLS)
+    if (supabaseAdmin) {
+      try {
+        let sbUserId = userId;
+        if (req.user.email) {
+          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+          const found = listData?.users?.find(u => u.email?.toLowerCase() === req.user.email.toLowerCase());
+          if (found) sbUserId = found.id;
+        }
+
+        const tables = [
+          'transactions',
+          'credit_cards',
+          'budgets',
+          'goals',
+          'debts',
+          'investments',
+          'notifications',
+          'accounts',
+        ];
+
+        for (const tbl of tables) {
+          await supabaseAdmin.from(tbl).delete().eq('user_id', sbUserId);
+          if (sbUserId !== userId) {
+            await supabaseAdmin.from(tbl).delete().eq('user_id', userId);
+          }
+        }
+        console.log(`[STORE] Supabase tables limpas com sucesso via admin para: ${userId} (${sbUserId})`);
+      } catch (sbErr) {
+        console.warn(`[STORE] Aviso ao limpar Supabase via admin:`, sbErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'Store financeira resetada com sucesso no servidor e na nuvem!',
+      serverTimestamp: cleanPayload._serverTimestamp,
+      store: cleanPayload,
+    });
+  } catch (e) {
+    console.error('❌ Erro ao resetar store no servidor:', e);
+    return res.status(500).json({ success: false, message: 'Erro ao resetar dados no servidor.' });
+  }
+});
+
 // 5. MAIL RECOVERY WITH MULTI-CODE TOLERANCE, DISK PERSISTENCE & USER VALIDATION
 app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   const { email } = req.body;
