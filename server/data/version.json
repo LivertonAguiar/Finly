@@ -1,10 +1,10 @@
 {
-  "version": "1.1.34",
-  "latestVersion": "1.1.34",
+  "version": "1.1.36",
+  "latestVersion": "1.1.36",
   "minSupportedVersion": "1.0.0",
-  "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.34: Histórico permanente de notificações com limpeza manual, som interno do app no celular, donut chart de categorias moderno e responsivo, datas brasileiras padronizadas e tutorial mobile atualizado.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.34/finly-v1.1.34.apk",
+  "releaseDate": "2026-09-08",
+  "notes": "Novidades da v1.1.36: Gráfico donut otimizado no mobile sem foco indesejado, aba Sobre limpa com download de APK exclusivo para Android.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.36/finly-v1.1.36.apk",
   "isLatest": true,
   "sections": {
     "features": [
