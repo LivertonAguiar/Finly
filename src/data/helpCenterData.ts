@@ -395,6 +395,39 @@ export const HELP_GUIDES: HelpGuide[] = [
     ],
     relatedFaqIds: ['faq-atualizacao-android', 'faq-offline'],
   },
+  {
+    id: 'seguranca-senha-biometria',
+    title: 'Como alterar sua senha e ativar o bloqueio por digital/PIN',
+    category: 'configuracoes',
+    categoryLabel: 'Configurações & Segurança',
+    summary: 'Aprenda onde gerenciar sua senha de acesso, ativar o bloqueio por código PIN de 4 dígitos e cadastrar sua digital (TouchID/FaceID) no Finly.',
+    readTime: '2 min',
+    badge: 'Segurança',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Acessar Meu Perfil',
+        description: 'Toda a gestão de segurança pessoal, credenciais e biometria está centralizada na aba Meu Perfil.',
+        webInstruction: 'Clique no seu avatar ou nome no topo da tela ou na barra lateral para acessar "Meu Perfil".',
+        androidInstruction: 'Acesse o menu inferior ou lateral e toque em "Perfil" ou no seu nome de usuário.',
+      },
+      {
+        stepNumber: 2,
+        title: 'Ativar o Bloqueio Biométrico & PIN',
+        description: 'Proteja a abertura do Finly sempre que sair do aplicativo.',
+        webInstruction: 'No cartão "Bloqueio Biométrico & PIN", marque a caixa de seleção e defina um código PIN numérico de 4 dígitos. Se o seu dispositivo tiver sensor biométrico ou Windows Hello, ative a opção de digital.',
+        androidInstruction: 'Ative a chave "Bloqueio Biométrico & PIN". Defina seu código PIN e confirme a leitura da sua impressão digital quando solicitado pelo Android.',
+      },
+      {
+        stepNumber: 3,
+        title: 'Alterar a Senha da Conta',
+        description: 'Atualize sua senha periodicamente para manter sua conta blindada.',
+        webInstruction: 'No cartão "Segurança & Alteração de Senha", informe sua senha atual, digite a nova senha desejada e confirme. Clique em "Atualizar Senha".',
+        androidInstruction: 'Role até o cartão "Segurança & Alteração de Senha", preencha a senha atual e a nova senha, e toque em "Atualizar Senha".',
+      },
+    ],
+    relatedFaqIds: ['faq-alterar-senha-biometria', 'faq-seguranca-dados'],
+  },
 ];
 
 export const HELP_FAQS: HelpFaqItem[] = [
@@ -453,5 +486,12 @@ export const HELP_FAQS: HelpFaqItem[] = [
     answer: 'Sim! Graças à arquitetura PWA e Capacitor com banco de dados local IndexedDB / SQLite, você pode registrar gastos, consultar faturas e navegar pelo app mesmo sem conexão com a internet. Assim que o sinal for restabelecido, os dados são sincronizados automaticamente.',
     category: 'mobile_web',
     tags: ['offline', 'internet', 'sincronizacao'],
+  },
+  {
+    id: 'faq-alterar-senha-biometria',
+    question: 'Onde altero minha senha ou configuro a impressão digital/PIN?',
+    answer: 'Acesse a aba "Meu Perfil" (clicando no seu nome ou avatar no topo/menu). Lá você encontra dois módulos dedicados: "Bloqueio Biométrico & PIN", para exigir digital ou código PIN de 4 dígitos ao abrir o app, e "Segurança & Alteração de Senha", para atualizar sua senha de acesso informando a senha atual.',
+    category: 'configuracoes',
+    tags: ['senha', 'biometria', 'digital', 'pin', 'seguranca', 'perfil'],
   },
 ];

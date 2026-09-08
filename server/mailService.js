@@ -68,30 +68,37 @@ app.post('/api/send-recovery-code', async (req, res) => {
 
   const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
-    from: `"Finly - Suporte & Segurança" <${senderEmail}>`,
+    from: `"Finly - Segurança & Acesso" <${senderEmail}>`,
     to: email,
-    subject: `Seu código de recuperação Finly: ${code}`,
+    subject: `Seu código de verificação Finly: ${code}`,
     html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0f172a; border-radius: 24px; color: #f8fafc; border: 1px solid #1e293b;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <div style="display: inline-block; background-color: #007a4d; color: #ffffff; width: 48px; height: 48px; border-radius: 16px; font-size: 26px; font-weight: 900; line-height: 48px; text-align: center;">P</div>
-          <h2 style="color: #ffffff; font-size: 22px; font-weight: 900; margin: 12px 0 4px 0; letter-spacing: -0.5px;">Planner<span style="color: #34d399;">Fin</span></h2>
-          <p style="color: #94a3b8; font-size: 13px; margin: 0;">Recuperação e Alteração de Senha</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 36px 28px; background-color: #121215; border-radius: 28px; color: #f8fafc; border: 1px solid #27272a; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+        <!-- Header with Finly Logo -->
+        <div style="text-align: center; margin-bottom: 28px;">
+          <div style="display: inline-block; background: linear-gradient(135deg, #6366f1, #7c3aed, #a855f7); color: #ffffff; width: 52px; height: 52px; border-radius: 18px; font-size: 28px; font-weight: 900; line-height: 52px; text-align: center; box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);">F</div>
+          <h2 style="color: #ffffff; font-size: 24px; font-weight: 900; margin: 14px 0 4px 0; letter-spacing: -0.5px;">Fin<span style="color: #a78bfa;">ly</span></h2>
+          <p style="color: #a1a1aa; font-size: 13px; margin: 0; font-weight: 500;">Segurança & Gestão Financeira Inteligente</p>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(0,122,77,0.15), rgba(16,185,129,0.05)); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
-          <p style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 0;">SEU CÓDIGO DE SEGURANÇA:</p>
-          <div style="font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #ffffff; font-family: monospace;">${code}</div>
-          <p style="font-size: 11px; color: #64748b; margin: 10px 0 0 0;">Válido por 15 minutos</p>
+        <!-- Code Box -->
+        <div style="background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.06)); border: 1px solid rgba(168,85,247,0.35); border-radius: 20px; padding: 26px 20px; text-align: center; margin-bottom: 24px;">
+          <p style="font-size: 11px; color: #c084fc; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 10px 0;">SEU CÓDIGO DE VERIFICAÇÃO:</p>
+          <div style="font-size: 40px; font-weight: 900; letter-spacing: 10px; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-shadow: 0 2px 10px rgba(124,58,237,0.5);">${code}</div>
+          <p style="font-size: 11px; color: #71717a; margin: 12px 0 0 0;">⏱️ Válido por 15 minutos</p>
         </div>
 
-        <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;">
-          Você solicitou a alteração de senha da sua conta Finly. Digite o código de 6 dígitos no aplicativo para continuar.
+        <!-- Message Body -->
+        <p style="font-size: 13px; color: #d4d4d8; line-height: 1.6; margin-bottom: 24px; text-align: center;">
+          Você solicitou a alteração de senha da sua conta <strong>Finly</strong>. Digite o código de 6 dígitos no aplicativo para confirmar sua identidade e definir uma nova senha.
         </p>
 
-        <div style="border-top: 1px solid #1e293b; padding-top: 16px; text-align: center;">
-          <p style="font-size: 11px; color: #64748b; margin: 0;">
-            Se você não solicitou esta alteração, ignore este e-mail com segurança.
+        <!-- Security Footer -->
+        <div style="border-top: 1px solid #27272a; padding-top: 18px; text-align: center;">
+          <p style="font-size: 11px; color: #71717a; margin: 0; line-height: 1.5;">
+            🛡️ Se você não realizou esta solicitação, desconsidere esta mensagem. Sua conta permanece 100% protegida.
+          </p>
+          <p style="font-size: 10px; color: #52525b; margin: 8px 0 0 0;">
+            © Finly. Todos os direitos reservados.
           </p>
         </div>
       </div>

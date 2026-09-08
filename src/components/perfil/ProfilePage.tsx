@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   User,
   Shield,
@@ -15,11 +15,29 @@ import {
   FileJson,
   Users,
   Lock,
+  Fingerprint,
+  Clock,
+  Trash2,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { Trash2, Sparkles, RefreshCw } from 'lucide-react';
+import { PinSetupModal } from '../common/PinSetupModal';
+import {
+  isSecurityLockEnabled,
+  isPinConfigured,
+  setSecurityLockEnabled,
+  isBiometricSupported,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  getLockTimeoutMinutes,
+  setLockTimeoutMinutes,
+  authenticateWithBiometrics,
+  getBiometricStatus,
+  BiometricStatusInfo,
+} from '../../utils/securityManager';
 
 export const ProfilePage: React.FC = () => {
   const { user, updateUser, toggleTheme, exportBackupJSON, importBackupJSON, resetToCleanState, loadDemoData } = useFinancial();
@@ -38,6 +56,62 @@ export const ProfilePage: React.FC = () => {
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [passAlert, setPassAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isChangingPass, setIsChangingPass] = useState(false);
+
+  // Security / PIN / Biometrics states
+  const [pinEnabled, setPinEnabled] = useState(isSecurityLockEnabled());
+  const [pinConfigured, setPinConfigured] = useState(isPinConfigured());
+  const [biometricEnabled, setBiometricEnabledState] = useState(isBiometricEnabled());
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricStatus, setBiometricStatus] = useState<BiometricStatusInfo>({ supported: false, enrolled: false });
+  const [lockTimeout, setLockTimeout] = useState(getLockTimeoutMinutes());
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+  useEffect(() => {
+    getBiometricStatus().then(status => {
+      setBiometricStatus(status);
+      setBiometricSupported(status.supported && status.enrolled);
+      if (!status.supported || !status.enrolled) {
+        setBiometricEnabledState(false);
+        setBiometricEnabled(false);
+      }
+    });
+  }, []);
+
+  const handleTogglePin = (checked: boolean) => {
+    if (checked) {
+      if (!isPinConfigured()) {
+        setIsPinModalOpen(true);
+      } else {
+        setSecurityLockEnabled(true);
+        setPinEnabled(true);
+      }
+    } else {
+      setSecurityLockEnabled(false);
+      setPinEnabled(false);
+    }
+  };
+
+  const handleToggleBiometric = async (checked: boolean) => {
+    if (checked) {
+      const success = await authenticateWithBiometrics();
+      if (success) {
+        setBiometricEnabled(true);
+        setBiometricEnabledState(true);
+      } else {
+        setBiometricEnabled(false);
+        setBiometricEnabledState(false);
+      }
+    } else {
+      setBiometricEnabled(false);
+      setBiometricEnabledState(false);
+    }
+  };
+
+  const handleChangeTimeout = (mins: number) => {
+    setLockTimeout(mins);
+    setLockTimeoutMinutes(mins);
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,19 +127,35 @@ export const ProfilePage: React.FC = () => {
     e.preventDefault();
     setPassAlert(null);
 
+    if (!currentPass) {
+      setPassAlert({ type: 'error', message: 'Informe sua senha atual.' });
+      return;
+    }
+    if (newPass.length < 6) {
+      setPassAlert({ type: 'error', message: 'A nova senha deve ter pelo menos 6 caracteres.' });
+      return;
+    }
     if (newPass !== confirmPass) {
       setPassAlert({ type: 'error', message: 'A nova senha e a confirmação não coincidem.' });
       return;
     }
 
-    const res = await changePassword(currentPass, newPass);
-    if (res.success) {
-      setPassAlert({ type: 'success', message: res.message });
-      setCurrentPass('');
-      setNewPass('');
-      setConfirmPass('');
-    } else {
-      setPassAlert({ type: 'error', message: res.message });
+    setIsChangingPass(true);
+    try {
+      const res = await changePassword(currentPass, newPass);
+      if (res.success) {
+        setPassAlert({ type: 'success', message: res.message });
+        setCurrentPass('');
+        setNewPass('');
+        setConfirmPass('');
+      } else {
+        setPassAlert({ type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setPassAlert({ type: 'error', message: err.message || 'Erro ao alterar senha.' });
+    } finally {
+      setIsChangingPass(false);
+      setTimeout(() => setPassAlert(null), 5000);
     }
   };
 
@@ -114,13 +204,13 @@ export const ProfilePage: React.FC = () => {
       {/* 1. Profile Form */}
       <form onSubmit={handleSaveProfile} className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-5">
         <div className="flex items-center gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="w-16 h-16 rounded-full bg-[#007a4d] text-white font-black text-2xl flex items-center justify-center uppercase shadow-md">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-600 to-violet-500 text-white font-black text-2xl flex items-center justify-center uppercase shadow-md shadow-purple-500/20">
             {(name || 'U').charAt(0)}
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{name}</h3>
             <p className="text-xs text-slate-400">{email}</p>
-            <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+            <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400">
               {currentUser?.role === 'admin' ? 'Titular Administrador' : 'Membro da Família'}
             </span>
           </div>
@@ -162,17 +252,124 @@ export const ProfilePage: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-xl bg-[#007a4d] hover:bg-[#006640] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer"
           >
             Salvar Perfil
           </button>
         </div>
       </form>
 
-      {/* 2. Change Password Section */}
+      {/* 2. Bloqueio Biométrico & PIN */}
+      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Fingerprint className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                Bloqueio Biométrico & PIN
+              </h3>
+              <p className="text-xs text-slate-400">
+                Proteja o acesso e abertura do Finly com código PIN ou biometria / digital
+              </p>
+            </div>
+          </div>
+
+          <input
+            type="checkbox"
+            checked={pinEnabled}
+            onChange={e => handleTogglePin(e.target.checked)}
+            className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
+          />
+        </div>
+
+        {pinEnabled && (
+          <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  Código PIN de Acesso
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {pinConfigured ? 'PIN de 4 dígitos configurado' : 'Nenhum PIN definido ainda'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPinModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 transition-colors cursor-pointer"
+              >
+                {pinConfigured ? 'Alterar PIN' : 'Definir PIN'}
+              </button>
+            </div>
+
+            {/* Biometrics Toggle if supported */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Fingerprint className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    Desbloqueio por Biometria / Impressão Digital
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    {biometricSupported
+                      ? 'TouchID, FaceID ou impressão digital ativa'
+                      : biometricStatus.reason || 'Sensor biométrico não disponível neste aparelho'}
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                disabled={!biometricSupported}
+                checked={biometricEnabled}
+                onChange={e => handleToggleBiometric(e.target.checked)}
+                className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600 disabled:opacity-40"
+              />
+            </div>
+
+            {/* Inactivity Timeout */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate-400" />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    Bloquear Automaticamente
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Tempo de inatividade após sair do app
+                  </span>
+                </div>
+              </div>
+              <select
+                value={lockTimeout}
+                onChange={e => handleChangeTimeout(parseInt(e.target.value, 10))}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <option value={0}>Imediatamente</option>
+                <option value={1}>Após 1 minuto</option>
+                <option value={5}>Após 5 minutos</option>
+                <option value={15}>Após 15 minutos</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <PinSetupModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={() => {
+          setPinConfigured(true);
+          setPinEnabled(true);
+          setBiometricEnabledState(isBiometricEnabled());
+        }}
+      />
+
+      {/* 3. Change Password Section */}
       <form onSubmit={handleChangePassword} className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center gap-2">
-          <Lock className="w-5 h-5 text-emerald-600" />
+          <Lock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Segurança & Alteração de Senha</h3>
         </div>
         <p className="text-xs text-slate-400 -mt-2">
@@ -231,9 +428,10 @@ export const ProfilePage: React.FC = () => {
         <div className="pt-2 flex justify-end">
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 transition-all cursor-pointer"
+            disabled={isChangingPass}
+            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm shadow-purple-500/20 transition-all cursor-pointer disabled:opacity-50"
           >
-            Atualizar Senha
+            {isChangingPass ? 'Atualizando...' : 'Atualizar Senha'}
           </button>
         </div>
       </form>

@@ -87,7 +87,7 @@ const getInitialTabFromPath = (): string => {
   if (path === 'skills') return 'skills';
   if (path === 'familia' || path === 'family') return 'familia';
   if (path === 'cadastro') return 'cadastro';
-  if (path === 'perfil' || path === 'profile') return 'perfil';
+  if (path === 'perfil' || path === 'profile' || path === 'seguranca' || path === 'security') return 'perfil';
   if (path === 'ajuda' || path === 'help') return 'ajuda';
   return 'dashboard';
 };
@@ -399,10 +399,10 @@ const AppContent: React.FC = () => {
             {activeTab === 'relatorios' && <ReportsPage />}
             {activeTab === 'calendario' && <CalendarPage />}
             {activeTab === 'settings' && <SettingsPage />}
-            {(activeTab === 'mais' || activeTab === 'sobre' || activeTab === 'seguranca') && (
+            {(activeTab === 'mais' || activeTab === 'sobre') && (
               <MorePage
                 setActiveTab={handleSelectTab}
-                initialSubTab={activeTab === 'sobre' ? 'SOBRE' : activeTab === 'seguranca' ? 'SEGURANÇA' : undefined}
+                initialSubTab={activeTab === 'sobre' ? 'SOBRE' : undefined}
               />
             )}
             {activeTab === 'metas' && <GoalsPage />}
