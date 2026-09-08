@@ -13,8 +13,6 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
-  Database,
-  AlertTriangle,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -38,8 +36,6 @@ export const CadastrosPage: React.FC = () => {
     addSubcategory,
     deleteSubcategory,
     resetCategoriesToDefault,
-    clearAppCache,
-    resetAllUserData,
     metrics,
     user,
   } = useFinancial();
@@ -77,21 +73,6 @@ export const CadastrosPage: React.FC = () => {
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-
-  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
-  const [cacheClearedSuccess, setCacheClearedSuccess] = useState(false);
-
-  const handleClearCache = () => {
-    setCacheClearedSuccess(true);
-    setTimeout(() => {
-      clearAppCache();
-    }, 600);
-  };
-
-  const handleConfirmResetData = () => {
-    resetAllUserData();
-    setShowResetConfirmModal(false);
-  };
 
   const [inlineSubName, setInlineSubName] = useState<Record<string, string>>({});
 
@@ -498,88 +479,6 @@ export const CadastrosPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* 5. DADOS & SISTEMA SECTION */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-        <div>
-          <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Database className="w-4 h-4 text-emerald-500" />
-            Dados & Sistema
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Gerencie o cache da aplicação e a integridade dos seus registros
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card: Limpar Cache */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Limpar Cache</h4>
-              <p className="text-[11px] text-slate-400 mt-0.5">Remove dados temporários e recarrega o app</p>
-            </div>
-            <button
-              onClick={handleClearCache}
-              className="px-4 py-2 text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl shadow-sm transition-colors"
-            >
-              {cacheClearedSuccess ? 'Limpando...' : 'Limpar'}
-            </button>
-          </div>
-
-          {/* Card: Excluir Meus Dados */}
-          <div className="p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-between">
-            <div>
-              <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300">Excluir Meus Dados</h4>
-              <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">
-                Remove transações, metas, dívidas e orçamentos
-              </p>
-            </div>
-            <button
-              onClick={() => setShowResetConfirmModal(true)}
-              className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm transition-colors"
-            >
-              Excluir
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Confirm Reset Data Modal */}
-      <Modal
-        isOpen={showResetConfirmModal}
-        onClose={() => setShowResetConfirmModal(false)}
-        title="Confirmar Exclusão de Dados"
-        maxWidth="md"
-      >
-        <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 shrink-0" />
-            <span>Atenção: Esta ação é irreversível!</span>
-          </div>
-
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Você tem certeza que deseja excluir todas as suas transações, orçamentos, metas e dívidas?
-            As suas contas bancárias serão zeradas para um novo recomeço.
-          </p>
-
-          <div className="pt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setShowResetConfirmModal(false)}
-              className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmResetData}
-              className="px-5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md"
-            >
-              Confirmar Exclusão
-            </button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Modals */}
       <AccountModal

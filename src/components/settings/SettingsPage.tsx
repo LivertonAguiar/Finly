@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Fingerprint,
 } from 'lucide-react';
+import { Modal } from '../ui/Modal';
 import { PinSetupModal } from '../common/PinSetupModal';
 import {
   isSecurityLockEnabled,
@@ -61,11 +62,25 @@ import {
 } from '../../utils/notificationEngine';
 
 export const SettingsPage: React.FC = () => {
-  const { user, updateUser, exportBackupJSON, importBackupJSON, resetToCleanState } = useFinancial();
+  const { user, updateUser, exportBackupJSON, importBackupJSON, resetToCleanState, clearAppCache, resetAllUserData } = useFinancial();
   const { currentUser, updateUserAccount, logout, changePassword } = useAuth();
   const { confirm } = useConfirm();
 
   const [successMsg, setSuccessMsg] = useState(false);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+  const [cacheClearedSuccess, setCacheClearedSuccess] = useState(false);
+
+  const handleClearCache = () => {
+    setCacheClearedSuccess(true);
+    setTimeout(() => {
+      clearAppCache();
+    }, 600);
+  };
+
+  const handleConfirmResetData = () => {
+    resetAllUserData();
+    setShowResetConfirmModal(false);
+  };
 
   // Preference fields
   const [selectedLang, setSelectedLang] = useState<SupportedLanguage>((user.language as SupportedLanguage) || 'pt-BR');
@@ -1210,6 +1225,57 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
+          {/* 4. DADOS & SISTEMA */}
+          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                  Dados & Sistema
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Gerencie o cache da aplicação e a integridade dos seus registros
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Limpar Cache */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-between">
+                <div>
+                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">Limpar Cache</h5>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Remove dados temporários e recarrega o app</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearCache}
+                  className="px-3.5 py-1.5 text-xs font-bold bg-white dark:bg-[#222226] border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  {cacheClearedSuccess ? 'Limpando...' : 'Limpar'}
+                </button>
+              </div>
+
+              {/* Excluir Meus Dados */}
+              <div className="p-4 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-between">
+                <div>
+                  <h5 className="text-xs font-bold text-rose-800 dark:text-rose-300">Excluir Meus Dados</h5>
+                  <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">
+                    Remove transações, metas, dívidas e orçamentos
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirmModal(true)}
+                  className="px-3.5 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* 5. SESSÃO & LOGOUT */}
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
             <div>
@@ -1228,6 +1294,43 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirm Reset Data Modal */}
+      <Modal
+        isOpen={showResetConfirmModal}
+        onClose={() => setShowResetConfirmModal(false)}
+        title="Confirmar Exclusão de Dados"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <span>Atenção: Esta ação é irreversível!</span>
+          </div>
+
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Você tem certeza que deseja excluir todas as suas transações, orçamentos, metas e dívidas?
+            As suas contas bancárias serão zeradas para um novo recomeço.
+          </p>
+
+          <div className="pt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowResetConfirmModal(false)}
+              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmResetData}
+              className="px-5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md cursor-pointer"
+            >
+              Confirmar Exclusão
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
