@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 import { hashPassword, verifyPassword, isHashed } from './security/crypto.js';
 import { generateSessionToken, verifySessionToken } from './security/token.js';
 
@@ -30,6 +31,22 @@ if (fs.existsSync(envPath)) {
 const app = express();
 const PORT = process.env.PORT || 3001;
 const APP_SECRET = process.env.APP_SECRET || 'finly_super_secure_vault_secret_2026_k9x2';
+
+// Supabase Admin Client for account & password synchronization
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://finly.lpaguiar.com.br';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let supabaseAdmin = null;
+
+if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+  try {
+    supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    console.log('🛡️ Supabase Admin SDK inicializado para sincronização de contas.');
+  } catch (err) {
+    console.warn('⚠️ Falha ao inicializar Supabase Admin SDK:', err.message);
+  }
+}
 
 // 1. HTTP Security Headers (OWASP Hardening)
 app.disable('x-powered-by');
@@ -167,7 +184,7 @@ const getAppVersionInfo = () => {
     }
   } catch (_) {}
 
-  let fallbackVer = '1.1.36';
+  let fallbackVer = '1.1.37';
   try {
     if (fs.existsSync(PKG_FILE)) {
       const pkg = JSON.parse(fs.readFileSync(PKG_FILE, 'utf8'));
@@ -316,6 +333,26 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
     } catch (e) {}
   }
 
+  // Asynchronously ensure Supabase Auth has the same password if user logged in successfully
+  if (supabaseAdmin) {
+    (async () => {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+        if (sbUser) {
+          await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password });
+        } else {
+          await supabaseAdmin.auth.admin.createUser({
+            email: cleanEmail,
+            password,
+            email_confirm: true,
+            user_metadata: { name: user.name, role: user.role, phone: user.phone },
+          });
+        }
+      } catch (_) {}
+    })();
+  }
+
   // Sanitize user object (never expose password hash)
   return res.json({
     success: true,
@@ -367,6 +404,27 @@ app.post('/api/auth/register', loginLimiter, (req, res) => {
     role: newUser.role,
   }, APP_SECRET);
 
+  // Asynchronously synchronize with Supabase Auth
+  if (supabaseAdmin) {
+    (async () => {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+        if (!sbUser) {
+          await supabaseAdmin.auth.admin.createUser({
+            email: cleanEmail,
+            password,
+            email_confirm: true,
+            user_metadata: { name: newUser.name, role: newUser.role, phone: newUser.phone },
+          });
+          console.log(`[AUTH] Novo usuário sincronizado no Supabase Auth: ${cleanEmail}`);
+        }
+      } catch (err) {
+        console.warn('⚠️ Falha ao sincronizar novo usuário no Supabase:', err.message);
+      }
+    })();
+  }
+
   return res.json({
     success: true,
     token,
@@ -401,6 +459,22 @@ app.post('/api/auth/change-password', authenticateToken, (req, res) => {
 
   user.password = hashPassword(newPassword);
   saveUsers(users);
+
+  // Asynchronously synchronize with Supabase Auth
+  if (supabaseAdmin) {
+    (async () => {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === user.email.toLowerCase());
+        if (sbUser) {
+          await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password: newPassword });
+          console.log(`[AUTH] Senha alterada sincronizada no Supabase Auth para: ${user.email}`);
+        }
+      } catch (err) {
+        console.warn('⚠️ Falha ao sincronizar alteração de senha no Supabase:', err.message);
+      }
+    })();
+  }
 
   return res.json({ success: true, message: 'Senha alterada com sucesso no servidor!' });
 });
@@ -464,7 +538,7 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
   }
 });
 
-// 5. MAIL RECOVERY WITH RATE LIMITING & ATTEMPT THROTTLING
+// 5. MAIL RECOVERY WITH MULTI-CODE TOLERANCE & ATTEMPT THROTTLING
 app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -473,11 +547,23 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
 
   const cleanEmail = email.toLowerCase().trim();
   const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const now = Date.now();
+  const expiresAt = now + 15 * 60 * 1000; // 15 minutes
+
+  // Retrieve existing codes and keep active unexpired ones
+  const existing = verificationCodes.get(cleanEmail);
+  const activeCodes = (existing?.codes || [])
+    .filter(c => c.expiresAt > now)
+    .slice(0, 4);
+
+  activeCodes.unshift({ code, expiresAt });
+
   verificationCodes.set(cleanEmail, {
-    code,
+    codes: activeCodes,
     attempts: 0,
-    expiresAt: Date.now() + 15 * 60 * 1000,
   });
+
+  console.log(`[AUTH] Código de verificação gerado para ${cleanEmail}: ${code}`);
 
   const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
@@ -496,7 +582,7 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
         <!-- Code Box -->
         <div style="background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.06)); border: 1px solid rgba(168,85,247,0.35); border-radius: 20px; padding: 26px 20px; text-align: center; margin-bottom: 24px;">
           <p style="font-size: 11px; color: #c084fc; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 10px 0;">SEU CÓDIGO DE VERIFICAÇÃO:</p>
-          <div style="font-size: 40px; font-weight: 900; letter-spacing: 10px; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-shadow: 0 2px 10px rgba(124,58,237,0.5);">${code}</div>
+          <div style="display: inline-block; font-size: 38px; font-weight: 900; letter-spacing: 6px; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-shadow: 0 2px 10px rgba(124,58,237,0.5); user-select: all; -webkit-user-select: all; padding: 6px 16px; background: rgba(0,0,0,0.35); border-radius: 14px;">${code}</div>
           <p style="font-size: 11px; color: #71717a; margin: 12px 0 0 0;">⏱️ Válido por 15 minutos</p>
         </div>
 
@@ -534,15 +620,25 @@ app.post('/api/verify-code', (req, res) => {
   }
 
   const cleanEmail = email.toLowerCase().trim();
+  const cleanCode = String(code).replace(/\D/g, '').trim();
+
   const record = verificationCodes.get(cleanEmail);
-  if (!record || Date.now() > record.expiresAt) {
+  const now = Date.now();
+  if (!record || !record.codes || record.codes.length === 0) {
     verificationCodes.delete(cleanEmail);
-    return res.status(400).json({ success: false, message: 'Código inválido ou expirado.' });
+    return res.status(400).json({ success: false, message: 'Nenhum código de verificação pendente para este e-mail.' });
   }
 
-  record.attempts = (record.attempts || 0) + 1;
+  record.codes = record.codes.filter(c => c.expiresAt > now);
+  if (record.codes.length === 0) {
+    verificationCodes.delete(cleanEmail);
+    return res.status(400).json({ success: false, message: 'Código de verificação expirado. Solicite um novo código.' });
+  }
 
-  if (record.code !== code.trim()) {
+  const matches = record.codes.some(c => String(c.code).replace(/\D/g, '').trim() === cleanCode);
+
+  if (!matches) {
+    record.attempts = (record.attempts || 0) + 1;
     if (record.attempts >= 5) {
       verificationCodes.delete(cleanEmail);
       return res.status(429).json({
@@ -559,27 +655,37 @@ app.post('/api/verify-code', (req, res) => {
   return res.json({ success: true, message: 'Código validado com sucesso!' });
 });
 
-app.post('/api/reset-password', (req, res) => {
+app.post('/api/reset-password', async (req, res) => {
   const { email, code, newPassword } = req.body;
   if (!email || !code || !newPassword) {
     return res.status(400).json({ success: false, message: 'E-mail, código e nova senha são obrigatórios.' });
   }
 
   const cleanEmail = email.toLowerCase().trim();
+  const cleanCode = String(code).replace(/\D/g, '').trim();
+
   const record = verificationCodes.get(cleanEmail);
-  if (!record || Date.now() > record.expiresAt) {
+  const now = Date.now();
+  if (!record || !record.codes || record.codes.length === 0) {
     verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Código de verificação inválido ou expirado.' });
   }
 
-  record.attempts = (record.attempts || 0) + 1;
+  record.codes = record.codes.filter(c => c.expiresAt > now);
+  if (record.codes.length === 0) {
+    verificationCodes.delete(cleanEmail);
+    return res.status(400).json({ success: false, message: 'Código expirado. Solicite um novo código.' });
+  }
 
-  if (record.code !== code.trim()) {
+  const matches = record.codes.some(c => String(c.code).replace(/\D/g, '').trim() === cleanCode);
+
+  if (!matches) {
+    record.attempts = (record.attempts || 0) + 1;
     if (record.attempts >= 5) {
       verificationCodes.delete(cleanEmail);
       return res.status(429).json({
         success: false,
-        message: 'Número excessivo de tentativas incorretas. Código cancelado por segurança.',
+        message: 'Número excessivo de tentativas incorretas. Código cancelado por segurança. Solicite um novo código.',
       });
     }
     return res.status(400).json({
@@ -594,9 +700,33 @@ app.post('/api/reset-password', (req, res) => {
     return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
   }
 
+  // 1. Update in Finly users.json
   user.password = hashPassword(newPassword);
   saveUsers(users);
   verificationCodes.delete(cleanEmail);
+  console.log(`[AUTH] Senha redefinida no users.json com sucesso para ${cleanEmail}`);
+
+  // 2. Synchronize with Supabase Auth if Supabase Admin is configured
+  if (supabaseAdmin) {
+    try {
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+      if (sbUser) {
+        await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password: newPassword });
+        console.log(`[AUTH] Senha sincronizada no Supabase Auth para ${cleanEmail}`);
+      } else {
+        await supabaseAdmin.auth.admin.createUser({
+          email: cleanEmail,
+          password: newPassword,
+          email_confirm: true,
+          user_metadata: { name: user.name, role: user.role, phone: user.phone },
+        });
+        console.log(`[AUTH] Usuário criado e sincronizado no Supabase Auth para ${cleanEmail}`);
+      }
+    } catch (sbErr) {
+      console.warn('⚠️ Aviso ao sincronizar redefinição de senha com Supabase:', sbErr.message);
+    }
+  }
 
   return res.json({ success: true, message: 'Senha redefinida com sucesso!' });
 });

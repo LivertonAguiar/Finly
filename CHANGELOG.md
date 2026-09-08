@@ -3,6 +3,23 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.37] - 2026-09-08
+
+### 🔒 Segurança, Autenticação & Recuperação de Senha
+- **Recuperação de Senha Aprimorada & Tolerância a Múltiplos Códigos**:
+  - Correção do erro *"Tentativa 1 de 5"* ao inserir o token de 6 dígitos recebido por e-mail.
+  - Suporte inteligente a múltiplos envios de código na janela de 15 minutos: se o usuário clicar mais de uma vez para recuperar senha, qualquer código ativo gerado dentro do prazo é validado com sucesso.
+  - Higienização automática de espaços, pontuações e hífens (`replace(/\D/g, '')`) ao colar ou digitar o código.
+  - Remoção de truncamento acidental por `maxLength` no navegador antes da limpeza de caracteres.
+  - Adicionado atalho de **"Reenviar código"** diretamente na tela de verificação sem precisar reiniciar o processo.
+  - Auto-login imediato e redirecionamento para o painel após a redefinição bem-sucedida de senha.
+- **Login Resiliente & Sincronização Supabase**:
+  - Fallback automático e transparente: falhas de autenticação no Supabase (como senhas divergentes ou ausência de cadastro) agora caem diretamente para verificação na API Finly, impedindo que o usuário fique bloqueado na tela de login.
+  - Sincronização bidirecional via Supabase Admin SDK: redefinições e alterações de senha no servidor Finly atualizam instantaneamente o Supabase Auth em segundo plano.
+- **Identidade Visual & Menu Meu Perfil**:
+  - Remoção da leve transparência no menu Meu Perfil: agora renderizado com fundo 100% sólido (`bg-[#18181b] border-[#27272a]` no modo escuro e `bg-white border-slate-200` no modo claro).
+  - Padronização do botão de envio na recuperação de senha com o gradiente oficial Finly (`from-purple-600 to-indigo-600`).
+
 ## [1.1.34] - 2026-09-07
 
 ### ✨ Novidades & Funcionalidades

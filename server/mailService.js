@@ -59,17 +59,27 @@ app.post('/api/send-recovery-code', async (req, res) => {
     return res.status(400).json({ success: false, message: 'E-mail é obrigatório.' });
   }
 
-  // Generate 6-digit verification code
+  const cleanEmail = email.toLowerCase().trim();
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  verificationCodes.set(email.toLowerCase().trim(), {
-    code,
-    expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+  const now = Date.now();
+  const expiresAt = now + 15 * 60 * 1000;
+
+  const existing = verificationCodes.get(cleanEmail);
+  const activeCodes = (existing?.codes || [])
+    .filter(c => c.expiresAt > now)
+    .slice(0, 4);
+
+  activeCodes.unshift({ code, expiresAt });
+
+  verificationCodes.set(cleanEmail, {
+    codes: activeCodes,
+    attempts: 0,
   });
 
   const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
     from: `"Finly - Segurança & Acesso" <${senderEmail}>`,
-    to: email,
+    to: cleanEmail,
     subject: `Seu código de verificação Finly: ${code}`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 36px 28px; background-color: #121215; border-radius: 28px; color: #f8fafc; border: 1px solid #27272a; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
@@ -83,7 +93,7 @@ app.post('/api/send-recovery-code', async (req, res) => {
         <!-- Code Box -->
         <div style="background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.06)); border: 1px solid rgba(168,85,247,0.35); border-radius: 20px; padding: 26px 20px; text-align: center; margin-bottom: 24px;">
           <p style="font-size: 11px; color: #c084fc; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 10px 0;">SEU CÓDIGO DE VERIFICAÇÃO:</p>
-          <div style="font-size: 40px; font-weight: 900; letter-spacing: 10px; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-shadow: 0 2px 10px rgba(124,58,237,0.5);">${code}</div>
+          <div style="display: inline-block; font-size: 38px; font-weight: 900; letter-spacing: 6px; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-shadow: 0 2px 10px rgba(124,58,237,0.5); user-select: all; -webkit-user-select: all; padding: 6px 16px; background: rgba(0,0,0,0.35); border-radius: 14px;">${code}</div>
           <p style="font-size: 11px; color: #71717a; margin: 12px 0 0 0;">⏱️ Válido por 15 minutos</p>
         </div>
 
@@ -107,7 +117,7 @@ app.post('/api/send-recovery-code', async (req, res) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Código de recuperação enviado para: ${email}`);
+    console.log(`✅ Código de recuperação enviado para: ${cleanEmail}`);
     return res.json({ success: true, message: 'Código de verificação enviado com sucesso!' });
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail:', error);
@@ -122,17 +132,24 @@ app.post('/api/verify-code', (req, res) => {
     return res.status(400).json({ success: false, message: 'E-mail e código são obrigatórios.' });
   }
 
-  const record = verificationCodes.get(email.toLowerCase().trim());
-  if (!record) {
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanCode = String(code).replace(/\D/g, '').trim();
+
+  const record = verificationCodes.get(cleanEmail);
+  const now = Date.now();
+  if (!record || !record.codes || record.codes.length === 0) {
+    verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Nenhum código solicitado para este e-mail.' });
   }
 
-  if (Date.now() > record.expiresAt) {
-    verificationCodes.delete(email.toLowerCase().trim());
+  record.codes = record.codes.filter(c => c.expiresAt > now);
+  if (record.codes.length === 0) {
+    verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Código expirado. Solicite um novo.' });
   }
 
-  if (record.code !== code.trim()) {
+  const matches = record.codes.some(c => String(c.code).replace(/\D/g, '').trim() === cleanCode);
+  if (!matches) {
     return res.status(400).json({ success: false, message: 'Código incorreto.' });
   }
 

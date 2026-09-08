@@ -34,10 +34,32 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.36';
+export const CURRENT_VERSION = '1.1.37';
 export const CURRENT_BUILD_DATE = '2026-09-08';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.37',
+    releaseDate: '2026-09-08',
+    summary: 'Correção crítica no fluxo de autenticação e recuperação de senha, tolerância a múltiplos códigos com higienização de dígitos, sincronização com Supabase Auth e menu Meu Perfil sólido.',
+    highlights: [
+      {
+        title: 'Recuperação de Senha Aprimorada',
+        description: 'Correção do erro "Tentativa 1 de 5" na validação do token: suporte a múltiplos códigos ativos na janela de 15 minutos, sanitização de espaços e formatação ao colar.',
+        type: 'fix',
+      },
+      {
+        title: 'Login Resiliente & Sincronização Supabase',
+        description: 'Fallback automático e transparente para a API Finly quando credenciais divergem do Supabase, sincronizando senhas em tempo real via Supabase Admin SDK.',
+        type: 'fix',
+      },
+      {
+        title: 'Menu Meu Perfil Sólido',
+        description: 'Remoção de transparência indesejada no dropdown de perfil nos modos escuro e claro, garantindo opacidade total e contraste ideal.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.36',
     releaseDate: '2026-09-08',

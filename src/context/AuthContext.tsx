@@ -183,11 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (error) {
-          // If Supabase returns invalid login credentials or error
-          if (error.message.includes('Invalid login credentials')) {
-            return { success: false, message: 'E-mail ou senha incorretos.' };
-          }
-          console.warn('Supabase login warning:', error.message);
+          console.warn('Supabase login warning, falling back to API server:', error.message);
         } else if (data.user) {
           const u = data.user;
           const loggedUser: AuthUser = {
@@ -401,16 +397,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const requestPasswordReset = async (email: string) => {
     const cleanEmail = email.trim().toLowerCase();
 
-    // If Supabase is configured, trigger Supabase reset password email
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail);
-        if (!error) {
-          return { success: true, message: 'Link de redefinição de senha enviado para seu e-mail!' };
-        }
-      } catch (_) {}
-    }
-
     try {
       const response = await fetch(getApiUrl('/api/send-recovery-code'), {
         method: 'POST',
@@ -438,19 +424,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 2. Verify Reset Code
   const verifyResetCode = async (email: string, code: string) => {
     const cleanEmail = email.trim().toLowerCase();
+    const cleanCode = code.replace(/\D/g, '').trim();
     try {
       const response = await fetch(getApiUrl('/api/verify-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, code }),
+        body: JSON.stringify({ email: cleanEmail, code: cleanCode }),
       });
       const data = await response.json();
       if (data.success) {
         return { success: true, message: 'Código validado com sucesso!' };
       }
+      return { success: false, message: data.message || 'Código de verificação incorreto.' };
     } catch (e) {
       const savedCode = sessionStorage.getItem(`reset_code_${cleanEmail}`);
-      if (savedCode && savedCode === code.trim()) {
+      if (savedCode && savedCode === cleanCode) {
         return { success: true, message: 'Código validado com sucesso!' };
       }
     }
@@ -460,28 +448,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 3. Reset Password (Cryptographic Storage)
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     const cleanEmail = email.trim().toLowerCase();
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (!error) {
-          return { success: true, message: 'Senha atualizada com sucesso no Supabase!' };
-        }
-      } catch (_) {}
-    }
+    const cleanCode = code.replace(/\D/g, '').trim();
 
     try {
       const response = await fetch(getApiUrl('/api/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, code, newPassword }),
+        body: JSON.stringify({ email: cleanEmail, code: cleanCode, newPassword }),
       });
       const data = await response.json();
       if (!data.success) {
         return { success: false, message: data.message || 'Falha ao redefinir senha.' };
       }
     } catch (e) {
-      const verifyRes = await verifyResetCode(email, code);
+      const verifyRes = await verifyResetCode(email, cleanCode);
       if (!verifyRes.success) {
         return { success: false, message: verifyRes.message };
       }

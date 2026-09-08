@@ -231,11 +231,10 @@ export const Header: React.FC<HeaderProps> = ({
               />
 
               <div
-                className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-auto sm:w-96 max-w-sm mx-auto sm:mx-0 bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-slate-200/90 dark:border-white/10 p-3.5 z-50 animate-in fade-in-50 zoom-in-95 backdrop-blur-xl"
-                style={{ backgroundColor: 'var(--app-card-bg, #18181B)' }}
+                className="finly-dropdown-solid fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-auto sm:w-96 max-w-sm mx-auto sm:mx-0 rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-slate-200/90 dark:border-slate-800 p-3.5 z-50 animate-in fade-in-50 zoom-in-95"
               >
                 {/* Header Bar */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-white/10">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-1.5">
                     <Bell className="w-4 h-4 text-purple-500 dark:text-purple-400" />
                     <h4 className="font-black text-xs text-slate-900 dark:text-white">Notificações</h4>
@@ -419,10 +418,9 @@ export const Header: React.FC<HeaderProps> = ({
               />
 
               <div
-                className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-white/10 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1"
-                style={{ backgroundColor: 'var(--app-card-bg, #18181B)' }}
+                className="finly-dropdown-solid absolute right-0 mt-2 w-64 rounded-2xl shadow-2xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1"
               >
-                <div className="p-2.5 border-b border-slate-100 dark:border-white/10">
+                <div className="p-2.5 border-b border-slate-100 dark:border-slate-800">
                 <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
                   {currentUser?.name || user.name}
                 </p>

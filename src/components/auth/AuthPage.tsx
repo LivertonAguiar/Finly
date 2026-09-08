@@ -107,8 +107,13 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
     }
     // 4. VERIFY CODE & RESET PASSWORD
     else if (mode === 'verify') {
-      if (!recoveryCode.trim()) {
+      const cleanCode = recoveryCode.replace(/\D/g, '').trim();
+      if (!cleanCode) {
         setErrorMessage('Digite o código de verificação recebido.');
+        return;
+      }
+      if (cleanCode.length !== 6) {
+        setErrorMessage('O código de verificação deve ter exatamente 6 dígitos.');
         return;
       }
       if (newPassword.length < 3) {
@@ -121,14 +126,19 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
       }
 
       setLoading(true);
-      const res = await resetPassword(email, recoveryCode, newPassword);
-      setLoading(false);
-
+      const res = await resetPassword(email, cleanCode, newPassword);
       if (res.success) {
-        setSuccessMessage('Sua senha foi redefinida com sucesso! Faça login com a nova senha.');
-        setPassword(newPassword);
-        setMode('login');
+        setSuccessMessage('Sua senha foi redefinida com sucesso! Entrando na sua conta...');
+        const loginRes = await login(email, newPassword, true);
+        setLoading(false);
+        if (loginRes.success) {
+          if (onLoginSuccess) onLoginSuccess();
+        } else {
+          setPassword(newPassword);
+          setMode('login');
+        }
       } else {
+        setLoading(false);
         setErrorMessage(res.message);
       }
     }
@@ -320,21 +330,49 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
           {mode === 'verify' && (
             <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Código de 6 Dígitos (Enviado para {email})
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-300">
+                    Código de 6 Dígitos
+                  </label>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true);
+                      const res = await requestPasswordReset(email);
+                      setLoading(false);
+                      if (res.success) {
+                        setSuccessMessage('Novo código enviado com sucesso para seu e-mail!');
+                        setErrorMessage('');
+                      } else {
+                        setErrorMessage(res.message);
+                      }
+                    }}
+                    className="text-[11px] font-bold text-purple-400 hover:text-purple-300 hover:underline cursor-pointer transition-colors"
+                  >
+                    Reenviar código
+                  </button>
+                </div>
                 <div className="relative">
-                  <KeyRound className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <KeyRound className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
-                    maxLength={6}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
                     placeholder="123456"
                     value={recoveryCode}
-                    onChange={e => setRecoveryCode(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-base font-mono font-bold tracking-widest text-emerald-400 text-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    onChange={e => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setRecoveryCode(clean);
+                      if (errorMessage) setErrorMessage('');
+                    }}
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-base font-mono font-bold tracking-widest text-purple-300 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-600"
                   />
                 </div>
+                <p className="text-[11px] text-slate-400 mt-1.5 text-center">
+                  Enviado para <span className="font-semibold text-slate-300">{email}</span>
+                </p>
               </div>
 
               <div>
@@ -345,7 +383,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                   placeholder="Digite sua nova senha"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -357,7 +395,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                   placeholder="Confirme sua nova senha"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
@@ -371,7 +409,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                   type="checkbox"
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#007a4d] focus:ring-[#007a4d] border-slate-700 bg-slate-800 cursor-pointer"
+                  className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-700 bg-slate-800 cursor-pointer"
                 />
                 <span>Manter conectado</span>
               </label>
@@ -382,7 +420,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-2xl bg-[#007a4d] hover:bg-[#006640] disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-[#007a4d]/25 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
           >
             {loading ? (
               <span>Enviando...</span>
