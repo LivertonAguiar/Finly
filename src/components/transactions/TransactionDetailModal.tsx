@@ -517,7 +517,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       className="py-2 flex items-center justify-between gap-2 text-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm shrink-0">{cat?.icon || '💳'}</span>
+                        <span className="text-sm shrink-0 w-6 text-center select-none">{cat?.icon || '💳'}</span>
                         <div className="min-w-0">
                           <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
                             {item.description}

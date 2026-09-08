@@ -811,16 +811,11 @@ export const TransactionsPage: React.FC = () => {
                       }}
                       className="py-3 first:pt-1 last:pb-0 flex items-center justify-between gap-2.5 sm:gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/50 px-2 sm:px-2.5 rounded-2xl transition-colors cursor-pointer"
                     >
-                      {/* Left: Status (desktop) + Category Icon + Info */}
-                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                        {/* On desktop (sm:), show status badge on the far left */}
-                        <div className="hidden sm:flex shrink-0">
-                          {getStatusBadge(t)}
-                        </div>
-
-                        {/* Category Icon */}
+                      {/* Left: Category Icon (Emoji - Perfectly Aligned) + Info */}
+                      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+                        {/* Category Icon (Emoji) - ALWAYS FIRST, 100% ALIGNED */}
                         <div
-                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-sm shrink-0 shadow-xs"
+                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-sm sm:text-base shrink-0 shadow-xs select-none"
                           style={{ backgroundColor: (cat?.color || '#7c4dff') + '20', color: cat?.color || '#7c4dff' }}
                         >
                           {cat?.icon || (isIncome ? '💰' : '📁')}
@@ -843,8 +838,8 @@ export const TransactionsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Right: Amount + Status (mobile) + Action buttons */}
-                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2.5 shrink-0 text-right">
+                      {/* Right: Status badge + Amount + Action buttons */}
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-3 shrink-0 text-right">
                         {t.isThirdParty && !t.reimbursed && (
                           <button
                             type="button"
@@ -867,19 +862,20 @@ export const TransactionsPage: React.FC = () => {
                           </button>
                         )}
 
+                        {/* Status Badge (Desktop: beside amount; Mobile: below amount) */}
+                        <div className="order-2 sm:order-1 shrink-0">
+                          {getStatusBadge(t)}
+                        </div>
+
+                        {/* Amount */}
                         <span
-                          className={`text-xs sm:text-sm font-black whitespace-nowrap ${
+                          className={`order-1 sm:order-2 text-xs sm:text-sm font-black whitespace-nowrap sm:min-w-[95px] text-right ${
                             isIncome ? 'text-[#66bb6a]' : isExpense ? 'text-[#ef5350]' : 'text-slate-700 dark:text-slate-300'
                           }`}
                         >
                           {isIncome ? '+' : isExpense ? '-' : ''}{' '}
                           {formatCurrency(t.amount, user.currency, !user.showValues)}
                         </span>
-
-                        {/* On mobile (< sm:), show status badge here under amount */}
-                        <div className="flex sm:hidden">
-                          {getStatusBadge(t)}
-                        </div>
 
                         {/* Desktop Action buttons */}
                         <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
