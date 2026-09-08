@@ -461,10 +461,10 @@ export const HELP_FAQS: HelpFaqItem[] = [
   },
   {
     id: 'faq-atualizacao-android',
-    question: 'Como atualizo o aplicativo Finly no meu celular Android?',
-    answer: 'Acesse a aba "Mais" -> "Atualizações & Sobre o Finly". Se houver uma nova versão disponível na nuvem, você verá o botão "Baixar APK". Basta clicar nele, abrir o arquivo baixado e confirmar a instalação da atualização.',
+    question: 'Como funcionam as atualizações no Finly (Web vs. App Android)?',
+    answer: 'No acesso Web (navegador no computador ou celular), o Finly se atualiza de forma 100% automática e transparente sempre que novas melhorias são publicadas na nuvem, sem exigir downloads nem exibir avisos de APK. No aplicativo instalado no Android (APK), o Finly avisa proativamente quando há uma nova versão disponível e permite baixar o instalador atualizado diretamente pela aba "Mais" -> "Sobre o Finly".',
     category: 'mobile_web',
-    tags: ['atualizacao', 'android', 'apk', 'versao'],
+    tags: ['atualizacao', 'android', 'apk', 'versao', 'web', 'download'],
   },
   {
     id: 'faq-alerta-orcamento',

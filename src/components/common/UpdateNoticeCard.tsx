@@ -9,6 +9,9 @@ interface UpdateNoticeCardProps {
 const DISMISS_KEY = 'finly_update_notice_dismissed';
 
 export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate }) => {
+  // Apenas disponível no app Android nativo (APK)
+  if (!isNativeCapacitor()) return null;
+
   const [isVisible, setIsVisible] = useState(false);
   const [latestVersion, setLatestVersion] = useState<string>('');
 

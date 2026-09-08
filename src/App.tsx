@@ -27,7 +27,7 @@ import { AuthPage } from './components/auth/AuthPage';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
-import { checkForAppUpdates } from './utils/appUpdateService';
+import { checkForAppUpdates, isNativeCapacitor } from './utils/appUpdateService';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
@@ -164,9 +164,11 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, transactions, cards, budgets, goals]);
 
-  // Proactive App Update Checker on Entry, Resume and Periodic Interval
+  // Proactive App Update Checker on Entry, Resume and Periodic Interval (Exclusivo Android Nativo)
   useEffect(() => {
     if (!currentUser) return;
+    // O aviso e modal de atualização de APK são exclusivos do app nativo Android
+    if (!isNativeCapacitor()) return;
     let isCancelled = false;
 
     const runAutoCheck = async () => {
@@ -249,8 +251,12 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleGoToUpdate = useCallback(() => {
-    setIsUpdateModalOpen(true);
-  }, []);
+    if (isNativeCapacitor()) {
+      setIsUpdateModalOpen(true);
+    } else {
+      handleSelectTab('sobre');
+    }
+  }, [handleSelectTab]);
 
   const handleOpenCardDetail = useCallback((cardId: string) => {
     setSelectedCardIdForDetail(cardId);
@@ -315,12 +321,18 @@ const AppContent: React.FC = () => {
   const [isNewCardOpen, setIsNewCardOpen] = useState(false);
 
 
-  // Global listener to trigger AppUpdateModal
+  // Global listener to trigger AppUpdateModal (apenas em ambiente Android nativo)
   useEffect(() => {
-    const handleOpenUpdate = () => setIsUpdateModalOpen(true);
+    const handleOpenUpdate = () => {
+      if (isNativeCapacitor()) {
+        setIsUpdateModalOpen(true);
+      } else {
+        handleSelectTab('sobre');
+      }
+    };
     window.addEventListener('finly_open_update_modal', handleOpenUpdate);
     return () => window.removeEventListener('finly_open_update_modal', handleOpenUpdate);
-  }, []);
+  }, [handleSelectTab]);
 
   const handleOpenSpeedDialAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {
     if (actionType === 'income') {
@@ -358,8 +370,8 @@ const AppContent: React.FC = () => {
 
       {/* Main Column (Header + Content) */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Floating In-App Update Notice Popup on Entry */}
-        <UpdateNoticeCard onGoToUpdate={handleGoToUpdate} />
+        {/* Floating In-App Update Notice Popup on Entry (Exclusivo Android Nativo) */}
+        {isNativeCapacitor() && <UpdateNoticeCard onGoToUpdate={handleGoToUpdate} />}
 
         {/* Real-time In-App Notification Toast */}
         <InAppNotificationToast />
@@ -443,11 +455,13 @@ const AppContent: React.FC = () => {
         onClose={() => setIsNewCardOpen(false)}
       />
 
-      {/* App Version & Update Modal (Android Native) */}
-      <AppUpdateModal
-        isOpen={isUpdateModalOpen}
-        onClose={() => setIsUpdateModalOpen(false)}
-      />
+      {/* App Version & Update Modal (Exclusivo Android Nativo) */}
+      {isNativeCapacitor() && (
+        <AppUpdateModal
+          isOpen={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+        />
+      )}
 
       {/* Web First-Access What's New Modal */}
       <WebWhatsNewModal

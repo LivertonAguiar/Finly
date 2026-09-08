@@ -104,7 +104,13 @@ export const getPlatformLabel = (): string => {
  */
 export const openAppUpdateModal = (autoCheck: boolean = true) => {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('finly_open_update_modal', { detail: { autoCheck } }));
+    if (isNativeCapacitor()) {
+      window.dispatchEvent(new CustomEvent('finly_open_update_modal', { detail: { autoCheck } }));
+    } else {
+      // No Web, navega para a aba Sobre com as notas de versão sem abrir modal de APK
+      window.history.pushState({ tab: 'sobre' }, '', '/sobre');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
   }
 };
 
@@ -212,7 +218,8 @@ const performCheck = async (options?: {
           }).catch(() => {});
         }
 
-        if (typeof window !== 'undefined') {
+        // Dispara evento de atualização de APK exclusivamente no app Android nativo
+        if (isNativeCapacitor() && typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('finly_app_update_available', { detail: result }));
         }
       }
@@ -260,7 +267,8 @@ const performCheck = async (options?: {
             }).catch(() => {});
           }
 
-          if (typeof window !== 'undefined') {
+          // Dispara evento de atualização de APK exclusivamente no app Android nativo
+          if (isNativeCapacitor() && typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('finly_app_update_available', { detail: result }));
           }
         }

@@ -3,6 +3,19 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.40] - 2026-09-08
+
+### 🚀 Restrição de Modais e Notificações de APK ao App Android Nativo
+- **Isolamento de Atualizações APK vs. Atualização Silenciosa Web**:
+  - Correção definitiva do comportamento na Web onde uma janela modal surgia oferecendo download de arquivo `.apk` compilado para Android.
+  - A checagem proativa em segundo plano de novas compilações (`runAutoCheck`) agora possui guarda estrita (`isNativeCapacitor()`), não disparando checagens nem abrindo modais em navegadores desktop ou móveis.
+  - O componente `UpdateNoticeCard` (banner de topo) e `AppUpdateModal` contam com verificação antecipada de runtime nativo: em navegadores comuns, retornam nulo imediatamente, eliminando listeners e temporizadores ociosos.
+- **Roteamento Inteligente de Notificações e Toasts**:
+  - No cabeçalho (`Header.tsx`), o clique em notificações sobre novas versões na Web redireciona o usuário para a aba "Sobre o Finly" com as notas de lançamento detalhadas, sem acionar modais de download de APK.
+  - No toast de notificação interna (`InAppNotificationToast.tsx`), o evento é roteado contextualmente respeitando a plataforma do usuário.
+- **Sincronização da Base de Suporte & Central de Ajuda (`helpCenterData.ts`)**:
+  - Atualização da pergunta frequente (`faq-atualizacao-android`) esclarecendo que na Web as atualizações ocorrem de forma 100% automática e contínua pelo servidor, enquanto no Android o APK pode ser baixado e instalado via aba Mais -> Sobre o Finly.
+
 ## [1.1.39] - 2026-09-08
 
 ### 🛡️ Atomicidade da Limpeza de Dados & Sincronização em 3 Camadas

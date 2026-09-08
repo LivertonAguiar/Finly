@@ -1,25 +1,25 @@
 {
-  "version": "1.1.39",
-  "latestVersion": "1.1.39",
+  "version": "1.1.40",
+  "latestVersion": "1.1.40",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-08",
-  "notes": "Novidades da v1.1.39: Limpeza atômica e definitiva de dados financeiros sincronizada entre dispositivo, Supabase (banco de dados) e servidor, com trava anti-reversão de auto-sync.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.39/finly-v1.1.39.apk",
+  "notes": "Novidades da v1.1.40: Restrição do modal de atualização e downloads de APK exclusivamente para o aplicativo nativo Android; no acesso Web as atualizações são automáticas sem pop-ups.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.40/finly-v1.1.40.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Limpeza Definitiva de Dados: apaga de forma atômica e coordenada todas as transações, orçamentos, metas e contas bancárias no armazenamento local, na nuvem e no servidor VPS",
-      "Trava de Sincronização: bloqueio contra ressurgimento de dados antigos por pulso em segundo plano após o reset",
+      "Isolamento de Atualizações: modal de atualização e botão de download de APK restritos exclusivamente ao app Android nativo",
+      "Experiência Web Silenciosa: no navegador e PWA, as atualizações ocorrem de forma transparente pelo servidor sem pop-ups intrusivos",
       "Histórico Permanente de Notificações: suas notificações ficam salvas no histórico até você clicar em limpar tudo ou apagar individualmente",
       "Som Interno no Celular: áudio finly_chime.wav integrado ao canal de notificação nativo do Android"
     ],
     "fixes": [
-      "Limpar Dados Financeiros: resolvido o problema em que os dados voltavam após a limpeza devido ao auto-sync em segundo plano",
-      "Sincronização Remota: sincronização atômica e sequencial de tabelas no Supabase para evitar conflitos de integridade"
+      "Pop-up Web de Atualização: eliminado o modal de atualização com opção de download de APK que surgia indevidamente na versão Web",
+      "Direcionamento de Notificações: cliques em notificações de atualização na Web agora levam diretamente à aba Sobre com as notas de versão"
     ],
     "improvements": [
-      "Feedback visual com spinner animado e toast de confirmação ao limpar dados",
-      "Diferenciação clara entre Limpar Cache do Navegador e Limpar Dados Financeiros em Configurações"
+      "Guarda de plataforma antecipada nos componentes UpdateNoticeCard e AppUpdateModal",
+      "Central de Ajuda sincronizada explicando a diferença de atualização contínua Web vs. APK Android"
     ]
   },
   "highlights": [

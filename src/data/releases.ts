@@ -34,10 +34,32 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.39';
+export const CURRENT_VERSION = '1.1.40';
 export const CURRENT_BUILD_DATE = '2026-09-08';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.40',
+    releaseDate: '2026-09-08',
+    summary: 'Restrição do modal de atualização e downloads de APK exclusivamente para o aplicativo nativo Android; no acesso Web as atualizações são automáticas sem pop-ups.',
+    highlights: [
+      {
+        title: 'Isolamento de Atualizações APK',
+        description: 'Bloqueio de modais e botões de download de instalador APK no acesso via navegador/web, tornando a experiência limpa e silenciosa.',
+        type: 'fix',
+      },
+      {
+        title: 'Atualização Transparente na Web',
+        description: 'Na Web as atualizações ocorrem automaticamente pelo servidor; notificações no cabeçalho e toasts direcionam para a aba Sobre com as notas de versão.',
+        type: 'improvement',
+      },
+      {
+        title: 'Guarda de Plataforma Antecipada',
+        description: 'Prevenção em nível de componente nos cards e modais de atualização para garantir que apenas o runtime nativo do Capacitor processe checagens proativas.',
+        type: 'feature',
+      },
+    ],
+  },
   {
     version: '1.1.39',
     releaseDate: '2026-09-08',

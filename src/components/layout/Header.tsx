@@ -345,7 +345,11 @@ export const Header: React.FC<HeaderProps> = ({
                           onClick={() => {
                             markNotificationRead(n.id);
                             if (n.tag === 'app_update') {
-                              window.dispatchEvent(new CustomEvent('finly_open_update_modal'));
+                              if (isNativeCapacitor()) {
+                                window.dispatchEvent(new CustomEvent('finly_open_update_modal'));
+                              } else {
+                                setActiveTab('sobre');
+                              }
                               setShowNotifications(false);
                             }
                           }}
