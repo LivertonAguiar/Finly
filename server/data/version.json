@@ -1,33 +1,31 @@
 {
-  "version": "1.1.33",
-  "latestVersion": "1.1.33",
+  "version": "1.1.34",
+  "latestVersion": "1.1.34",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.33: Status unificado de compras de cartão com rótulo 'Pendente (Cartão)' e ícone de cartão de crédito, botão de download de APK sempre disponível em todas as plataformas e telas de atualização, e melhorias de usabilidade.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.33/finly-v1.1.33.apk",
+  "notes": "Novidades da v1.1.34: Histórico permanente de notificações com limpeza manual, som interno do app no celular, donut chart de categorias moderno e responsivo, datas brasileiras padronizadas e tutorial mobile atualizado.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.34/finly-v1.1.34.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Status Unificado de Cartão: despesas no cartão identificadas claramente como 'Pendente (Cartão)' com ícone de cartão de crédito e 'Pago (Cartão)'",
-      "Botão de Download de APK Permanente: acessível em todas as telas (Web e Android) para instalar e atualizar a qualquer momento",
-      "Reordenação Touch Nativa: arrastar e soltar itens do menu lateral com captura de ponteiro, vibração háptica e auto-scroll",
-      "Download Nativo no Android: exportação de PDF, CSV e XLSX com integração direta ao Filesystem e Share nativo"
+      "Histórico Permanente de Notificações: suas notificações ficam salvas no histórico até você clicar em limpar tudo ou apagar individualmente",
+      "Som Interno no Celular: áudio finly_chime.wav integrado ao canal de notificação nativo do Android",
+      "Donut Chart Moderno: cantos arredondados, hub central interativo com filtros de gastos Fixos e Variáveis",
+      "Padronização de Datas: formato estritamente brasileiro DD/MM e DD/MM/AAAA em todas as listas e detalhes"
     ],
     "fixes": [
-      "Substituição do status 'Fatura Aberta' por 'Pendente (Cartão)' para total harmonia com os filtros",
-      "Remoção da restrição que ocultava o botão de download de APK no navegador",
-      "Correção de deslocamento lateral indesejado na aba de cartões em telas de smartphones",
-      "Fechamento automático do modal de notificações ao tocar ou clicar fora da janela"
+      "Tutorial Mobile: orientação correta de acesso ao Planejamento pela aba Mais na barra de navegação",
+      "Sincronização Remota: preservação das notificações do usuário durante sync com Supabase e API"
     ],
     "improvements": [
-      "Badge responsivo com tamanho ajustado para todas as resoluções de tela",
-      "Área de toque aprimorada no manipulador de arrastar itens do menu lateral"
+      "Lixeira individual em cada notificação e filtros por abas Todas e Não Lidas",
+      "Card de acesso rápido ao Histórico de Notificações na aba Mais do app móvel"
     ]
   },
   "highlights": [
-    "[Transações] Status 'Pendente (Cartão)' com ícone de cartão e total harmonia com os filtros",
-    "[Download] Botão de download do APK sempre disponível no app e na web",
-    "[Menu Lateral] Reordenação touch nativa e suave com feedback háptico",
-    "[Android] Exportação e compartilhamento oficial de PDF, CSV e Excel"
+    "[Notificações] Histórico permanente mantido até ação explícita de limpar ou apagar",
+    "[Áudio] Som de notificação harmônico externo oficial no Android",
+    "[Gráficos] Donut chart de categorias reformulado com hub central inteligente",
+    "[Datas] Padrão brasileiro DD/MM e DD/MM/AAAA em todo o sistema"
   ]
 }

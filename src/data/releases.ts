@@ -34,10 +34,47 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.33';
+export const CURRENT_VERSION = '1.1.34';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.34',
+    releaseDate: '2026-09-07',
+    summary: 'Histórico permanente de notificações com limpeza manual e exclusão individual, som interno do app no celular (Android), donut chart de categorias moderno com hub central interativo, padronização de datas brasileiras e tutorial mobile atualizado.',
+    highlights: [
+      {
+        title: 'Histórico Permanente de Notificações',
+        description: 'Notificações de contas a pagar, faturas de cartão e limites orçamentários agora ficam guardadas no histórico até que você decida apagá-las.',
+        type: 'feature',
+      },
+      {
+        title: 'Limpeza e Exclusão de Notificações',
+        description: 'Opções de Limpar Tudo e lixeira individual em cada notificação, além de abas para filtrar entre Todas e Não Lidas.',
+        type: 'feature',
+      },
+      {
+        title: 'Som Interno no Celular (Android)',
+        description: 'Áudio harmônico finly_chime.wav integrado ao canal nativo do Android para notificações externas audíveis mesmo com o aparelho bloqueado.',
+        type: 'feature',
+      },
+      {
+        title: 'Donut Chart Moderno & Responsivo',
+        description: 'Gráfico de categorias com bordas arredondadas, hub central inteligente com toque/hover e filtros rápidos para gastos Fixos e Variáveis.',
+        type: 'visual',
+      },
+      {
+        title: 'Padronização de Datas Brasileiras',
+        description: 'Formato DD/MM em linhas e metadados compactos e DD/MM/AAAA em cabeçalhos, detalhes e seletores.',
+        type: 'improvement',
+      },
+      {
+        title: 'Tutorial Mobile Sincronizado',
+        description: 'Central de ajuda e telas de mockup orientando corretamente o acesso a Planejamento através do menu Mais.',
+        type: 'fix',
+      },
+    ],
+  },
   {
     version: '1.1.33',
     releaseDate: '2026-09-07',

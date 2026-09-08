@@ -3,6 +3,23 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.34] - 2026-09-07
+
+### ✨ Novidades & Funcionalidades
+- **Histórico Permanente de Notificações com Limpeza Manual**:
+  - Todas as notificações do sistema (faturas a vencer, contas a pagar, limites orçamentários de 80% e 100%, metas concluídas e atualizações) agora são gravadas no histórico permanente e sincronizadas entre sessões.
+  - As notificações não somem sozinhas: saem apenas quando o usuário acionar o botão **"Limpar tudo"** ou a **lixeira individual** de cada alerta.
+  - Abas de filtragem rápida entre `Todas` e `Não lidas`, botão de marcar todas como lidas e atalho direto na aba Mais do app mobile.
+- **Som da Notificação Interna no Celular (Android)**:
+  - O áudio harmônico oficial (`finly_chime.wav` - acorde C6 + E6) foi configurado no canal nativo do Android (`finly-alerts-v2`), garantindo toque no alto-falante do celular com aparelho bloqueado e na barra de notificações.
+- **Donut Chart de Categorias Moderno & Responsivo**:
+  - Gráfico reformulado com bordas arredondadas orgânicas (`cornerRadius={6}`), expansão fluida (`Sector`) e hub central interativo revelando valores e percentuais ao toque ou hover.
+  - Abas segmentadas `[ Todas | Fixas | Variáveis ]` recalculando fatias em tempo real e pílulas de macro divisão.
+- **Padronização de Datas Brasileiras**:
+  - Formato estritamente brasileiro: `DD/MM` (metadados compactos e linhas de extrato) e `DD/MM/AAAA` (cabeçalhos de grupos, detalhes e seletores de data).
+- **Tutorial Mobile Sincronizado**:
+  - Central de ajuda e telas do mockup Android corrigidas indicando o acesso ao módulo Planejamento através do menu Mais (5º ícone) na barra de navegação móvel.
+
 ## [1.1.33] - 2026-09-07
 
 ### ✨ Novidades & Usabilidade
