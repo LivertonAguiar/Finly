@@ -34,10 +34,27 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.34';
-export const CURRENT_BUILD_DATE = '2026-09-07';
+export const CURRENT_VERSION = '1.1.35';
+export const CURRENT_BUILD_DATE = '2026-09-08';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.35',
+    releaseDate: '2026-09-08',
+    summary: 'Consolidação de melhorias: histórico permanente de notificações, som nativo Android, donut chart moderno, datas no padrão brasileiro, tutorial mobile atualizado e Central de Ajuda revisada.',
+    highlights: [
+      {
+        title: 'Central de Ajuda Revisada',
+        description: 'Conteúdo da Central de Ajuda atualizado com dados de helpdesk e tutoriais mais detalhados.',
+        type: 'improvement',
+      },
+      {
+        title: 'Estabilidade e Performance',
+        description: 'Ajustes internos de estabilidade, otimização de cache e melhoria de responsividade geral do app.',
+        type: 'perf',
+      },
+    ],
+  },
   {
     version: '1.1.34',
     releaseDate: '2026-09-07',
