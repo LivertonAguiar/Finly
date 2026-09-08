@@ -38,17 +38,23 @@ export const isNativePlatform = (): boolean => {
 };
 
 /**
- * Initializes notification channels for Android 8+ (Oreo and higher)
+ * Initializes notification channels for Android 8+ (Oreo and higher) with custom chime
  */
 export async function initializeNotificationChannels() {
   if (!isNativePlatform()) return;
   try {
+    // Delete legacy channel without custom sound so Android applies finly_chime.wav cleanly
+    try {
+      await LocalNotifications.deleteChannel({ id: 'finly-alerts' });
+    } catch (_) {}
+
     await LocalNotifications.createChannel({
-      id: 'finly-alerts',
+      id: 'finly-alerts-v2',
       name: 'Alertas Financeiros Finly',
       description: 'Lembretes de vencimento de faturas, contas a pagar e orçamentos do Finly',
       importance: 5, // High importance (heads-up notification)
       visibility: 1, // Public visibility on lockscreen
+      sound: 'finly_chime.wav',
       vibration: true,
       lights: true,
       lightColor: '#7C4DFF',
@@ -142,8 +148,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 /**
  * Synthesizes a subtle, pleasant financial audio chime via Web Audio API
  */
-export function playNotificationSound() {
-  if (typeof window === 'undefined') return;
+function playSynthesizedChime() {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -179,6 +184,25 @@ export function playNotificationSound() {
 }
 
 /**
+ * Plays the official Finly financial audio chime (via /sounds/finly_chime.wav or Web Audio synthesizer)
+ */
+export function playNotificationSound() {
+  if (typeof window === 'undefined') return;
+  try {
+    const audio = new Audio('/sounds/finly_chime.wav');
+    audio.volume = 0.5;
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        playSynthesizedChime();
+      });
+    }
+  } catch (_) {
+    playSynthesizedChime();
+  }
+}
+
+/**
  * Sends a local notification (Native Android APK, Mobile PWA, or Desktop Browser)
  */
 export async function sendLocalNotification(
@@ -210,8 +234,10 @@ export async function sendLocalNotification(
   const isPriorityAlert = options.force || options.tag === 'app_update' || options.tag === 'app_up_to_date' || options.tag === 'test-notification';
   if (!prefs.enabled && !isPriorityAlert) return false;
 
-  // Audio chime
-  if (prefs.sound || isPriorityAlert) {
+  // Audio chime:
+  // On Web / PWA / Desktop, play audio directly in-app.
+  // On Native Mobile (Android APK), Android OS triggers finly_chime.wav externally on the notification stream.
+  if ((prefs.sound || isPriorityAlert) && !isNativePlatform()) {
     playNotificationSound();
   }
 
@@ -229,7 +255,13 @@ export async function sendLocalNotification(
       const perm = await LocalNotifications.checkPermissions();
       if (perm.display !== 'granted') {
         const req = await LocalNotifications.requestPermissions();
-        if (req.display !== 'granted') return true; // still true because in-app toast shown
+        if (req.display !== 'granted') {
+          // Fallback to in-app chime if system notification permission is denied
+          if (prefs.sound || isPriorityAlert) {
+            playNotificationSound();
+          }
+          return true;
+        }
       }
 
       const notifId = options.id || Math.floor(Math.random() * 100000) + 1;
@@ -240,7 +272,8 @@ export async function sendLocalNotification(
             title,
             body: options.body,
             id: notifId,
-            channelId: 'finly-alerts',
+            channelId: 'finly-alerts-v2',
+            sound: 'finly_chime.wav',
             schedule: { at: new Date(Date.now() + 150) },
             extra: options.data,
             smallIcon: 'ic_stat_finly_notification',
@@ -252,6 +285,9 @@ export async function sendLocalNotification(
       return true;
     } catch (err) {
       console.warn('LocalNotifications native schedule error:', err);
+      if (prefs.sound || isPriorityAlert) {
+        playNotificationSound();
+      }
     }
   }
 

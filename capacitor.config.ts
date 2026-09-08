@@ -25,6 +25,7 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: 'ic_stat_finly_notification',
       iconColor: '#7C4DFF',
+      sound: 'finly_chime.wav',
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
