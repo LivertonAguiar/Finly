@@ -37,6 +37,8 @@ export interface UpdateCheckResult {
   notes?: string;
   downloadUrl?: string;
   source?: 'api' | 'sw' | 'github' | 'local';
+  apkReady?: boolean;
+  isCompiling?: boolean;
 }
 
 export function isNewerVersion(latest: string, current: string): boolean {
@@ -58,6 +60,29 @@ export function isNewerVersion(latest: string, current: string): boolean {
   }
   return false;
 }
+
+/**
+ * Checks GitHub Releases API to verify if the APK asset has finished compiling and is ready for download
+ */
+export const verifyApkReady = async (version: string): Promise<boolean> => {
+  try {
+    const cleanVer = version.replace(/^v/, '');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`https://api.github.com/repos/LivertonAguiar/Finly/releases/tags/v${cleanVer}`, {
+      headers: { Accept: 'application/vnd.github.v3+json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      return (data.assets || []).some((a: any) => typeof a.name === 'string' && a.name.endsWith('.apk'));
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
 
 export const isNativeCapacitor = (): boolean => {
   return typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
@@ -150,22 +175,36 @@ const performCheck = async (options?: {
     if (apiRes && apiRes.ok) {
       const serverInfo = await apiRes.json();
       const serverVer = (serverInfo.latestVersion || serverInfo.version || '').replace(/^v/, '');
-      const hasUpdate = isNewerVersion(serverVer, APP_VERSION);
+      const hasNewVersion = isNewerVersion(serverVer, APP_VERSION);
       const downloadUrl = serverInfo.downloadUrl || GITHUB_RELEASES_URL;
 
+      // Verify if APK is actually ready on GitHub before declaring update ready on Android
+      let apkReady = true;
+      if (hasNewVersion && isNativeCapacitor()) {
+        apkReady = await verifyApkReady(serverVer);
+      }
+
+      const isCompiling = hasNewVersion && isNativeCapacitor() && !apkReady;
+      const effectiveHasUpdate = hasNewVersion && (!isNativeCapacitor() || apkReady);
+
       const result: UpdateCheckResult = {
-        hasUpdate,
+        hasUpdate: effectiveHasUpdate,
         latestVersion: serverVer || APP_VERSION,
-        notes: serverInfo.notes || CURRENT_RELEASE.summary,
+        notes: isCompiling
+          ? `A nova versão v${serverVer} está sendo compilada no GitHub Actions (~1 a 2 min). O download e a notificação serão liberados automaticamente assim que o APK estiver pronto.`
+          : (serverInfo.notes || CURRENT_RELEASE.summary),
         downloadUrl,
         source: 'api',
+        apkReady,
+        isCompiling,
       };
 
-      if (hasUpdate) {
+      // Only notify when update exists AND the APK is actually ready for download!
+      if (effectiveHasUpdate) {
         if (notifyIfFound && isNativeCapacitor() && shouldNotifyVersion(serverVer)) {
           markVersionNotified(serverVer);
           sendLocalNotification('🚀 Nova Atualização do Finly Disponível!', {
-            body: `A versão v${serverVer} está disponível para download. Toque para atualizar o app.`,
+            body: `A versão v${serverVer} está pronta para download. Toque para atualizar o app.`,
             tag: 'app_update',
             id: 99999,
             force: false,
