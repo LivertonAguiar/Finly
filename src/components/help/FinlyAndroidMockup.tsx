@@ -57,7 +57,7 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
       return 'cartoes';
     }
     if (guide.category === 'planejamento' || guide.id === 'como-configurar-orcamentos-e-metas') {
-      return 'planejamento';
+      return 'mais';
     }
     if (guide.category === 'mobile_web' || guide.category === 'configuracoes') {
       return 'mais';
@@ -592,27 +592,70 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
     if (guide.id === 'como-configurar-orcamentos-e-metas') {
       if (stepIndex === 0) {
         return (
-          <div className="p-3 space-y-3 animate-in fade-in duration-200">
-            <div className="p-3.5 rounded-2xl bg-[#1C1C22] border border-slate-800 text-center space-y-2">
-              <div className="w-10 h-10 rounded-2xl bg-purple-600/20 text-purple-400 flex items-center justify-center mx-auto">
-                <Flag className="w-5 h-5" />
+          <div className="p-3 space-y-2.5 animate-in fade-in duration-200">
+            {/* Header info */}
+            <div className="p-3 rounded-2xl bg-[#1C1C22] border border-slate-800 text-center space-y-1.5">
+              <div className="w-9 h-9 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center mx-auto">
+                <Flag className="w-4 h-4" />
               </div>
-              <div className="text-xs font-black text-white">Aba Planejamento na Barra Inferior</div>
+              <div className="text-xs font-black text-white">Menu Mais → Planejamento</div>
               <p className="text-[10px] text-slate-400 leading-relaxed">
-                Toque no <strong>4º ícone (Planejamento)</strong> na barra inferior de navegação para gerenciar seus tetos.
+                No mobile, toque na <strong>5ª aba (Mais)</strong> na barra inferior e acesse o módulo <strong>Planejamento</strong>.
               </p>
             </div>
-            {/* Pointer to tab 4 */}
-            <div className="relative p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/40 text-[10px] text-purple-300 font-bold flex items-center justify-between">
-              <span>Toque na 4ª aba "Planejamento" abaixo</span>
-              <span className="text-purple-400 font-black">↓</span>
-              {/* Hotspot Pin */}
-              <span className="absolute -top-2 -right-2 flex h-5 w-5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-5 w-5 bg-purple-600 text-white font-black text-[9px] items-center justify-center shadow-md">
-                  1
+
+            {/* Mockup of Mais Menu with Planejamento highlighted */}
+            <div className="space-y-1.5">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Menu Mais (Módulos)</div>
+              
+              {/* Other module (Metas) dimmed */}
+              <div className="p-2 rounded-xl bg-[#1A1A1E]/60 border border-slate-800/60 flex items-center justify-between opacity-40">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-[10px]">🎯</div>
+                  <span className="text-[10px] font-bold text-slate-300">Metas</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+              </div>
+
+              {/* TARGET MODULE: Planejamento (Highlighted with glowing border & hotspot pin) */}
+              <div className="relative p-2.5 rounded-xl bg-gradient-to-r from-purple-950/60 to-purple-900/30 border-2 border-purple-500 text-white flex items-center justify-between shadow-lg shadow-purple-900/30">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <Flag className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black text-white flex items-center gap-1.5">
+                      <span>Planejamento</span>
+                      <span className="text-[8px] px-1.5 py-0.2 rounded-full bg-purple-500/30 text-purple-300 font-bold border border-purple-500/40">Tetos</span>
+                    </div>
+                    <div className="text-[9px] text-slate-400">Teto de gastos e orçamento mensal</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-purple-400 shrink-0" />
+
+                {/* Hotspot Pin */}
+                <span className="absolute -top-2 -right-2 flex h-5 w-5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-5 w-5 bg-purple-600 text-white font-black text-[9px] items-center justify-center shadow-md">
+                    1
+                  </span>
                 </span>
-              </span>
+              </div>
+
+              {/* Other module (Dívidas) dimmed */}
+              <div className="p-2 rounded-xl bg-[#1A1A1E]/60 border border-slate-800/60 flex items-center justify-between opacity-40">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-rose-600/20 text-rose-400 flex items-center justify-center text-[10px]">📉</div>
+                  <span className="text-[10px] font-bold text-slate-300">Dívidas</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+              </div>
+            </div>
+
+            {/* Pointer to tab 5 (Mais) */}
+            <div className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/40 text-[9.5px] text-purple-300 font-bold flex items-center justify-between">
+              <span>Toque na 5ª aba "Mais" no rodapé</span>
+              <span className="text-purple-400 font-black text-xs">↘</span>
             </div>
           </div>
         );
