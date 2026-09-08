@@ -34,10 +34,27 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.35';
+export const CURRENT_VERSION = '1.1.36';
 export const CURRENT_BUILD_DATE = '2026-09-08';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.36',
+    releaseDate: '2026-09-08',
+    summary: 'Ajuste visual no gráfico donut no mobile, otimização da aba Sobre com botão de download do APK exclusivo para Android e remoção de recarregamento redundante.',
+    highlights: [
+      {
+        title: 'Gráfico Donut Otimizado no Mobile',
+        description: 'Correção de contorno/focus ring indesejado ao tocar nos segmentos do gráfico de despesas por categoria e persistência aprimorada dos dados.',
+        type: 'fix',
+      },
+      {
+        title: 'Aba Sobre Otimizada',
+        description: 'Botão de download do APK agora é exibido apenas no app Android, mantendo a versão Web mais limpa, e remoção do botão redundante de recarregar.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.35',
     releaseDate: '2026-09-08',
