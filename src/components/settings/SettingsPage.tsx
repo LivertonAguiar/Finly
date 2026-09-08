@@ -198,10 +198,17 @@ export const SettingsPage: React.FC = () => {
   // Instant live preview on clicking theme preset
   const handleSelectPreset = (preset: ThemePreset) => {
     setSelectedThemePreset(preset);
-    const defAccent = PRESET_COLORS[preset]?.defaultAccent || selectedAccentColor;
+    let defAccent = PRESET_COLORS[preset]?.defaultAccent || selectedAccentColor;
+    let targetMode: 'dark' | 'light' = preset === 'clean-light' ? 'light' : 'dark';
+
+    if (preset === 'linear-mono') {
+      targetMode = user.theme === 'light' ? 'light' : 'dark';
+      defAccent = targetMode === 'dark' ? '#FFFFFF' : '#18181B';
+    }
+
     setSelectedAccentColor(defAccent);
-    applyTheme({ preset, accentColor: defAccent, cardRadius: selectedCardRadius });
-    updateUser({ themePreset: preset, accentColor: defAccent, theme: preset === 'clean-light' ? 'light' : 'dark' });
+    applyTheme({ preset, accentColor: defAccent, cardRadius: selectedCardRadius, mode: targetMode });
+    updateUser({ themePreset: preset, accentColor: defAccent, theme: targetMode });
   };
 
   // Instant live preview on clicking accent color
@@ -219,10 +226,15 @@ export const SettingsPage: React.FC = () => {
   };
 
   const handleSaveAll = () => {
+    const targetTheme: 'light' | 'dark' = selectedThemePreset === 'clean-light'
+      ? 'light'
+      : (selectedThemePreset === 'linear-mono' ? (user.theme === 'light' ? 'light' : 'dark') : 'dark');
+
     applyTheme({
       preset: selectedThemePreset,
       accentColor: selectedAccentColor,
       cardRadius: selectedCardRadius,
+      mode: targetTheme,
     });
 
     updateUser({
@@ -231,7 +243,7 @@ export const SettingsPage: React.FC = () => {
       phone,
       language: selectedLang,
       currency: selectedCurrency,
-      theme: selectedThemePreset === 'clean-light' ? 'light' : 'dark',
+      theme: targetTheme,
       themePreset: selectedThemePreset,
       accentColor: selectedAccentColor,
       cardRadius: selectedCardRadius,

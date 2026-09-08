@@ -252,18 +252,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
             style={{
               backgroundColor: accentColor,
+              color: 'var(--primary-accent-foreground, #FFFFFF)',
               boxShadow: `0 2px 10px ${accentColor}66`,
             }}
-            className={`w-8 h-8 rounded-full text-white flex items-center justify-center shrink-0 shadow-md active:scale-85 transition-transform duration-200 cursor-pointer hover:brightness-110 ${
+            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-md active:scale-85 transition-transform duration-200 cursor-pointer hover:brightness-110 ${
               isSpeedDialOpen ? 'rotate-90 brightness-95' : ''
             }`}
             title="Ações Rápidas"
             aria-label="Ações Rápidas"
           >
             {isSpeedDialOpen ? (
-              <X className="w-4 h-4 stroke-[3]" />
+              <X className="w-4 h-4 stroke-[3]" style={{ stroke: 'currentColor' }} />
             ) : (
-              <Plus className="w-4 h-4 stroke-[3]" />
+              <Plus className="w-4 h-4 stroke-[3]" style={{ stroke: 'currentColor' }} />
             )}
           </button>
 

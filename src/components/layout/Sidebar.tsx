@@ -143,15 +143,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title={collapsed ? t('action.new_transaction', 'Novo Lançamento') : undefined}
               style={{
                 backgroundColor: accentColor,
+                color: 'var(--primary-accent-foreground, #FFFFFF)',
                 boxShadow: `0 4px 14px 0 ${accentColor}35`,
               }}
-              className={`text-white font-black uppercase tracking-wider flex items-center justify-center transition-all duration-300 cursor-pointer hover:brightness-110 active:scale-[0.98] overflow-hidden ${
+              className={`font-black uppercase tracking-wider flex items-center justify-center transition-all duration-300 cursor-pointer hover:brightness-110 active:scale-[0.98] overflow-hidden ${
                 collapsed
                   ? 'w-11 h-11 rounded-2xl p-0'
                   : 'w-full py-3 px-3.5 gap-2 rounded-2xl text-xs'
               }`}
             >
-              <Plus className="w-4.5 h-4.5 stroke-[3] shrink-0" />
+              <Plus className="w-4.5 h-4.5 stroke-[3] shrink-0" style={{ stroke: 'currentColor' }} />
               {!collapsed && (
                 <span className="whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-xs">
                   {t('action.new_transaction', 'Novo')}

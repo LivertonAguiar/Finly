@@ -21,7 +21,7 @@ import { supabaseDb } from '../services/supabaseDb';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import { useUndoToast } from './UndoToastContext';
 import { saveOrShareFile } from '../utils/fileDownloadHelper';
-import { applyTheme, ThemePreset, CardRadius } from '../utils/themeEngine';
+import { applyTheme, ThemePreset, CardRadius, PRESET_COLORS } from '../utils/themeEngine';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -272,7 +272,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               if (rawTheme === 'dark' && rawPreset === 'clean-light') {
                 const savedDark = (localStorage.getItem('finly_last_dark_preset') as ThemePreset);
                 rawPreset = (savedDark && savedDark !== 'clean-light') ? savedDark : 'sleek-neo-glass';
-              } else if (rawTheme === 'light' && rawPreset !== 'clean-light') {
+              } else if (rawTheme === 'light' && rawPreset !== 'clean-light' && rawPreset !== 'linear-mono') {
                 rawPreset = 'clean-light';
               }
               return {
@@ -586,26 +586,43 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (user.themePreset === 'clean-light') {
         const savedLastDark = localStorage.getItem('finly_last_dark_preset') as ThemePreset;
         const targetPreset: ThemePreset = (savedLastDark && savedLastDark !== 'clean-light') ? savedLastDark : 'sleek-neo-glass';
-        setUser(prev => ({ ...prev, themePreset: targetPreset }));
-        applyTheme({ preset: targetPreset });
+        const targetAccent = PRESET_COLORS[targetPreset]?.defaultAccent || '#06B6D4';
+        setUser(prev => ({ ...prev, themePreset: targetPreset, accentColor: targetAccent }));
+        applyTheme({ preset: targetPreset, accentColor: targetAccent, mode: 'dark' });
         return;
       }
     } else {
       document.documentElement.classList.remove('dark');
-      if (user.themePreset !== 'clean-light') {
+      // In light mode, allow clean-light AND linear-mono
+      if (user.themePreset !== 'clean-light' && user.themePreset !== 'linear-mono') {
         if (user.themePreset) {
           localStorage.setItem('finly_last_dark_preset', user.themePreset);
         }
-        setUser(prev => ({ ...prev, themePreset: 'clean-light' }));
-        applyTheme({ preset: 'clean-light' });
+        const targetPreset = 'clean-light';
+        const curAccent = user.accentColor;
+        const targetAccent = (!curAccent || curAccent.toUpperCase() === '#FFFFFF') ? '#0284C7' : curAccent;
+        setUser(prev => ({ ...prev, themePreset: targetPreset, accentColor: targetAccent }));
+        applyTheme({ preset: targetPreset, accentColor: targetAccent, mode: 'light' });
         return;
       }
     }
 
+    let effectiveAccent = user.accentColor;
+    if (user.themePreset === 'linear-mono') {
+      if (isDark && (!effectiveAccent || effectiveAccent === '#18181B' || effectiveAccent === '#0284C7')) {
+        effectiveAccent = '#FFFFFF';
+      } else if (!isDark && (!effectiveAccent || effectiveAccent.toUpperCase() === '#FFFFFF')) {
+        effectiveAccent = '#18181B';
+      }
+    } else if (!isDark && effectiveAccent && effectiveAccent.toUpperCase() === '#FFFFFF') {
+      effectiveAccent = '#0284C7';
+    }
+
     applyTheme({
       preset: (user.themePreset as ThemePreset) || (isDark ? 'sleek-neo-glass' : 'clean-light'),
-      accentColor: user.accentColor,
+      accentColor: effectiveAccent,
       cardRadius: user.cardRadius as CardRadius,
+      mode: isDark ? 'dark' : 'light',
     });
   }, [user.theme, user.themePreset]);
 
@@ -646,21 +663,28 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setUser(prev => {
       const newTheme: 'light' | 'dark' = prev.theme === 'dark' ? 'light' : 'dark';
       let newPreset: ThemePreset;
+      let newAccent: string;
 
-      if (newTheme === 'light') {
+      if (prev.themePreset === 'linear-mono') {
+        newPreset = 'linear-mono';
+        newAccent = newTheme === 'dark' ? '#FFFFFF' : '#18181B';
+      } else if (newTheme === 'light') {
         if (prev.themePreset && prev.themePreset !== 'clean-light') {
           localStorage.setItem('finly_last_dark_preset', prev.themePreset);
         }
         newPreset = 'clean-light';
+        const curAccent = localStorage.getItem('finly_accent_color');
+        newAccent = (!curAccent || curAccent.toUpperCase() === '#FFFFFF') ? '#0284C7' : curAccent;
       } else {
         const savedLastDark = localStorage.getItem('finly_last_dark_preset') as ThemePreset;
         newPreset = (savedLastDark && savedLastDark !== 'clean-light')
           ? savedLastDark
           : (prev.themePreset && prev.themePreset !== 'clean-light' ? (prev.themePreset as ThemePreset) : 'sleek-neo-glass');
+        newAccent = PRESET_COLORS[newPreset]?.defaultAccent || '#7C4DFF';
       }
 
-      applyTheme({ preset: newPreset });
-      return { ...prev, theme: newTheme, themePreset: newPreset };
+      applyTheme({ preset: newPreset, accentColor: newAccent, mode: newTheme });
+      return { ...prev, theme: newTheme, themePreset: newPreset, accentColor: newAccent };
     });
   };
 

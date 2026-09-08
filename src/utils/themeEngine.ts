@@ -16,7 +16,18 @@ export interface ThemeConfig {
   preset: ThemePreset;
   accentColor: string;
   cardRadius: CardRadius;
+  mode?: 'dark' | 'light';
 }
+
+export const getContrastTextColor = (hexColor: string): '#000000' | '#FFFFFF' => {
+  if (!hexColor) return '#FFFFFF';
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2) || '0', 16);
+  const g = parseInt(hex.substring(2, 4) || '0', 16);
+  const b = parseInt(hex.substring(4, 6) || '0', 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 180 ? '#000000' : '#FFFFFF';
+};
 
 export const PRESET_COLORS: Record<
   ThemePreset,
@@ -110,7 +121,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   const savedRadius = (localStorage.getItem('finly_card_radius') as CardRadius) || 'squircle';
 
   let preset = config.preset || savedPreset;
-  const accent = config.accentColor || savedAccent;
+  let accent = config.accentColor || savedAccent;
   const radius = config.cardRadius || savedRadius;
 
   // Auto-heal: If document has class 'dark' and preset is 'clean-light' and config didn't explicitly request clean-light
@@ -120,20 +131,44 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   }
 
   const presetData = PRESET_COLORS[preset] || PRESET_COLORS['sleek-neo-glass'];
-  const isDark = presetData.mode === 'dark';
+
+  // Determine dark/light mode
+  let mode: 'dark' | 'light' = config.mode || (preset === 'clean-light' ? 'light' : presetData.mode);
+  if (!config.mode && preset === 'linear-mono') {
+    const storedMode = localStorage.getItem('finly_theme_mode') as 'dark' | 'light' | null;
+    mode = storedMode || (root.classList.contains('dark') ? 'dark' : 'dark');
+  }
+
+  const isDark = mode === 'dark';
+
+  // Handle Linear Mono accents and light-mode white accent safeguard
+  if (preset === 'linear-mono') {
+    if (isDark) {
+      if (!config.accentColor && (accent === '#18181B' || accent === '#0284C7')) {
+        accent = '#FFFFFF';
+      }
+    } else {
+      if (!config.accentColor || accent.toUpperCase() === '#FFFFFF') {
+        accent = '#18181B';
+      }
+    }
+  } else if (!isDark && accent.toUpperCase() === '#FFFFFF') {
+    accent = '#0284C7';
+  }
 
   // Save to localStorage
   localStorage.setItem('finly_theme_preset', preset);
-  if (isDark) {
+  localStorage.setItem('finly_theme_mode', mode);
+  if (isDark && preset !== 'clean-light') {
     localStorage.setItem('finly_last_dark_preset', preset);
   }
-  if (config.accentColor) localStorage.setItem('finly_accent_color', config.accentColor);
+  localStorage.setItem('finly_accent_color', accent);
   if (config.cardRadius) localStorage.setItem('finly_card_radius', config.cardRadius);
 
   // Set DOM attributes and classes
   root.setAttribute('data-theme-preset', preset);
   root.setAttribute('data-card-radius', radius);
-  root.setAttribute('data-theme-mode', presetData.mode);
+  root.setAttribute('data-theme-mode', mode);
 
   if (isDark) {
     root.classList.add('dark');
@@ -143,12 +178,23 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
 
   // Set CSS Variables directly on root
   const radiusPx = RADIUS_MAP[radius] || '36px';
+  const accentForeground = getContrastTextColor(accent);
 
   root.style.setProperty('--primary-accent', accent);
+  root.style.setProperty('--primary-accent-foreground', accentForeground);
   root.style.setProperty('--card-radius', radiusPx);
 
-  const darkBg = isDark ? presetData.bg : '#080B14';
-  const darkCardBg = isDark ? presetData.cardBg : '#121826';
+  let darkBg = presetData.bg;
+  let darkCardBg = presetData.cardBg;
+  let lightBg = '#F1F5F9';
+  let lightCardBg = '#FFFFFF';
+
+  if (preset === 'linear-mono') {
+    darkBg = '#000000';
+    darkCardBg = '#121215';
+    lightBg = '#F4F4F5';
+    lightCardBg = '#FFFFFF';
+  }
 
   if (isDark) {
     root.style.setProperty('--app-bg', darkBg);
@@ -156,9 +202,9 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     document.body.style.backgroundColor = darkBg;
     document.body.style.color = '#FFFFFF';
   } else {
-    root.style.setProperty('--app-bg', '#F1F5F9');
-    root.style.setProperty('--app-card-bg', '#FFFFFF');
-    document.body.style.backgroundColor = '#F1F5F9';
+    root.style.setProperty('--app-bg', lightBg);
+    root.style.setProperty('--app-card-bg', lightCardBg);
+    document.body.style.backgroundColor = lightBg;
     document.body.style.color = '#0F172A';
   }
 
@@ -173,6 +219,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   dynamicStyleTag.innerHTML = `
     :root {
       --primary-accent: ${accent} !important;
+      --primary-accent-foreground: ${accentForeground} !important;
       --card-radius: ${radiusPx} !important;
     }
     html.dark, :root.dark {
@@ -180,8 +227,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       --app-card-bg: ${darkCardBg} !important;
     }
     html:not(.dark), :root:not(.dark) {
-      --app-bg: #F1F5F9 !important;
-      --app-card-bg: #FFFFFF !important;
+      --app-bg: ${lightBg} !important;
+      --app-card-bg: ${lightCardBg} !important;
     }
     ${isDark ? `
       html.dark body {
@@ -190,7 +237,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       }
     ` : `
       html:not(.dark) body {
-        background-color: #F1F5F9 !important;
+        background-color: ${lightBg} !important;
         color: #0F172A !important;
       }
     `}
@@ -199,7 +246,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   // Notify active components immediately
   try {
     window.dispatchEvent(new CustomEvent('finly_theme_changed', {
-      detail: { preset, accentColor: accent, cardRadius: radius, mode: presetData.mode }
+      detail: { preset, accentColor: accent, cardRadius: radius, mode }
     }));
   } catch (e) {}
 };

@@ -362,6 +362,15 @@ html.dark .dark\:bg-slate-900 {
 .hover\:bg-purple-700:hover,
 .hover\:bg-purple-600:hover {
   background-color: var(--primary-accent, #7C4DFF) !important;
+  color: var(--primary-accent-foreground, #FFFFFF) !important;
+}
+
+.bg-purple-600 svg,
+.bg-purple-500 svg,
+.hover\:bg-purple-700:hover svg,
+.hover\:bg-purple-600:hover svg {
+  color: var(--primary-accent-foreground, #FFFFFF) !important;
+  stroke: var(--primary-accent-foreground, #FFFFFF) !important;
 }
 
 .text-purple-600,
