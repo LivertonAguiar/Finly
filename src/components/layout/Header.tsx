@@ -312,10 +312,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <BellOff className="w-5 h-5" />
                       </div>
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                        {filterTab === 'unread' ? 'Nenhuma notificação não lida' : 'Histórico de notificações vazio'}
-                      </p>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs mx-auto leading-relaxed">
-                        Suas notificações ficam salvas aqui e só saem quando você clicar em limpar ou apagar.
+                        {filterTab === 'unread' ? 'Nenhuma notificação não lida' : 'Nenhuma notificação'}
                       </p>
                     </div>
                   ) : (
@@ -393,12 +390,6 @@ export const Header: React.FC<HeaderProps> = ({
                       );
                     })
                   )}
-                </div>
-
-                {/* Footer Bar */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
-                  <span>Histórico permanente</span>
-                  <span>Só sai quando você apagar</span>
                 </div>
               </div>
             </>
