@@ -1,10 +1,10 @@
 {
-  "version": "1.1.37",
-  "latestVersion": "1.1.37",
+  "version": "1.1.38",
+  "latestVersion": "1.1.38",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-08",
-  "notes": "Novidades da v1.1.37: Correção crítica no login e recuperação de senha, tolerância a múltiplos códigos e menu de perfil sólido.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.37/finly-v1.1.37.apk",
+  "notes": "Novidades da v1.1.38: Persistência permanente em disco dos códigos de recuperação, intercompatibilidade de e-mail (Hotmail/Gmail) e blindagem contra envios inválidos.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.38/finly-v1.1.38.apk",
   "isLatest": true,
   "sections": {
     "features": [

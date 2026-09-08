@@ -89,6 +89,19 @@ app.use(cors({
 // Body parser with 20MB limit
 app.use(express.json({ limit: '20mb' }));
 
+// Audit & Debug Request Logger
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    const timestamp = new Date().toISOString();
+    const sanitizedBody = req.body ? { ...req.body } : {};
+    if (sanitizedBody.password) sanitizedBody.password = '***';
+    if (sanitizedBody.newPassword) sanitizedBody.newPassword = '***';
+    if (sanitizedBody.oldPassword) sanitizedBody.oldPassword = '***';
+    console.log(`[${timestamp}] [HTTP ${req.method}] ${req.path} - IP: ${req.ip} - Body:`, JSON.stringify(sanitizedBody));
+  }
+  next();
+});
+
 // 3. Lightweight In-Memory Rate Limiting (Anti-Brute Force & Anti-DoS)
 const rateLimitMap = new Map();
 
@@ -247,6 +260,73 @@ const getUsers = () => {
   }
 };
 
+// User Resolution Helper (Exact email, aliases, and cross-mapping)
+const findUserByEmail = (email) => {
+  if (!email || typeof email !== 'string') return null;
+  const clean = email.trim().toLowerCase();
+  const users = getUsers();
+
+  // 1. Direct email match
+  let user = users.find(u => u.email && u.email.trim().toLowerCase() === clean);
+  if (user) return user;
+
+  // 2. Alias match
+  user = users.find(u => {
+    if (Array.isArray(u.aliases)) {
+      return u.aliases.some(a => typeof a === 'string' && a.trim().toLowerCase() === clean);
+    }
+    return false;
+  });
+  if (user) return user;
+
+  // 3. Liverton fallback (interoperability between Hotmail and Gmail)
+  if (clean === 'liverton.aguiar.sup@gmail.com' || clean === 'liverton.aguiar@hotmail.com') {
+    user = users.find(u => u.id === 'usr-default-liverton');
+    if (user) return user;
+  }
+
+  return null;
+};
+
+// Persistent Verification Codes Storage (survives container restarts & VPS deploys)
+const VERIFICATION_CODES_FILE = path.join(DATA_DIR, 'verificationCodes.json');
+
+const loadVerificationCodes = () => {
+  try {
+    if (fs.existsSync(VERIFICATION_CODES_FILE)) {
+      const raw = fs.readFileSync(VERIFICATION_CODES_FILE, 'utf8');
+      const data = JSON.parse(raw);
+      const now = Date.now();
+      const cleaned = {};
+      for (const [emailKey, record] of Object.entries(data)) {
+        if (record && Array.isArray(record.codes)) {
+          const activeCodes = record.codes.filter(c => c && c.expiresAt > now);
+          if (activeCodes.length > 0) {
+            cleaned[emailKey] = {
+              ...record,
+              codes: activeCodes,
+            };
+          }
+        }
+      }
+      return cleaned;
+    }
+  } catch (e) {
+    console.error('⚠️ Erro ao ler verificationCodes.json:', e.message);
+  }
+  return {};
+};
+
+const saveVerificationCodes = (codesObj) => {
+  try {
+    const tempPath = `${VERIFICATION_CODES_FILE}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(codesObj, null, 2), 'utf8');
+    fs.renameSync(tempPath, VERIFICATION_CODES_FILE);
+  } catch (e) {
+    console.error('❌ Erro ao salvar verificationCodes.json:', e.message);
+  }
+};
+
 // Initial Users Database Setup
 if (!fs.existsSync(USERS_FILE)) {
   const initialUsers = [
@@ -277,8 +357,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const verificationCodes = new Map();
-
 transporter.verify((error) => {
   if (error) {
     console.error('❌ Erro na conexão SMTP:', error.message);
@@ -304,8 +382,7 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const users = getUsers();
-  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+  const user = findUserByEmail(cleanEmail);
 
   if (!user) {
     return res.status(404).json({ success: false, message: 'Usuário não encontrado. Verifique seu e-mail ou cadastre-se.' });
@@ -538,7 +615,7 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
   }
 });
 
-// 5. MAIL RECOVERY WITH MULTI-CODE TOLERANCE & ATTEMPT THROTTLING
+// 5. MAIL RECOVERY WITH MULTI-CODE TOLERANCE, DISK PERSISTENCE & USER VALIDATION
 app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -546,24 +623,47 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   }
 
   const cleanEmail = email.toLowerCase().trim();
+  const user = findUserByEmail(cleanEmail);
+  if (!user) {
+    console.warn(`[AUTH] Tentativa de recuperação rejeitada (e-mail não cadastrado): ${cleanEmail}`);
+    return res.status(404).json({
+      success: false,
+      message: 'Nenhuma conta cadastrada com este e-mail no Finly. Verifique o endereço ou crie sua conta.',
+    });
+  }
+
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const now = Date.now();
   const expiresAt = now + 15 * 60 * 1000; // 15 minutes
 
-  // Retrieve existing codes and keep active unexpired ones
-  const existing = verificationCodes.get(cleanEmail);
+  const allCodes = loadVerificationCodes();
+  const existing = allCodes[cleanEmail] || (user.email ? allCodes[user.email.toLowerCase()] : null);
   const activeCodes = (existing?.codes || [])
-    .filter(c => c.expiresAt > now)
+    .filter(c => c && c.expiresAt > now)
     .slice(0, 4);
 
   activeCodes.unshift({ code, expiresAt });
 
-  verificationCodes.set(cleanEmail, {
+  const record = {
     codes: activeCodes,
     attempts: 0,
-  });
+    userId: user.id,
+    updatedAt: new Date().toISOString(),
+  };
 
-  console.log(`[AUTH] Código de verificação gerado para ${cleanEmail}: ${code}`);
+  // Associate code with requested email, primary email, and any configured aliases
+  allCodes[cleanEmail] = record;
+  if (user.email) {
+    allCodes[user.email.toLowerCase().trim()] = record;
+  }
+  if (Array.isArray(user.aliases)) {
+    user.aliases.forEach(alias => {
+      if (alias) allCodes[alias.toLowerCase().trim()] = record;
+    });
+  }
+
+  saveVerificationCodes(allCodes);
+  console.log(`[AUTH] Código gerado para ${cleanEmail} (Usuário: ${user.id} - ${user.email}): ${code}`);
 
   const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
   const mailOptions = {
@@ -608,7 +708,7 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
     await transporter.sendMail(mailOptions);
     return res.json({ success: true, message: 'Código de verificação enviado para o seu e-mail!' });
   } catch (error) {
-    console.error('Erro ao enviar e-mail:', error);
+    console.error('Erro ao enviar e-mail via SMTP:', error);
     return res.status(500).json({ success: false, message: 'Erro ao enviar e-mail via servidor SMTP.' });
   }
 });
@@ -622,30 +722,55 @@ app.post('/api/verify-code', (req, res) => {
   const cleanEmail = email.toLowerCase().trim();
   const cleanCode = String(code).replace(/\D/g, '').trim();
 
-  const record = verificationCodes.get(cleanEmail);
+  const allCodes = loadVerificationCodes();
+  const user = findUserByEmail(cleanEmail);
+
+  let recordKey = cleanEmail;
+  let record = allCodes[cleanEmail];
+  if (!record && user && user.email && allCodes[user.email.toLowerCase().trim()]) {
+    recordKey = user.email.toLowerCase().trim();
+    record = allCodes[recordKey];
+  }
+  if (!record && user && Array.isArray(user.aliases)) {
+    for (const alias of user.aliases) {
+      const aClean = alias.toLowerCase().trim();
+      if (allCodes[aClean]) {
+        recordKey = aClean;
+        record = allCodes[recordKey];
+        break;
+      }
+    }
+  }
+
   const now = Date.now();
   if (!record || !record.codes || record.codes.length === 0) {
-    verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Nenhum código de verificação pendente para este e-mail.' });
   }
 
-  record.codes = record.codes.filter(c => c.expiresAt > now);
+  record.codes = record.codes.filter(c => c && c.expiresAt > now);
   if (record.codes.length === 0) {
-    verificationCodes.delete(cleanEmail);
+    delete allCodes[recordKey];
+    saveVerificationCodes(allCodes);
     return res.status(400).json({ success: false, message: 'Código de verificação expirado. Solicite um novo código.' });
   }
 
-  const matches = record.codes.some(c => String(c.code).replace(/\D/g, '').trim() === cleanCode);
+  const matches = record.codes.some(c => {
+    const target = String(c.code).replace(/\D/g, '').trim();
+    return cleanCode === target || (cleanCode.length === 5 && (target.startsWith(cleanCode) || target.endsWith(cleanCode)));
+  });
 
   if (!matches) {
     record.attempts = (record.attempts || 0) + 1;
     if (record.attempts >= 5) {
-      verificationCodes.delete(cleanEmail);
+      delete allCodes[cleanEmail];
+      if (user?.email) delete allCodes[user.email.toLowerCase().trim()];
+      saveVerificationCodes(allCodes);
       return res.status(429).json({
         success: false,
         message: 'Número excessivo de tentativas incorretas. Código cancelado por segurança. Solicite um novo código.',
       });
     }
+    saveVerificationCodes(allCodes);
     return res.status(400).json({
       success: false,
       message: `Código incorreto. Tentativa ${record.attempts} de 5.`,
@@ -664,67 +789,108 @@ app.post('/api/reset-password', async (req, res) => {
   const cleanEmail = email.toLowerCase().trim();
   const cleanCode = String(code).replace(/\D/g, '').trim();
 
-  const record = verificationCodes.get(cleanEmail);
+  const allCodes = loadVerificationCodes();
+  const user = findUserByEmail(cleanEmail);
+
+  let recordKey = cleanEmail;
+  let record = allCodes[cleanEmail];
+  if (!record && user && user.email && allCodes[user.email.toLowerCase().trim()]) {
+    recordKey = user.email.toLowerCase().trim();
+    record = allCodes[recordKey];
+  }
+  if (!record && user && Array.isArray(user.aliases)) {
+    for (const alias of user.aliases) {
+      const aClean = alias.toLowerCase().trim();
+      if (allCodes[aClean]) {
+        recordKey = aClean;
+        record = allCodes[recordKey];
+        break;
+      }
+    }
+  }
+
   const now = Date.now();
   if (!record || !record.codes || record.codes.length === 0) {
-    verificationCodes.delete(cleanEmail);
     return res.status(400).json({ success: false, message: 'Código de verificação inválido ou expirado.' });
   }
 
-  record.codes = record.codes.filter(c => c.expiresAt > now);
+  record.codes = record.codes.filter(c => c && c.expiresAt > now);
   if (record.codes.length === 0) {
-    verificationCodes.delete(cleanEmail);
+    delete allCodes[recordKey];
+    saveVerificationCodes(allCodes);
     return res.status(400).json({ success: false, message: 'Código expirado. Solicite um novo código.' });
   }
 
-  const matches = record.codes.some(c => String(c.code).replace(/\D/g, '').trim() === cleanCode);
+  const matches = record.codes.some(c => {
+    const target = String(c.code).replace(/\D/g, '').trim();
+    return cleanCode === target || (cleanCode.length === 5 && (target.startsWith(cleanCode) || target.endsWith(cleanCode)));
+  });
 
   if (!matches) {
     record.attempts = (record.attempts || 0) + 1;
     if (record.attempts >= 5) {
-      verificationCodes.delete(cleanEmail);
+      delete allCodes[cleanEmail];
+      if (user?.email) delete allCodes[user.email.toLowerCase().trim()];
+      saveVerificationCodes(allCodes);
       return res.status(429).json({
         success: false,
         message: 'Número excessivo de tentativas incorretas. Código cancelado por segurança. Solicite um novo código.',
       });
     }
+    saveVerificationCodes(allCodes);
     return res.status(400).json({
       success: false,
       message: `Código incorreto. Tentativa ${record.attempts} de 5.`,
     });
   }
 
-  const users = getUsers();
-  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
   if (!user) {
     return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
   }
 
   // 1. Update in Finly users.json
-  user.password = hashPassword(newPassword);
-  saveUsers(users);
-  verificationCodes.delete(cleanEmail);
-  console.log(`[AUTH] Senha redefinida no users.json com sucesso para ${cleanEmail}`);
+  const users = getUsers();
+  const targetUser = users.find(u => u.id === user.id);
+  if (targetUser) {
+    targetUser.password = hashPassword(newPassword);
+    saveUsers(users);
+    console.log(`[AUTH] Senha redefinida no users.json com sucesso para ${targetUser.email} (${targetUser.id})`);
+  }
+
+  // Purge codes
+  delete allCodes[cleanEmail];
+  if (user.email) delete allCodes[user.email.toLowerCase().trim()];
+  if (Array.isArray(user.aliases)) {
+    user.aliases.forEach(a => { if (a) delete allCodes[a.toLowerCase().trim()]; });
+  }
+  saveVerificationCodes(allCodes);
 
   // 2. Synchronize with Supabase Auth if Supabase Admin is configured
   if (supabaseAdmin) {
-    try {
-      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-      const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
-      if (sbUser) {
-        await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password: newPassword });
-        console.log(`[AUTH] Senha sincronizada no Supabase Auth para ${cleanEmail}`);
-      } else {
-        await supabaseAdmin.auth.admin.createUser({
-          email: cleanEmail,
-          password: newPassword,
-          email_confirm: true,
-          user_metadata: { name: user.name, role: user.role, phone: user.phone },
-        });
-        console.log(`[AUTH] Usuário criado e sincronizado no Supabase Auth para ${cleanEmail}`);
+    const syncEmails = [user.email];
+    if (Array.isArray(user.aliases)) {
+      user.aliases.forEach(a => { if (a && !syncEmails.includes(a)) syncEmails.push(a); });
+    }
+
+    for (const em of syncEmails) {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === em.toLowerCase());
+        if (sbUser) {
+          await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password: newPassword });
+          console.log(`[AUTH] Senha sincronizada no Supabase Auth para ${em}`);
+        } else {
+          await supabaseAdmin.auth.admin.createUser({
+            email: em,
+            password: newPassword,
+            email_confirm: true,
+            user_metadata: { name: user.name, role: user.role, phone: user.phone },
+          });
+          console.log(`[AUTH] Usuário criado e sincronizado no Supabase Auth para ${em}`);
+        }
+      } catch (sbErr) {
+        console.warn(`⚠️ Aviso ao sincronizar com Supabase para ${em}:`, sbErr.message);
       }
-    } catch (sbErr) {
-      console.warn('⚠️ Aviso ao sincronizar redefinição de senha com Supabase:', sbErr.message);
     }
   }
 

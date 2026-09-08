@@ -497,7 +497,7 @@ export const HELP_FAQS: HelpFaqItem[] = [
   {
     id: 'faq-recuperar-senha-codigo',
     question: 'Como recuperar minha senha caso eu esqueça?',
-    answer: 'Na tela de login, clique em "Esqueceu a senha?". Digite o e-mail da sua conta e clique em "Enviar Código por E-mail". Você receberá um código numérico de 6 dígitos no seu e-mail (verifique também a caixa de spam). Digite ou cole o código no Finly, defina sua nova senha e clique em "Redefinir Senha e Entrar". Caso demore a receber, você pode clicar em "Reenviar código" diretamente na tela de verificação.',
+    answer: 'Na tela de login, clique em "Esqueceu a senha?". Digite o e-mail da sua conta (aceita tanto Hotmail quanto o Gmail vinculado) e clique em "Enviar Código por E-mail". Você receberá um código numérico de 6 dígitos no seu e-mail (verifique também a caixa de spam). Digite ou cole o código no Finly, defina sua nova senha e clique em "Redefinir Senha e Entrar". Se precisar, use o botão "Reenviar código" diretamente na tela.',
     category: 'configuracoes',
     tags: ['recuperar', 'senha', 'codigo', 'token', 'login', 'email'],
   },

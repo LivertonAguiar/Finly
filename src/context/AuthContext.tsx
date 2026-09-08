@@ -15,6 +15,15 @@ const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined
 const AUTH_USERS_KEY = 'finly_auth_users_db';
 const ACTIVE_SESSION_KEY = 'finly_active_session_id';
 
+export const DEFAULT_LIVERTON_USER: AuthUser = {
+  id: 'usr-default-liverton',
+  name: 'Liverton',
+  email: 'liverton.aguiar@hotmail.com',
+  phone: '85985949115',
+  role: 'admin',
+  createdAt: '2026-01-01',
+};
+
 const DEFAULT_ADMIN_USER: AuthUser = {
   id: 'usr-default-admin',
   name: 'Administrador',
@@ -34,7 +43,7 @@ export const DEFAULT_DEMO_USER: AuthUser = {
 
 // Security Helper: Purge any password fields from client storage
 const sanitizeUsersList = (users: any[]): AuthUser[] => {
-  if (!Array.isArray(users)) return [DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
+  if (!Array.isArray(users)) return [DEFAULT_LIVERTON_USER, DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
   return users.map(u => ({
     id: u.id || `usr-${Date.now()}`,
     name: u.name || 'Usuário',
@@ -237,8 +246,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       // Offline fallback
       let user = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
-      if (!user && cleanEmail === 'liverton.aguiar@hotmail.com') {
-        user = DEFAULT_ADMIN_USER;
+      if (!user && (cleanEmail === 'liverton.aguiar@hotmail.com' || cleanEmail === 'liverton.aguiar.sup@gmail.com')) {
+        user = DEFAULT_LIVERTON_USER;
       }
 
       if (!user) {

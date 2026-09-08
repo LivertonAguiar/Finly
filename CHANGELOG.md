@@ -3,6 +3,22 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.38] - 2026-09-08
+
+### 🔒 Persistência de Recuperação, Intercompatibilidade & Blindagem de E-mail
+- **Persistência em Disco de Códigos de Verificação (`verificationCodes.json`)**:
+  - Os códigos de recuperação agora são salvos de forma atômica no diretório persistente montado no Docker (`/app/server/data`).
+  - Reinicializações do container ou novos deploys na VPS não apagam mais os códigos solicitados pelos usuários.
+- **Intercompatibilidade Hotmail & Gmail para a Conta Principal**:
+  - O e-mail `liverton.aguiar.sup@gmail.com` foi vinculado como alias oficial da conta `usr-default-liverton` (`liverton.aguiar@hotmail.com`).
+  - O login e a recuperação de senha agora aceitam tanto o Hotmail quanto o Gmail do remetente, direcionando sempre para a conta e store financeiro reais do usuário.
+- **Bloqueio de E-mails Fantasmas & Prevenção de Bounces**:
+  - A rota `/api/send-recovery-code` agora valida previamente se o e-mail solicitado existe em `users.json`. E-mails inexistentes retornam 404 claro, impedindo disparos para endereços inválidos que causavam avisos de erro de entrega (*Mail Delivery Subsystem*).
+- **Tolerância a Códigos de 5 e 6 Dígitos**:
+  - Aceitação de códigos onde o primeiro ou último dígito pudesse ter sido omitido por espaço ou colagem rápida em teclados móveis.
+- **Auditoria e Logs Transparentes no Servidor**:
+  - Middleware de logging adicionado para registrar requisições de autenticação e recuperação no Docker com ofuscação de senhas para facilitar diagnóstico.
+
 ## [1.1.37] - 2026-09-08
 
 ### 🔒 Segurança, Autenticação & Recuperação de Senha
