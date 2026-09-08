@@ -20,7 +20,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction } from '../../types';
-import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { formatCurrency, formatDate, formatDateShort, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
@@ -195,8 +195,9 @@ export const CalendarPage: React.FC = () => {
     const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12);
     const dayOfWeek = d.toLocaleDateString('pt-BR', { weekday: 'long' });
     const day = parts[2];
-    const mName = d.toLocaleDateString('pt-BR', { month: 'long' });
-    return `${day} de ${mName}, ${dayOfWeek}`;
+    const month = parts[1];
+    const year = parts[0];
+    return `${day}/${month}/${year} (${dayOfWeek})`;
   }, [selectedDate]);
 
   // Robust category lookup
@@ -457,7 +458,7 @@ export const CalendarPage: React.FC = () => {
                                 {t.description}
                               </p>
                               <span className="text-[10px] text-slate-400 truncate block">
-                                {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}
+                                {formatDateShort(t.date)} • {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}
                               </span>
                             </div>
                           </div>

@@ -25,11 +25,48 @@ export function formatNumber(value: number | string, decimals = 2): string {
   }).format(safeNum);
 }
 
+/**
+ * Formats a date string to full Brazilian date standard: DD/MM/AAAA
+ * Example: '2026-09-07' -> '07/09/2026'
+ */
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
-  const [year, month, day] = dateString.split('T')[0].split('-');
-  if (!year || !month || !day) return dateString;
-  return `${day}/${month}/${year}`;
+  const clean = dateString.split('T')[0];
+  if (clean.includes('-')) {
+    const [year, month, day] = clean.split('-');
+    if (year && month && day) {
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+  }
+  if (clean.includes('/')) {
+    const parts = clean.split('/');
+    if (parts.length === 3) {
+      return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+    }
+  }
+  return dateString;
+}
+
+/**
+ * Formats a date string to compact Brazilian date standard: DD/MM
+ * Example: '2026-09-07' -> '07/09'
+ */
+export function formatDateShort(dateString: string): string {
+  if (!dateString) return '';
+  const clean = dateString.split('T')[0];
+  if (clean.includes('-')) {
+    const [year, month, day] = clean.split('-');
+    if (day && month) {
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
+    }
+  }
+  if (clean.includes('/')) {
+    const parts = clean.split('/');
+    if (parts.length >= 2) {
+      return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}`;
+    }
+  }
+  return dateString;
 }
 
 export function formatMonthYear(yearMonth: string): string {
@@ -62,7 +99,6 @@ export function formatLocalDateISO(date: Date): string {
 export function getTodayString(): string {
   return formatLocalDateISO(new Date());
 }
-
 
 export function calculateCardInvoiceStatus(
   card: { closingDay: number; dueDay: number },

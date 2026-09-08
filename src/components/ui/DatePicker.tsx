@@ -438,8 +438,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 block">
                     Data Selecionada
                   </span>
-                  <span className="text-sm font-black text-purple-600 dark:text-purple-400 capitalize">
-                    {getFullDisplay(value)}
+                  <span className="text-sm font-black text-purple-600 dark:text-purple-400">
+                    {formatDisplay(value)}
                   </span>
                 </div>
                 <button

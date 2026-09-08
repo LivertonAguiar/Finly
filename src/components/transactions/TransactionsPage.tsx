@@ -32,7 +32,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction, TransactionType } from '../../types';
-import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { formatCurrency, formatDate, formatDateShort, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { BankLogo } from '../../utils/bankLogos';
@@ -331,11 +331,12 @@ export const TransactionsPage: React.FC = () => {
         const d = new Date(dateStr + 'T12:00:00');
         const dayOfWeek = d.toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase().replace('.', '');
         const dayNum = String(d.getDate()).padStart(2, '0');
-        const monthShort = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
+        const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
 
         groups.push({
           date: dateStr,
-          displayDate: `${dayNum} ${monthShort}, ${dayOfWeek}`,
+          displayDate: `${dayNum}/${monthNum}/${year} (${dayOfWeek})`,
           items,
           dayTotal,
           isToday: dateStr === todayStr,
@@ -832,6 +833,7 @@ export const TransactionsPage: React.FC = () => {
                           </p>
                           <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">
                             <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
+                            <span className="shrink-0 font-medium text-slate-500 dark:text-slate-400">• {formatDateShort(t.date)}</span>
                             {card ? (
                               <span className="truncate">• Cartão {card.name}</span>
                             ) : acc ? (
