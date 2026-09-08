@@ -210,13 +210,13 @@ export const TransactionsPage: React.FC = () => {
       // Expense
       if (isCard) {
         if (isCompleted) {
-          label = 'Fatura Paga';
+          label = 'Pago (Cartão)';
           styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
           icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
         } else {
-          label = 'Fatura Aberta';
-          styleClass = 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30 hover:bg-teal-500/25';
-          icon = <Clock className="w-3.5 h-3.5 text-teal-500 shrink-0" />;
+          label = 'Pendente (Cartão)';
+          styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
+          icon = <CreditCard className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
         }
       } else {
         if (isCompleted) {
@@ -238,7 +238,7 @@ export const TransactionsPage: React.FC = () => {
           e.stopPropagation();
           toggleTransactionStatus(t.id);
         }}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs shrink-0 ${styleClass}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs shrink-0 ${styleClass}`}
         title={`Situação: ${label} (Clique para alternar)`}
       >
         {icon}

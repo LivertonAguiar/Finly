@@ -267,6 +267,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             >
               {isCompleted ? (
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              ) : isCard ? (
+                <CardIcon className="w-4 h-4 text-amber-500 shrink-0" />
               ) : (
                 <Clock className="w-4 h-4 text-amber-500 shrink-0" />
               )}
@@ -277,8 +279,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                     : 'A Receber'
                   : isCard
                   ? isCompleted
-                    ? 'Fatura Paga'
-                    : 'Fatura Aberta'
+                    ? 'Pago (Cartão)'
+                    : 'Pendente (Cartão)'
                   : isCompleted
                   ? 'Paga'
                   : 'A Pagar'}
