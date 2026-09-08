@@ -34,10 +34,32 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.32';
+export const CURRENT_VERSION = '1.1.33';
 export const CURRENT_BUILD_DATE = '2026-09-07';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: '1.1.33',
+    releaseDate: '2026-09-07',
+    summary: 'Status unificado de compras no cartão como Pendente (Cartão) com ícone temático de cartão de crédito, botão permanente de download de APK disponível em todas as plataformas e telas de atualização.',
+    highlights: [
+      {
+        title: 'Status Unificado Pendente (Cartão)',
+        description: 'Despesas no cartão agora exibem claramente Pendente (Cartão) e Pago (Cartão) com ícone de cartão de crédito e total alinhamento com os filtros de status.',
+        type: 'feature',
+      },
+      {
+        title: 'Botão de Download de APK Permanente',
+        description: 'Botão para baixar o pacote APK Android agora permanece sempre visível na Web e no App, permitindo instalar ou atualizar a qualquer momento.',
+        type: 'improvement',
+      },
+      {
+        title: 'Reordenação Touch & Pointer no Menu Lateral',
+        description: 'Arrastar e soltar itens nativo em telas de toque (celular/tablet) e desktop com captura de ponteiro, resposta háptica imediata e auto-scroll.',
+        type: 'feature',
+      },
+    ],
+  },
   {
     version: '1.1.32',
     releaseDate: '2026-09-07',

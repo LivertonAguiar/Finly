@@ -1,34 +1,33 @@
 {
-  "version": "1.1.32",
-  "latestVersion": "1.1.32",
+  "version": "1.1.33",
+  "latestVersion": "1.1.33",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-07",
-  "notes": "Novidades da v1.1.32: Reordenação touch e pointer nativa na personalização do menu lateral, download e compartilhamento nativo de relatórios no Android, privacidade unificada no botão do topo, e foco automático nas transações do dia.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.32/finly-v1.1.32.apk",
+  "notes": "Novidades da v1.1.33: Status unificado de compras de cartão com rótulo 'Pendente (Cartão)' e ícone de cartão de crédito, botão de download de APK sempre disponível em todas as plataformas e telas de atualização, e melhorias de usabilidade.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.33/finly-v1.1.33.apk",
   "isLatest": true,
   "sections": {
     "features": [
+      "Status Unificado de Cartão: despesas no cartão identificadas claramente como 'Pendente (Cartão)' com ícone de cartão de crédito e 'Pago (Cartão)'",
+      "Botão de Download de APK Permanente: acessível em todas as telas (Web e Android) para instalar e atualizar a qualquer momento",
       "Reordenação Touch Nativa: arrastar e soltar itens do menu lateral com captura de ponteiro, vibração háptica e auto-scroll",
-      "Download Nativo no Android: exportação de PDF, CSV e XLSX com integração direta ao Filesystem e Share nativo",
-      "Foco Inteligente de Transações: abertura da aba de transações direcionada automaticamente para o dia atual"
+      "Download Nativo no Android: exportação de PDF, CSV e XLSX com integração direta ao Filesystem e Share nativo"
     ],
     "fixes": [
-      "Correção do recurso de mover no menu lateral em dispositivos móveis e telas touch",
-      "Remoção da opção redundante de privacidade em Configurações e Mais Opções (unificada no botão de olho)",
+      "Substituição do status 'Fatura Aberta' por 'Pendente (Cartão)' para total harmonia com os filtros",
+      "Remoção da restrição que ocultava o botão de download de APK no navegador",
       "Correção de deslocamento lateral indesejado na aba de cartões em telas de smartphones",
       "Fechamento automático do modal de notificações ao tocar ou clicar fora da janela"
     ],
     "improvements": [
-      "Área de toque aprimorada no manipulador de arrastar itens",
-      "Feedback visual de elevação e contorno no cartão em movimento",
-      "Novas skills de engenharia e testes integradas"
+      "Badge responsivo com tamanho ajustado para todas as resoluções de tela",
+      "Área de toque aprimorada no manipulador de arrastar itens do menu lateral"
     ]
   },
   "highlights": [
-    "[Menu Lateral] Reordenação por toque e ponteiro com vibração háptica",
-    "[Android] Download e compartilhamento nativo de PDF, CSV e Excel",
-    "[Transações] Rolagem e foco automático nas transações do dia corrente",
-    "[Interface] Modo privacidade unificado no topo e correção de gestos no mobile",
-    "[Notificações] Fechamento confiável por toque fora do painel"
+    "[Transações] Status 'Pendente (Cartão)' com ícone de cartão e total harmonia com os filtros",
+    "[Download] Botão de download do APK sempre disponível no app e na web",
+    "[Menu Lateral] Reordenação touch nativa e suave com feedback háptico",
+    "[Android] Exportação e compartilhamento oficial de PDF, CSV e Excel"
   ]
 }

@@ -3,6 +3,14 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.33] - 2026-09-07
+
+### ✨ Novidades & Usabilidade
+- **Status Unificado de Compras no Cartão (`Pendente (Cartão)`)**:
+  - Compras no cartão de crédito agora exibem o rótulo intuitivo **`Pendente (Cartão)`** com o ícone de cartão de crédito e **`Pago (Cartão)`** com check verde, eliminando o termo confuso *"Fatura Aberta"* da linha de despesas.
+- **Botão de Download de APK Permanente**:
+  - O botão de download do pacote APK do Android agora fica sempre visível e acessível em todas as telas (Web e Android) no menu Mais Opções e na Central de Atualizações, permitindo baixar o instalador a qualquer momento sem restrições.
+
 ## [1.1.32] - 2026-09-07
 
 ### ✨ Novas Funcionalidades & Experiência Móvel

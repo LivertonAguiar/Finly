@@ -693,16 +693,23 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
                 </button>
 
-                {isNativeCapacitor() && updateResult?.hasUpdate && (
-                  <button
-                    type="button"
-                    onClick={() => openExternalUrl(updateResult.downloadUrl || GITHUB_RELEASES_URL)}
-                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Baixar APK</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => openExternalUrl(updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${updateResult?.latestVersion || APP_VERSION}/finly-v${updateResult?.latestVersion || APP_VERSION}.apk` || GITHUB_RELEASES_URL)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                    updateResult?.hasUpdate
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 animate-pulse'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
+                  title="Baixar pacote APK do aplicativo para Android"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>
+                    {updateResult?.hasUpdate
+                      ? `Baixar Atualização v${updateResult.latestVersion}`
+                      : `Baixar APK Android`}
+                  </span>
+                </button>
 
                 <button
                   type="button"
