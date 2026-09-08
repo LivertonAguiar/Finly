@@ -230,9 +230,12 @@ export const Header: React.FC<HeaderProps> = ({
                 onTouchStart={() => setShowNotifications(false)}
               />
 
-              <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-auto sm:w-96 max-w-sm mx-auto sm:mx-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-200/90 dark:border-slate-800 p-3.5 z-50 animate-in fade-in-50 zoom-in-95 backdrop-blur-xl">
+              <div
+                className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-auto sm:w-96 max-w-sm mx-auto sm:mx-0 bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-slate-200/90 dark:border-white/10 p-3.5 z-50 animate-in fade-in-50 zoom-in-95 backdrop-blur-xl"
+                style={{ backgroundColor: 'var(--app-card-bg, #18181B)' }}
+              >
                 {/* Header Bar */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-white/10">
                   <div className="flex items-center gap-1.5">
                     <Bell className="w-4 h-4 text-purple-500 dark:text-purple-400" />
                     <h4 className="font-black text-xs text-slate-900 dark:text-white">Notificações</h4>
@@ -268,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowNotifications(false)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                       title="Fechar"
                     >
                       <X className="w-4 h-4" />
@@ -285,7 +288,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                         filterTab === 'all'
                           ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60 shadow-xs'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       Todas ({notifications.length})
@@ -296,7 +299,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                         filterTab === 'unread'
                           ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60 shadow-xs'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       Não lidas ({unreadCount})
@@ -305,10 +308,10 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
 
                 {/* Notifications List */}
-                <div className="py-2 space-y-1.5 max-h-72 overflow-y-auto pr-0.5 divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="py-2 space-y-1.5 max-h-72 overflow-y-auto pr-0.5 divide-y divide-slate-100 dark:divide-white/5">
                   {displayedNotifications.length === 0 ? (
-                    <div className="py-6 text-center space-y-2">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto">
+                    <div className="py-7 text-center space-y-2.5">
+                      <div className="w-11 h-11 rounded-2xl bg-purple-500/10 dark:bg-purple-950/40 text-purple-500 dark:text-purple-400 flex items-center justify-center mx-auto border border-purple-500/20 dark:border-purple-800/40 shadow-xs">
                         <BellOff className="w-5 h-5" />
                       </div>
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -415,8 +418,11 @@ export const Header: React.FC<HeaderProps> = ({
                 onTouchStart={() => setShowUserMenu(false)}
               />
 
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1">
-              <div className="p-2.5 border-b border-slate-100 dark:border-slate-800">
+              <div
+                className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-white/10 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1"
+                style={{ backgroundColor: 'var(--app-card-bg, #18181B)' }}
+              >
+                <div className="p-2.5 border-b border-slate-100 dark:border-white/10">
                 <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
                   {currentUser?.name || user.name}
                 </p>
