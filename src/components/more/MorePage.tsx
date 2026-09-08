@@ -86,9 +86,10 @@ interface MorePageProps {
 }
 
 export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab }) => {
-  const { user, updateUser, exportBackupJSON } = useFinancial();
+  const { user, updateUser, exportBackupJSON, notifications } = useFinancial();
   const { currentUser, changePassword } = useAuth();
   const { lang, t } = useTranslation();
+  const unreadNotifsCount = notifications?.filter(n => !n.read).length || 0;
   const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'SEGURANÇA' | 'SOBRE'>(initialSubTab || 'GERAL');
   const [activeSidebarIds, setActiveSidebarIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
@@ -404,6 +405,37 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         {/* ========================================================================= */}
         {segmentedTab === 'GERAL' && (
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {/* Quick Action: Histórico de Notificações */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('finly_open_notifications'))}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#1E1E22] transition-colors cursor-pointer group bg-gradient-to-r from-purple-500/5 to-transparent"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 relative">
+                  <Bell className="w-5 h-5" />
+                  {unreadNotifsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-500 rounded-full ring-2 ring-white dark:ring-[#18181B]" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      Histórico de Notificações
+                    </span>
+                    {unreadNotifsCount > 0 && (
+                      <span className="text-[10px] px-2 py-0.2 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold">
+                        {unreadNotifsCount} nova{unreadNotifsCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Ver e gerenciar alertas de faturas, contas e orçamentos
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors shrink-0" />
+            </button>
             {visibleGeneralItems.length === 0 ? (
               <div className="p-8 text-center space-y-2">
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300">

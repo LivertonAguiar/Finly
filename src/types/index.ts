@@ -196,4 +196,5 @@ export interface NotificationItem {
   date: string;
   read: boolean;
   type: 'info' | 'alert' | 'success' | 'reminder';
+  tag?: string;
 }

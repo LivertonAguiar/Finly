@@ -69,6 +69,43 @@ export function formatDateShort(dateString: string): string {
   return dateString;
 }
 
+/**
+ * Formats a notification date/time string to Brazilian standard
+ * Examples: 'Hoje às 14:35', 'Ontem às 09:12', '07/09/2026 às 21:50'
+ */
+export function formatNotificationTimestamp(dateStr: string): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+
+    const now = new Date();
+    const isToday = d.getDate() === now.getDate() &&
+                    d.getMonth() === now.getMonth() &&
+                    d.getFullYear() === now.getFullYear();
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = d.getDate() === yesterday.getDate() &&
+                        d.getMonth() === yesterday.getMonth() &&
+                        d.getFullYear() === yesterday.getFullYear();
+
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const time = `${hours}:${mins}`;
+
+    if (isToday) return `Hoje às ${time}`;
+    if (isYesterday) return `Ontem às ${time}`;
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year} às ${time}`;
+  } catch (_) {
+    return dateStr;
+  }
+}
+
 export function formatMonthYear(yearMonth: string): string {
   if (!yearMonth) return '';
   const [year, month] = yearMonth.split('-');

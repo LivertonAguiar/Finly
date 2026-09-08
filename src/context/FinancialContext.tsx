@@ -149,8 +149,17 @@ interface FinancialContextType {
 
   // Notifications
   notifications: NotificationItem[];
+  addNotification: (item: {
+    title: string;
+    message: string;
+    type?: 'info' | 'alert' | 'success' | 'reminder';
+    date?: string;
+    tag?: string;
+  }) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  deleteNotification: (id: string) => void;
+  clearAllNotifications: () => void;
 
   // Data Management & Backups
   refreshData: () => Promise<void>;
@@ -524,6 +533,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setInvestments(sbStore.investments || []);
           setTransactions(sbStore.transactions || []);
           if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+          if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
+            setNotifications(sbStore.notifications);
+          }
           if (sbStore.userProfile) setUser(sbStore.userProfile);
           return;
         }
@@ -541,6 +553,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setInvestments(serverStore.investments || []);
         setTransactions(serverStore.transactions || []);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+        if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
+          setNotifications(serverStore.notifications);
+        }
         if (serverStore.userProfile) setUser(serverStore.userProfile);
       } else {
         // Fallback reload from local storage
@@ -1154,6 +1169,35 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Notifications
+  const addNotification = (item: {
+    title: string;
+    message: string;
+    type?: 'info' | 'alert' | 'success' | 'reminder';
+    date?: string;
+    tag?: string;
+  }) => {
+    const newNotif: NotificationItem = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      title: item.title,
+      message: item.message,
+      date: item.date || new Date().toISOString(),
+      read: false,
+      type: item.type || 'info',
+      tag: item.tag,
+    };
+
+    setNotifications(prev => {
+      // Avoid duplicate alert with same title and message if recorded within the last 15 minutes
+      const nowMs = new Date(newNotif.date).getTime();
+      const isDuplicate = prev.some(
+        n => n.title === newNotif.title && n.message === newNotif.message &&
+        Math.abs(nowMs - new Date(n.date).getTime()) < 15 * 60 * 1000
+      );
+      if (isDuplicate) return prev;
+      return [newNotif, ...prev];
+    });
+  };
+
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
   };
@@ -1161,6 +1205,43 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const markAllNotificationsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
+
+  const deleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  // Automatically capture in-app notifications into the persistent history
+  useEffect(() => {
+    const handleInAppNotif = (e: any) => {
+      const detail = e?.detail;
+      if (!detail || !detail.title) return;
+
+      let type: 'info' | 'alert' | 'success' | 'reminder' = 'info';
+      const text = `${detail.title} ${detail.body || ''}`.toLowerCase();
+      if (text.includes('🚨') || text.includes('limite') || text.includes('alerta') || text.includes('ultrapassou')) {
+        type = 'alert';
+      } else if (text.includes('🎉') || text.includes('meta concluída') || text.includes('parabéns')) {
+        type = 'success';
+      } else if (text.includes('💳') || text.includes('fatura') || text.includes('⏰') || text.includes('vence') || text.includes('lembrete')) {
+        type = 'reminder';
+      }
+
+      addNotification({
+        title: detail.title,
+        message: detail.body || '',
+        type,
+        tag: detail.tag,
+        date: new Date().toISOString(),
+      });
+    };
+
+    window.addEventListener('finly_in_app_notification', handleInAppNotif);
+    return () => window.removeEventListener('finly_in_app_notification', handleInAppNotif);
+  }, []);
 
   // Reset / Clear Data
   const resetAllUserData = () => {
@@ -1393,8 +1474,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateFamilyMember,
         removeFamilyMember,
         notifications,
+        addNotification,
         markNotificationRead,
         markAllNotificationsRead,
+        deleteNotification,
+        clearAllNotifications,
         refreshData,
         clearAppCache,
         resetAllUserData,

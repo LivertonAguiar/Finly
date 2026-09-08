@@ -44,17 +44,17 @@ export const InAppNotificationToast: React.FC = () => {
   const handleClickToast = () => {
     if (isUpdateToast) {
       window.dispatchEvent(new CustomEvent('finly_open_update_modal'));
-      setToast(null);
+    } else {
+      window.dispatchEvent(new CustomEvent('finly_open_notifications'));
     }
+    setToast(null);
   };
 
   return (
     <div className="fixed top-3 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-in slide-in-from-top-3 duration-300 pointer-events-auto">
       <div
         onClick={handleClickToast}
-        className={`relative p-4 rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 text-white shadow-2xl border border-purple-500/40 backdrop-blur-xl flex items-start gap-3.5 ${
-          isUpdateToast ? 'cursor-pointer hover:border-purple-400 hover:scale-[1.01] transition-all' : ''
-        }`}
+        className="relative p-4 rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 text-white shadow-2xl border border-purple-500/40 backdrop-blur-xl flex items-start gap-3.5 cursor-pointer hover:border-purple-400 hover:scale-[1.01] transition-all"
       >
         <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center shrink-0 text-purple-300 mt-0.5">
           <Bell className="w-5 h-5 text-purple-400 animate-bounce" />
@@ -75,10 +75,15 @@ export const InAppNotificationToast: React.FC = () => {
             {toast.body}
           </p>
 
-          {isUpdateToast && (
+          {isUpdateToast ? (
             <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-amber-300 hover:text-amber-200">
               <span>Toque para ver novidades e atualizar</span>
               <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          ) : (
+            <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-purple-300 hover:text-purple-200">
+              <span>Ver no histórico</span>
+              <ArrowRight className="w-3 h-3" />
             </div>
           )}
         </div>
