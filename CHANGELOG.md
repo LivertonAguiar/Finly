@@ -3,6 +3,20 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.44] - 2026-09-08
+
+### 🛡️ Triggers no PostgreSQL e Bloqueio Definitivo contra Ressurreição de Dados
+- **Gatilhos no Banco de Dados Supabase (PostgreSQL Triggers)**:
+  - Implementação de triggers ativos (`trg_prevent_ghost_transactions` e `trg_prevent_ghost_cards`) com execução `BEFORE INSERT OR UPDATE` nas tabelas `transactions` e `credit_cards`.
+  - Qualquer tentativa de clientes antigos com bundles em cache de inserir ou atualizar transações ou cartões legados (anteriores a setembro de 2026) é interceptada e descartada silenciosamente (`RETURN NULL`) a nível de banco de dados.
+- **Sincronização Bidirecional & Exclusão Real no Supabase (`supabaseDb.ts`)**:
+  - `saveEntireStore` agora reconcilia deleções: quando a lista de transações for limpa ou esvaziada pelo usuário, ela executa a limpeza real no banco de dados (`DELETE FROM transactions WHERE user_id = targetUserId`).
+  - Adição dos métodos dedicados `deleteTransaction` e `deleteMultipleTransactions` com chamada direta ao Supabase via `FinancialContext.tsx` no momento exato em que o usuário clica em excluir.
+- **Sanitização Server-Side no Backend Express (`apiServer.js`)**:
+  - Implementação do filtro `sanitizeStoreData` em `GET /api/user/store` e `POST /api/user/store`, impedindo que stores no disco do servidor VPS recebam ou sirvam dados legados.
+- **Proteção do Ciclo de Deploy (`deploy-vps.ps1`)**:
+  - Exclusão estrita de `server/data/stores` e `server/data/*.json` no empacotamento e extração do deploy na VPS Oracle.
+
 ## [1.1.43] - 2026-09-08
 
 ### 🛡️ Blindagem contra Ressurreição de Dados Antigos & Proteção de Deploy

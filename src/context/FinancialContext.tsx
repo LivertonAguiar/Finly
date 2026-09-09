@@ -210,10 +210,27 @@ function sanitizeStoredData<T>(obj: T): T {
   return obj;
 }
 
+// Known legacy ghost record IDs from old template stores that must never be loaded
+const GHOST_CARD_IDS = new Set([
+  'card-1788094641945-bzt',
+  'card-1788094677952-2ym',
+  'card-1788916198444-dq3',
+]);
+
+function isGhostTransaction(tx: any): boolean {
+  if (!tx) return false;
+  const id = String(tx.id || '');
+  if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id === 'tx-pay-1788193846930') return true;
+  if (tx.createdAt && (String(tx.createdAt).startsWith('2026-08-30') || String(tx.createdAt).startsWith('2026-08-31'))) return true;
+  if (tx.created_at && (String(tx.created_at).startsWith('2026-08-30') || String(tx.created_at).startsWith('2026-08-31'))) return true;
+  return false;
+}
+
 export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const payingInvoiceLockRef = useRef<Record<string, number>>({});
   const isStoreLoadedForUserIdRef = useRef<string | null>(null);
   const isResettingRef = useRef<boolean>(false);
+  const hasInitialRemoteSyncFinishedRef = useRef<boolean>(false);
 
   const { showUndo } = useUndoToast();
   const { currentUser } = useAuth();
@@ -256,13 +273,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } else {
           return sanitizeStoredData({
             accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
-            cards: Array.isArray(parsed.cards) ? parsed.cards : [],
+            cards: Array.isArray(parsed.cards) ? parsed.cards.filter((c: any) => c && !GHOST_CARD_IDS.has(c.id)) : [],
             categories: mergeCategories(parsed.categories),
             budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
             goals: Array.isArray(parsed.goals) ? parsed.goals : [],
             debts: Array.isArray(parsed.debts) ? parsed.debts : [],
             investments: Array.isArray(parsed.investments) ? parsed.investments : [],
-            transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+            transactions: Array.isArray(parsed.transactions) ? parsed.transactions.filter((t: any) => !isGhostTransaction(t)) : [],
             familyMembers: Array.isArray(parsed.familyMembers) ? parsed.familyMembers : [
               { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
             ],
@@ -385,6 +402,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setFamilyMembers(store.familyMembers);
     setNotifications(store.notifications);
     isStoreLoadedForUserIdRef.current = userId;
+    hasInitialRemoteSyncFinishedRef.current = false;
   }, [userId]);
 
   const [period, setPeriod] = useState<string>('this_month');
@@ -409,25 +427,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         try {
           const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
           if (sbStore && sbStore.accounts) {
+            const cleanCards = (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+            const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
             setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-            setCards(sbStore.cards || []);
+            setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
             setBudgets(sbStore.budgets || []);
             setGoals(sbStore.goals || []);
             setDebts(sbStore.debts || []);
             setInvestments(sbStore.investments || []);
-            setTransactions(sbStore.transactions || []);
+            setTransactions(cleanTxs);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
             }
             if (sbStore.userProfile) setUser(sbStore.userProfile);
 
+            hasInitialRemoteSyncFinishedRef.current = true;
+
             // Sync server store and local storage to match Supabase truth
+            const cleanStore = { ...sbStore, cards: cleanCards, transactions: cleanTxs };
             try {
-              localStorage.setItem(userStoreKey, JSON.stringify(sbStore));
+              localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
             } catch (_) {}
-            apiSync.pushStore(currentUser.id, sbStore, true);
+            apiSync.pushStore(currentUser.id, cleanStore, true);
             return;
           }
         } catch (sbErr) {
@@ -438,19 +461,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 2. Fallback to Express server store ONLY if Supabase is offline or unconfigured
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
       if (serverStore && serverStore.accounts) {
+        const cleanCards = (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+        const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
         setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-        setCards(serverStore.cards || []);
+        setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
         setBudgets(serverStore.budgets || []);
         setGoals(serverStore.goals || []);
         setDebts(serverStore.debts || []);
         setInvestments(serverStore.investments || []);
-        setTransactions(serverStore.transactions || []);
+        setTransactions(cleanTxs);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
         if (serverStore.userProfile) setUser(serverStore.userProfile);
+
+        hasInitialRemoteSyncFinishedRef.current = true;
       }
     };
 
@@ -474,8 +501,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Automatic Real-Time Persistence (local offline cache + debounced Supabase & server sync)
   useEffect(() => {
-    // Only save if the store has actually been loaded for the CURRENT user (prevents wiping out data on switch)
-    if (!currentUser || isStoreLoadedForUserIdRef.current !== currentUser.id) return;
+    // Only save if the store has actually been loaded from remote for the CURRENT user (prevents wiping or overwriting with stale localStorage)
+    if (!currentUser || isStoreLoadedForUserIdRef.current !== currentUser.id || !hasInitialRemoteSyncFinishedRef.current || isResettingRef.current) return;
 
     const currentStore: UserStoreData = {
       accounts,
@@ -537,25 +564,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         try {
           const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
           if (sbStore && sbStore.accounts) {
+            const cleanCards = (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+            const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
             setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-            setCards(sbStore.cards || []);
+            setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
             setBudgets(sbStore.budgets || []);
             setGoals(sbStore.goals || []);
             setDebts(sbStore.debts || []);
             setInvestments(sbStore.investments || []);
-            setTransactions(sbStore.transactions || []);
+            setTransactions(cleanTxs);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
             }
             if (sbStore.userProfile) setUser(sbStore.userProfile);
 
+            hasInitialRemoteSyncFinishedRef.current = true;
+
             // Update server store to match Supabase
+            const cleanStore = { ...sbStore, cards: cleanCards, transactions: cleanTxs };
             try {
-              localStorage.setItem(userStoreKey, JSON.stringify(sbStore));
+              localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
             } catch (_) {}
-            apiSync.pushStore(currentUser.id, sbStore, true);
+            apiSync.pushStore(currentUser.id, cleanStore, true);
             return;
           }
         } catch (sbErr) {
@@ -566,19 +598,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 3. Fallback to Express server store ONLY if Supabase is unconfigured or failed
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
       if (serverStore && serverStore.accounts) {
+        const cleanCards = (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+        const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
         setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-        setCards(serverStore.cards || []);
+        setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
         setBudgets(serverStore.budgets || []);
         setGoals(serverStore.goals || []);
         setDebts(serverStore.debts || []);
         setInvestments(serverStore.investments || []);
-        setTransactions(serverStore.transactions || []);
+        setTransactions(cleanTxs);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
         if (serverStore.userProfile) setUser(serverStore.userProfile);
+
+        hasInitialRemoteSyncFinishedRef.current = true;
         return;
       } else {
         // Fallback reload from local storage
@@ -1015,6 +1051,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               return t;
             })
           );
+          if (currentUser && isSupabaseConfigured()) {
+            supabaseDb.deleteTransaction(currentUser.id, id).catch(() => {});
+          }
           showUndo({
             message: `Transação "${tx.description}" excluída`,
             onUndo: () => {
@@ -1028,6 +1067,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Balance is auto-recalculated by the derived balance effect
     const txToDelete = tx || transactions.find(t => t.id === id);
     setTransactions(prev => prev.filter(t => t.id !== id));
+    if (currentUser && isSupabaseConfigured()) {
+      supabaseDb.deleteTransaction(currentUser.id, id).catch(() => {});
+    }
     if (txToDelete) {
       showUndo({
         message: `Transação "${txToDelete.description}" excluída`,
@@ -1045,6 +1087,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (deletedTxs.length === 0) return;
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.filter(t => !idSet.has(t.id)));
+    if (currentUser && isSupabaseConfigured()) {
+      supabaseDb.deleteMultipleTransactions(currentUser.id, ids).catch(() => {});
+    }
     showUndo({
       message: `${deletedTxs.length} transações excluídas`,
       onUndo: () => {

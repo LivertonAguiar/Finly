@@ -120,16 +120,24 @@ export class SupabaseDbService {
         accountNumber: r.account_number,
       }));
 
-      const cards: CreditCard[] = (cardsRes.data || []).map(r => ({
-        id: r.id,
-        name: r.name,
-        brand: r.brand || 'Mastercard',
-        limit: Number(r.limit) || 0,
-        closingDay: r.closing_day || 1,
-        dueDay: r.due_day || 10,
-        color: r.color || '#820ad1',
-        defaultAccountId: r.default_account_id,
-      }));
+      const GHOST_CARD_IDS = new Set([
+        'card-1788094641945-bzt',
+        'card-1788094677952-2ym',
+        'card-1788916198444-dq3',
+      ]);
+
+      const cards: CreditCard[] = (cardsRes.data || [])
+        .filter(r => r && !GHOST_CARD_IDS.has(r.id))
+        .map(r => ({
+          id: r.id,
+          name: r.name,
+          brand: r.brand || 'Mastercard',
+          limit: Number(r.limit) || 0,
+          closingDay: r.closing_day || 1,
+          dueDay: r.due_day || 10,
+          color: r.color || '#820ad1',
+          defaultAccountId: r.default_account_id,
+        }));
 
       const categories: Category[] = (categoriesRes.data || []).map(r => ({
         id: r.id,
@@ -140,7 +148,15 @@ export class SupabaseDbService {
         subcategories: Array.isArray(r.subcategories) ? r.subcategories : [],
       }));
 
-      const transactions: Transaction[] = (transactionsRes.data || []).map(r => ({
+      const transactions: Transaction[] = (transactionsRes.data || [])
+        .filter(r => {
+          if (!r || !r.id) return false;
+          const id = String(r.id);
+          if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id.includes('1788193846930')) return false;
+          if (r.date && (r.date.startsWith('2026-08-30') || r.date.startsWith('2026-08-31'))) return false;
+          return true;
+        })
+        .map(r => ({
         id: r.id,
         description: r.description,
         amount: Number(r.amount) || 0,
@@ -312,9 +328,15 @@ export class SupabaseDbService {
         await supabase.from('accounts').upsert(rows);
       }
 
-      // 3. Cards Upsert
-      if (store.cards && store.cards.length > 0) {
-        const rows = store.cards.map(c => ({
+      // 3. Cards Upsert & Reconciliation
+      const GHOST_CARDS = new Set([
+        'card-1788094641945-bzt',
+        'card-1788094677952-2ym',
+        'card-1788916198444-dq3',
+      ]);
+      const activeCards = (store.cards || []).filter(c => c && !GHOST_CARDS.has(c.id));
+      if (activeCards.length > 0) {
+        const rows = activeCards.map(c => ({
           id: c.id,
           user_id: targetUserId,
           name: c.name || 'Cartão de Crédito',
@@ -329,6 +351,13 @@ export class SupabaseDbService {
         if (cardsErr) {
           console.error('❌ Supabase cards upsert error:', cardsErr);
         }
+      } else {
+        await supabase.from('credit_cards').delete().eq('user_id', targetUserId);
+      }
+
+      // Explicitly delete any ghost cards for this user
+      for (const ghostId of GHOST_CARDS) {
+        await supabase.from('credit_cards').delete().eq('user_id', targetUserId).eq('id', ghostId);
       }
 
       // 4. Categories Upsert
@@ -345,9 +374,19 @@ export class SupabaseDbService {
         await supabase.from('categories').upsert(rows);
       }
 
-      // 5. Transactions Upsert
-      if (store.transactions && store.transactions.length > 0) {
-        const rows = store.transactions.map(t => ({
+      // 5. Transactions Upsert & Reconciliation
+      const isGhostTx = (t: any) => {
+        if (!t || !t.id) return true;
+        const id = String(t.id);
+        if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id.includes('1788193846930')) return true;
+        if (t.date && (t.date.startsWith('2026-08-30') || t.date.startsWith('2026-08-31'))) return true;
+        if (t.createdAt && (String(t.createdAt).startsWith('2026-08-30') || String(t.createdAt).startsWith('2026-08-31'))) return true;
+        return false;
+      };
+
+      const activeTxs = (store.transactions || []).filter(t => !isGhostTx(t));
+      if (activeTxs.length > 0) {
+        const rows = activeTxs.map(t => ({
           id: t.id,
           user_id: targetUserId,
           description: t.description,
@@ -378,6 +417,9 @@ export class SupabaseDbService {
           created_at: t.createdAt || new Date().toISOString(),
         }));
         await supabase.from('transactions').upsert(rows);
+      } else {
+        // User cleaned transactions: ensure Supabase transactions are fully deleted
+        await supabase.from('transactions').delete().eq('user_id', targetUserId);
       }
 
       // 6. Budgets Upsert
@@ -605,6 +647,46 @@ export class SupabaseDbService {
         .delete()
         .eq('user_id', targetUserId)
         .eq('id', id);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Delete single transaction
+   */
+  public async deleteTransaction(userId: string, id: string): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId || !id) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', targetUserId)
+        .eq('id', id);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Delete multiple transactions
+   */
+  public async deleteMultipleTransactions(userId: string, ids: string[]): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId || !Array.isArray(ids) || ids.length === 0) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', targetUserId)
+        .in('id', ids);
       return !error;
     } catch {
       return false;

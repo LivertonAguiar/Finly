@@ -586,6 +586,34 @@ app.post('/api/auth/change-password', authenticateToken, (req, res) => {
   return res.json({ success: true, message: 'Senha alterada com sucesso no servidor!' });
 });
 
+// Ghost Data Shields (Prevents resurrected stale August transactions and cards)
+const GHOST_CARDS_SET = new Set([
+  'card-1788094641945-bzt',
+  'card-1788094677952-2ym',
+  'card-1788916198444-dq3',
+]);
+
+const isGhostTransactionRecord = (t) => {
+  if (!t || !t.id) return true;
+  const id = String(t.id);
+  if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id.includes('1788193846930')) return true;
+  if (t.date && (t.date.startsWith('2026-08-30') || t.date.startsWith('2026-08-31'))) return true;
+  if (t.createdAt && (String(t.createdAt).startsWith('2026-08-30') || String(t.createdAt).startsWith('2026-08-31'))) return true;
+  return false;
+};
+
+const sanitizeStoreData = (store) => {
+  if (!store || typeof store !== 'object') return store;
+  const sanitized = { ...store };
+  if (Array.isArray(sanitized.cards)) {
+    sanitized.cards = sanitized.cards.filter(c => c && !GHOST_CARDS_SET.has(c.id));
+  }
+  if (Array.isArray(sanitized.transactions)) {
+    sanitized.transactions = sanitized.transactions.filter(t => !isGhostTransactionRecord(t));
+  }
+  return sanitized;
+};
+
 // 3. CONTINUOUS AUTO-SYNC: GET USER STORE (PROTECTED AGAINST BOLA / IDOR)
 app.get('/api/user/store', authenticateToken, (req, res) => {
   const userId = req.user.userId;
@@ -600,7 +628,7 @@ app.get('/api/user/store', authenticateToken, (req, res) => {
 
   try {
     const raw = fs.readFileSync(storePath, 'utf8');
-    const store = JSON.parse(raw);
+    const store = sanitizeStoreData(JSON.parse(raw));
     const stat = fs.statSync(storePath);
     return res.json({
       success: true,
@@ -625,8 +653,9 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
   const tempPath = `${storePath}.tmp`;
 
   try {
+    const sanitizedStore = sanitizeStoreData(store);
     const payload = {
-      ...store,
+      ...sanitizedStore,
       _serverTimestamp: new Date().toISOString(),
     };
 
