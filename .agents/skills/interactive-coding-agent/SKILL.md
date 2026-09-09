@@ -27,3 +27,6 @@ This skill enforces a communicative, autonomous, and predictable coding agent wo
 
 5. **Structured Delivery Summary**:
    - End tasks with: Concluded, Modified Files, Validation, and Remarks.
+
+6. **Idioma Oficial**:
+   - Todas as respostas, mensagens de progresso, planos e comunicações devem ser estritamente em **Português (pt-BR)**.

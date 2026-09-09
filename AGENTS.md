@@ -62,3 +62,8 @@ Este documento estabelece as diretrizes obrigatórias de governança de código,
 - **Anti-Spam**: Agrupar ações correlacionadas em vez de narrar comandos triviais individualmente.
 - **Resumo Final Estruturado**: Concluído, Arquivos Modificados, Validação e Observações.
 
+---
+
+## 5. Idioma Obrigatório das Interações
+- **Português (pt-BR) Estrito**: Todas as comunicações, mensagens de progresso, esclarecimentos, planos de ação e resumos finais devem ser formulados exclusivamente em **Português do Brasil (pt-BR)**.
+
