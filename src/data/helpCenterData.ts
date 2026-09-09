@@ -4,7 +4,7 @@
  */
 
 export interface VisualCallout {
-  area: 'header' | 'sidebar' | 'bottom_nav' | 'fab' | 'modal' | 'cards_tab' | 'filters' | 'settings';
+  area: 'header' | 'sidebar' | 'bottom_nav' | 'fab' | 'modal' | 'cards_tab' | 'dashboard' | 'filters' | 'settings';
   targetLabel: string;
   webDescription: string;
   androidDescription: string;
@@ -56,7 +56,7 @@ export const HELP_CATEGORIES: HelpCategoryDef[] = [
     id: 'primeiros_passos',
     label: 'Primeiros Passos',
     iconName: 'Sparkles',
-    description: 'Conceitos básicos, navegação inicial e primeiros lançamentos',
+    description: 'Conceitos básicos, navegação inicial, personalização do dashboard e primeiros lançamentos',
     colorClass: 'from-purple-500 to-indigo-600',
   },
   {
@@ -111,6 +111,56 @@ export const HELP_CATEGORIES: HelpCategoryDef[] = [
 ];
 
 export const HELP_GUIDES: HelpGuide[] = [
+  {
+    id: 'como-personalizar-dashboard',
+    title: 'Como organizar os cards do dashboard',
+    category: 'primeiros_passos',
+    categoryLabel: 'Primeiros Passos',
+    summary: 'Escolha os indicadores da tela inicial e entenda como os cards se adaptam automaticamente ao espaço disponível.',
+    readTime: '2 min',
+    badge: 'Novo',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Abrir a personalização do dashboard',
+        description: 'Acesse os controles que definem quais informações aparecem na sua tela inicial.',
+        webInstruction: 'No Dashboard, clique em "Personalizar" no canto superior direito ou em "Gerenciar Tela Inicial" no final da página.',
+        androidInstruction: 'Na aba Principal, toque no ícone de ajustes ao lado do mês ou em "Gerenciar Tela Inicial" no final da página.',
+        callout: {
+          area: 'dashboard',
+          targetLabel: 'Personalizar dashboard',
+          webDescription: 'Botão no canto superior direito do painel',
+          androidDescription: 'Ícone de ajustes ao lado do seletor de mês',
+          hotspotX: 88,
+          hotspotY: 12,
+        },
+      },
+      {
+        stepNumber: 2,
+        title: 'Mostrar ou ocultar indicadores',
+        description: 'Mantenha visíveis apenas os cards mais úteis para sua rotina financeira.',
+        webInstruction: 'Marque ou desmarque cada card nas listas "Cards Principais" e "Cards Complementares". A alteração aparece imediatamente no dashboard.',
+        androidInstruction: 'Toque na caixa ao lado de cada card para mostrar ou ocultar o indicador. O painel permanece em uma coluna para facilitar a leitura.',
+      },
+      {
+        stepNumber: 3,
+        title: 'Reordenar e redimensionar no computador',
+        description: 'Ajuste a prioridade visual dos indicadores usando o espaço disponível.',
+        webInstruction: 'Arraste um card para mudar sua posição. Ao passar o mouse sobre ele, use o botão no canto superior direito para alternar entre meia largura e largura total.',
+        androidInstruction: 'No Android, arrastar e redimensionar ficam ocultos para preservar a rolagem por toque; os cards usam automaticamente toda a largura disponível.',
+        tip: 'Se quiser desfazer a organização, use "Restaurar Padrão" na janela de personalização.',
+      },
+      {
+        stepNumber: 4,
+        title: 'Deixar o Finly adaptar os espaços',
+        description: 'O painel reorganiza os cards conforme a largura útil e a altura de cada conteúdo.',
+        webInstruction: 'Com espaço suficiente, os cards menores ocupam automaticamente as lacunas entre os maiores. Ao abrir ou recolher o menu lateral, o número de colunas é recalculado.',
+        androidInstruction: 'Em celulares e tablets, o painel prioriza uma coluna única; os cards permanecem dentro da área disponível e podem ser rolados sem cortes.',
+      },
+    ],
+    commonMistake: 'Esperar duas colunas em uma janela estreita. O Finly só divide o painel quando há largura útil suficiente para manter os cards legíveis.',
+    relatedFaqIds: ['faq-dashboard-responsivo'],
+  },
   {
     id: 'como-lancar-despesa',
     title: 'Como lançar uma despesa rápida (à vista ou no cartão)',
@@ -431,6 +481,13 @@ export const HELP_GUIDES: HelpGuide[] = [
 ];
 
 export const HELP_FAQS: HelpFaqItem[] = [
+  {
+    id: 'faq-dashboard-responsivo',
+    question: 'Por que os cards do dashboard mudam de coluna ou posição?',
+    answer: 'O Finly usa a largura realmente disponível no painel. Em telas amplas, os cards podem ocupar uma ou duas colunas e os menores preenchem os espaços deixados pelos maiores. Em janelas estreitas, tablets e celulares, eles passam automaticamente para uma coluna para evitar cortes. No computador, você também pode arrastar, expandir ou reduzir cards; use "Restaurar Padrão" em "Personalizar" para desfazer a organização.',
+    category: 'primeiros_passos',
+    tags: ['dashboard', 'cards', 'responsivo', 'personalizar', 'colunas', 'layout'],
+  },
   {
     id: 'faq-cartao-vs-conta',
     question: 'Qual a diferença entre lançar uma despesa em "Conta Bancária" e em "Cartão de Crédito"?',

@@ -5,13 +5,29 @@ export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error';
 class ApiSyncService {
   private syncTimer: any = null;
   private pendingPayload: any = null;
+  private pendingUserId: string | null = null;
+  private isPushInFlight = false;
+  private activePushController: AbortController | null = null;
+  private activePushCompletion: Promise<void> | null = null;
+  private pushGeneration = 0;
   private currentUserId: string | null = null;
   private statusListeners: ((status: SyncStatus) => void)[] = [];
   public currentStatus: SyncStatus = 'synced';
   private initialConnected = false;
 
   public setUserId(userId: string | null) {
+    if (this.currentUserId === userId) return;
     this.currentUserId = userId;
+    this.pushGeneration += 1;
+    this.pendingUserId = null;
+    this.pendingPayload = null;
+    if (this.syncTimer) {
+      clearTimeout(this.syncTimer);
+      this.syncTimer = null;
+    }
+    // A request already sent keeps its original explicit user headers/body.
+    // Abort only on account switches; reset uses an awaited barrier below.
+    this.activePushController?.abort();
   }
 
   public subscribeStatus(listener: (status: SyncStatus) => void) {
@@ -27,7 +43,7 @@ class ApiSyncService {
     this.statusListeners.forEach(l => l(status));
   }
 
-  private getAuthHeaders(): Record<string, string> {
+  private getAuthHeaders(userId: string | null = this.currentUserId): Record<string, string> {
     const headers: Record<string, string> = {};
     if (typeof window !== 'undefined') {
       let token = localStorage.getItem('finly_auth_token');
@@ -53,8 +69,8 @@ class ApiSyncService {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      if (this.currentUserId) {
-        headers['x-user-id'] = this.currentUserId;
+      if (userId) {
+        headers['x-user-id'] = userId;
       }
     }
     return headers;
@@ -64,9 +80,8 @@ class ApiSyncService {
   public async fetchServerStore(userId: string): Promise<any | null> {
     try {
       this.setStatus('syncing');
-      this.currentUserId = userId;
 
-      const authHeaders = this.getAuthHeaders();
+      const authHeaders = this.getAuthHeaders(userId);
       const res = await fetch(getApiUrl('/api/user/store'), {
         headers: authHeaders,
       });
@@ -98,7 +113,11 @@ class ApiSyncService {
 
   // Push local data to server with continuous debounce (Authenticated)
   public pushStore(userId: string, store: any, immediate = false) {
-    this.currentUserId = userId;
+    if (this.currentUserId === null) this.setUserId(userId);
+    // Ignore a callback left behind by a previous account. The active account
+    // effect will enqueue its own current snapshot.
+    if (this.currentUserId !== userId) return;
+    this.pendingUserId = userId;
     this.pendingPayload = store;
 
     if (this.syncTimer) {
@@ -107,57 +126,114 @@ class ApiSyncService {
     }
 
     if (immediate) {
-      this.executePush();
+      void this.executePush();
     } else {
       this.setStatus('syncing');
       this.syncTimer = setTimeout(() => {
-        this.executePush();
+        this.syncTimer = null;
+        void this.executePush();
       }, 800); // 800ms debounce
     }
   }
 
   private async executePush() {
-    if (!this.currentUserId || !this.pendingPayload) return;
-    const userId = this.currentUserId;
+    if (this.isPushInFlight || !this.pendingUserId || !this.pendingPayload) return;
+
+    const userId = this.pendingUserId;
     const store = this.pendingPayload;
+    const generation = this.pushGeneration;
+    this.pendingUserId = null;
+    this.pendingPayload = null;
+    this.isPushInFlight = true;
+    const controller = new AbortController();
+    this.activePushController = controller;
+    let completePush!: () => void;
+    const pushCompletion = new Promise<void>(resolve => {
+      completePush = resolve;
+    });
+    this.activePushCompletion = pushCompletion;
+    const pushTimeout = setTimeout(() => controller.abort(), 15000);
+    let saved = false;
 
     try {
       this.setStatus('syncing');
       const res = await fetch(getApiUrl('/api/user/store'), {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          ...this.getAuthHeaders(),
+          ...this.getAuthHeaders(userId),
         },
         body: JSON.stringify({ userId, store }),
       });
 
       if (res.ok) {
+        saved = true;
         this.setStatus('synced');
       } else {
         this.setStatus('offline');
       }
     } catch (e) {
       this.setStatus('offline');
+    } finally {
+      clearTimeout(pushTimeout);
+      this.isPushInFlight = false;
+      if (this.activePushController === controller) {
+        this.activePushController = null;
+      }
+      completePush();
+      if (this.activePushCompletion === pushCompletion) {
+        this.activePushCompletion = null;
+      }
+
+      // Keep the latest failed payload for retry. If a newer payload arrived
+      // while this request was running, that newer snapshot already wins.
+      if (!saved && generation === this.pushGeneration && !this.pendingPayload) {
+        this.pendingUserId = userId;
+        this.pendingPayload = store;
+      }
+
+      // Only start the next request after the previous one has completed. This
+      // guarantees that an older whole-store snapshot cannot win by finishing last.
+      if (this.pendingPayload && !this.syncTimer) {
+        if (saved || generation !== this.pushGeneration) {
+          void this.executePush();
+        } else {
+          this.syncTimer = setTimeout(() => {
+            this.syncTimer = null;
+            void this.executePush();
+          }, 3000);
+        }
+      }
     }
   }
 
   // Delete / Reset server store immediately on disk
   public async resetServerStore(userId: string): Promise<boolean> {
     try {
-      this.currentUserId = userId;
+      if (this.currentUserId !== userId) this.setUserId(userId);
+      this.pushGeneration += 1;
+      this.pendingUserId = null;
       this.pendingPayload = null;
       if (this.syncTimer) {
         clearTimeout(this.syncTimer);
         this.syncTimer = null;
       }
 
+      // Do not abort a POST for this user: the server may already be writing
+      // it. Wait for that request to settle, then send DELETE as the final
+      // operation so stale data cannot be written after the reset.
+      const activePush = this.activePushCompletion;
+      if (activePush) await activePush;
+      this.pendingUserId = null;
+      this.pendingPayload = null;
+
       this.setStatus('syncing');
       const res = await fetch(getApiUrl('/api/user/store'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          ...this.getAuthHeaders(),
+          ...this.getAuthHeaders(userId),
         },
       });
 

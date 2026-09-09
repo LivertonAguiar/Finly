@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   Wallet,
   TrendingUp,
@@ -136,6 +136,75 @@ const CARDS_SIZES_STORAGE_KEY = 'finly_dashboard_card_sizes_v2';
 
 const DEFAULT_CARD_SIZES: Record<string, 'half' | 'full'> = {
   despesasCategoria: 'full',
+};
+
+const DASHBOARD_MASONRY_ROW_HEIGHT = 4;
+const DASHBOARD_MASONRY_GAP = 24;
+
+interface DashboardMasonryItemProps extends React.HTMLAttributes<HTMLDivElement> {
+  isFull: boolean;
+}
+
+const DashboardMasonryItem: React.FC<DashboardMasonryItemProps> = ({
+  isFull,
+  children,
+  className = '',
+  style,
+  ...props
+}) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [rowSpan, setRowSpan] = useState(1);
+
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const measure = () => {
+      const contentHeight = content.getBoundingClientRect().height;
+      const nextSpan = Math.max(
+        1,
+        Math.ceil((contentHeight + DASHBOARD_MASONRY_GAP) / DASHBOARD_MASONRY_ROW_HEIGHT),
+      );
+      setRowSpan((currentSpan) => (currentSpan === nextSpan ? currentSpan : nextSpan));
+    };
+
+    measure();
+
+    let animationFrame = 0;
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(measure);
+    };
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(scheduleMeasure)
+      : null;
+    resizeObserver?.observe(content);
+    window.addEventListener('resize', scheduleMeasure);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', scheduleMeasure);
+    };
+  }, []);
+
+  const masonryStyle = {
+    ...style,
+    '--dashboard-card-row-span': rowSpan,
+  } as React.CSSProperties;
+
+  return (
+    <div
+      {...props}
+      style={masonryStyle}
+      className={`dashboard-card-grid__item ${isFull ? 'dashboard-card-grid__item--full' : ''}`}
+    >
+      <div ref={contentRef} className={`min-w-0 w-full ${className}`}>
+        {children}
+      </div>
+    </div>
+  );
 };
 
 const renderActiveDonutShape = (props: any) => {
@@ -831,10 +900,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               : 'Nenhuma despesa registrada neste mês.'}
           </div>
         ) : (
-          <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10 pt-2" : "space-y-4 pt-2"}>
+          <div className={isFullWidth ? "dashboard-category-card-layout" : "space-y-4 pt-2"}>
             {/* Column 1: Donut Chart with Interactive Center Hub and Macro Split Pills */}
             <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
-              isFullWidth ? "w-full lg:w-[320px] my-auto" : "w-full"
+              isFullWidth ? "dashboard-category-card-chart my-auto" : "w-full"
             }`}>
               <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none" style={{ WebkitTapHighlightColor: 'transparent', outline: 'none' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -1732,9 +1801,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
           Nenhuma receita registrada neste mês.
         </div>
       ) : (
-        <div className={isFullWidth ? "flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10 pt-2" : "space-y-4 pt-2"}>
+        <div className={isFullWidth ? "dashboard-category-card-layout" : "space-y-4 pt-2"}>
           <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
-            isFullWidth ? "w-full lg:w-[320px] my-auto" : "w-full"
+            isFullWidth ? "dashboard-category-card-chart my-auto" : "w-full"
           }`}>
             <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
               <ResponsiveContainer width="100%" height="100%">
@@ -2219,7 +2288,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   );
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in pb-16">
+    <div className="dashboard-overview w-full space-y-6 animate-in fade-in pb-16">
       {/* 1. TOPBAR HEADER (CENTERED MONTH PICKER + CUSTOMIZE ACTION) */}
       <div className="relative flex items-center justify-center px-1 py-1">
         {/* Centered Month Picker Popover */}
@@ -2400,8 +2469,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 4. RESPONSIVE MODULAR GRID (DRAG AND DROP MODULAR GRID WITH RESIZABLE CARDS & DENSE PACKING) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start grid-flow-row-dense">
+      {/* 4. RESPONSIVE MODULAR GRID (DRAG AND DROP WITH RESIZABLE, HEIGHT-AWARE CARDS) */}
+      <div className="dashboard-card-grid" data-dashboard-grid>
         {dashboardCardsOrder
           .filter((cardKey) => cardsState[cardKey as keyof DashboardCardsState])
           .map((cardKey) => {
@@ -2432,8 +2501,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             const isOver = dragOverCardKey === cardKey && !isBeingDragged;
 
             return (
-              <div
+              <DashboardMasonryItem
                 key={cardKey}
+                isFull={isFull}
+                data-dashboard-card={cardKey}
                 draggable={!isApp}
                 onDragStart={(e) => {
                   const target = e.target as HTMLElement;
@@ -2447,8 +2518,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 onDrop={(e) => handleDrop(e, cardKey)}
                 onDragEnd={handleDragEnd}
                 className={`relative group/draggable transition-all duration-200 ${
-                  isFull ? 'col-span-1 md:col-span-2' : 'col-span-1'
-                } ${
                   !isApp ? 'cursor-grab active:cursor-grabbing' : ''
                 } ${
                   isBeingDragged
@@ -2466,7 +2535,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                       e.stopPropagation();
                       toggleCardSize(cardKey);
                     }}
-                    className="hidden md:flex absolute top-3.5 right-3.5 z-20 w-7 h-7 rounded-lg items-center justify-center bg-white/75 dark:bg-[#18181B]/75 hover:bg-white dark:hover:bg-[#222226] border border-slate-200/60 dark:border-white/10 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 shadow-2xs opacity-0 group-hover/draggable:opacity-75 hover:!opacity-100 transition-all cursor-pointer backdrop-blur-md"
+                    className="dashboard-card-resize-button absolute top-3.5 right-3.5 z-20 w-7 h-7 rounded-lg items-center justify-center bg-white/75 dark:bg-[#18181B]/75 hover:bg-white dark:hover:bg-[#222226] border border-slate-200/60 dark:border-white/10 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 shadow-2xs opacity-0 group-hover/draggable:opacity-75 hover:!opacity-100 transition-all cursor-pointer backdrop-blur-md"
                     title={isFull ? 'Reduzir para meia largura (1 coluna)' : 'Expandir para largura total (2 colunas)'}
                   >
                     {isFull ? (
@@ -2488,7 +2557,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 )}
 
                 {renderer(isFull)}
-              </div>
+              </DashboardMasonryItem>
             );
           })}
       </div>

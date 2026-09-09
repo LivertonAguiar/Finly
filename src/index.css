@@ -461,3 +461,69 @@ html.dark .dark\:bg-slate-900 {
 html.dark ::-webkit-scrollbar-thumb {
   background: #475569;
 }
+
+/* Dashboard cards respond to the space left by the sidebar, not the viewport. */
+.dashboard-overview {
+  container: dashboard / inline-size;
+}
+
+.dashboard-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.dashboard-card-grid__item {
+  min-width: 0;
+  width: 100%;
+}
+
+.dashboard-card-resize-button {
+  display: none;
+}
+
+.dashboard-category-card-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+.dashboard-category-card-chart {
+  width: 100%;
+}
+
+@container dashboard (min-width: 52rem) {
+  .dashboard-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    grid-auto-rows: 4px;
+    column-gap: 1.5rem;
+    row-gap: 0;
+  }
+
+  .dashboard-card-grid__item {
+    grid-column: span 1 / span 1;
+    grid-row-end: span var(--dashboard-card-row-span, 1);
+  }
+
+  .dashboard-card-grid__item--full {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-card-resize-button {
+    display: flex;
+  }
+
+  .dashboard-category-card-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2.5rem;
+  }
+
+  .dashboard-category-card-chart {
+    width: 20rem;
+  }
+}

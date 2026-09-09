@@ -28,6 +28,15 @@ export interface UserStoreData {
 }
 
 export class SupabaseDbService {
+  private storeSaveQueue: Array<{
+    userId: string;
+    store: UserStoreData;
+    resolve: (saved: boolean) => void;
+  }> = [];
+  private isStoreSaveRunning = false;
+  private storeSaveDrainWaiters: Array<() => void> = [];
+  private cardMutationTail: Promise<void> = Promise.resolve();
+
   /**
    * Helper to validate or resolve UUID string for Postgres user_id columns
    */
@@ -77,9 +86,28 @@ export class SupabaseDbService {
         supabase.from('notifications').select('*').eq('user_id', targetUserId).order('created_at', { ascending: false }),
       ]);
 
-      // If cardsRes failed, warn instead of silently treating as empty
-      if (cardsRes.error) {
-        console.warn('Supabase fetch cards notice:', cardsRes.error.message);
+      // A snapshot is safe only when every table was read successfully.
+      // Treating a failed query as [] would overwrite valid local data and
+      // could propagate that empty collection back to the database.
+      const failedReads = [
+        { table: 'profiles', response: profileRes },
+        { table: 'accounts', response: accountsRes },
+        { table: 'credit_cards', response: cardsRes },
+        { table: 'categories', response: categoriesRes },
+        { table: 'transactions', response: transactionsRes },
+        { table: 'budgets', response: budgetsRes },
+        { table: 'goals', response: goalsRes },
+        { table: 'debts', response: debtsRes },
+        { table: 'investments', response: investmentsRes },
+        { table: 'family_members', response: familyRes },
+        { table: 'notifications', response: notificationsRes },
+      ].filter(({ response }) => response.error);
+
+      if (failedReads.length > 0) {
+        const details = failedReads
+          .map(({ table, response }) => `${table}: ${response.error?.message || 'unknown error'}`)
+          .join('; ');
+        throw new Error(`Incomplete Supabase store snapshot (${details})`);
       }
 
       // If no data exists at all on Supabase yet
@@ -278,14 +306,77 @@ export class SupabaseDbService {
       };
     } catch (err) {
       console.error('❌ Supabase fetchUserStore error:', err);
-      return null;
+      throw err;
     }
   }
 
   /**
-   * Save / Sync entire user store in batches
+   * Queue whole-store saves so an older request cannot finish after a newer
+   * snapshot and become the final state. Pending saves for the same user are
+   * coalesced to the newest snapshot.
    */
   public async saveEntireStore(userId: string, store: UserStoreData): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const pendingForUser = this.storeSaveQueue.find(job => job.userId === userId);
+
+      if (pendingForUser) {
+        pendingForUser.store = store;
+        const previousResolve = pendingForUser.resolve;
+        pendingForUser.resolve = (saved) => {
+          previousResolve(saved);
+          resolve(saved);
+        };
+      } else {
+        this.storeSaveQueue.push({ userId, store, resolve });
+      }
+
+      void this.flushStoreSaveQueue();
+    });
+  }
+
+  private async flushStoreSaveQueue(): Promise<void> {
+    if (this.isStoreSaveRunning) return;
+    this.isStoreSaveRunning = true;
+
+    try {
+      while (this.storeSaveQueue.length > 0) {
+        const job = this.storeSaveQueue.shift()!;
+        const saved = await this.persistEntireStore(job.userId, job.store);
+        job.resolve(saved);
+      }
+    } finally {
+      this.isStoreSaveRunning = false;
+      const waiters = this.storeSaveDrainWaiters.splice(0);
+      waiters.forEach(resolve => resolve());
+    }
+  }
+
+  private async waitForStoreSaveDrain(): Promise<void> {
+    if (!this.isStoreSaveRunning && this.storeSaveQueue.length === 0) return;
+    await new Promise<void>(resolve => {
+      this.storeSaveDrainWaiters.push(resolve);
+    });
+  }
+
+  private enqueueCardMutation(operation: () => Promise<boolean>): Promise<boolean> {
+    const run = async () => {
+      try {
+        return await operation();
+      } catch (error) {
+        console.error('Supabase card mutation error:', error);
+        return false;
+      }
+    };
+    const result = this.cardMutationTail.then(run, run);
+    this.cardMutationTail = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
+  private async waitForCardMutationDrain(): Promise<void> {
+    await this.cardMutationTail;
+  }
+
+  private async persistEntireStore(userId: string, store: UserStoreData): Promise<boolean> {
     if (!isSupabaseConfigured() || !userId) return false;
     const targetUserId = this.getValidUserId(userId);
     if (!targetUserId) return false;
@@ -293,7 +384,7 @@ export class SupabaseDbService {
     try {
       // 1. Profile Upsert
       if (store.userProfile) {
-        await supabase.from('profiles').upsert({
+        const { error: profileErr } = await supabase.from('profiles').upsert({
           id: targetUserId,
           name: store.userProfile.name,
           email: store.userProfile.email,
@@ -309,6 +400,7 @@ export class SupabaseDbService {
           show_values: store.userProfile.showValues !== false,
           language: store.userProfile.language || 'pt-BR',
         });
+        if (profileErr) throw profileErr;
       }
 
       // 2. Accounts Upsert
@@ -328,32 +420,14 @@ export class SupabaseDbService {
         await supabase.from('accounts').upsert(rows);
       }
 
-      // 3. Cards Upsert & Reconciliation
+      // 3. Card cleanup only. User card mutations use the dedicated ordered
+      // queue below so an old whole-store save cannot overwrite a newer edit
+      // or resurrect an explicitly deleted card.
       const GHOST_CARDS = new Set([
         'card-1788094641945-bzt',
         'card-1788094677952-2ym',
         'card-1788916198444-dq3',
       ]);
-      const activeCards = (store.cards || []).filter(c => c && !GHOST_CARDS.has(c.id));
-      if (activeCards.length > 0) {
-        const rows = activeCards.map(c => ({
-          id: c.id,
-          user_id: targetUserId,
-          name: c.name || 'Cartão de Crédito',
-          brand: c.brand || 'Mastercard',
-          limit: Number(c.limit) || 0,
-          closing_day: Number(c.closingDay) || 1,
-          due_day: Number(c.dueDay) || 10,
-          color: c.color || '#820ad1',
-          default_account_id: c.defaultAccountId || null,
-        }));
-        const { error: cardsErr } = await supabase.from('credit_cards').upsert(rows);
-        if (cardsErr) {
-          console.error('❌ Supabase cards upsert error:', cardsErr);
-        }
-      } else {
-        await supabase.from('credit_cards').delete().eq('user_id', targetUserId);
-      }
 
       // Explicitly delete any ghost cards for this user
       for (const ghostId of GHOST_CARDS) {
@@ -613,7 +687,7 @@ export class SupabaseDbService {
     const targetUserId = this.getValidUserId(userId);
     if (!targetUserId) return false;
 
-    try {
+    return this.enqueueCardMutation(async () => {
       const { error } = await supabase.from('credit_cards').upsert({
         id: c.id,
         user_id: targetUserId,
@@ -627,10 +701,7 @@ export class SupabaseDbService {
       });
       if (error) console.error('❌ Supabase upsertCard error:', error);
       return !error;
-    } catch (e) {
-      console.error('❌ Supabase upsertCard exception:', e);
-      return false;
-    }
+    });
   }
 
   /**
@@ -641,16 +712,14 @@ export class SupabaseDbService {
     const targetUserId = this.getValidUserId(userId);
     if (!targetUserId) return false;
 
-    try {
+    return this.enqueueCardMutation(async () => {
       const { error } = await supabase
         .from('credit_cards')
         .delete()
         .eq('user_id', targetUserId)
         .eq('id', id);
       return !error;
-    } catch {
-      return false;
-    }
+    });
   }
 
   /**
@@ -698,8 +767,14 @@ export class SupabaseDbService {
    */
   public async clearUserStore(userId: string): Promise<boolean> {
     if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
 
     try {
+      // A reset is a barrier: let every older queued snapshot finish first,
+      // then delete it so an in-flight save cannot resurrect cleared data.
+      await this.waitForStoreSaveDrain();
+      await this.waitForCardMutationDrain();
       const tables = [
         'transactions',
         'credit_cards',
@@ -710,16 +785,20 @@ export class SupabaseDbService {
         'notifications',
         'accounts',
       ];
+      let allDeleted = true;
 
       for (const tbl of tables) {
-        const { error } = await supabase.from(tbl).delete().eq('user_id', userId);
+        const { error } = await supabase.from(tbl).delete().eq('user_id', targetUserId);
         if (error) {
+          allDeleted = false;
           console.warn(`Supabase notice on delete from ${tbl}:`, error.message);
         }
       }
 
-      console.log(`✅ Supabase: Dados financeiros limpos para usuário ${userId}`);
-      return true;
+      if (allDeleted) {
+        console.log(`✅ Supabase: Dados financeiros limpos para usuário ${targetUserId}`);
+      }
+      return allDeleted;
     } catch (err) {
       console.error('❌ Erro ao limpar dados no Supabase:', err);
       return false;

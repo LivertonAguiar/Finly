@@ -3,6 +3,28 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.48] - 2026-09-09
+
+### 🔒 Persistência Confiável de Cartões e Tema
+- **Cartões protegidos contra sincronização parcial**:
+  - Uma falha isolada ao consultar qualquer tabela do Supabase invalida o snapshot inteiro; a sincronização não transforma mais erro de leitura em lista vazia.
+  - O salvamento geral deixou de interpretar `cards: []` como ordem para apagar todos os cartões. Exclusões continuam acontecendo apenas pelas ações explícitas de excluir ou restaurar os dados.
+  - Inclusões, edições e exclusões pendentes de cartões ficam registradas localmente e são reconciliadas com a nuvem, inclusive após reiniciar o app, preservando também o banco/logotipo selecionado.
+- **Concorrência e tema estabilizados**:
+  - Respostas remotas iniciadas antes de uma alteração local são descartadas, e gravações completas são serializadas para o snapshot mais novo sempre vencer.
+  - Falhas transitórias ao enviar o store para a API entram novamente na fila, sem descartar silenciosamente a última alteração.
+  - Preferências visuais locais deixam de ser substituídas pelo heartbeat; no modo demonstração, o perfil passa a ser persistido corretamente antes da próxima abertura.
+
+### 📐 Dashboard Responsivo e Encaixe Inteligente
+- **Cards sem lacunas artificiais**:
+  - A grade modular mede a altura real de cada card e encaixa os próximos indicadores no espaço livre, eliminando grandes áreas vazias entre widgets de tamanhos diferentes.
+  - Cards expandidos continuam ocupando toda a largura, enquanto os demais preservam a reorganização e o redimensionamento já salvos pelo usuário.
+- **Adaptação pela largura útil**:
+  - A mudança entre uma e duas colunas passa a considerar o espaço interno disponível após a barra lateral, inclusive quando o menu é recolhido ou expandido.
+  - Tablets e janelas intermediárias permanecem em uma coluna legível, sem cortes ou compressão indevida de gráficos e textos.
+- **Central de Ajuda**:
+  - Novo guia e FAQ explicam como mostrar, ocultar, reordenar, expandir e restaurar os cards do dashboard.
+
 ## [1.1.47] - 2026-09-08
 
 ### 🏷️ Preflight de Deploy Compatível com Tags Históricas

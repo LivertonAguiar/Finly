@@ -1,9 +1,9 @@
-# 🚀 Finly `v1.1.47`
+# 🚀 Finly `v1.1.48`
 
 > Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade Web e Mobile Android.
 
 [![Build Android APK & Release](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml/badge.svg)](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml)
-[![Version](https://img.shields.io/badge/version-1.1.47-purple.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.1.48-purple.svg)](package.json)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
@@ -115,7 +115,7 @@ finly/
 
 | Rota | Componente | Descrição |
 | :--- | :--- | :--- |
-| `/dashboard` | `DashboardPage` | Painel principal com 4 KPIs, Gráfico Donut de Despesas, Balanço Mensal e 15 widgets configuráveis. |
+| `/dashboard` | `DashboardPage` | Painel principal com KPIs, gráficos e widgets configuráveis em grade responsiva com encaixe automático conforme o espaço útil. |
 | `/transacoes` | `TransactionsPage` | Extrato diário com filtro rápido por popover (Todas, Despesas, Receitas, Transferências) e busca. |
 | `/contas` | `AccountsPage` | Grid compacto de contas bancárias, saldos reais, saldos previstos e menu de reajuste. |
 | `/cartoes` | `CreditTab` | Gestão de múltiplos cartões, limites disponíveis, faturas abertas/fechadas e pagamento. |

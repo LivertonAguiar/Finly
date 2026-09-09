@@ -71,6 +71,16 @@ interface UserStoreData {
   userProfile: UserProfile;
 }
 
+interface PendingCardMutations {
+  upserts: Record<string, CreditCard>;
+  deletes: string[];
+}
+
+type LocalAppearancePreference = Pick<
+  UserProfile,
+  'theme' | 'themePreset' | 'accentColor' | 'cardRadius'
+>;
+
 interface FinancialContextType {
   // User & Settings
   user: UserProfile;
@@ -231,11 +241,226 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const isStoreLoadedForUserIdRef = useRef<string | null>(null);
   const isResettingRef = useRef<boolean>(false);
   const hasInitialRemoteSyncFinishedRef = useRef<boolean>(false);
+  const localMutationRevisionRef = useRef(0);
+  const remotePullSequenceRef = useRef(0);
+  const canWriteFullStoreToSupabaseRef = useRef(false);
+  const pendingCardMutationsRef = useRef<PendingCardMutations>({ upserts: {}, deletes: [] });
+  const cardsRef = useRef<CreditCard[]>([]);
+  const hasLocalAppearancePreferenceRef = useRef(false);
 
   const { showUndo } = useUndoToast();
   const { currentUser } = useAuth();
   const userId = currentUser ? currentUser.id : 'guest';
   const userStoreKey = `finly_user_${userId}_store`;
+  const pendingCardMutationsKey = `finly_user_${userId}_pending_card_mutations`;
+  const appearancePreferenceKey = `finly_user_${userId}_appearance`;
+  const cardMutationMigrationKey = `finly_user_${userId}_card_mutation_migration_v1`;
+
+  const isDemoUser = () => (
+    currentUser?.id === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com'
+  );
+
+  const persistPendingCardMutations = () => {
+    try {
+      const pending = pendingCardMutationsRef.current;
+      if (Object.keys(pending.upserts).length === 0 && pending.deletes.length === 0) {
+        localStorage.removeItem(pendingCardMutationsKey);
+      } else {
+        localStorage.setItem(pendingCardMutationsKey, JSON.stringify(pending));
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const loadPendingCardMutations = (): PendingCardMutations => {
+    try {
+      const raw = localStorage.getItem(pendingCardMutationsKey);
+      if (!raw) return { upserts: {}, deletes: [] };
+      const parsed = JSON.parse(raw);
+      return {
+        upserts: parsed?.upserts && typeof parsed.upserts === 'object' ? parsed.upserts : {},
+        deletes: Array.isArray(parsed?.deletes) ? parsed.deletes : [],
+      };
+    } catch (_) {
+      return { upserts: {}, deletes: [] };
+    }
+  };
+
+  const markLocalMutation = () => {
+    localMutationRevisionRef.current += 1;
+  };
+
+  const loadLocalAppearance = (): LocalAppearancePreference | null => {
+    try {
+      const raw = localStorage.getItem(appearancePreferenceKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.theme !== 'light' && parsed?.theme !== 'dark' && parsed?.theme !== 'system') {
+          return null;
+        }
+        return parsed;
+      }
+
+      // Migrate the device-wide theme keys used by previous Android/Web
+      // releases. Only do this when a cache for this user already exists so a
+      // first login can still accept the profile stored remotely.
+      if (!localStorage.getItem(userStoreKey)) return null;
+      const legacyTheme = localStorage.getItem('finly_theme_mode');
+      if (legacyTheme !== 'light' && legacyTheme !== 'dark') return null;
+
+      const migrated: LocalAppearancePreference = {
+        theme: legacyTheme,
+        themePreset: (localStorage.getItem('finly_theme_preset') || undefined) as UserProfile['themePreset'],
+        accentColor: localStorage.getItem('finly_accent_color') || undefined,
+        cardRadius: (localStorage.getItem('finly_card_radius') || undefined) as UserProfile['cardRadius'],
+      };
+      localStorage.setItem(appearancePreferenceKey, JSON.stringify(migrated));
+      return migrated;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const persistLocalAppearance = (profile: UserProfile) => {
+    const appearance: LocalAppearancePreference = {
+      theme: profile.theme,
+      themePreset: profile.themePreset,
+      accentColor: profile.accentColor,
+      cardRadius: profile.cardRadius,
+    };
+    try {
+      localStorage.setItem(appearancePreferenceKey, JSON.stringify(appearance));
+    } catch (_) {}
+  };
+
+  const persistLocalUserProfile = (profile: UserProfile) => {
+    try {
+      const raw = localStorage.getItem(userStoreKey);
+      if (!raw) return;
+      const store = JSON.parse(raw);
+      store.userProfile = profile;
+      localStorage.setItem(userStoreKey, JSON.stringify(store));
+    } catch (_) {}
+  };
+
+  const queueCardUpsert = (card: CreditCard) => {
+    if (!currentUser || isDemoUser()) return;
+    const pending = pendingCardMutationsRef.current;
+    pending.upserts[card.id] = card;
+    pending.deletes = pending.deletes.filter(id => id !== card.id);
+    persistPendingCardMutations();
+  };
+
+  const queueCardDelete = (cardId: string) => {
+    if (!currentUser || isDemoUser()) return;
+    const pending = pendingCardMutationsRef.current;
+    delete pending.upserts[cardId];
+    if (!pending.deletes.includes(cardId)) pending.deletes.push(cardId);
+    persistPendingCardMutations();
+  };
+
+  const applyLocalCards = (nextCards: CreditCard[]) => {
+    cardsRef.current = nextCards;
+    setCards(nextCards);
+    try {
+      const raw = localStorage.getItem(userStoreKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed.cards = nextCards;
+        localStorage.setItem(userStoreKey, JSON.stringify(parsed));
+      }
+    } catch (_) {}
+  };
+
+  const replaceCardsWithPendingSync = (nextCards: CreditCard[]) => {
+    const cleanCards = nextCards.filter(card => card && !GHOST_CARD_IDS.has(card.id));
+    markLocalMutation();
+
+    if (currentUser && !isDemoUser()) {
+      const nextIds = new Set(cleanCards.map(card => card.id));
+      for (const previousCard of cardsRef.current) {
+        if (!nextIds.has(previousCard.id)) {
+          queueCardDelete(previousCard.id);
+          if (isSupabaseConfigured()) void supabaseDb.deleteCard(currentUser.id, previousCard.id);
+        }
+      }
+      for (const card of cleanCards) {
+        queueCardUpsert(card);
+        if (isSupabaseConfigured()) void supabaseDb.upsertCard(currentUser.id, card);
+      }
+    }
+
+    applyLocalCards(cleanCards);
+  };
+
+  const cardsMatch = (left: CreditCard, right: CreditCard) => (
+    left.id === right.id &&
+    left.name === right.name &&
+    (left.brand || 'Mastercard') === (right.brand || 'Mastercard') &&
+    Number(left.limit) === Number(right.limit) &&
+    Number(left.closingDay) === Number(right.closingDay) &&
+    Number(left.dueDay) === Number(right.dueDay) &&
+    left.color === right.color &&
+    (left.defaultAccountId || null) === (right.defaultAccountId || null) &&
+    (left.bankId || null) === (right.bankId || null)
+  );
+
+  const reconcileRemoteCards = (remoteCards: CreditCard[]): CreditCard[] => {
+    const pending = pendingCardMutationsRef.current;
+    const localCardsById = new Map(cardsRef.current.map(card => [card.id, card]));
+    const byId = new Map<string, CreditCard>(remoteCards.map((card): [string, CreditCard] => {
+      const localCard = localCardsById.get(card.id);
+      return [card.id, {
+        ...card,
+        // Older schemas did not persist bankId. Keep the local issuer binding
+        // so a successful heartbeat does not remove the selected bank/logo.
+        bankId: card.bankId || localCard?.bankId,
+      }];
+    }));
+    let pendingChanged = false;
+
+    for (const cardId of pending.deletes) {
+      if (!byId.has(cardId)) {
+        pending.deletes = pending.deletes.filter(id => id !== cardId);
+        pendingChanged = true;
+      } else {
+        byId.delete(cardId);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.deleteCard(currentUser.id, cardId);
+        }
+      }
+    }
+
+    for (const [cardId, localCard] of Object.entries(pending.upserts)) {
+      const remoteCard = byId.get(cardId);
+      if (remoteCard && cardsMatch(remoteCard, localCard)) {
+        delete pending.upserts[cardId];
+        pendingChanged = true;
+      } else {
+        byId.set(cardId, localCard);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertCard(currentUser.id, localCard);
+        }
+      }
+    }
+
+    if (pendingChanged) persistPendingCardMutations();
+    return Array.from(byId.values());
+  };
+
+  const mergeRemoteProfile = (remoteProfile: UserProfile, localProfile: UserProfile): UserProfile => {
+    if (!hasLocalAppearancePreferenceRef.current) return remoteProfile;
+    return {
+      ...remoteProfile,
+      // Once this device has a preference, a background pull must not flip it.
+      theme: localProfile.theme,
+      themePreset: localProfile.themePreset,
+      accentColor: localProfile.accentColor,
+      cardRadius: localProfile.cardRadius,
+    };
+  };
 
   // Helper to merge default categories with any existing user categories
   const mergeCategories = (savedCats: any[]): Category[] => {
@@ -285,8 +510,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             ],
             notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
             userProfile: (() => {
-              const rawTheme = parsed.userProfile?.theme || 'dark';
-              let rawPreset = parsed.userProfile?.themePreset || 'sleek-neo-glass';
+              const localAppearance = loadLocalAppearance();
+              const rawTheme = localAppearance?.theme || parsed.userProfile?.theme || 'dark';
+              let rawPreset = localAppearance?.themePreset || parsed.userProfile?.themePreset || 'sleek-neo-glass';
               if (rawTheme === 'dark' && rawPreset === 'clean-light') {
                 const savedDark = (localStorage.getItem('finly_last_dark_preset') as ThemePreset);
                 rawPreset = (savedDark && savedDark !== 'clean-light') ? savedDark : 'sleek-neo-glass';
@@ -294,9 +520,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 rawPreset = 'clean-light';
               }
               return {
-                accentColor: parsed.userProfile?.accentColor || '#06B6D4',
-                cardRadius: parsed.userProfile?.cardRadius || 'squircle',
                 ...(parsed.userProfile || {}),
+                accentColor: localAppearance?.accentColor || parsed.userProfile?.accentColor || '#06B6D4',
+                cardRadius: localAppearance?.cardRadius || parsed.userProfile?.cardRadius || 'squircle',
                 themePreset: rawPreset,
                 name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Usuário'),
                 email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : ''),
@@ -316,6 +542,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // If this is the Demo Account, initialize with full realistic demo dataset!
     if (isDemo) {
       const demo = generateRealisticDemoStore();
+      const localAppearance = loadLocalAppearance();
       try {
         localStorage.setItem(userStoreKey, JSON.stringify(demo));
       } catch (e) {}
@@ -335,16 +562,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           email: demo.userProfile?.email || 'demo@finly.com',
           currency: 'BRL',
           role: 'admin',
-          theme: 'dark',
-          themePreset: 'sleek-neo-glass',
-          accentColor: '#06B6D4',
-          cardRadius: 'squircle',
+          theme: localAppearance?.theme || 'dark',
+          themePreset: localAppearance?.themePreset || 'sleek-neo-glass',
+          accentColor: localAppearance?.accentColor || '#06B6D4',
+          cardRadius: localAppearance?.cardRadius || 'squircle',
           showValues: true,
         },
       });
     }
 
     // Default clean initial store for REAL users with standard Carteira
+    const localAppearance = loadLocalAppearance();
     return {
       accounts: [DEFAULT_WALLET_ACCOUNT],
       cards: [],
@@ -363,10 +591,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         email: currentUser?.email || '',
         currency: 'BRL',
         role: 'admin',
-        theme: 'dark',
-        themePreset: 'sleek-neo-glass',
-        accentColor: '#06B6D4',
-        cardRadius: 'squircle',
+        theme: localAppearance?.theme || 'dark',
+        themePreset: localAppearance?.themePreset || 'sleek-neo-glass',
+        accentColor: localAppearance?.accentColor || '#06B6D4',
+        cardRadius: localAppearance?.cardRadius || 'squircle',
         showValues: true,
       },
     };
@@ -386,10 +614,50 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [transactions, setTransactions] = useState<Transaction[]>(initialStore.transactions);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialStore.familyMembers);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialStore.notifications);
+  const [storeOwnerUserId, setStoreOwnerUserId] = useState(userId);
+  const userRef = useRef(user);
+  userRef.current = user;
+  cardsRef.current = cards;
 
   // Sync state whenever the active user changes (e.g. switching to demo mode)
   useEffect(() => {
+    remotePullSequenceRef.current += 1;
+    localMutationRevisionRef.current = 0;
+    isStoreLoadedForUserIdRef.current = null;
+    hasInitialRemoteSyncFinishedRef.current = false;
+    canWriteFullStoreToSupabaseRef.current = false;
+
+    const hadCachedStore = Boolean(localStorage.getItem(userStoreKey));
     const store = loadUserStore();
+    const pendingMutations = loadPendingCardMutations();
+    const isDemo = currentUser?.id === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com';
+    let shouldMarkCardMigration = false;
+
+    // One-time migration for cards created before the durable mutation queue
+    // existed. Treat the cached cards as pending once, so upgrading Android
+    // cannot discard them on the first remote heartbeat.
+    if (!isDemo && !localStorage.getItem(cardMutationMigrationKey)) {
+      if (hadCachedStore) {
+        const pendingDeletes = new Set(pendingMutations.deletes);
+        for (const card of store.cards) {
+          if (card && !GHOST_CARD_IDS.has(card.id) && !pendingDeletes.has(card.id)) {
+            pendingMutations.upserts[card.id] = card;
+          }
+        }
+      }
+      shouldMarkCardMigration = true;
+    }
+    pendingCardMutationsRef.current = pendingMutations;
+    const cardJournalPersisted = persistPendingCardMutations();
+    if (shouldMarkCardMigration && cardJournalPersisted) {
+      try {
+        localStorage.setItem(cardMutationMigrationKey, '1');
+      } catch (_) {}
+    }
+
+    hasLocalAppearancePreferenceRef.current = Boolean(
+      localStorage.getItem(appearancePreferenceKey) || localStorage.getItem(userStoreKey)
+    );
     setUser(store.userProfile);
     setAccounts(store.accounts);
     setCards(store.cards);
@@ -401,8 +669,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(store.transactions);
     setFamilyMembers(store.familyMembers);
     setNotifications(store.notifications);
+    setStoreOwnerUserId(userId);
     isStoreLoadedForUserIdRef.current = userId;
-    hasInitialRemoteSyncFinishedRef.current = false;
   }, [userId]);
 
   const [period, setPeriod] = useState<string>('this_month');
@@ -420,14 +688,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
 
     const pullData = async () => {
-      if (isDemo || isResettingRef.current) return;
+      if (isDemo) {
+        hasInitialRemoteSyncFinishedRef.current = true;
+        return;
+      }
+      if (isResettingRef.current) return;
+
+      const pullSequence = ++remotePullSequenceRef.current;
+      const revisionAtStart = localMutationRevisionRef.current;
+      const canApplySnapshot = () => (
+        pullSequence === remotePullSequenceRef.current &&
+        revisionAtStart === localMutationRevisionRef.current &&
+        !isResettingRef.current
+      );
 
       // 1. Primary: Supabase PostgreSQL (Single Source of Truth)
       if (isSupabaseConfigured()) {
         try {
           const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          if (!canApplySnapshot()) return;
+          canWriteFullStoreToSupabaseRef.current = true;
           if (sbStore && sbStore.accounts) {
-            const cleanCards = (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+            const cleanCards = reconcileRemoteCards(
+              (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
+            );
             const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
             setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
             setCards(cleanCards);
@@ -441,12 +725,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
             }
-            if (sbStore.userProfile) setUser(sbStore.userProfile);
+            const mergedUserProfile = sbStore.userProfile
+              ? mergeRemoteProfile(sbStore.userProfile, userRef.current)
+              : userRef.current;
+            if (sbStore.userProfile) setUser(mergedUserProfile);
 
             hasInitialRemoteSyncFinishedRef.current = true;
 
             // Sync server store and local storage to match Supabase truth
-            const cleanStore = { ...sbStore, cards: cleanCards, transactions: cleanTxs };
+            const cleanStore = {
+              ...sbStore,
+              cards: cleanCards,
+              transactions: cleanTxs,
+              userProfile: mergedUserProfile,
+            };
             try {
               localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
             } catch (_) {}
@@ -455,13 +747,24 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         } catch (sbErr) {
           console.warn('Supabase store fetch notice:', sbErr);
+          if (!canApplySnapshot()) return;
+          canWriteFullStoreToSupabaseRef.current = false;
+          // Once local/cached data is available, a failed Supabase snapshot must
+          // not fall through to a potentially older secondary copy.
+          if (hasInitialRemoteSyncFinishedRef.current || localStorage.getItem(userStoreKey)) {
+            hasInitialRemoteSyncFinishedRef.current = true;
+            return;
+          }
         }
       }
 
       // 2. Fallback to Express server store ONLY if Supabase is offline or unconfigured
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
       if (serverStore && serverStore.accounts) {
-        const cleanCards = (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+        if (!canApplySnapshot()) return;
+        const cleanCards = reconcileRemoteCards(
+          (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
+        );
         const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
         setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
         setCards(cleanCards);
@@ -475,14 +778,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
-        if (serverStore.userProfile) setUser(serverStore.userProfile);
+        if (serverStore.userProfile) {
+          setUser(localProfile => mergeRemoteProfile(serverStore.userProfile, localProfile));
+        }
 
         hasInitialRemoteSyncFinishedRef.current = true;
         return;
       }
 
       // 3. New User or first-time login: neither Supabase nor server had existing data yet
-      hasInitialRemoteSyncFinishedRef.current = true;
+      if (canApplySnapshot()) hasInitialRemoteSyncFinishedRef.current = true;
     };
 
     pullData();
@@ -500,13 +805,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return () => {
       window.removeEventListener('focus', handleFocus);
       clearInterval(interval);
+      apiSync.setUserId(null);
     };
   }, [currentUser?.id]);
 
   // Automatic Real-Time Persistence (local offline cache + debounced Supabase & server sync)
   useEffect(() => {
     // Only save if the store has actually been loaded from remote for the CURRENT user (prevents wiping or overwriting with stale localStorage)
-    if (!currentUser || isStoreLoadedForUserIdRef.current !== currentUser.id || !hasInitialRemoteSyncFinishedRef.current || isResettingRef.current) return;
+    if (
+      !currentUser ||
+      storeOwnerUserId !== currentUser.id ||
+      isStoreLoadedForUserIdRef.current !== currentUser.id ||
+      !hasInitialRemoteSyncFinishedRef.current ||
+      isResettingRef.current
+    ) return;
 
     const currentStore: UserStoreData = {
       accounts,
@@ -532,7 +844,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
 
     // 2. Primary: Supabase PostgreSQL Persistence
-    if (!isDemo && isSupabaseConfigured()) {
+    if (!isDemo && isSupabaseConfigured() && canWriteFullStoreToSupabaseRef.current) {
       supabaseDb.saveEntireStore(currentUser.id, currentStore).catch(e => {
         console.warn('Supabase save error:', e);
       });
@@ -540,7 +852,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // 3. Fallback: Push to backend server
     apiSync.pushStore(currentUser.id, currentStore);
-  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, familyMembers, notifications, user, userStoreKey, currentUser?.id]);
+  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, familyMembers, notifications, user, userStoreKey, storeOwnerUserId, currentUser?.id]);
 
   // Pull-to-refresh & In-app manual sync handler
   const refreshData = async (): Promise<void> => {
@@ -563,12 +875,24 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
+      const pullSequence = ++remotePullSequenceRef.current;
+      const revisionAtStart = localMutationRevisionRef.current;
+      const canApplySnapshot = () => (
+        pullSequence === remotePullSequenceRef.current &&
+        revisionAtStart === localMutationRevisionRef.current &&
+        !isResettingRef.current
+      );
+
       // 2. Primary: Supabase PostgreSQL
       if (isSupabaseConfigured()) {
         try {
           const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          if (!canApplySnapshot()) return;
+          canWriteFullStoreToSupabaseRef.current = true;
           if (sbStore && sbStore.accounts) {
-            const cleanCards = (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+            const cleanCards = reconcileRemoteCards(
+              (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
+            );
             const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
             setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
             setCards(cleanCards);
@@ -582,12 +906,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
             }
-            if (sbStore.userProfile) setUser(sbStore.userProfile);
+            const mergedUserProfile = sbStore.userProfile
+              ? mergeRemoteProfile(sbStore.userProfile, userRef.current)
+              : userRef.current;
+            if (sbStore.userProfile) setUser(mergedUserProfile);
 
             hasInitialRemoteSyncFinishedRef.current = true;
 
             // Update server store to match Supabase
-            const cleanStore = { ...sbStore, cards: cleanCards, transactions: cleanTxs };
+            const cleanStore = {
+              ...sbStore,
+              cards: cleanCards,
+              transactions: cleanTxs,
+              userProfile: mergedUserProfile,
+            };
             try {
               localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
             } catch (_) {}
@@ -596,13 +928,19 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         } catch (sbErr) {
           console.warn('Supabase store refresh notice:', sbErr);
+          if (!canApplySnapshot()) return;
+          canWriteFullStoreToSupabaseRef.current = false;
+          if (localStorage.getItem(userStoreKey)) return;
         }
       }
 
       // 3. Fallback to Express server store ONLY if Supabase is unconfigured or failed
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
       if (serverStore && serverStore.accounts) {
-        const cleanCards = (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id));
+        if (!canApplySnapshot()) return;
+        const cleanCards = reconcileRemoteCards(
+          (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
+        );
         const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
         setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
         setCards(cleanCards);
@@ -616,7 +954,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
-        if (serverStore.userProfile) setUser(serverStore.userProfile);
+        if (serverStore.userProfile) {
+          setUser(localProfile => mergeRemoteProfile(serverStore.userProfile, localProfile));
+        }
 
         hasInitialRemoteSyncFinishedRef.current = true;
         return;
@@ -721,9 +1061,35 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [transactions]);
 
   // User Actions
-  const updateUser = (data: Partial<UserProfile>) => setUser(prev => ({ ...prev, ...data }));
-  const toggleHideValues = () => setUser(prev => ({ ...prev, showValues: !prev.showValues }));
+  const updateUser = (data: Partial<UserProfile>) => {
+    markLocalMutation();
+    const hasAppearanceChanges = (
+      data.theme !== undefined ||
+      data.themePreset !== undefined ||
+      data.accentColor !== undefined ||
+      data.cardRadius !== undefined
+    );
+    if (hasAppearanceChanges) {
+      hasLocalAppearancePreferenceRef.current = true;
+    }
+    setUser(prev => {
+      const updated = { ...prev, ...data };
+      if (hasAppearanceChanges) persistLocalAppearance(updated);
+      persistLocalUserProfile(updated);
+      return updated;
+    });
+  };
+  const toggleHideValues = () => {
+    markLocalMutation();
+    setUser(prev => {
+      const updated = { ...prev, showValues: !prev.showValues };
+      persistLocalUserProfile(updated);
+      return updated;
+    });
+  };
   const toggleTheme = () => {
+    markLocalMutation();
+    hasLocalAppearancePreferenceRef.current = true;
     setUser(prev => {
       const newTheme: 'light' | 'dark' = prev.theme === 'dark' ? 'light' : 'dark';
       let newPreset: ThemePreset;
@@ -748,7 +1114,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       applyTheme({ preset: newPreset, accentColor: newAccent, mode: newTheme });
-      return { ...prev, theme: newTheme, themePreset: newPreset, accentColor: newAccent };
+      const updated = { ...prev, theme: newTheme, themePreset: newPreset, accentColor: newAccent };
+      persistLocalAppearance(updated);
+      persistLocalUserProfile(updated);
+      return updated;
     });
   };
 
@@ -777,20 +1146,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Card Actions
   const addCard = (card: Omit<CreditCard, 'id'>) => {
     const newCard: CreditCard = { ...card, id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 5)}` };
-    setCards(prev => {
-      const updated = [...prev, newCard];
-      try {
-        const raw = localStorage.getItem(userStoreKey);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          parsed.cards = updated;
-          localStorage.setItem(userStoreKey, JSON.stringify(parsed));
-        }
-      } catch (e) {}
-      return updated;
-    });
+    markLocalMutation();
+    queueCardUpsert(newCard);
+    applyLocalCards([...cardsRef.current, newCard]);
 
-    if (currentUser && isSupabaseConfigured()) {
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
       supabaseDb.upsertCard(currentUser.id, newCard).catch(e => {
         console.warn('Supabase upsertCard notice:', e);
       });
@@ -798,63 +1158,39 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const updateCard = (id: string, data: Partial<CreditCard>) => {
-    setCards(prev => {
-      const updated = prev.map(c => (c.id === id ? { ...c, ...data } : c));
-      try {
-        const raw = localStorage.getItem(userStoreKey);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          parsed.cards = updated;
-          localStorage.setItem(userStoreKey, JSON.stringify(parsed));
-        }
-      } catch (e) {}
-      return updated;
-    });
+    const targetCard = cardsRef.current.find(c => c.id === id);
+    if (!targetCard) return;
+    const updatedCard = { ...targetCard, ...data };
+    markLocalMutation();
+    queueCardUpsert(updatedCard);
+    applyLocalCards(cardsRef.current.map(c => (c.id === id ? updatedCard : c)));
 
-    if (currentUser && isSupabaseConfigured()) {
-      const targetCard = cards.find(c => c.id === id);
-      if (targetCard) {
-        supabaseDb.upsertCard(currentUser.id, { ...targetCard, ...data }).catch(() => {});
-      }
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      supabaseDb.upsertCard(currentUser.id, updatedCard).catch(() => {});
     }
   };
 
   const deleteCard = (id: string) => {
-    const card = cards.find(c => c.id === id);
+    const card = cardsRef.current.find(c => c.id === id);
     if (!card) return;
-    setCards(prev => {
-      const updated = prev.filter(c => c.id !== id);
-      try {
-        const raw = localStorage.getItem(userStoreKey);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          parsed.cards = updated;
-          localStorage.setItem(userStoreKey, JSON.stringify(parsed));
-        }
-      } catch (e) {}
-      return updated;
-    });
+    markLocalMutation();
+    queueCardDelete(id);
+    applyLocalCards(cardsRef.current.filter(c => c.id !== id));
 
-    if (currentUser && isSupabaseConfigured()) {
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
       supabaseDb.deleteCard(currentUser.id, id).catch(() => {});
     }
 
     showUndo({
       message: `Cartão "${card.name}" excluído`,
       onUndo: () => {
-        setCards(prev => {
-          const updated = [...prev, card];
-          try {
-            const raw = localStorage.getItem(userStoreKey);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              parsed.cards = updated;
-              localStorage.setItem(userStoreKey, JSON.stringify(parsed));
-            }
-          } catch (e) {}
-          return updated;
-        });
-        if (currentUser && isSupabaseConfigured()) {
+        markLocalMutation();
+        queueCardUpsert(card);
+        const restoredCards = cardsRef.current.some(existing => existing.id === card.id)
+          ? cardsRef.current
+          : [...cardsRef.current, card];
+        applyLocalCards(restoredCards);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
           supabaseDb.upsertCard(currentUser.id, card).catch(() => {});
         }
       },
@@ -1408,6 +1744,12 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Reset / Clear Data (hard reset locally, in Supabase and on the server)
   const resetAllUserData = async () => {
     isResettingRef.current = true;
+    remotePullSequenceRef.current += 1;
+    localMutationRevisionRef.current += 1;
+    pendingCardMutationsRef.current = { upserts: {}, deletes: [] };
+    try {
+      localStorage.removeItem(pendingCardMutationsKey);
+    } catch (_) {}
 
     const cleanStore: UserStoreData = {
       accounts: [DEFAULT_WALLET_ACCOUNT],
@@ -1449,8 +1791,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 4. Wipe all records in Supabase tables
       if (isSupabaseConfigured()) {
         try {
-          await supabaseDb.clearUserStore(currentUser.id);
+          canWriteFullStoreToSupabaseRef.current = await supabaseDb.clearUserStore(currentUser.id);
         } catch (sbErr) {
+          canWriteFullStoreToSupabaseRef.current = false;
           console.warn('Supabase clear store error:', sbErr);
         }
       }
@@ -1493,7 +1836,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const loadDemoData = () => {
     const demo = generateRealisticDemoStore();
     setAccounts(demo.accounts);
-    setCards(demo.cards);
+    replaceCardsWithPendingSync(demo.cards);
     setCategories(demo.categories);
     setTransactions(demo.transactions);
     setBudgets(demo.budgets);
@@ -1537,7 +1880,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!parsed || typeof parsed !== 'object') return false;
 
       if (Array.isArray(parsed.accounts)) setAccounts(parsed.accounts);
-      if (Array.isArray(parsed.cards)) setCards(parsed.cards);
+      if (Array.isArray(parsed.cards)) replaceCardsWithPendingSync(parsed.cards);
       if (Array.isArray(parsed.categories)) setCategories(parsed.categories);
       if (Array.isArray(parsed.budgets)) setBudgets(parsed.budgets);
       if (Array.isArray(parsed.goals)) setGoals(parsed.goals);
