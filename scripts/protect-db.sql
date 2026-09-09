@@ -13,16 +13,14 @@ DELETE FROM credit_cards
 WHERE user_id = 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b' 
   AND id IN ('card-1788094641945-bzt', 'card-1788094677952-2ym', 'card-1788916198444-dq3');
 
--- 1. Trigger to block ghost transactions
+-- 1. Trigger to block ghost transactions (targeted to the exact stale test IDs)
 CREATE OR REPLACE FUNCTION prevent_ghost_transactions_fn()
 RETURNS TRIGGER AS $$
 BEGIN
   IF (
     NEW.id LIKE 'tx-1788095%' 
     OR NEW.id LIKE 'tx-1788210%' 
-    OR NEW.id LIKE '%1788193846930%' 
-    OR NEW.created_at < '2026-09-01 00:00:00+00' 
-    OR NEW.date < '2026-09-01'
+    OR NEW.id LIKE '%1788193846930%'
   ) THEN
     RETURN NULL;
   END IF;

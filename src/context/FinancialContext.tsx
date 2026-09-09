@@ -298,8 +298,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 cardRadius: parsed.userProfile?.cardRadius || 'squircle',
                 ...(parsed.userProfile || {}),
                 themePreset: rawPreset,
-                name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Liverton'),
-                email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : 'liverton.aguiar@hotmail.com'),
+                name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Usuário'),
+                email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : ''),
                 currency: parsed.userProfile?.currency || 'BRL',
                 role: parsed.userProfile?.role || 'admin',
                 theme: rawTheme,
@@ -355,12 +355,12 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       investments: [],
       transactions: [],
       familyMembers: [
-        { id: 'fam-1', name: currentUser?.name || 'Liverton', email: currentUser?.email || 'liverton.aguiar@hotmail.com', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
+        { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
       ],
       notifications: [],
       userProfile: {
-        name: currentUser?.name || 'Liverton',
-        email: currentUser?.email || 'liverton.aguiar@hotmail.com',
+        name: currentUser?.name || 'Usuário',
+        email: currentUser?.email || '',
         currency: 'BRL',
         role: 'admin',
         theme: 'dark',
@@ -478,7 +478,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (serverStore.userProfile) setUser(serverStore.userProfile);
 
         hasInitialRemoteSyncFinishedRef.current = true;
+        return;
       }
+
+      // 3. New User or first-time login: neither Supabase nor server had existing data yet
+      hasInitialRemoteSyncFinishedRef.current = true;
     };
 
     pullData();
@@ -630,6 +634,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setTransactions(store.transactions);
         setFamilyMembers(store.familyMembers);
         setNotifications(store.notifications);
+        hasInitialRemoteSyncFinishedRef.current = true;
       }
     } catch (err) {
       console.warn('Sync completed with local cache fallback:', err);
