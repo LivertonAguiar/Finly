@@ -505,9 +505,9 @@ export const HELP_FAQS: HelpFaqItem[] = [
   {
     id: 'faq-logos-cartoes',
     question: 'Quais bancos e cartões têm logotipos e cores oficiais no Finly?',
-    answer: 'O Finly suporta os principais bancos e cartões do Brasil com logotipos vetoriais em alta definição e temas dinâmicos: Nubank, Inter, Itaú, Bradesco, Banco do Brasil, Santander, Caixa, C6 Bank, BTG Pactual, XP, Mercado Pago, PicPay, PagBank, Safra, Sicredi, Sicoob, Nomad, Wise, Will, Neon, além de cartões de varejo e digitais como Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour.',
+    answer: 'O Finly suporta mais de 28 bancos e emissores do Brasil com logotipos vetoriais em alta definição e temas dinâmicos: Nubank, Inter, Itaú, Bradesco, Banco do Brasil, Santander, Caixa, C6 Bank, BTG Pactual, XP, Mercado Pago, PicPay, PagBank, Safra, Sicredi, Sicoob, Nomad, Wise, Will, Neon, além de cartões de varejo e digitais como Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour. Na tela de cadastro, você conta com barra de pesquisa instantânea, filtros por categoria (Populares, Cartões de Loja, Digitais e Tradicionais) e alternador entre visualização em Cards Detalhados ou Grade de Ícones sem cortes de texto.',
     category: 'cartoes',
-    tags: ['cartao', 'logos', 'banco', 'amazon', 'bradescard', 'casas bahia', 'americanas', 'santander way', 'bradesco neo', 'carrefour'],
+    tags: ['cartao', 'logos', 'banco', 'amazon', 'bradescard', 'casas bahia', 'americanas', 'santander way', 'bradesco neo', 'carrefour', 'busca', 'categorias', 'grade', 'cards'],
   },
   {
     id: 'faq-formato-ofx',

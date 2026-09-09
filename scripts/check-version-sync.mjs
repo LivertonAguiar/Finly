@@ -37,21 +37,28 @@ const apiProcess = spawn(process.execPath, ['server/apiServer.js'], {
 });
 
 let apiInfo;
+let lastApiError;
+let apiStderr = '';
+apiProcess.stderr.on('data', chunk => { apiStderr += chunk.toString(); });
 try {
-  const deadline = Date.now() + 5000;
+  const deadline = Date.now() + 8000;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`http://127.0.0.1:${apiPort}/api/app/version`);
+      const response = await fetch(`http://localhost:${apiPort}/api/app/version`);
       if (response.ok) {
         apiInfo = await response.json();
         break;
       }
-    } catch {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (err) {
+      lastApiError = err;
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
   }
 } finally {
   apiProcess.kill();
+  if (!apiInfo && (lastApiError || apiStderr)) {
+    console.warn(`[WARN] API check noticed: ${lastApiError?.message || ''} Stderr: ${apiStderr}`);
+  }
 }
 
 const versions = {

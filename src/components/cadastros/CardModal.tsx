@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
+import { BankSelector } from '../ui/BankSelector';
 import { useFinancial } from '../../context/FinancialContext';
 import { CreditCard } from '../../types';
 import { CARD_BRANDS, CardBrandLogo, ALL_BANKS, BankLogo } from '../../utils/bankLogos';
@@ -10,6 +11,20 @@ interface CardModalProps {
   onClose: () => void;
   editingCard?: CreditCard | null;
 }
+
+const CARD_COLOR_PRESETS = [
+  { name: 'Roxo Finly', color: '#820ad1' },
+  { name: 'Indigo Noturno', color: '#4f46e5' },
+  { name: 'Azul Real', color: '#0066b3' },
+  { name: 'Ciano Neon', color: '#00e5ff' },
+  { name: 'Esmeralda', color: '#10b981' },
+  { name: 'Laranja Vibrante', color: '#ff7a00' },
+  { name: 'Vermelho Carmim', color: '#ea1d25' },
+  { name: 'Dourado / Ouro', color: '#f59e0b' },
+  { name: 'Rosa Magenta', color: '#ec4899' },
+  { name: 'Grafite Titanium', color: '#2b2b2b' },
+  { name: 'Preto Obsidian', color: '#111827' },
+];
 
 export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCard }) => {
   const { addCard, updateCard, accounts, user } = useFinancial();
@@ -45,12 +60,16 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         setColor(editingCard.color || '#820ad1');
         setDefaultAccountId(editingCard.defaultAccountId || accounts[0]?.id || '');
 
-        // Match bank from name if possible
-        const foundBank = ALL_BANKS.find(b =>
-          (editingCard.name && editingCard.name.toLowerCase().includes(b.name.toLowerCase())) ||
-          (editingCard.name && editingCard.name.toLowerCase().includes(b.id))
-        );
-        if (foundBank) setSelectedBankId(foundBank.id);
+        // Preserve existing bankId, or match bank from name if possible
+        if (editingCard.bankId) {
+          setSelectedBankId(editingCard.bankId);
+        } else {
+          const foundBank = ALL_BANKS.find(b =>
+            (editingCard.name && editingCard.name.toLowerCase().includes(b.name.toLowerCase())) ||
+            (editingCard.name && editingCard.name.toLowerCase().includes(b.id))
+          );
+          if (foundBank) setSelectedBankId(foundBank.id);
+        }
       } else {
         const defaultBank = ALL_BANKS[0]; // Nubank
         setSelectedBankId(defaultBank.id);
@@ -171,47 +190,13 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         {/* ========================================================================= */}
         {/* 2. PRIMARY: SELETOR DE EMISSOR / BANCO (DESTAQUE PRINCIPAL & MAIOR) */}
         {/* ========================================================================= */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-purple-600" />
-              <span>Selecione o Emissor / Banco (Principal)</span>
-            </label>
-            <span className="text-[10px] text-slate-400 font-bold">{ALL_BANKS.length} bancos disponíveis</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 scrollbar-thin">
-            {ALL_BANKS.map((bank) => {
-              const isSelected = selectedBankId.toLowerCase() === bank.id.toLowerCase() || name.toLowerCase().includes(bank.name.toLowerCase());
-              return (
-                <button
-                  key={bank.id}
-                  type="button"
-                  onClick={() => handleSelectBank(bank)}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    isSelected
-                      ? 'border-purple-500 bg-purple-500/15 ring-2 ring-purple-500/40 shadow-sm scale-[1.02]'
-                      : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/60'
-                  }`}
-                >
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center p-1 bg-slate-100 dark:bg-slate-900 shrink-0 shadow-xs">
-                    <BankLogo nameOrId={bank.id} size={20} className="w-5 h-5 rounded" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-xs font-black text-slate-900 dark:text-white truncate block">
-                      {bank.name}
-                    </span>
-                  </div>
-                  {isSelected && (
-                    <span className="w-4 h-4 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <BankSelector
+          selectedBankId={selectedBankId}
+          onSelectBank={handleSelectBank}
+          accentColor="purple"
+          title="Selecione o Emissor / Banco (Principal)"
+          maxHeightClass="max-h-56"
+        />
 
         {/* ========================================================================= */}
         {/* 3. SECONDARY: SELETOR DE BANDEIRA (COMPACTO & MENOR) */}
@@ -320,21 +305,18 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
             </div>
             {/* Paletas de Cor Rápidas */}
             <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-none">
-              {ALL_BANKS.slice(0, 10).map(b => (
+              {CARD_COLOR_PRESETS.map(p => (
                 <button
-                  key={b.id}
+                  key={p.color}
                   type="button"
-                  onClick={() => {
-                    setColor(b.color);
-                    setSelectedBankId(b.id);
-                  }}
+                  onClick={() => setColor(p.color)}
                   className={`w-5 h-5 rounded-full shrink-0 transition-transform cursor-pointer border ${
-                    color.toLowerCase() === b.color.toLowerCase()
+                    color.toLowerCase() === p.color.toLowerCase()
                       ? 'scale-125 ring-2 ring-purple-500 border-white'
                       : 'border-white/20 hover:scale-110'
                   }`}
-                  style={{ backgroundColor: b.color }}
-                  title={`${b.name} (${b.color})`}
+                  style={{ backgroundColor: p.color }}
+                  title={p.name}
                 />
               ))}
             </div>

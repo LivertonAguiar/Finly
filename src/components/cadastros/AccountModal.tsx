@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
+import { BankSelector } from '../ui/BankSelector';
 import { useFinancial } from '../../context/FinancialContext';
 import { Account, AccountType } from '../../types';
 import { ALL_BANKS, BankLogo } from '../../utils/bankLogos';
@@ -92,41 +93,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, edi
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editingAccount ? 'Editar Conta' : 'Nova Conta Bancária'} maxWidth="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Visual Bank Selector Grid */}
-        <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-            Selecione o Banco / Instituição
-          </label>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-thin">
-            {ALL_BANKS.map((b) => {
-              const isSelected = institution.toLowerCase() === b.name.toLowerCase();
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => handleSelectBank(b)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
-                    isSelected
-                      ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20 shadow-sm'
-                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                  }`}
-                >
-                  <div className="relative mb-1">
-                    <BankLogo nameOrId={b.id} size={28} className="w-7 h-7 rounded-lg shadow-xs" />
-                    {isSelected && (
-                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px]">
-                        <Check className="w-2.5 h-2.5 stroke-[3]" />
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate w-full">
-                    {b.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {/* Visual Bank Selector */}
+        <BankSelector
+          selectedBankName={institution}
+          onSelectBank={handleSelectBank}
+          accentColor="emerald"
+          title="Selecione o Banco / Instituição"
+          maxHeightClass="max-h-52"
+        />
 
         {/* Selected Bank Preview & Customization */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">

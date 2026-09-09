@@ -464,13 +464,6 @@ export function getCardBankInfo(cardOrName?: string | { name?: string; bankId?: 
   if (norm.includes('banrisul')) return ALL_BANKS.find(b => b.id === 'banrisul');
   if (norm.includes('next')) return ALL_BANKS.find(b => b.id === 'next');
 
-  // 4. Color fallback
-  if (typeof cardOrName === 'object' && cardOrName.color) {
-    const cardColor = cardOrName.color.toLowerCase();
-    found = ALL_BANKS.find(b => b.color.toLowerCase() === cardColor);
-    if (found) return found;
-  }
-
   return undefined;
 }
 
