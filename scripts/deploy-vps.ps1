@@ -49,8 +49,13 @@ if ($localCommit -ne $remoteCommit) {
 }
 
 $tagCommit = git -C $repoRoot rev-list -n 1 $versionTag 2>$null
-if ($LASTEXITCODE -ne 0 -or $tagCommit -ne $localCommit) {
-    throw "Deploy bloqueado: a tag $versionTag nao existe ou nao aponta para o commit atual."
+if (-not $tagCommit) {
+    throw "Deploy bloqueado: a tag $versionTag nao foi encontrada no repositorio."
+}
+
+git -C $repoRoot merge-base --is-ancestor $tagCommit $localCommit
+if ($LASTEXITCODE -ne 0) {
+    throw "Deploy bloqueado: o commit local nao descende da tag de release $versionTag."
 }
 
 npm.cmd --prefix $repoRoot run check:version
