@@ -504,10 +504,10 @@ export const HELP_FAQS: HelpFaqItem[] = [
   },
   {
     id: 'faq-logos-cartoes',
-    question: 'Quais bancos e cartões têm logotipos e cores oficiais no Finly?',
-    answer: 'O Finly suporta mais de 28 bancos e emissores do Brasil com logotipos vetoriais em alta definição e temas dinâmicos: Nubank, Inter, Itaú, Bradesco, Banco do Brasil, Santander, Caixa, C6 Bank, BTG Pactual, XP, Mercado Pago, PicPay, PagBank, Safra, Sicredi, Sicoob, Nomad, Wise, Will, Neon, além de cartões de varejo e digitais como Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour. Ao selecionar qualquer banco ou cor, o tema do cartão e a paleta visual são ativados dinamicamente no card de exibição, destacando o ícone do emissor como a identidade principal do plástico.',
+    question: 'Quais bancos têm cores oficiais e posso personalizar a cor do meu cartão?',
+    answer: 'O Finly suporta mais de 28 bancos e emissores do Brasil com logotipos vetoriais em alta definição e temas dinâmicos: Nubank, Inter, Itaú, Bradesco, Banco do Brasil, Santander, Caixa, C6 Bank, BTG Pactual, XP, Mercado Pago, PicPay, PagBank, Safra, Sicredi, Sicoob, Nomad, Wise, Will, Neon, além de cartões de varejo como Amazon, Bradescard, Casas Bahia, Americanas, Santander Way, Bradesco Neo e Carrefour. A cor oficial do banco é sugerida automaticamente, mas você tem total liberdade para escolher qualquer cor personalizada na paleta ou no seletor HEX (#). Além disso, pode restaurar a cor original do emissor a qualquer momento com apenas um clique.',
     category: 'cartoes',
-    tags: ['cartao', 'logos', 'banco', 'amazon', 'bradescard', 'casas bahia', 'americanas', 'santander way', 'bradesco neo', 'carrefour', 'busca', 'categorias', 'grade', 'cards', 'tema'],
+    tags: ['cartao', 'logos', 'banco', 'cor', 'tema', 'personalizacao', 'hex', 'emissor'],
   },
   {
     id: 'faq-sync-tempo-real',

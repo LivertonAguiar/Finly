@@ -2078,8 +2078,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
               <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-1">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex items-center gap-1 text-[#7c4dff]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff]" />
+                  <span className="flex items-center gap-1" style={{ color: cardColor }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cardColor }} />
                     Mês: {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
                   {card.futureInstallmentsTotal > 0 && (

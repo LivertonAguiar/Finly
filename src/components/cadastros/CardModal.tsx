@@ -36,6 +36,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
   const [closingDay, setClosingDay] = useState('20');
   const [dueDay, setDueDay] = useState('27');
   const [color, setColor] = useState('#820ad1');
+  const [isCustomColor, setIsCustomColor] = useState(false);
   const [defaultAccountId, setDefaultAccountId] = useState(accounts[0]?.id || '');
 
   const prevIsOpenRef = React.useRef(false);
@@ -61,15 +62,24 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         setDefaultAccountId(editingCard.defaultAccountId || accounts[0]?.id || '');
 
         // Preserve existing bankId, or match bank from name if possible
+        let detectedBankId = 'nubank';
         if (editingCard.bankId) {
+          detectedBankId = editingCard.bankId;
           setSelectedBankId(editingCard.bankId);
         } else {
           const foundBank = ALL_BANKS.find(b =>
             (editingCard.name && editingCard.name.toLowerCase().includes(b.name.toLowerCase())) ||
             (editingCard.name && editingCard.name.toLowerCase().includes(b.id))
           );
-          if (foundBank) setSelectedBankId(foundBank.id);
+          if (foundBank) {
+            detectedBankId = foundBank.id;
+            setSelectedBankId(foundBank.id);
+          }
         }
+
+        const refBank = ALL_BANKS.find(b => b.id === detectedBankId);
+        const hasCustomColor = refBank ? refBank.color.toLowerCase() !== (editingCard.color || '').toLowerCase() : true;
+        setIsCustomColor(hasCustomColor);
       } else {
         const defaultBank = ALL_BANKS[0]; // Nubank
         setSelectedBankId(defaultBank.id);
@@ -79,6 +89,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         setClosingDay('20');
         setDueDay('27');
         setColor(defaultBank.color);
+        setIsCustomColor(false);
         setDefaultAccountId(accounts[0]?.id || '');
       }
     }
@@ -86,13 +97,29 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
 
   const handleSelectBank = (bank: typeof ALL_BANKS[0]) => {
     setSelectedBankId(bank.id);
-    setColor(bank.color);
+    // Se o usuário ainda não personalizou a cor manualmente, aplica a cor oficial do novo banco selecionado
+    if (!isCustomColor) {
+      setColor(bank.color);
+    }
     // Only update name if empty or if it was the default generated name
     const isDefaultName =
       !name.trim() ||
       ALL_BANKS.some(b => name.trim() === `${b.name} Crédito` || name.trim() === b.name);
     if (isDefaultName) {
       setName(`${bank.name} Crédito`);
+    }
+  };
+
+  const handleColorChange = (newColor: string) => {
+    setColor(newColor);
+    setIsCustomColor(true);
+  };
+
+  const handleResetToBankColor = () => {
+    const b = ALL_BANKS.find(item => item.id === selectedBankId);
+    if (b) {
+      setColor(b.color);
+      setIsCustomColor(false);
     }
   };
 
@@ -285,7 +312,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Dia Fechamento</label>
             <input
@@ -311,40 +338,78 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
               className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 shadow-xs"
             />
           </div>
+        </div>
 
-          <div className="col-span-3 sm:col-span-1">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cor do Cartão & Tema</label>
+        {/* 5. SELEÇÃO DE COR LIVRE E INDEPENDENTE DO BANCO */}
+        <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-2.5 shadow-xs">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={color}
-                onChange={e => setColor(e.target.value)}
-                className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent"
-                title="Personalizar cor"
-              />
+              <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Cor do Cartão & Tema Visual
+              </label>
+              {isCustomColor ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                  Personalizada
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                  Cor oficial do banco
+                </span>
+              )}
+            </div>
+
+            {currentBank && isCustomColor && (
+              <button
+                type="button"
+                onClick={handleResetToBankColor}
+                className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1.5 cursor-pointer transition-colors"
+                title={`Voltar para a cor oficial do ${currentBank.name} (${currentBank.color})`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/40" style={{ backgroundColor: currentBank.color }} />
+                <span>Restaurar cor do {currentBank.name}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={e => handleColorChange(e.target.value)}
+                  className="w-9 h-9 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 bg-transparent p-0.5 shadow-xs"
+                  title="Abrir seletor visual de cor"
+                />
+              </div>
               <input
                 type="text"
                 value={color}
-                onChange={e => setColor(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-800 dark:text-slate-100"
+                onChange={e => handleColorChange(e.target.value)}
+                placeholder="#820ad1"
+                className="w-24 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 shadow-xs uppercase"
               />
             </div>
+
             {/* Paletas de Cor Rápidas */}
-            <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-none">
-              {CARD_COLOR_PRESETS.map(p => (
-                <button
-                  key={p.color}
-                  type="button"
-                  onClick={() => setColor(p.color)}
-                  className={`w-5 h-5 rounded-full shrink-0 transition-transform cursor-pointer border ${
-                    color.toLowerCase() === p.color.toLowerCase()
-                      ? 'scale-125 ring-2 ring-purple-500 border-white'
-                      : 'border-white/20 hover:scale-110'
-                  }`}
-                  style={{ backgroundColor: p.color }}
-                  title={p.name}
-                />
-              ))}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-1">
+              {CARD_COLOR_PRESETS.map(p => {
+                const isSelected = color.toLowerCase() === p.color.toLowerCase();
+                return (
+                  <button
+                    key={p.color}
+                    type="button"
+                    onClick={() => handleColorChange(p.color)}
+                    className={`w-6 h-6 rounded-full shrink-0 transition-all cursor-pointer border ${
+                      isSelected
+                        ? 'scale-125 ring-2 ring-purple-500 border-white shadow-sm'
+                        : 'border-white/30 hover:scale-110 opacity-80 hover:opacity-100'
+                    }`}
+                    style={{ backgroundColor: p.color }}
+                    title={p.name}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>

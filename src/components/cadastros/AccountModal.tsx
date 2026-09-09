@@ -12,6 +12,18 @@ interface AccountModalProps {
   editingAccount?: Account | null;
 }
 
+const ACCOUNT_COLOR_PRESETS = [
+  { name: 'Esmeralda', color: '#10b981' },
+  { name: 'Azul Real', color: '#0066b3' },
+  { name: 'Roxo Finly', color: '#820ad1' },
+  { name: 'Laranja Vibrante', color: '#ff7a00' },
+  { name: 'Vermelho Carmim', color: '#ea1d25' },
+  { name: 'Dourado / Ouro', color: '#f59e0b' },
+  { name: 'Ciano Neon', color: '#00e5ff' },
+  { name: 'Rosa Magenta', color: '#ec4899' },
+  { name: 'Preto Obsidian', color: '#1e293b' },
+];
+
 export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, editingAccount }) => {
   const { addAccount, updateAccount } = useFinancial();
 
@@ -20,8 +32,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, edi
   const [institution, setInstitution] = useState(ALL_BANKS[0].name);
   const [balance, setBalance] = useState('0');
   const [color, setColor] = useState(ALL_BANKS[0].color);
+  const [isCustomColor, setIsCustomColor] = useState(false);
   const [includeInTotal, setIncludeInTotal] = useState(true);
-
 
   const prevIsOpenRef = React.useRef(false);
   const prevEditingIdRef = React.useRef<string | null>(null);
@@ -43,23 +55,43 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, edi
         setBalance(editingAccount.balance !== undefined ? Number(editingAccount.balance).toFixed(2) : '0');
         setColor(editingAccount.color);
         setIncludeInTotal(editingAccount.includeInTotal);
+
+        const refBank = ALL_BANKS.find(b => b.name.toLowerCase() === (editingAccount.institution || '').toLowerCase() || b.id.toLowerCase() === (editingAccount.institution || '').toLowerCase());
+        const hasCustom = refBank ? refBank.color.toLowerCase() !== (editingAccount.color || '').toLowerCase() : true;
+        setIsCustomColor(hasCustom);
       } else {
         setName('');
         setType('checking');
         setInstitution(ALL_BANKS[0].name);
         setBalance('0');
         setColor(ALL_BANKS[0].color);
+        setIsCustomColor(false);
         setIncludeInTotal(true);
       }
     }
   }, [isOpen, editingAccount?.id]);
 
-
   const handleSelectBank = (bank: typeof ALL_BANKS[0]) => {
     setInstitution(bank.name);
-    setColor(bank.color);
+    // Se ainda não escolheu cor customizada, usa a cor oficial da instituição
+    if (!isCustomColor) {
+      setColor(bank.color);
+    }
     if (!name || ALL_BANKS.some(b => b.name === name)) {
       setName(bank.name);
+    }
+  };
+
+  const handleColorChange = (newColor: string) => {
+    setColor(newColor);
+    setIsCustomColor(true);
+  };
+
+  const handleResetToBankColor = () => {
+    const refBank = ALL_BANKS.find(b => b.name.toLowerCase() === institution.toLowerCase() || b.id.toLowerCase() === institution.toLowerCase());
+    if (refBank) {
+      setColor(refBank.color);
+      setIsCustomColor(false);
     }
   };
 
@@ -150,16 +182,73 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, edi
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cor de Identificação</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={color}
-                onChange={e => setColor(e.target.value)}
-                className="w-9 h-9 rounded-xl border-none cursor-pointer bg-transparent"
-              />
-              <span className="text-xs font-mono text-slate-500 dark:text-slate-400 uppercase">{color}</span>
+          <div className="col-span-1 sm:col-span-2 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-2.5 shadow-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Cor de Identificação da Conta
+                </label>
+                {isCustomColor ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    Personalizada
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                    Cor oficial
+                  </span>
+                )}
+              </div>
+
+              {isCustomColor && (
+                <button
+                  type="button"
+                  onClick={handleResetToBankColor}
+                  className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5 cursor-pointer transition-colors"
+                  title="Restaurar para a cor padrão da instituição"
+                >
+                  <span>Restaurar cor do banco</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={e => handleColorChange(e.target.value)}
+                  className="w-9 h-9 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 bg-transparent p-0.5 shadow-xs"
+                  title="Abrir seletor visual de cor"
+                />
+                <input
+                  type="text"
+                  value={color}
+                  onChange={e => handleColorChange(e.target.value)}
+                  placeholder="#10b981"
+                  className="w-24 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 shadow-xs uppercase"
+                />
+              </div>
+
+              {/* Paletas Rápidas */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-1">
+                {ACCOUNT_COLOR_PRESETS.map(p => {
+                  const isSelected = color.toLowerCase() === p.color.toLowerCase();
+                  return (
+                    <button
+                      key={p.color}
+                      type="button"
+                      onClick={() => handleColorChange(p.color)}
+                      className={`w-6 h-6 rounded-full shrink-0 transition-all cursor-pointer border ${
+                        isSelected
+                          ? 'scale-125 ring-2 ring-emerald-500 border-white shadow-sm'
+                          : 'border-white/30 hover:scale-110 opacity-80 hover:opacity-100'
+                      }`}
+                      style={{ backgroundColor: p.color }}
+                      title={p.name}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

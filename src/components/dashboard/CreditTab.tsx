@@ -531,8 +531,11 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   {/* Segment 1: Fatura Atual Aberta */}
                   {activeCardDetail.currentInvoicePercent > 0 && (
                     <div
-                      style={{ width: `${Math.min(100, activeCardDetail.currentInvoicePercent)}%` }}
-                      className="h-full bg-[#7c4dff] transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, activeCardDetail.currentInvoicePercent)}%`,
+                        backgroundColor: activeCardDetail.color || '#7c4dff',
+                      }}
+                      className="h-full transition-all duration-500"
                       title={`Fatura deste mês: ${formatCurrency(activeCardDetail.currentOpenInvoice, user.currency)}`}
                     />
                   )}
@@ -549,8 +552,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 {/* Limit Breakdown Chips */}
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-2 pt-0.5">
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 text-[#7c4dff]">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#7c4dff]" />
+                    <span className="flex items-center gap-1.5" style={{ color: activeCardDetail.color || '#7c4dff' }}>
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: activeCardDetail.color || '#7c4dff' }} />
                       Fatura de {capitalizedMonth}: {formatCurrency(activeCardDetail.invoiceTotal, user.currency, !user.showValues)}
                     </span>
                     {activeCardDetail.futureInstallmentsTotal > 0 && (
