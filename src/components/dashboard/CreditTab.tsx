@@ -26,7 +26,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
-import { CardBrandLogo } from '../../utils/bankLogos';
+import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import { CardModal } from '../cadastros/CardModal';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
@@ -406,19 +406,36 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           </div>
 
           {/* Card Invoice Header Summary */}
-          <div className="p-4 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+          <div
+            className="p-4 sm:p-6 rounded-[25px] border shadow-sm dark:shadow-2xl space-y-4 transition-all"
+            style={{
+              background: user.theme === 'dark'
+                ? `radial-gradient(120% 120% at 0% 0%, ${activeCardDetail.color || '#7c4dff'}25 0%, rgba(36, 36, 40, 0.98) 55%, #1C1C1E 100%)`
+                : `radial-gradient(120% 120% at 0% 0%, ${activeCardDetail.color || '#7c4dff'}15 0%, #FFFFFF 65%)`,
+              borderColor: `${activeCardDetail.color || '#7c4dff'}40`,
+              boxShadow: `0 8px 30px -4px ${activeCardDetail.color || '#7c4dff'}20`,
+            }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center p-2 shadow-xs shrink-0"
-                  style={{ backgroundColor: activeCardDetail.color ? activeCardDetail.color + '25' : '#7c4dff25' }}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center p-2 shadow-sm shrink-0 border"
+                  style={{
+                    backgroundColor: activeCardDetail.color ? activeCardDetail.color + '25' : '#7c4dff25',
+                    borderColor: activeCardDetail.color ? activeCardDetail.color + '45' : '#7c4dff45',
+                  }}
                 >
-                  <CardBrandLogo brand={activeCardDetail.brand} size={28} />
+                  <BankLogo nameOrId={activeCardDetail.bankId || activeCardDetail.name} fallbackBrand={activeCardDetail.brand} size={28} radius={10} />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
-                    {activeCardDetail.name}
-                  </h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                      {activeCardDetail.name}
+                    </h3>
+                    <div className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/60 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${activeCardDetail.brand}`}>
+                      <CardBrandLogo brand={activeCardDetail.brand} size={16} className="w-6 h-3.5" />
+                    </div>
+                  </div>
                   <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border inline-block mt-0.5 ${activeCardDetail.statusColor}`}>
                     {activeCardDetail.statusLabel}
                   </span>
@@ -1017,22 +1034,38 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 <span>Cadastrar Novo Cartão de Crédito</span>
               </div>
 
-              {cardsData.map(card => (
+              {cardsData.map(card => {
+                const cardColor = card.color || '#7c4dff';
+                return (
                 <div
                   key={card.id}
                   onClick={() => setActiveCardDetailId(card.id)}
-                  className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative cursor-pointer"
+                  className="p-3.5 sm:p-4 rounded-2xl hover:bg-slate-50/90 dark:hover:bg-[#202024] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative cursor-pointer"
+                  style={{
+                    backgroundColor: user.theme === 'dark' ? '#18181B' : '#FFFFFF',
+                    borderColor: `${cardColor}30`,
+                    borderLeftWidth: '4px',
+                    borderLeftColor: cardColor,
+                  }}
                 >
-                  {/* Left: Brand Logo + Card Name + Status */}
+                  {/* Left: Bank Logo + Card Name + Status */}
                   <div className="flex items-center gap-3 min-w-0 sm:min-w-[180px] w-full sm:w-auto">
                     <div
-                      className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs"
-                      style={{ backgroundColor: card.color ? card.color + '25' : '#7c4dff25' }}
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs border"
+                      style={{
+                        backgroundColor: `${cardColor}22`,
+                        borderColor: `${cardColor}45`,
+                      }}
                     >
-                      <CardBrandLogo brand={card.brand} size={22} />
+                      <BankLogo nameOrId={card.bankId || card.name} fallbackBrand={card.brand} size={22} radius={8} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">{card.name}</h4>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">{card.name}</h4>
+                        <div className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/50 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${card.brand}`}>
+                          <CardBrandLogo brand={card.brand} size={12} className="w-4 h-2.5" />
+                        </div>
+                      </div>
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
                         {card.statusLabel}
                       </span>
@@ -1047,7 +1080,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                       <div
-                        style={{ width: `${Math.min(100, Math.max(card.usedPercentage > 0 ? 3 : 0, card.usedPercentage))}%`, backgroundColor: card.usedPercentage > 85 ? '#ef5350' : card.usedPercentage > 60 ? '#f59e0b' : '#7c4dff' }}
+                        style={{ width: `${Math.min(100, Math.max(card.usedPercentage > 0 ? 3 : 0, card.usedPercentage))}%`, backgroundColor: card.usedPercentage > 85 ? '#ef5350' : card.usedPercentage > 60 ? '#f59e0b' : cardColor }}
                         className="h-full rounded-full transition-all duration-500"
                       />
                     </div>
@@ -1118,7 +1151,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             /* GRID BLOCKS VIEW (||) */
@@ -1137,25 +1171,54 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               </div>
 
               {/* List of Credit Cards */}
-              {cardsData.map(card => (
+              {cardsData.map(card => {
+                const bankInfo = getCardBankInfo(card);
+                const cardColor = card.color || bankInfo?.color || '#7c4dff';
+                return (
                 <div
                   key={card.id}
                   onClick={() => setActiveCardDetailId(card.id)}
-                  className="p-5 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50/90 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-lg dark:hover:shadow-black/60 hover:-translate-y-0.5 transition-all duration-200 space-y-4 relative group flex flex-col justify-between cursor-pointer"
+                  className="p-5 rounded-[25px] border hover:-translate-y-0.5 transition-all duration-200 space-y-4 relative group flex flex-col justify-between cursor-pointer"
+                  style={user.theme === 'dark' ? {
+                    background: `radial-gradient(130% 130% at 0% 0%, ${cardColor}18 0%, rgba(24, 24, 27, 0.98) 55%, #121215 100%)`,
+                    borderColor: `${cardColor}35`,
+                    boxShadow: `0 8px 24px -4px ${cardColor}15`,
+                  } : {
+                    background: `radial-gradient(130% 130% at 0% 0%, ${cardColor}12 0%, #FFFFFF 65%)`,
+                    borderColor: `${cardColor}30`,
+                    boxShadow: `0 8px 24px -4px ${cardColor}15`,
+                  }}
                 >
-                  {/* Header: Brand + Name + 3-dots Menu */}
+                  {/* Header: Bank Logo + Name + Brand badge + 3-dots Menu */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center p-1 text-xs shrink-0 shadow-xs"
-                        style={{ backgroundColor: card.color ? card.color + '25' : '#7c4dff25' }}
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs border transition-transform group-hover:scale-105"
+                        style={{
+                          backgroundColor: `${cardColor}22`,
+                          borderColor: `${cardColor}45`,
+                        }}
                       >
-                        <CardBrandLogo brand={card.brand} size={20} />
+                        <BankLogo
+                          nameOrId={card.bankId || card.name}
+                          fallbackBrand={card.brand}
+                          size={24}
+                          radius={8}
+                          className="w-6 h-6 object-contain"
+                        />
                       </div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
-                          {card.name}
-                        </h4>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight truncate">
+                            {card.name}
+                          </h4>
+                          <div
+                            className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/60 dark:border-white/10 flex items-center justify-center"
+                            title={`Bandeira ${card.brand}`}
+                          >
+                            <CardBrandLogo brand={card.brand} size={14} className="w-5 h-3" />
+                          </div>
+                        </div>
                         <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
                           {card.statusLabel}
                         </span>
@@ -1261,8 +1324,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       {/* Segment 1: Fatura Atual Aberta */}
                       {card.currentInvoicePercent > 0 && (
                         <div
-                          style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
-                          className="h-full bg-[#7c4dff] transition-all duration-500"
+                          style={{ width: `${Math.min(100, card.currentInvoicePercent)}%`, backgroundColor: cardColor }}
+                          className="h-full transition-all duration-500"
                           title={`Fatura deste mês: ${formatCurrency(card.currentOpenInvoice, user.currency)}`}
                         />
                       )}
@@ -1308,7 +1371,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <button
                     onClick={() => setActiveCardDetailId(card.id)}
-                    className="text-[10px] font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer"
+                    className="text-[10px] font-black hover:underline uppercase tracking-wider cursor-pointer"
+                    style={{ color: cardColor }}
                   >
                     VER FATURA
                   </button>
@@ -1366,7 +1430,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -1433,11 +1498,28 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             {/* Resumo do Cartão e Período */}
             <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-7 flex items-center justify-center shrink-0">
-                  <CardBrandLogo brand={payingCard.brand} size={28} className="w-10 h-6" />
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs border"
+                  style={{
+                    backgroundColor: payingCard.color ? `${payingCard.color}22` : '#7c4dff22',
+                    borderColor: payingCard.color ? `${payingCard.color}45` : '#7c4dff45',
+                  }}
+                >
+                  <BankLogo
+                    nameOrId={payingCard.bankId || payingCard.name}
+                    fallbackBrand={payingCard.brand}
+                    size={24}
+                    radius={8}
+                    className="w-6 h-6 object-contain"
+                  />
                 </div>
                 <div>
-                  <p className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase">{payingCard.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase">{payingCard.name}</p>
+                    <div className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/60 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${payingCard.brand}`}>
+                      <CardBrandLogo brand={payingCard.brand} size={12} className="w-4 h-2.5" />
+                    </div>
+                  </div>
                   <p className="text-[11px] text-slate-400">
                     Fatura de {capitalizedMonth} de {yearNum} • Vence dia {payingCard.dueDay}
                   </p>

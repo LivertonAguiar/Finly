@@ -40,6 +40,7 @@ export interface CreditCard {
   dueDay: number;
   color: string;
   defaultAccountId?: string;
+  bankId?: string;
 }
 
 export interface Transaction {

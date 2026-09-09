@@ -92,6 +92,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         dueDay: dDay,
         color,
         defaultAccountId,
+        bankId: selectedBankId,
       });
     } else {
       addCard({
@@ -102,6 +103,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         dueDay: dDay,
         color,
         defaultAccountId,
+        bankId: selectedBankId,
       });
     }
     onClose();
@@ -299,14 +301,15 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cor do Cartão</label>
+          <div className="col-span-3 sm:col-span-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cor do Cartão & Tema</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={color}
                 onChange={e => setColor(e.target.value)}
                 className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent"
+                title="Personalizar cor"
               />
               <input
                 type="text"
@@ -314,6 +317,26 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
                 onChange={e => setColor(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-800 dark:text-slate-100"
               />
+            </div>
+            {/* Paletas de Cor Rápidas */}
+            <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-none">
+              {ALL_BANKS.slice(0, 10).map(b => (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => {
+                    setColor(b.color);
+                    setSelectedBankId(b.id);
+                  }}
+                  className={`w-5 h-5 rounded-full shrink-0 transition-transform cursor-pointer border ${
+                    color.toLowerCase() === b.color.toLowerCase()
+                      ? 'scale-125 ring-2 ring-purple-500 border-white'
+                      : 'border-white/20 hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: b.color }}
+                  title={`${b.name} (${b.color})`}
+                />
+              ))}
             </div>
           </div>
         </div>

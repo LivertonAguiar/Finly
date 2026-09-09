@@ -206,9 +206,22 @@ export const CadastrosPage: React.FC = () => {
                 {cards.map(c => (
                   <div key={c.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 flex justify-between items-center text-xs">
                     <div className="flex items-center gap-2.5">
-                      <CardBrandLogo brand={c.brand} size={18} className="w-6 h-3.5 shrink-0" />
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center p-1 shrink-0 shadow-xs border"
+                        style={{
+                          backgroundColor: c.color ? `${c.color}22` : '#7c4dff22',
+                          borderColor: c.color ? `${c.color}45` : '#7c4dff45',
+                        }}
+                      >
+                        <BankLogo nameOrId={c.bankId || c.name} fallbackBrand={c.brand} size={20} radius={6} />
+                      </div>
                       <div>
-                        <p className="font-bold text-slate-800 dark:text-slate-100">{c.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-slate-800 dark:text-slate-100">{c.name}</p>
+                          <div className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/50 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${c.brand}`}>
+                            <CardBrandLogo brand={c.brand} size={10} className="w-3.5 h-2" />
+                          </div>
+                        </div>
                         <p className="text-[10px] text-slate-400">Fecha dia {c.closingDay} • Vence dia {c.dueDay}</p>
                       </div>
                     </div>

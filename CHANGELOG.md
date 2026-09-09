@@ -3,6 +3,20 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.42] - 2026-09-08
+
+### 💳 Ícones Oficiais de Bancos nos Cartões & Tema Dinâmico Personalizado
+- **Identidade do Emissor com Ícones de Bancos Brasileiros (`bankLogos.tsx`)**:
+  - Os cards de crédito agora exibem com destaque o logotipo oficial do banco ou instituição emissora (Nubank, Inter, Itaú, Bradesco, Banco do Brasil, Santander, Caixa, C6 Bank, BTG Pactual, XP, Mercado Pago, PicPay, etc.) no lugar do ícone da bandeira.
+  - O utilitário `getCardBankInfo` identifica inteligentemente a instituição emissora pelo `bankId`, nome do cartão ou palavras-chave conhecidas com retrocompatibilidade total.
+  - A bandeira do cartão (Mastercard, Visa, Elo, Amex, etc.) permanece acessível através de um badge elegante e minimalista posicionado junto ao título do cartão.
+- **Tema Dinâmico e Personalizado no Card (`CreditTab.tsx`, `OverviewTab.tsx`, `CardModal.tsx`)**:
+  - Ao selecionar o banco ou escolher uma cor personalizada no modal de cartão, o tema visual do card é ativado em toda a aplicação.
+  - Aplicação de gradientes radiais suaves (`radial-gradient`) com iluminação temática personalizada no fundo do card tanto no tema escuro quanto no claro.
+  - Barra de progresso de limite/fatura e botões de atalho ("Ver Fatura") sincronizados com a cor do cartão.
+  - Seletor de cores no `CardModal` turbinado com atalhos de paletas oficiais de bancos para aplicação em 1 clique.
+  - Atualização integrada nos cards da Visão Geral (`OverviewTab.tsx`), Lista de Cadastros (`CadastrosPage.tsx`) e modais de liquidação de fatura (`PayInvoiceModal.tsx`).
+
 ## [1.1.41] - 2026-09-08
 
 ### 💳 Estabilidade de Cadastro de Cartões & Sincronização Híbrida Web/Android

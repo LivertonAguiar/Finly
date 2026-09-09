@@ -1943,17 +1943,37 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         {cardSummaries.length === 0 ? (
           <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
         ) : (
-          cardSummaries.map(card => (
+          cardSummaries.map(card => {
+            const cardColor = card.color || '#7c4dff';
+            return (
             <div
               key={card.id}
               onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-              className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-[#141416] hover:bg-slate-100/90 dark:hover:bg-[#1E1E22] border border-slate-200/60 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
+              className="p-3.5 rounded-2xl hover:bg-slate-100/90 dark:hover:bg-[#1E1E22] border transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
+              style={{
+                backgroundColor: user.theme === 'dark' ? '#141416' : 'rgba(248, 250, 252, 0.7)',
+                borderColor: `${cardColor}30`,
+                borderLeftWidth: '3px',
+                borderLeftColor: cardColor,
+              }}
               title="Clique para ver extrato e composição da fatura"
             >
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1 min-w-0 truncate">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center p-1 shrink-0 shadow-2xs border"
+                    style={{
+                      backgroundColor: `${cardColor}22`,
+                      borderColor: `${cardColor}40`,
+                    }}
+                  >
+                    <BankLogo nameOrId={card.bankId || card.name} fallbackBrand={card.brand} size={18} radius={5} />
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1.5 min-w-0 truncate">
                     <span className="truncate">{card.name}</span>
+                    <div className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/50 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${card.brand}`}>
+                      <CardBrandLogo brand={card.brand} size={10} className="w-3.5 h-2" />
+                    </div>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all shrink-0" />
                   </h4>
                   <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 inline-flex items-center border shadow-2xs ${card.statusColor}`}>
@@ -1973,8 +1993,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               <div className="w-full bg-slate-200/80 dark:bg-[#18181B] h-2.5 rounded-full overflow-hidden flex shadow-inner">
                 {card.currentInvoicePercent > 0 && (
                   <div
-                    style={{ width: `${Math.min(100, card.currentInvoicePercent)}%` }}
-                    className="h-full bg-[#7c4dff] transition-all duration-500"
+                    style={{ width: `${Math.min(100, card.currentInvoicePercent)}%`, backgroundColor: cardColor }}
+                    className="h-full transition-all duration-500"
                     title={`Fatura deste mês: ${formatCurrency(card.currentOpenInvoice, user.currency)}`}
                   />
                 )}
@@ -2051,7 +2071,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 )}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

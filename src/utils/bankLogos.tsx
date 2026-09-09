@@ -114,10 +114,72 @@ const EloIcon: React.FC<{ size?: number | string; radius?: number | string; clas
 );
 
 /**
+ * Finds matching BankInfo by ID, name keywords, or bank color.
+ */
+export function getCardBankInfo(cardOrName?: string | { name?: string; bankId?: string; color?: string }): BankInfo | undefined {
+  if (!cardOrName) return undefined;
+  const nameOrId = typeof cardOrName === 'string' ? cardOrName : (cardOrName.bankId || cardOrName.name || '');
+  const norm = nameOrId.trim().toLowerCase();
+  if (!norm) return undefined;
+
+  // 1. Direct ID match
+  let found = ALL_BANKS.find(b => b.id.toLowerCase() === norm);
+  if (found) return found;
+
+  // 2. Direct name match
+  found = ALL_BANKS.find(b => norm.includes(b.name.toLowerCase()) || norm.includes(b.id.toLowerCase()));
+  if (found) return found;
+
+  // 3. Known bank aliases & keywords
+  if (norm.includes('nu') || norm.includes('roxo') || norm.includes('ultravioleta') || norm.includes('260')) return ALL_BANKS.find(b => b.id === 'nubank');
+  if (norm.includes('inter') || norm.includes('077')) return ALL_BANKS.find(b => b.id === 'inter');
+  if (norm.includes('ita') || norm.includes('341')) return ALL_BANKS.find(b => b.id === 'itau');
+  if (norm.includes('bradesco') || norm.includes('237')) return ALL_BANKS.find(b => b.id === 'bradesco');
+  if (norm.includes('brasil') || norm.includes('bb') || norm.includes('ourocard') || norm.includes('001')) return ALL_BANKS.find(b => b.id === 'bb');
+  if (norm.includes('caixa') || norm.includes('104')) return ALL_BANKS.find(b => b.id === 'caixa');
+  if (norm.includes('santander') || norm.includes('033')) return ALL_BANKS.find(b => b.id === 'santander');
+  if (norm.includes('c6') || norm.includes('336')) return ALL_BANKS.find(b => b.id === 'c6');
+  if (norm.includes('btg') || norm.includes('208')) return ALL_BANKS.find(b => b.id === 'btg');
+  if (norm.includes('xp') || norm.includes('102') || norm.includes('348')) return ALL_BANKS.find(b => b.id === 'xp');
+  if (norm.includes('mercado') || norm.includes('mp') || norm.includes('323')) return ALL_BANKS.find(b => b.id === 'mercadopago');
+  if (norm.includes('picpay') || norm.includes('380')) return ALL_BANKS.find(b => b.id === 'picpay');
+  if (norm.includes('pagbank') || norm.includes('pagseguro') || norm.includes('290')) return ALL_BANKS.find(b => b.id === 'pagbank');
+  if (norm.includes('safra') || norm.includes('422')) return ALL_BANKS.find(b => b.id === 'safra');
+  if (norm.includes('sicredi') || norm.includes('748')) return ALL_BANKS.find(b => b.id === 'sicredi');
+  if (norm.includes('sicoob') || norm.includes('756')) return ALL_BANKS.find(b => b.id === 'sicoob');
+  if (norm.includes('nomad')) return ALL_BANKS.find(b => b.id === 'nomad');
+  if (norm.includes('wise')) return ALL_BANKS.find(b => b.id === 'wise');
+  if (norm.includes('will')) return ALL_BANKS.find(b => b.id === 'will');
+  if (norm.includes('neon') || norm.includes('735')) return ALL_BANKS.find(b => b.id === 'neon');
+  if (norm.includes('original')) return ALL_BANKS.find(b => b.id === 'original');
+  if (norm.includes('pan')) return ALL_BANKS.find(b => b.id === 'pan');
+  if (norm.includes('daycoval')) return ALL_BANKS.find(b => b.id === 'daycoval');
+  if (norm.includes('agi')) return ALL_BANKS.find(b => b.id === 'agi');
+  if (norm.includes('banrisul')) return ALL_BANKS.find(b => b.id === 'banrisul');
+  if (norm.includes('next')) return ALL_BANKS.find(b => b.id === 'next');
+
+  // 4. Color fallback
+  if (typeof cardOrName === 'object' && cardOrName.color) {
+    const cardColor = cardOrName.color.toLowerCase();
+    found = ALL_BANKS.find(b => b.color.toLowerCase() === cardColor);
+    if (found) return found;
+  }
+
+  return undefined;
+}
+
+/**
  * BankLogo: Renders the official bank icons directly from react-bancos (Henrique Zolini).
  */
-export const BankLogo: React.FC<{ nameOrId?: string; className?: string; size?: number; radius?: number }> = ({
+export const BankLogo: React.FC<{
+  nameOrId?: string;
+  fallbackBrand?: string;
+  className?: string;
+  size?: number;
+  radius?: number;
+}> = ({
   nameOrId = '',
+  fallbackBrand = '',
   className = 'w-6 h-6',
   size = 28,
   radius = 6,
@@ -128,11 +190,11 @@ export const BankLogo: React.FC<{ nameOrId?: string; className?: string; size?: 
     return <Wallet size={size} className={className} />;
   }
 
-  if (norm.includes('nu') || norm.includes('260')) return <Nubank size={size} radius={radius} className={className} />;
+  if (norm.includes('nu') || norm.includes('260') || norm.includes('roxo') || norm.includes('ultravioleta')) return <Nubank size={size} radius={radius} className={className} />;
   if (norm.includes('inter') || norm.includes('077')) return <Inter size={size} radius={radius} className={className} />;
   if (norm.includes('ita') || norm.includes('341')) return <Itau size={size} radius={radius} className={className} />;
   if (norm.includes('bradesco') || norm.includes('237')) return <Bradesco size={size} radius={radius} className={className} />;
-  if (norm.includes('brasil') || norm.includes('bb') || norm.includes('001')) return <BancoDoBrasil size={size} radius={radius} className={className} />;
+  if (norm.includes('brasil') || norm.includes('bb') || norm.includes('001') || norm.includes('ourocard')) return <BancoDoBrasil size={size} radius={radius} className={className} />;
   if (norm.includes('caixa') || norm.includes('104')) return <Caixa size={size} radius={radius} className={className} />;
   if (norm.includes('santander') || norm.includes('033')) return <Santander size={size} radius={radius} className={className} />;
   if (norm.includes('c6') || norm.includes('336')) return <C6Bank size={size} radius={radius} className={className} />;
@@ -147,13 +209,18 @@ export const BankLogo: React.FC<{ nameOrId?: string; className?: string; size?: 
   if (norm.includes('nomad')) return <Nomad size={size} radius={radius} className={className} />;
   if (norm.includes('wise')) return <Wise size={size} radius={radius} className={className} />;
   if (norm.includes('will')) return <WillBank size={size} radius={radius} className={className} />;
-  if (norm.includes('neon')) return <Neon size={size} radius={radius} className={className} />;
+  if (norm.includes('neon') || norm.includes('735')) return <Neon size={size} radius={radius} className={className} />;
   if (norm.includes('original')) return <Original size={size} radius={radius} className={className} />;
   if (norm.includes('pan')) return <Pan size={size} radius={radius} className={className} />;
   if (norm.includes('daycoval')) return <Daycoval size={size} radius={radius} className={className} />;
   if (norm.includes('agi')) return <Agibank size={size} radius={radius} className={className} />;
   if (norm.includes('banrisul')) return <Banrisul size={size} radius={radius} className={className} />;
   if (norm.includes('next')) return <Next size={size} radius={radius} className={className} />;
+
+  // If a brand is provided and no bank matched, render the card brand logo as fallback
+  if (fallbackBrand) {
+    return <CardBrandLogo brand={fallbackBrand} size={size} radius={radius} className={className} />;
+  }
 
   return <Outros size={size} radius={radius} className={className} />;
 };

@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getCurrentMonth, getTodayString } from '../../utils/formatters';
-import { CardBrandLogo } from '../../utils/bankLogos';
+import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { CreditCard as CardIcon, Calendar, CheckCircle2, AlertCircle, Clock, DollarSign, Wallet, Lightbulb, X, Download } from 'lucide-react';
 import { exportInvoiceCSV } from '../../utils/reportExportService';
 
@@ -221,11 +221,28 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
         {selectedCard ? (
           <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-7 flex items-center justify-center shrink-0">
-                <CardBrandLogo brand={selectedCard.brand} size={28} className="w-10 h-6" />
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs border"
+                style={{
+                  backgroundColor: selectedCard.color ? `${selectedCard.color}22` : '#7c4dff22',
+                  borderColor: selectedCard.color ? `${selectedCard.color}45` : '#7c4dff45',
+                }}
+              >
+                <BankLogo
+                  nameOrId={selectedCard.bankId || selectedCard.name}
+                  fallbackBrand={selectedCard.brand}
+                  size={24}
+                  radius={8}
+                  className="w-6 h-6 object-contain"
+                />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase">{selectedCard.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase">{selectedCard.name}</p>
+                  <div className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/60 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${selectedCard.brand}`}>
+                    <CardBrandLogo brand={selectedCard.brand} size={12} className="w-4 h-2.5" />
+                  </div>
+                </div>
                 <p className="text-[11px] text-slate-400">
                   Fecha dia {selectedCard.closingDay} • Vence dia {selectedCard.dueDay}
                 </p>
