@@ -3,6 +3,18 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.50] - 2026-09-09
+
+### 🔄 Sincronização em Tempo Real via SSE & Estabilidade da Esteira de Build
+- **Sincronização Push em Tempo Real via Server-Sent Events (SSE)**:
+  - Implementação de canal de eventos em tempo real (`/api/sync/events`) na API Node.js com heartbeat periódico e reconexão resiliente.
+  - O aplicativo Web e Mobile Android recebem avisos imediatos de alterações remotas, sincronizando novos dados sem depender exclusivamente de polling.
+- **Reconciliação e Blindagem de Cartões de Crédito**:
+  - Correção na lógica de reconciliação para evitar deleção acidental de cartões durante o ciclo de heartbeat/sync.
+  - Correção no reset do formulário do modal de cartões (`CardModal.tsx`), preservando os valores inseridos pelo usuário.
+- **Esteira de Compilação de APK Android**:
+  - Sincronização de manifests e liberação de release com bump oficial para v1.1.50.
+
 ## [1.1.49] - 2026-09-09
 
 ### 💳 Novos Emissores e Logotipos Oficiais de Cartões em Alta Definição (HD)

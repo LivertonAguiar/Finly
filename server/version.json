@@ -1,18 +1,20 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-09",
-  "notes": "Novos emissores e logotipos oficiais de cartões em alta definição: Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour.",
+  "notes": "Sincronização push em tempo real via Server-Sent Events (SSE), prevenção de perda de dados e reconciliação definitiva de cartões entre Web e Mobile.",
   "isLatest": true,
   "sections": {
     "features": [
-      "Suporte a 7 novos cartões e emissores com identidades visuais oficiais",
-      "Logotipos vetoriais em alta definição para Amazon, Bradescard, Casas Bahia, Americanas, Santander Way, Bradesco Neo e Carrefour",
-      "Vínculo inteligente e reconhecimento automático por nome digitado"
+      "Sincronização bidirecional em tempo real via push SSE conectando Web e App Mobile instantaneamente",
+      "Novo canal SSE dedicado em /api/sync/events com reconexão automática e heartbeat resiliente"
     ],
-    "fixes": [],
+    "fixes": [
+      "Correção definitiva da exclusão acidental de cartões durante ciclos de sincronização",
+      "Preservação integral dos dados preenchidos no modal de cadastro e edição de cartões"
+    ],
     "improvements": [
-      "Preenchimento automático de cores e gradientes oficiais no cadastro de cartões",
-      "Novo guia e FAQ na Central de Ajuda sobre emissores suportados"
+      "Trava de integridade na esteira de compilação do APK Android no GitHub Actions",
+      "Notificações instantâneas de atualizações de saldo e lançamentos entre múltiplos dispositivos"
     ]
   }
 }

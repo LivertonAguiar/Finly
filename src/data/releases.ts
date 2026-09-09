@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-09',
+    summary: 'Sincronização em tempo real via SSE (Server-Sent Events), prevenção contra exclusão indevida de cartões e esteira de build do APK estável.',
+    highlights: [
+      {
+        title: 'Sincronização Push em Tempo Real',
+        description: 'Transmissão instantânea de eventos de sincronização via SSE (/api/sync/events), mantendo Web e App Mobile sempre sincronizados.',
+        type: 'feature',
+      },
+      {
+        title: 'Reconciliação e Blindagem de Cartões',
+        description: 'Eliminação da exclusão indevida de cartões no ciclo de heartbeat e preservação de campos no formulário.',
+        type: 'fix',
+      },
+      {
+        title: 'Esteira de Build e APK Estável',
+        description: 'Atualização e sincronização completa dos manifests para geração e publicação automática do APK no GitHub Releases.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.49',
+    releaseDate: '2026-09-09',
     summary: 'Novos emissores e logotipos oficiais de cartões em alta definição: Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour.',
     highlights: [
       {
