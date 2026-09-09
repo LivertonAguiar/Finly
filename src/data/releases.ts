@@ -42,6 +42,23 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-08',
+    summary: 'Preflight de deploy compatível com repositórios que possuem tags locais antigas, buscando somente a tag da versão publicada.',
+    highlights: [
+      {
+        title: 'Busca Segura da Tag Atual',
+        description: 'O deploy consulta somente a tag da versão em publicação e não é afetado por divergências históricas em tags antigas locais.',
+        type: 'fix',
+      },
+      {
+        title: 'Bloqueio Antes da VPS',
+        description: 'Falhas de preflight continuam interrompendo o processo antes de qualquer arquivo ou serviço de produção ser alterado.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.46',
+    releaseDate: '2026-09-08',
     summary: 'Barreiras automáticas validam a versão no bundle, dentro do APK, no GitHub e após o deploy da VPS antes de concluir uma publicação.',
     highlights: [
       {

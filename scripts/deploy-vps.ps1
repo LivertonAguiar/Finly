@@ -35,8 +35,12 @@ if ($LASTEXITCODE -ne 0 -or $currentBranch -ne 'main') {
     throw "Deploy bloqueado: a branch ativa precisa ser main."
 }
 
-git -C $repoRoot fetch origin main --tags --quiet
+git -C $repoRoot fetch origin main --quiet
 if ($LASTEXITCODE -ne 0) { throw "Deploy bloqueado: nao foi possivel atualizar origin/main." }
+
+$versionTag = "v$expectedVersion"
+git -C $repoRoot fetch origin "refs/tags/$versionTag`:refs/tags/$versionTag" --quiet
+if ($LASTEXITCODE -ne 0) { throw "Deploy bloqueado: nao foi possivel obter a tag $versionTag." }
 
 $localCommit = git -C $repoRoot rev-parse HEAD
 $remoteCommit = git -C $repoRoot rev-parse origin/main
@@ -44,9 +48,9 @@ if ($localCommit -ne $remoteCommit) {
     throw "Deploy bloqueado: o commit local ainda nao esta sincronizado com origin/main."
 }
 
-$tagCommit = git -C $repoRoot rev-list -n 1 "v$expectedVersion" 2>$null
+$tagCommit = git -C $repoRoot rev-list -n 1 $versionTag 2>$null
 if ($LASTEXITCODE -ne 0 -or $tagCommit -ne $localCommit) {
-    throw "Deploy bloqueado: a tag v$expectedVersion nao existe ou nao aponta para o commit atual."
+    throw "Deploy bloqueado: a tag $versionTag nao existe ou nao aponta para o commit atual."
 }
 
 npm.cmd --prefix $repoRoot run check:version

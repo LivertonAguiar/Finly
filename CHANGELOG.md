@@ -3,6 +3,15 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.47] - 2026-09-08
+
+### 🏷️ Preflight de Deploy Compatível com Tags Históricas
+- **Busca Direcionada da Tag Atual**:
+  - O deploy deixa de importar todas as tags remotas e busca somente a tag correspondente à versão em publicação.
+  - Tags antigas divergentes no clone local não bloqueiam mais uma implantação válida da versão atual.
+- **Falha Segura Preservada**:
+  - Se a tag atual não existir ou não apontar para o mesmo commit de `main`, o processo continua sendo interrompido antes de acessar a VPS.
+
 ## [1.1.46] - 2026-09-08
 
 ### 🧱 Barreiras Preventivas para Publicações Web, Android e VPS

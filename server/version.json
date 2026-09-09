@@ -1,7 +1,7 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-08",
-  "notes": "Novas barreiras automáticas validam a versão dentro do bundle, do APK Android e após o deploy da VPS antes de concluir uma publicação.",
+  "notes": "Barreiras automáticas validam bundle, APK e VPS; o preflight agora busca somente a tag da versão atual, sem conflito com tags históricas locais.",
   "isLatest": true,
   "sections": {
     "features": [],
