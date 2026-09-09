@@ -503,6 +503,13 @@ export const HELP_FAQS: HelpFaqItem[] = [
     tags: ['pagamento', 'fatura', 'limite', 'cartao'],
   },
   {
+    id: 'faq-logos-cartoes',
+    question: 'Quais bancos e cartões têm logotipos e cores oficiais no Finly?',
+    answer: 'O Finly suporta os principais bancos e cartões do Brasil com logotipos vetoriais em alta definição e temas dinâmicos: Nubank, Inter, Itaú, Bradesco, Banco do Brasil, Santander, Caixa, C6 Bank, BTG Pactual, XP, Mercado Pago, PicPay, PagBank, Safra, Sicredi, Sicoob, Nomad, Wise, Will, Neon, além de cartões de varejo e digitais como Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour.',
+    category: 'cartoes',
+    tags: ['cartao', 'logos', 'banco', 'amazon', 'bradescard', 'casas bahia', 'americanas', 'santander way', 'bradesco neo', 'carrefour'],
+  },
+  {
     id: 'faq-formato-ofx',
     question: 'Onde encontro o arquivo OFX no meu banco?',
     answer: 'No Internet Banking do seu banco (computador ou app), vá até a tela de Extrato Bancário. Procure pelo botão "Exportar", "Salvar Extrato" ou "Download" e selecione o formato OFX (alguns bancos chamam de "Money", "Quicken" ou simplesmente "OFX").',

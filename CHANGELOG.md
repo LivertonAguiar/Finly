@@ -3,6 +3,22 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.49] - 2026-09-09
+
+### 💳 Novos Emissores e Logotipos Oficiais de Cartões em Alta Definição (HD)
+- **7 novos cartões oficiais suportados com vetores HD dedicados**:
+  - **Cartão Amazon**: acabamento grafite escuro com a clássica marca branca e a seta-sorriso em âmbar (`#ff9900`).
+  - **Bradescard**: vermelho oficial Bradesco com os arcos estilizados e tipografia nítida.
+  - **Casas Bahia Card**: azul royal com o monograma icônico "CB" (C branco, B carmim `#e71a3b`) e subtexto da marca.
+  - **Cartão Americanas**: vermelho vibrante com faixas paralelas horizontais e texto em destaque.
+  - **Santander Way**: vermelho Santander com o símbolo da chama e a marca "way" moderna.
+  - **Bradesco Neo**: estilo futurista em azul noite com os arcos Bradesco e "neo" em ciano elétrico brilhante (`#00e5ff`).
+  - **Cartão Carrefour**: azul e vermelho com o clássico losango e letra "C" em espaço negativo.
+- **Integração e Reconhecimento Inteligente**:
+  - Seleção direta na grade de emissores no modal de cartões (`CardModal.tsx`) com preenchimento de nomes, cores e gradientes oficiais.
+  - Vínculo automático de logotipos por palavras-chave digitadas e exibição de alta resolução em toda a interface (detalhes, listas, painel e pagamento de fatura).
+  - Central de Ajuda atualizada com o FAQ `faq-logos-cartoes`.
+
 ## [1.1.48] - 2026-09-09
 
 ### 🔒 Persistência Confiável de Cartões e Tema

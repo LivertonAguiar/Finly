@@ -36,11 +36,50 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-08';
+export const CURRENT_BUILD_DATE = '2026-09-09';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-09',
+    summary: 'Novos emissores e logotipos oficiais de cartões em alta definição: Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour.',
+    highlights: [
+      {
+        title: '7 Novos Cartões Oficiais',
+        description: 'Suporte completo a Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour com cores e gradientes oficiais.',
+        type: 'feature',
+      },
+      {
+        title: 'Logotipos Vetoriais em Alta Definição',
+        description: 'Ícones vetoriais SVG nítidos e padronizados em todos os tamanhos, cards e modais.',
+        type: 'visual',
+      },
+      {
+        title: 'Reconhecimento e Central de Ajuda',
+        description: 'Vínculo inteligente por palavras-chave e FAQ detalhado sobre emissores suportados.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.48',
+    releaseDate: '2026-09-09',
+    summary: 'Persistência confiável de cartões e preferências locais, com grade modular responsiva no dashboard.',
+    highlights: [
+      {
+        title: 'Persistência Blindada',
+        description: 'Cartões protegidos contra snapshots parciais e fila serializada de mutações no Supabase e API.',
+        type: 'fix',
+      },
+      {
+        title: 'Dashboard com Masonry',
+        description: 'Cálculo de altura real e eliminação de lacunas artificiais na tela inicial.',
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    version: '1.1.47',
     releaseDate: '2026-09-08',
     summary: 'Preflight de deploy compatível com repositórios que possuem tags locais antigas, buscando somente a tag da versão publicada.',
     highlights: [

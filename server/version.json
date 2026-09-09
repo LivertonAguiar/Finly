@@ -1,18 +1,18 @@
 {
   "minSupportedVersion": "1.0.0",
-  "releaseDate": "2026-09-08",
-  "notes": "Barreiras automáticas validam bundle, APK e VPS; o preflight agora busca somente a tag da versão atual, sem conflito com tags históricas locais.",
+  "releaseDate": "2026-09-09",
+  "notes": "Novos emissores e logotipos oficiais de cartões em alta definição: Cartão Amazon, Bradescard, Casas Bahia Card, Cartão Americanas, Santander Way, Bradesco Neo e Cartão Carrefour.",
   "isLatest": true,
   "sections": {
-    "features": [],
-    "fixes": [
-      "Histórico de releases anteriores mantido imutável a cada nova versão",
-      "Deploy bloqueado quando Git, APK, API e bundle não correspondem",
-      "Publicação interrompida se o APK tiver metadados internos divergentes"
+    "features": [
+      "Suporte a 7 novos cartões e emissores com identidades visuais oficiais",
+      "Logotipos vetoriais em alta definição para Amazon, Bradescard, Casas Bahia, Americanas, Santander Way, Bradesco Neo e Carrefour",
+      "Vínculo inteligente e reconhecimento automático por nome digitado"
     ],
+    "fixes": [],
     "improvements": [
-      "Manifesto app-version.json gerado automaticamente dentro do bundle Web",
-      "Health check pós-deploy confirma API e frontend na mesma versão"
+      "Preenchimento automático de cores e gradientes oficiais no cadastro de cartões",
+      "Novo guia e FAQ na Central de Ajuda sobre emissores suportados"
     ]
   }
 }
