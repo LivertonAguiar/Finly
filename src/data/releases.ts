@@ -2,6 +2,7 @@
  * Finly Release Registry & Version History
  * Single Source of Truth for App Versioning, Changelog and In-App Release Notes.
  */
+import { version as packageVersion } from '../../package.json';
 
 export type ReleaseType = 'feature' | 'fix' | 'improvement' | 'visual' | 'perf';
 
@@ -34,10 +35,32 @@ export interface ReleaseInfo {
   highlights: ReleaseHighlight[];
 }
 
-export const CURRENT_VERSION = '1.1.40';
+export const CURRENT_VERSION = packageVersion;
 export const CURRENT_BUILD_DATE = '2026-09-08';
 
 export const RELEASES: ReleaseInfo[] = [
+  {
+    version: CURRENT_VERSION,
+    releaseDate: '2026-09-08',
+    summary: 'Versão do aplicativo, APK e servidor agora sincronizada automaticamente por uma única fonte, com atualização Android confiável.',
+    highlights: [
+      {
+        title: 'Versão Única em Todas as Plataformas',
+        description: 'A interface, o manifesto Android, a API da VPS e o release do GitHub passam a derivar a versão oficial do package.json.',
+        type: 'fix',
+      },
+      {
+        title: 'Atualizações Android Confiáveis',
+        description: 'O aplicativo deixa de exibir versões antigas e de oferecer APKs que já estão instalados no dispositivo.',
+        type: 'fix',
+      },
+      {
+        title: 'Proteção no Pipeline de Release',
+        description: 'Uma validação automática bloqueia novas compilações quando as fontes divergem ou quando uma versão publicada seria sobrescrita por outro commit.',
+        type: 'improvement',
+      },
+    ],
+  },
   {
     version: '1.1.40',
     releaseDate: '2026-09-08',

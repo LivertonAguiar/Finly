@@ -201,31 +201,33 @@ const authenticateToken = async (req, res, next) => {
   });
 };
 
-// App Version & Update Endpoint (Dynamic Single Source of Truth)
-const VERSION_FILE = path.join(__dirname, 'data/version.json');
+// App Version & Update Endpoint (package.json is the authoritative version source)
+const VERSION_FILE = path.join(__dirname, 'version.json');
 const PKG_FILE = path.join(__dirname, '../package.json');
 
 const getAppVersionInfo = () => {
-  try {
-    if (fs.existsSync(VERSION_FILE)) {
-      return JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
-    }
-  } catch (_) {}
-
-  let fallbackVer = '1.1.37';
+  let appVersion = '0.0.0';
   try {
     if (fs.existsSync(PKG_FILE)) {
       const pkg = JSON.parse(fs.readFileSync(PKG_FILE, 'utf8'));
-      if (pkg.version) fallbackVer = pkg.version;
+      if (pkg.version) appVersion = pkg.version;
+    }
+  } catch (_) {}
+
+  let metadata = {};
+  try {
+    if (fs.existsSync(VERSION_FILE)) {
+      metadata = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
     }
   } catch (_) {}
 
   return {
-    version: fallbackVer,
-    latestVersion: fallbackVer,
-    releaseDate: '2026-09-08',
-    notes: `Novidades da v${fallbackVer}: Blindagem de segurança e melhorias de performance.`,
-    downloadUrl: 'https://github.com/LivertonAguiar/Finly/releases/latest',
+    ...metadata,
+    version: appVersion,
+    latestVersion: appVersion,
+    releaseDate: metadata.releaseDate || '2026-09-08',
+    notes: metadata.notes || `Atualização do Finly v${appVersion} disponível.`,
+    downloadUrl: `https://github.com/LivertonAguiar/Finly/releases/download/v${appVersion}/finly-v${appVersion}.apk`,
     isLatest: true,
   };
 };

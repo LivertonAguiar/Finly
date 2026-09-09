@@ -1,0 +1,18 @@
+{
+  "minSupportedVersion": "1.0.0",
+  "releaseDate": "2026-09-08",
+  "notes": "A versão do aplicativo, do APK Android e da API agora permanece sincronizada automaticamente, evitando avisos incorretos de atualização.",
+  "isLatest": true,
+  "sections": {
+    "features": [],
+    "fixes": [
+      "Versão exibida no aplicativo sincronizada com o manifesto do APK",
+      "Endpoint da VPS deixa de anunciar uma versão antiga preservada nos dados de produção",
+      "Código de versão Android passa a ser derivado da versão semântica oficial"
+    ],
+    "improvements": [
+      "Pipeline impede que uma release existente seja sobrescrita por outro commit",
+      "Validação automática de versão executada antes de cada build Android"
+    ]
+  }
+}

@@ -1,7 +1,15 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
 
-def appVersionCode = (System.getenv("VERSION_CODE") ?: "10137").toInteger()
-def appVersionName = (System.getenv("VERSION") ?: "1.1.37").replace("v", "")
+def packageInfo = new JsonSlurper().parseText(file('../../package.json').getText('UTF-8'))
+def appVersionName = (System.getenv('VERSION') ?: packageInfo.version.toString()).replace('v', '')
+def versionParts = appVersionName.tokenize('.').collect { it.toInteger() }
+if (versionParts.size() != 3 || versionParts.any { it < 0 || it > 999 }) {
+    throw new GradleException("Versão inválida no package.json: ${appVersionName}")
+}
+def semanticVersionCode = versionParts[0] * 1000000 + versionParts[1] * 1000 + versionParts[2]
+def appVersionCode = (System.getenv('VERSION_CODE') ?: semanticVersionCode.toString()).toInteger()
 
 android {
     namespace = "com.finly.app"

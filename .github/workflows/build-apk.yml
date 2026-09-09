@@ -14,8 +14,6 @@ jobs:
   build-apk:
     name: Compilar Finly Android APK & Release
     runs-on: ubuntu-latest
-    env:
-      VERSION_CODE: ${{ github.run_number }}
 
     steps:
       - name: 📥 Clonar Repositório
@@ -34,8 +32,21 @@ jobs:
           PKG_VER=$(node -p "require('./package.json').version")
           echo "VERSION=v${PKG_VER}" >> $GITHUB_ENV
 
+      - name: 🛑 Impedir Sobrescrita de Release Existente
+        run: |
+          if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            TAG_COMMIT=$(git rev-list -n 1 "${VERSION}")
+            if [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
+              echo "::error::A versão ${VERSION} já pertence ao commit ${TAG_COMMIT}. Atualize o package.json antes de publicar outro APK."
+              exit 1
+            fi
+          fi
+
       - name: 📦 Instalar Dependências Web
         run: npm ci
+
+      - name: ✅ Validar Sincronização da Versão
+        run: npm run check:version
 
       - name: 🔨 Compilar Web Bundle (Vite)
         run: npm run build

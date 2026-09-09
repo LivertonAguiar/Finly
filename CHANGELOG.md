@@ -3,6 +3,18 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.45] - 2026-09-08
+
+### 🔄 Sincronização Única de Versão no Web, Android, VPS e GitHub
+- **Fonte Única de Verdade**:
+  - `package.json` passa a alimentar diretamente a versão exibida no aplicativo, o manifesto Android, a API da VPS e o workflow de release.
+  - Corrigida a divergência em que o APK era `1.1.44`, a interface mostrava `1.1.40` e o servidor anunciava `1.1.41`.
+- **Atualização Android Confiável**:
+  - `versionCode` agora é derivado da versão semântica, mantendo ordem crescente tanto em builds locais quanto no GitHub Actions.
+  - O pipeline valida todas as fontes antes da compilação e bloqueia a sobrescrita de uma tag existente por outro commit.
+- **Metadados de Produção Seguros**:
+  - As notas de versão foram separadas dos dados mutáveis de usuários, permitindo atualização no deploy sem risco para as stores da VPS.
+
 ## [1.1.44] - 2026-09-08
 
 ### 🛡️ Triggers no PostgreSQL e Bloqueio Definitivo contra Ressurreição de Dados
