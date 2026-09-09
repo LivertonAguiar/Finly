@@ -20,7 +20,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { AccountModal } from './AccountModal';
 import { CardModal } from './CardModal';
 import { CategoryModal } from './CategoryModal';
-import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
+import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import { Modal } from '../ui/Modal';
 import { Account, CreditCard, Category } from '../../types';
 
@@ -213,14 +213,12 @@ export const CadastrosPage: React.FC = () => {
                           borderColor: c.color ? `${c.color}45` : '#7c4dff45',
                         }}
                       >
-                        <BankLogo nameOrId={c.bankId || c.name} fallbackBrand={c.brand} size={20} radius={6} />
+                        <BankLogo nameOrId={c.bankId || getCardBankInfo(c)?.id || c.name} size={20} radius={6} />
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
                           <p className="font-bold text-slate-800 dark:text-slate-100">{c.name}</p>
-                          <div className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/50 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${c.brand}`}>
-                            <CardBrandLogo brand={c.brand} size={10} className="w-3.5 h-2" />
-                          </div>
+                          <span className="text-[10px] text-slate-400 font-semibold">• {getCardBankInfo(c)?.name || c.brand}</span>
                         </div>
                         <p className="text-[10px] text-slate-400">Fecha dia {c.closingDay} • Vence dia {c.dueDay}</p>
                       </div>

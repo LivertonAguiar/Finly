@@ -16,7 +16,7 @@ const AUTH_USERS_KEY = 'finly_auth_users_db';
 const ACTIVE_SESSION_KEY = 'finly_active_session_id';
 
 export const DEFAULT_LIVERTON_USER: AuthUser = {
-  id: 'usr-default-liverton',
+  id: 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b',
   name: 'Liverton',
   email: 'liverton.aguiar@hotmail.com',
   phone: '85985949115',
@@ -45,7 +45,7 @@ export const DEFAULT_DEMO_USER: AuthUser = {
 const sanitizeUsersList = (users: any[]): AuthUser[] => {
   if (!Array.isArray(users)) return [DEFAULT_LIVERTON_USER, DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
   return users.map(u => ({
-    id: u.id || `usr-${Date.now()}`,
+    id: u.id === 'usr-default-liverton' ? 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b' : (u.id || `usr-${Date.now()}`),
     name: u.name || 'Usuário',
     email: u.email || '',
     phone: u.phone,
@@ -68,18 +68,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error('Error loading users:', e);
     }
-    return [DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
+    return [DEFAULT_LIVERTON_USER, DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER];
   });
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
-      const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
+      let activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
+      // Transparent alias migration from legacy user id to canonical UUID
+      if (activeId === 'usr-default-liverton') {
+        activeId = 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b';
+        localStorage.setItem(ACTIVE_SESSION_KEY, activeId);
+      }
       if (activeId) {
         if (activeId === DEFAULT_DEMO_USER.id) return DEFAULT_DEMO_USER;
         const savedUsersStr = localStorage.getItem(AUTH_USERS_KEY);
-        const usersList: AuthUser[] = savedUsersStr ? sanitizeUsersList(JSON.parse(savedUsersStr)) : [DEFAULT_ADMIN_USER];
-        const found = usersList.find(u => u.id === activeId);
+        const usersList: AuthUser[] = savedUsersStr ? sanitizeUsersList(JSON.parse(savedUsersStr)) : [DEFAULT_LIVERTON_USER];
+        const found = usersList.find(u => u.id === activeId || (activeId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b' && u.email === 'liverton.aguiar@hotmail.com'));
         if (found) return found;
+        if (activeId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') return DEFAULT_LIVERTON_USER;
       }
     } catch (e) {
       console.error('Error loading session:', e);

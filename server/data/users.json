@@ -1,9 +1,9 @@
 [
   {
-    "id": "usr-default-liverton",
+    "id": "e2208d7b-f536-4ff8-a0a6-5ed82ebae52b",
     "name": "Liverton",
     "email": "liverton.aguiar@hotmail.com",
-    "aliases": ["liverton.aguiar.sup@gmail.com"],
+    "aliases": ["usr-default-liverton", "liverton.aguiar.sup@gmail.com"],
     "password": "scrypt$8a9e0b945ae9dd1483f8a6e37222f5ab$b3480555c0219f02a269d56dcbc30f1c06e3def046df0dda349ced60e37045aa192dbdd91666bea0c7843c9bbdf26d90980e8f5a481e53add12212b7bf8db9fa",
     "phone": "85985949115",
     "role": "admin",

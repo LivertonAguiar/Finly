@@ -55,7 +55,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
-import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
+import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
 import { MonthPickerPopover } from '../ui/MonthPickerPopover';
@@ -2036,13 +2036,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                       borderColor: `${cardColor}40`,
                     }}
                   >
-                    <BankLogo nameOrId={card.bankId || card.name} fallbackBrand={card.brand} size={18} radius={5} />
+                    <BankLogo nameOrId={card.bankId || getCardBankInfo(card)?.id || card.name} size={18} radius={5} />
                   </div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1.5 min-w-0 truncate">
                     <span className="truncate">{card.name}</span>
-                    <div className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/50 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${card.brand}`}>
-                      <CardBrandLogo brand={card.brand} size={10} className="w-3.5 h-2" />
-                    </div>
+                    <span className="text-[10px] text-slate-400 font-semibold truncate lowercase">
+                      • {getCardBankInfo(card)?.name}
+                    </span>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all shrink-0" />
                   </h4>
                   <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 inline-flex items-center border shadow-2xs ${card.statusColor}`}>

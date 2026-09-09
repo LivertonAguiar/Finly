@@ -235,6 +235,12 @@
       "skillPath": "skills/design-mobile-apps/SKILL.md",
       "computedHash": "f76a047e9746d7b507770ef14f8a0b86525816042cd0404e96be56b0542c3cea"
     },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "a6260582f48df8ba53380bb9b9e870ed2ae5fe147799e90ed783b8aa25167d50"
+    },
     "tailwindcss-mobile-first": {
       "source": "josiahsiegel/claude-plugin-marketplace",
       "sourceType": "github",

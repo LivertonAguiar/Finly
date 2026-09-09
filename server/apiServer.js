@@ -253,6 +253,42 @@ const CANONICAL_USER_MAP = {
   'demo@finly.com': 'usr-demo-financeiro',
 };
 
+// Map to canonical Postgres UUID for Supabase persistence
+const POSTGRES_USER_UUID_MAP = {
+  'usr-default-liverton': 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b',
+  'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b': 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b',
+  'usr-demo-financeiro': '75a44ea2-c56f-474f-aaf1-4688f6e778a2',
+  '75a44ea2-c56f-474f-aaf1-4688f6e778a2': '75a44ea2-c56f-474f-aaf1-4688f6e778a2',
+};
+
+// Active SSE clients for instant push synchronization (Web <-> Mobile)
+const sseClients = new Map(); // canonicalUserId -> Set<Response>
+
+function broadcastStoreUpdate(userId, eventData) {
+  const canonicalId = CANONICAL_USER_MAP[userId] || userId;
+  const targetIds = new Set([canonicalId, userId]);
+  for (const [alias, mapped] of Object.entries(CANONICAL_USER_MAP)) {
+    if (mapped === canonicalId || alias === canonicalId) {
+      targetIds.add(alias);
+      targetIds.add(mapped);
+    }
+  }
+
+  const payloadString = `data: ${JSON.stringify(eventData)}\n\n`;
+  targetIds.forEach(id => {
+    const clients = sseClients.get(id);
+    if (clients) {
+      clients.forEach(clientRes => {
+        try {
+          clientRes.write(payloadString);
+        } catch (_) {
+          clients.delete(clientRes);
+        }
+      });
+    }
+  });
+}
+
 const getUserStorePath = (userId) => {
   if (!userId) return path.join(STORES_DIR, 'anonymous.json');
   let canonicalId = CANONICAL_USER_MAP[userId] || userId;
@@ -642,6 +678,60 @@ app.get('/api/user/store', authenticateToken, (req, res) => {
   }
 });
 
+// 3.1 REAL-TIME PUSH: SERVER-SENT EVENTS (SSE) STREAM
+app.get('/api/sync/events', (req, res) => {
+  let token = req.query.token;
+  if (!token && req.headers.authorization) {
+    token = req.headers.authorization.replace(/^Bearer\s+/i, '');
+  }
+
+  let sessionUser = null;
+  if (token) {
+    try {
+      sessionUser = verifySessionToken(token, APP_SECRET);
+    } catch (_) {}
+  }
+
+  const userId = sessionUser?.userId || req.query.userId || req.headers['x-user-id'];
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Não autorizado para eventos em tempo real.' });
+  }
+
+  const canonicalId = CANONICAL_USER_MAP[userId] || userId;
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+  });
+
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED', userId: canonicalId })}\n\n`);
+
+  if (!sseClients.has(canonicalId)) {
+    sseClients.set(canonicalId, new Set());
+  }
+  sseClients.get(canonicalId).add(res);
+
+  // Keep-alive heartbeat every 15s to prevent reverse-proxy timeout
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch (_) {
+      clearInterval(heartbeat);
+    }
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    const clients = sseClients.get(canonicalId);
+    if (clients) {
+      clients.delete(res);
+      if (clients.size === 0) sseClients.delete(canonicalId);
+    }
+  });
+});
+
 // 4. CONTINUOUS AUTO-SYNC: SAVE / SYNC USER STORE (PROTECTED & ATOMIC)
 app.post('/api/user/store', authenticateToken, (req, res) => {
   const userId = req.user.userId;
@@ -661,9 +751,56 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
       _serverTimestamp: new Date().toISOString(),
     };
 
-    // Atomic write to prevent file corruption
+    // Atomic write to primary store path
     fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
     fs.renameSync(tempPath, storePath);
+
+    // Cross-identity mirror: ensure both UUID and alias stores exist and are identical
+    const canonicalId = CANONICAL_USER_MAP[userId] || userId;
+    if (canonicalId === 'usr-default-liverton' || userId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+      const mirrorUuidPath = path.join(STORES_DIR, 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b.json');
+      const mirrorAliasPath = path.join(STORES_DIR, 'usr-default-liverton.json');
+      try {
+        if (storePath !== mirrorUuidPath) fs.writeFileSync(mirrorUuidPath, JSON.stringify(payload, null, 2), 'utf8');
+        if (storePath !== mirrorAliasPath) fs.writeFileSync(mirrorAliasPath, JSON.stringify(payload, null, 2), 'utf8');
+      } catch (_) {}
+    }
+
+    // Direct background sync with Supabase PostgreSQL using Admin SDK (bypasses RLS)
+    if (supabaseAdmin && Array.isArray(sanitizedStore.cards)) {
+      const postgresUserId = POSTGRES_USER_UUID_MAP[userId] || 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b';
+      const cardRows = sanitizedStore.cards
+        .filter(c => c && !GHOST_CARDS_SET.has(c.id))
+        .map(c => ({
+          id: c.id,
+          user_id: postgresUserId,
+          name: c.name || 'Cartão de Crédito',
+          brand: c.brand || 'Mastercard',
+          limit: Number(c.limit) || 0,
+          closing_day: Number(c.closingDay) || 1,
+          due_day: Number(c.dueDay) || 10,
+          color: c.color || '#820ad1',
+          default_account_id: c.defaultAccountId || null,
+        }));
+
+      if (cardRows.length > 0) {
+        supabaseAdmin
+          .from('credit_cards')
+          .upsert(cardRows)
+          .then(({ error }) => {
+            if (error) console.warn('⚠️ Erro ao persistir cartões no Supabase via Admin:', error.message);
+            else console.log(`💳 [SUPABASE ADMIN] ${cardRows.length} cartões sincronizados com sucesso.`);
+          })
+          .catch(err => console.warn('⚠️ Falha Supabase card upsert:', err.message));
+      }
+    }
+
+    // Instant real-time push broadcast to all other open clients (Web <-> Mobile)
+    broadcastStoreUpdate(userId, {
+      type: 'STORE_UPDATED',
+      timestamp: payload._serverTimestamp,
+      store: sanitizedStore,
+    });
 
     return res.json({
       success: true,

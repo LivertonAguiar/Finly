@@ -52,3 +52,13 @@ Este documento estabelece as diretrizes obrigatórias de governança de código,
   - Bloqueio biométrico (impressão digital / TouchID / FaceID) e PIN numérico de 4 dígitos (`Bloqueio Biométrico & PIN`).
 - **Aba Mais Opções (`MorePage.tsx`)**:
   - Mantida leve e limpa, segmentada exclusivamente entre **Geral** (atalhos rápidos) e **Sobre** (versão, novidades e download de APK).
+
+---
+
+## 4. Modo Operacional Interativo (Codex / Claude Code Style)
+- **Comunicação Proativa**: Informar o que será investigado e o próximo passo antes e durante tarefas longas (mensagens curtas de 1 a 3 frases a cada 2-4 etapas).
+- **Descobertas Imediatas**: Notificar causas-raiz, inconsistências ou riscos assim que detectados, sem guardar para o final.
+- **Ciclo Padronizado**: `Investigar → Explicar → Planejar → Implementar → Validar (Build/Testes) → Resumir`.
+- **Anti-Spam**: Agrupar ações correlacionadas em vez de narrar comandos triviais individualmente.
+- **Resumo Final Estruturado**: Concluído, Arquivos Modificados, Validação e Observações.
+

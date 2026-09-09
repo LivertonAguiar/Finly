@@ -422,19 +422,19 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   className="w-12 h-12 rounded-2xl flex items-center justify-center p-2 shadow-sm shrink-0 border"
                   style={{
                     backgroundColor: activeCardDetail.color ? activeCardDetail.color + '25' : '#7c4dff25',
-                    borderColor: activeCardDetail.color ? activeCardDetail.color + '45' : '#7c4dff45',
+                    borderColor: activeCardDetail.color ? activeCardDetail.color + '55' : '#7c4dff55',
                   }}
                 >
-                  <BankLogo nameOrId={activeCardDetail.bankId || activeCardDetail.name} fallbackBrand={activeCardDetail.brand} size={28} radius={10} />
+                  <BankLogo nameOrId={activeCardDetail.bankId || getCardBankInfo(activeCardDetail)?.id || activeCardDetail.name} size={28} radius={10} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
                       {activeCardDetail.name}
                     </h3>
-                    <div className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/60 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${activeCardDetail.brand}`}>
-                      <CardBrandLogo brand={activeCardDetail.brand} size={16} className="w-6 h-3.5" />
-                    </div>
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                      • {getCardBankInfo(activeCardDetail)?.name || 'Cartão'}
+                    </span>
                   </div>
                   <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border inline-block mt-0.5 ${activeCardDetail.statusColor}`}>
                     {activeCardDetail.statusLabel}
@@ -1053,18 +1053,18 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     <div
                       className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs border"
                       style={{
-                        backgroundColor: `${cardColor}22`,
-                        borderColor: `${cardColor}45`,
+                        backgroundColor: `${cardColor}25`,
+                        borderColor: `${cardColor}50`,
                       }}
                     >
-                      <BankLogo nameOrId={card.bankId || card.name} fallbackBrand={card.brand} size={22} radius={8} />
+                      <BankLogo nameOrId={card.bankId || getCardBankInfo(card)?.id || card.name} size={22} radius={8} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">{card.name}</h4>
-                        <div className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/50 dark:border-white/10 flex items-center justify-center" title={`Bandeira ${card.brand}`}>
-                          <CardBrandLogo brand={card.brand} size={12} className="w-4 h-2.5" />
-                        </div>
+                        <span className="text-[10px] text-slate-400 font-semibold truncate">
+                          • {getCardBankInfo(card)?.name || 'Cartão'}
+                        </span>
                       </div>
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
                         {card.statusLabel}
@@ -1195,13 +1195,12 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       <div
                         className="w-10 h-10 rounded-2xl flex items-center justify-center p-1.5 shrink-0 shadow-xs border transition-transform group-hover:scale-105"
                         style={{
-                          backgroundColor: `${cardColor}22`,
-                          borderColor: `${cardColor}45`,
+                          backgroundColor: `${cardColor}25`,
+                          borderColor: `${cardColor}50`,
                         }}
                       >
                         <BankLogo
-                          nameOrId={card.bankId || card.name}
-                          fallbackBrand={card.brand}
+                          nameOrId={card.bankId || getCardBankInfo(card)?.id || card.name}
                           size={24}
                           radius={8}
                           className="w-6 h-6 object-contain"
@@ -1212,16 +1211,15 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                           <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight truncate">
                             {card.name}
                           </h4>
-                          <div
-                            className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 shrink-0 border border-slate-200/60 dark:border-white/10 flex items-center justify-center"
-                            title={`Bandeira ${card.brand}`}
-                          >
-                            <CardBrandLogo brand={card.brand} size={14} className="w-5 h-3" />
-                          </div>
                         </div>
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block mt-0.5 ${card.statusColor}`}>
-                          {card.statusLabel}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 inline-block ${card.statusColor}`}>
+                            {card.statusLabel}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold truncate">
+                            {getCardBankInfo(card)?.name}
+                          </span>
+                        </div>
                       </div>
                     </div>
 

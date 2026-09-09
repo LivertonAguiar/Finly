@@ -421,6 +421,19 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
     let pendingChanged = false;
 
+    // Guarantee that any card existing in local memory (cardsRef.current) is NEVER
+    // dropped by an incomplete or lagging remote snapshot unless it was explicitly deleted
+    const pendingDeletesSet = new Set(pending.deletes);
+    for (const localCard of cardsRef.current) {
+      if (localCard && !GHOST_CARD_IDS.has(localCard.id) && !pendingDeletesSet.has(localCard.id)) {
+        if (!byId.has(localCard.id)) {
+          byId.set(localCard.id, localCard);
+          pending.upserts[localCard.id] = localCard;
+          pendingChanged = true;
+        }
+      }
+    }
+
     for (const cardId of pending.deletes) {
       if (!byId.has(cardId)) {
         pending.deletes = pending.deletes.filter(id => id !== cardId);
@@ -778,10 +791,6 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
-        if (serverStore.userProfile) {
-          setUser(localProfile => mergeRemoteProfile(serverStore.userProfile, localProfile));
-        }
-
         hasInitialRemoteSyncFinishedRef.current = true;
         return;
       }
@@ -791,6 +800,27 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     pullData();
+
+    // Instant Real-Time Sync via Server-Sent Events (SSE push notifications)
+    const unsubscribeRealtime = apiSync.subscribeRealtimeEvents((event) => {
+      if (event && event.type === 'STORE_UPDATED') {
+        pullData();
+      }
+    });
+
+    // Mobile Capacitor lifecycle listener: resume immediately pulls fresh store
+    let appStateListenerHandle: any = null;
+    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+      import('@capacitor/app').then(({ App }) => {
+        App.addListener('appStateChange', (state) => {
+          if (state.isActive) {
+            pullData();
+          }
+        }).then(h => {
+          appStateListenerHandle = h;
+        }).catch(() => {});
+      }).catch(() => {});
+    }
 
     // Sync on window focus (e.g. when user switches from mobile to PC)
     const handleFocus = () => {
@@ -805,6 +835,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return () => {
       window.removeEventListener('focus', handleFocus);
       clearInterval(interval);
+      unsubscribeRealtime();
+      if (appStateListenerHandle?.remove) {
+        appStateListenerHandle.remove();
+      }
       apiSync.setUserId(null);
     };
   }, [currentUser?.id]);
@@ -1148,12 +1182,31 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const newCard: CreditCard = { ...card, id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 5)}` };
     markLocalMutation();
     queueCardUpsert(newCard);
-    applyLocalCards([...cardsRef.current, newCard]);
+    const nextCards = [...cardsRef.current, newCard];
+    applyLocalCards(nextCards);
 
-    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-      supabaseDb.upsertCard(currentUser.id, newCard).catch(e => {
-        console.warn('Supabase upsertCard notice:', e);
-      });
+    if (currentUser && !isDemoUser()) {
+      const currentStore: UserStoreData = {
+        accounts,
+        cards: nextCards,
+        categories,
+        budgets,
+        goals,
+        debts,
+        investments,
+        transactions,
+        familyMembers,
+        notifications,
+        userProfile: user,
+      };
+      // Immediate push to server to broadcast to all connected devices instantly
+      apiSync.pushStore(currentUser.id, currentStore, true);
+
+      if (isSupabaseConfigured()) {
+        supabaseDb.upsertCard(currentUser.id, newCard).catch(e => {
+          console.warn('Supabase upsertCard notice:', e);
+        });
+      }
     }
   };
 
@@ -1163,10 +1216,28 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const updatedCard = { ...targetCard, ...data };
     markLocalMutation();
     queueCardUpsert(updatedCard);
-    applyLocalCards(cardsRef.current.map(c => (c.id === id ? updatedCard : c)));
+    const nextCards = cardsRef.current.map(c => (c.id === id ? updatedCard : c));
+    applyLocalCards(nextCards);
 
-    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-      supabaseDb.upsertCard(currentUser.id, updatedCard).catch(() => {});
+    if (currentUser && !isDemoUser()) {
+      const currentStore: UserStoreData = {
+        accounts,
+        cards: nextCards,
+        categories,
+        budgets,
+        goals,
+        debts,
+        investments,
+        transactions,
+        familyMembers,
+        notifications,
+        userProfile: user,
+      };
+      apiSync.pushStore(currentUser.id, currentStore, true);
+
+      if (isSupabaseConfigured()) {
+        supabaseDb.upsertCard(currentUser.id, updatedCard).catch(() => {});
+      }
     }
   };
 
@@ -1175,10 +1246,28 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!card) return;
     markLocalMutation();
     queueCardDelete(id);
-    applyLocalCards(cardsRef.current.filter(c => c.id !== id));
+    const nextCards = cardsRef.current.filter(c => c.id !== id);
+    applyLocalCards(nextCards);
 
-    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-      supabaseDb.deleteCard(currentUser.id, id).catch(() => {});
+    if (currentUser && !isDemoUser()) {
+      const currentStore: UserStoreData = {
+        accounts,
+        cards: nextCards,
+        categories,
+        budgets,
+        goals,
+        debts,
+        investments,
+        transactions,
+        familyMembers,
+        notifications,
+        userProfile: user,
+      };
+      apiSync.pushStore(currentUser.id, currentStore, true);
+
+      if (isSupabaseConfigured()) {
+        supabaseDb.deleteCard(currentUser.id, id).catch(() => {});
+      }
     }
 
     showUndo({
@@ -1190,14 +1279,29 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           ? cardsRef.current
           : [...cardsRef.current, card];
         applyLocalCards(restoredCards);
-        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-          supabaseDb.upsertCard(currentUser.id, card).catch(() => {});
+        if (currentUser && !isDemoUser()) {
+          const currentStore: UserStoreData = {
+            accounts,
+            cards: restoredCards,
+            categories,
+            budgets,
+            goals,
+            debts,
+            investments,
+            transactions,
+            familyMembers,
+            notifications,
+            userProfile: user,
+          };
+          apiSync.pushStore(currentUser.id, currentStore, true);
+          if (isSupabaseConfigured()) {
+            supabaseDb.upsertCard(currentUser.id, card).catch(() => {});
+          }
         }
       },
     });
   };
 
-  
   const payCardInvoice = (cardId: string, accountId: string, amount: number, month: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || amount <= 0) return;

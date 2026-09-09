@@ -539,11 +539,7 @@ export const BankLogo: React.FC<{
   if (norm.includes('banrisul')) return <Banrisul size={size} radius={radius} className={className} />;
   if (norm.includes('next')) return <Next size={size} radius={radius} className={className} />;
 
-  // If a brand is provided and no bank matched, render the card brand logo as fallback
-  if (fallbackBrand) {
-    return <CardBrandLogo brand={fallbackBrand} size={size} radius={radius} className={className} />;
-  }
-
+  // If no bank matched, render Outros institution bank icon (never fallback to a card brand flag)
   return <Outros size={size} radius={radius} className={className} />;
 };
 

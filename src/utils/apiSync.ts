@@ -15,6 +15,9 @@ class ApiSyncService {
   public currentStatus: SyncStatus = 'synced';
   private initialConnected = false;
 
+  private eventSource: EventSource | null = null;
+  private realtimeListeners: ((event: { type: string; store?: any; timestamp?: string }) => void)[] = [];
+
   public setUserId(userId: string | null) {
     if (this.currentUserId === userId) return;
     this.currentUserId = userId;
@@ -25,9 +28,60 @@ class ApiSyncService {
       clearTimeout(this.syncTimer);
       this.syncTimer = null;
     }
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
     // A request already sent keeps its original explicit user headers/body.
     // Abort only on account switches; reset uses an awaited barrier below.
     this.activePushController?.abort();
+    if (userId && this.realtimeListeners.length > 0) {
+      this.ensureEventSourceConnected();
+    }
+  }
+
+  public subscribeRealtimeEvents(listener: (event: { type: string; store?: any; timestamp?: string }) => void) {
+    this.realtimeListeners.push(listener);
+    this.ensureEventSourceConnected();
+    return () => {
+      this.realtimeListeners = this.realtimeListeners.filter(l => l !== listener);
+      if (this.realtimeListeners.length === 0 && this.eventSource) {
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+    };
+  }
+
+  private ensureEventSourceConnected() {
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+    if (this.eventSource && this.eventSource.readyState !== EventSource.CLOSED) return;
+
+    const userId = this.currentUserId;
+    if (!userId || userId === 'guest' || userId === 'usr-demo-financeiro') return;
+
+    let token = '';
+    try {
+      token = localStorage.getItem('finly_auth_token') || '';
+    } catch (_) {}
+
+    const url = getApiUrl(`/api/sync/events?userId=${encodeURIComponent(userId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`);
+    try {
+      const es = new EventSource(url);
+      this.eventSource = es;
+
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data && data.type === 'STORE_UPDATED') {
+            this.realtimeListeners.forEach(cb => cb(data));
+          }
+        } catch (_) {}
+      };
+
+      es.onerror = () => {
+        // Will auto-reconnect automatically by standard browser EventSource
+      };
+    } catch (_) {}
   }
 
   public subscribeStatus(listener: (status: SyncStatus) => void) {

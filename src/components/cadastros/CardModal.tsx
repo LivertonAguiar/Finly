@@ -86,8 +86,14 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
 
   const handleSelectBank = (bank: typeof ALL_BANKS[0]) => {
     setSelectedBankId(bank.id);
-    setName(`${bank.name} Crédito`);
     setColor(bank.color);
+    // Only update name if empty or if it was the default generated name
+    const isDefaultName =
+      !name.trim() ||
+      ALL_BANKS.some(b => name.trim() === `${b.name} Crédito` || name.trim() === b.name);
+    if (isDefaultName) {
+      setName(`${bank.name} Crédito`);
+    }
   };
 
   const handleSelectBrand = (b: typeof CARD_BRANDS[0]) => {
@@ -128,63 +134,83 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
     onClose();
   };
 
+  const currentBank = ALL_BANKS.find(b => b.id === selectedBankId);
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editingCard ? 'Editar Cartão' : 'Novo Cartão de Crédito'} maxWidth="lg">
       <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1 scrollbar-thin">
         {/* ========================================================================= */}
-        {/* 1. REALISTIC CARD PREVIEW (EMISSOR/BANCO MAIOR + BANDEIRA MENOR) */}
+        {/* 1. REALISTIC CARD PREVIEW (TEMA ATIVO DINÂMICO + ÍCONE DO BANCO PROEMINENTE) */}
         {/* ========================================================================= */}
         <div
-          className="relative w-full h-44 rounded-[25px] p-5 text-white shadow-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 border border-white/10"
+          className="relative w-full h-48 rounded-[26px] p-5 text-white shadow-2xl overflow-hidden flex flex-col justify-between transition-all duration-500 border"
           style={{
-            background: `linear-gradient(135deg, ${color} 0%, #111827 100%)`,
+            background: `linear-gradient(135deg, ${color} 0%, ${color}dd 42%, #0f172a 100%)`,
+            borderColor: `${color}80`,
+            boxShadow: `0 16px 36px -6px ${color}60, 0 4px 14px rgba(0,0,0,0.45)`,
           }}
         >
-          {/* Top of Card: Bank Logo (Larger) + Brand Logo (Smaller) */}
+          {/* Top of Card: Bank Logo (Prominent) + Bank Emblem */}
           <div className="flex items-center justify-between z-10">
             {/* Bank / Emissor (PROMINENT & LARGE) */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center p-1.5 shadow-md border border-white/20">
-                <BankLogo nameOrId={selectedBankId || name} size={28} className="w-7 h-7 rounded-lg" />
+              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center p-1.5 shadow-md border border-white/30 transition-transform duration-300 hover:scale-105">
+                <BankLogo nameOrId={selectedBankId || name} size={30} className="w-8 h-8 rounded-xl object-contain" />
               </div>
               <div>
-                <span className="text-xs font-black tracking-wider uppercase block text-white drop-shadow-sm">
+                <span className="text-sm font-black tracking-wider uppercase block text-white drop-shadow-md truncate max-w-[200px] sm:max-w-[280px]">
                   {name || 'Nome do Cartão'}
                 </span>
-                <span className="text-[10px] text-white/70 font-semibold uppercase">Crédito</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] text-white/90 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/25 backdrop-blur-sm border border-white/15">
+                    Crédito
+                  </span>
+                  <span className="text-[10px] text-white/80 font-semibold">
+                    {currentBank?.name || 'Emissor'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Brand Logo (SMALLER & COMPACT) */}
-            <div className="px-2.5 py-1 rounded-xl bg-black/30 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-xs">
-              <CardBrandLogo brand={brand} size={22} className="w-8 h-5" />
+            {/* Bank Emblem / Badge (Substitui bandeira pelo ícone do banco) */}
+            <div
+              className="px-3 py-1.5 rounded-2xl bg-black/30 backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-sm transition-all"
+              style={{ borderColor: `${color}70` }}
+            >
+              <BankLogo nameOrId={selectedBankId || name} size={18} className="w-5 h-5 rounded-md object-contain" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-white">
+                {currentBank?.name || 'Banco'}
+              </span>
             </div>
           </div>
 
           {/* Chip & Contactless Wave */}
           <div className="flex items-center gap-3 z-10 my-auto">
-            <div className="w-9 h-7 rounded-md bg-gradient-to-tr from-amber-400 to-amber-200 border border-amber-500/50 shadow-inner flex items-center justify-center">
-              <div className="w-full h-[1px] bg-amber-600/40" />
+            <div className="w-10 h-7 rounded-lg bg-gradient-to-tr from-amber-300 via-amber-400 to-amber-200 border border-amber-500/60 shadow-md flex items-center justify-center">
+              <div className="w-full h-[1px] bg-amber-600/50" />
             </div>
-            <span className="text-lg opacity-60">📶</span>
+            <span className="text-lg opacity-75 drop-shadow-sm">📶</span>
           </div>
 
           {/* Bottom: Cardholder and Limit */}
           <div className="flex items-end justify-between z-10">
             <div>
-              <p className="text-[9px] uppercase tracking-widest text-slate-300 font-semibold">Titular</p>
-              <p className="text-xs font-mono font-bold tracking-wider">{user.name.toUpperCase()}</p>
+              <p className="text-[9px] uppercase tracking-widest text-slate-200/90 font-bold">Titular</p>
+              <p className="text-xs font-mono font-black tracking-wider text-white drop-shadow-sm">{user.name.toUpperCase()}</p>
             </div>
             <div className="text-right">
-              <p className="text-[9px] uppercase tracking-widest text-slate-300 font-semibold">Limite Total</p>
-              <p className="text-sm font-black text-emerald-400">
+              <p className="text-[9px] uppercase tracking-widest text-slate-200/90 font-bold">Limite Total</p>
+              <p className="text-base font-black text-emerald-300 drop-shadow-md">
                 R$ {parseFloat(limit || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </div>
 
-          {/* Background Decorative Glow */}
-          <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          {/* Background Decorative Glow Synced with Theme Color */}
+          <div
+            className="absolute -right-10 -bottom-10 w-52 h-52 rounded-full blur-3xl pointer-events-none transition-all duration-500 opacity-60"
+            style={{ backgroundColor: color }}
+          />
         </div>
 
         {/* ========================================================================= */}
