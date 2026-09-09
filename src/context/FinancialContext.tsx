@@ -404,54 +404,54 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const pullData = async () => {
       if (isDemo || isResettingRef.current) return;
 
-      let sbStore: UserStoreData | null = null;
+      // 1. Primary: Supabase PostgreSQL (Single Source of Truth)
       if (isSupabaseConfigured()) {
         try {
-          sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          if (sbStore && sbStore.accounts) {
+            setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+            setCards(sbStore.cards || []);
+            setCategories(mergeCategories(sbStore.categories));
+            setBudgets(sbStore.budgets || []);
+            setGoals(sbStore.goals || []);
+            setDebts(sbStore.debts || []);
+            setInvestments(sbStore.investments || []);
+            setTransactions(sbStore.transactions || []);
+            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+            if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
+              setNotifications(sbStore.notifications);
+            }
+            if (sbStore.userProfile) setUser(sbStore.userProfile);
+
+            // Sync server store and local storage to match Supabase truth
+            try {
+              localStorage.setItem(userStoreKey, JSON.stringify(sbStore));
+            } catch (_) {}
+            apiSync.pushStore(currentUser.id, sbStore, true);
+            return;
+          }
         } catch (sbErr) {
           console.warn('Supabase store fetch notice:', sbErr);
         }
       }
 
-      // Also pull serverStore so that data from the express server is never dropped
+      // 2. Fallback to Express server store ONLY if Supabase is offline or unconfigured
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
-
-      const effectiveStore = sbStore || serverStore;
-      if (!effectiveStore) return;
-
-      // Reconcile cards from Supabase and Express server:
-      const sbCards = Array.isArray(sbStore?.cards) ? sbStore.cards : [];
-      const srvCards = Array.isArray(serverStore?.cards) ? serverStore.cards : [];
-
-      const cardsMap = new Map<string, CreditCard>();
-      srvCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
-      sbCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
-
-      if (cardsMap.size > 0) {
-        setCards(Array.from(cardsMap.values()));
-      }
-
-      if (effectiveStore.accounts && effectiveStore.accounts.length > 0) {
-        setAccounts(effectiveStore.accounts);
-      }
-      if (effectiveStore.categories) {
-        setCategories(mergeCategories(effectiveStore.categories));
-      }
-      if (effectiveStore.budgets) setBudgets(effectiveStore.budgets);
-      if (effectiveStore.goals) setGoals(effectiveStore.goals);
-      if (effectiveStore.debts) setDebts(effectiveStore.debts);
-      if (effectiveStore.investments) setInvestments(effectiveStore.investments);
-      if (effectiveStore.transactions) {
-        const sbTxs = Array.isArray(sbStore?.transactions) ? sbStore.transactions : [];
-        const srvTxs = Array.isArray(serverStore?.transactions) ? serverStore.transactions : [];
-        if (sbTxs.length >= srvTxs.length && sbTxs.length > 0) {
-          setTransactions(sbTxs);
-        } else if (srvTxs.length > 0) {
-          setTransactions(srvTxs);
+      if (serverStore && serverStore.accounts) {
+        setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+        setCards(serverStore.cards || []);
+        setCategories(mergeCategories(serverStore.categories));
+        setBudgets(serverStore.budgets || []);
+        setGoals(serverStore.goals || []);
+        setDebts(serverStore.debts || []);
+        setInvestments(serverStore.investments || []);
+        setTransactions(serverStore.transactions || []);
+        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+        if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
+          setNotifications(serverStore.notifications);
         }
+        if (serverStore.userProfile) setUser(serverStore.userProfile);
       }
-      if (Array.isArray(effectiveStore.familyMembers)) setFamilyMembers(effectiveStore.familyMembers);
-      if (effectiveStore.userProfile) setUser(effectiveStore.userProfile);
     };
 
     pullData();
@@ -532,54 +532,53 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      // 2. Fetch both Supabase and Express server store for comprehensive sync
-      let sbStore: UserStoreData | null = null;
+      // 2. Primary: Supabase PostgreSQL
       if (isSupabaseConfigured()) {
         try {
-          sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          if (sbStore && sbStore.accounts) {
+            setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+            setCards(sbStore.cards || []);
+            setCategories(mergeCategories(sbStore.categories));
+            setBudgets(sbStore.budgets || []);
+            setGoals(sbStore.goals || []);
+            setDebts(sbStore.debts || []);
+            setInvestments(sbStore.investments || []);
+            setTransactions(sbStore.transactions || []);
+            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+            if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
+              setNotifications(sbStore.notifications);
+            }
+            if (sbStore.userProfile) setUser(sbStore.userProfile);
+
+            // Update server store to match Supabase
+            try {
+              localStorage.setItem(userStoreKey, JSON.stringify(sbStore));
+            } catch (_) {}
+            apiSync.pushStore(currentUser.id, sbStore, true);
+            return;
+          }
         } catch (sbErr) {
           console.warn('Supabase store refresh notice:', sbErr);
         }
       }
 
+      // 3. Fallback to Express server store ONLY if Supabase is unconfigured or failed
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
-      const effectiveStore = sbStore || serverStore;
-
-      if (effectiveStore && (effectiveStore.accounts || effectiveStore.transactions)) {
-        if (effectiveStore.accounts) {
-          setAccounts(effectiveStore.accounts.length > 0 ? effectiveStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+      if (serverStore && serverStore.accounts) {
+        setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+        setCards(serverStore.cards || []);
+        setCategories(mergeCategories(serverStore.categories));
+        setBudgets(serverStore.budgets || []);
+        setGoals(serverStore.goals || []);
+        setDebts(serverStore.debts || []);
+        setInvestments(serverStore.investments || []);
+        setTransactions(serverStore.transactions || []);
+        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+        if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
+          setNotifications(serverStore.notifications);
         }
-
-        // Reconcile cards
-        const sbCards = Array.isArray(sbStore?.cards) ? sbStore.cards : [];
-        const srvCards = Array.isArray(serverStore?.cards) ? serverStore.cards : [];
-        const cardsMap = new Map<string, CreditCard>();
-        srvCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
-        sbCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
-
-        if (cardsMap.size > 0) {
-          setCards(Array.from(cardsMap.values()));
-        }
-
-        if (effectiveStore.categories) setCategories(mergeCategories(effectiveStore.categories));
-        if (effectiveStore.budgets) setBudgets(effectiveStore.budgets);
-        if (effectiveStore.goals) setGoals(effectiveStore.goals);
-        if (effectiveStore.debts) setDebts(effectiveStore.debts);
-        if (effectiveStore.investments) setInvestments(effectiveStore.investments);
-        if (effectiveStore.transactions) {
-          const sbTxs = Array.isArray(sbStore?.transactions) ? sbStore.transactions : [];
-          const srvTxs = Array.isArray(serverStore?.transactions) ? serverStore.transactions : [];
-          if (sbTxs.length >= srvTxs.length && sbTxs.length > 0) {
-            setTransactions(sbTxs);
-          } else if (srvTxs.length > 0) {
-            setTransactions(srvTxs);
-          }
-        }
-        if (Array.isArray(effectiveStore.familyMembers)) setFamilyMembers(effectiveStore.familyMembers);
-        if (Array.isArray(effectiveStore.notifications) && effectiveStore.notifications.length > 0) {
-          setNotifications(effectiveStore.notifications);
-        }
-        if (effectiveStore.userProfile) setUser(effectiveStore.userProfile);
+        if (serverStore.userProfile) setUser(serverStore.userProfile);
         return;
       } else {
         // Fallback reload from local storage

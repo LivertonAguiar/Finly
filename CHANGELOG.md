@@ -3,6 +3,20 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.43] - 2026-09-08
+
+### 🛡️ Blindagem contra Ressurreição de Dados Antigos & Proteção de Deploy
+- **Isolamento de Dados no Deploy (`deploy-vps.ps1` & `.gitignore`)**:
+  - O script de deploy em produção agora ignora explicitamente qualquer arquivo de dados local (`--exclude="server/data/stores"` e `--exclude="server/data/*.json"`). O deploy de código nunca mais sobrescreve os dados em execução no servidor VPS.
+  - Arquivos de store pessoal (`usr-default-liverton.json`, `*.json`) foram permanentemente removidos do rastreamento do Git e protegidos via `.gitignore`.
+- **Fonte Canônica de Verdade no Supabase (`FinancialContext.tsx`)**:
+  - Correção na sincronização (`pullData` e `refreshData`): se o usuário limpou transações ou excluiu cartões no Supabase, essa limpeza é autoritativa.
+  - Eliminado o comportamento falho que ressuscitava transações e cartões antigos de arquivos em disco quando a contagem de lançamentos no Supabase era zero.
+  - Sincronização unidirecional do Supabase para o store do servidor Express (`apiSync.pushStore`), garantindo que o servidor acompanhe as exclusões do usuário.
+- **Higienização Completa Imediata**:
+  - Limpeza dos 19 lançamentos residuais e dos 3 cartões antigos de teste no Supabase e no container Docker da VPS.
+  - Preservação intacta dos 2 cartões atuais do usuário (`C.C NUBANK` e `C.C INTER`).
+
 ## [1.1.42] - 2026-09-08
 
 ### 💳 Ícones Oficiais de Bancos nos Cartões & Tema Dinâmico Personalizado

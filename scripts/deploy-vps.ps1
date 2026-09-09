@@ -17,13 +17,13 @@ if (-not (Test-Path $keyPath)) {
 }
 
 Write-Host "Empacotando arquivos do projeto..." -ForegroundColor Yellow
-tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" -czf finly-update.tar.gz .
+tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data/stores" --exclude="server/data/stores/*" --exclude="server/data/*.json" -czf finly-update.tar.gz .
 
 Write-Host "Enviando pacote para a VPS ($server)..." -ForegroundColor Yellow
 scp.exe -i $keyPath -o StrictHostKeyChecking=no finly-update.tar.gz "$($server):$($remoteDir)/"
 
 Write-Host "Reconstruindo container Docker no servidor..." -ForegroundColor Yellow
-$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz && rm finly-update.tar.gz && docker compose up -d --build'
+$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" && rm -f finly-update.tar.gz && docker compose up -d --build'
 ssh.exe -i $keyPath -o StrictHostKeyChecking=no $server $cmd
 
 try {
