@@ -404,43 +404,54 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const pullData = async () => {
       if (isDemo || isResettingRef.current) return;
 
-      // 1. Primary: Supabase PostgreSQL
+      let sbStore: UserStoreData | null = null;
       if (isSupabaseConfigured()) {
         try {
-          const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
-          if (sbStore && sbStore.accounts) {
-            setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-            setCards(sbStore.cards || []);
-            setCategories(mergeCategories(sbStore.categories));
-            setBudgets(sbStore.budgets || []);
-            setGoals(sbStore.goals || []);
-            setDebts(sbStore.debts || []);
-            setInvestments(sbStore.investments || []);
-            setTransactions(sbStore.transactions || []);
-            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
-            if (sbStore.userProfile) setUser(sbStore.userProfile);
-            return;
-          }
+          sbStore = await supabaseDb.fetchUserStore(currentUser.id);
         } catch (sbErr) {
           console.warn('Supabase store fetch notice:', sbErr);
         }
       }
 
-      // 2. Fallback: Node/Express Server Store
-      apiSync.fetchServerStore(currentUser.id).then(serverStore => {
-        if (serverStore && serverStore.accounts) {
-          setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-          setCards(serverStore.cards || []);
-          setCategories(mergeCategories(serverStore.categories));
-          setBudgets(serverStore.budgets || []);
-          setGoals(serverStore.goals || []);
-          setDebts(serverStore.debts || []);
-          setInvestments(serverStore.investments || []);
-          setTransactions(serverStore.transactions || []);
-          if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
-          if (serverStore.userProfile) setUser(serverStore.userProfile);
+      // Also pull serverStore so that data from the express server is never dropped
+      const serverStore = await apiSync.fetchServerStore(currentUser.id);
+
+      const effectiveStore = sbStore || serverStore;
+      if (!effectiveStore) return;
+
+      // Reconcile cards from Supabase and Express server:
+      const sbCards = Array.isArray(sbStore?.cards) ? sbStore.cards : [];
+      const srvCards = Array.isArray(serverStore?.cards) ? serverStore.cards : [];
+
+      const cardsMap = new Map<string, CreditCard>();
+      srvCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
+      sbCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
+
+      if (cardsMap.size > 0) {
+        setCards(Array.from(cardsMap.values()));
+      }
+
+      if (effectiveStore.accounts && effectiveStore.accounts.length > 0) {
+        setAccounts(effectiveStore.accounts);
+      }
+      if (effectiveStore.categories) {
+        setCategories(mergeCategories(effectiveStore.categories));
+      }
+      if (effectiveStore.budgets) setBudgets(effectiveStore.budgets);
+      if (effectiveStore.goals) setGoals(effectiveStore.goals);
+      if (effectiveStore.debts) setDebts(effectiveStore.debts);
+      if (effectiveStore.investments) setInvestments(effectiveStore.investments);
+      if (effectiveStore.transactions) {
+        const sbTxs = Array.isArray(sbStore?.transactions) ? sbStore.transactions : [];
+        const srvTxs = Array.isArray(serverStore?.transactions) ? serverStore.transactions : [];
+        if (sbTxs.length >= srvTxs.length && sbTxs.length > 0) {
+          setTransactions(sbTxs);
+        } else if (srvTxs.length > 0) {
+          setTransactions(srvTxs);
         }
-      });
+      }
+      if (Array.isArray(effectiveStore.familyMembers)) setFamilyMembers(effectiveStore.familyMembers);
+      if (effectiveStore.userProfile) setUser(effectiveStore.userProfile);
     };
 
     pullData();
@@ -521,43 +532,55 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      // 2. Primary: Supabase
+      // 2. Fetch both Supabase and Express server store for comprehensive sync
+      let sbStore: UserStoreData | null = null;
       if (isSupabaseConfigured()) {
-        const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
-        if (sbStore && sbStore.accounts) {
-          setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-          setCards(sbStore.cards || []);
-          setCategories(mergeCategories(sbStore.categories));
-          setBudgets(sbStore.budgets || []);
-          setGoals(sbStore.goals || []);
-          setDebts(sbStore.debts || []);
-          setInvestments(sbStore.investments || []);
-          setTransactions(sbStore.transactions || []);
-          if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
-          if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
-            setNotifications(sbStore.notifications);
-          }
-          if (sbStore.userProfile) setUser(sbStore.userProfile);
-          return;
+        try {
+          sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+        } catch (sbErr) {
+          console.warn('Supabase store refresh notice:', sbErr);
         }
       }
 
-      // 3. Pull latest server store
       const serverStore = await apiSync.fetchServerStore(currentUser.id);
-      if (serverStore && serverStore.accounts) {
-        setAccounts(serverStore.accounts && serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
-        setCards(serverStore.cards || []);
-        setCategories(mergeCategories(serverStore.categories));
-        setBudgets(serverStore.budgets || []);
-        setGoals(serverStore.goals || []);
-        setDebts(serverStore.debts || []);
-        setInvestments(serverStore.investments || []);
-        setTransactions(serverStore.transactions || []);
-        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
-        if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
-          setNotifications(serverStore.notifications);
+      const effectiveStore = sbStore || serverStore;
+
+      if (effectiveStore && (effectiveStore.accounts || effectiveStore.transactions)) {
+        if (effectiveStore.accounts) {
+          setAccounts(effectiveStore.accounts.length > 0 ? effectiveStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
         }
-        if (serverStore.userProfile) setUser(serverStore.userProfile);
+
+        // Reconcile cards
+        const sbCards = Array.isArray(sbStore?.cards) ? sbStore.cards : [];
+        const srvCards = Array.isArray(serverStore?.cards) ? serverStore.cards : [];
+        const cardsMap = new Map<string, CreditCard>();
+        srvCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
+        sbCards.forEach((c: any) => c && c.id && cardsMap.set(c.id, c));
+
+        if (cardsMap.size > 0) {
+          setCards(Array.from(cardsMap.values()));
+        }
+
+        if (effectiveStore.categories) setCategories(mergeCategories(effectiveStore.categories));
+        if (effectiveStore.budgets) setBudgets(effectiveStore.budgets);
+        if (effectiveStore.goals) setGoals(effectiveStore.goals);
+        if (effectiveStore.debts) setDebts(effectiveStore.debts);
+        if (effectiveStore.investments) setInvestments(effectiveStore.investments);
+        if (effectiveStore.transactions) {
+          const sbTxs = Array.isArray(sbStore?.transactions) ? sbStore.transactions : [];
+          const srvTxs = Array.isArray(serverStore?.transactions) ? serverStore.transactions : [];
+          if (sbTxs.length >= srvTxs.length && sbTxs.length > 0) {
+            setTransactions(sbTxs);
+          } else if (srvTxs.length > 0) {
+            setTransactions(srvTxs);
+          }
+        }
+        if (Array.isArray(effectiveStore.familyMembers)) setFamilyMembers(effectiveStore.familyMembers);
+        if (Array.isArray(effectiveStore.notifications) && effectiveStore.notifications.length > 0) {
+          setNotifications(effectiveStore.notifications);
+        }
+        if (effectiveStore.userProfile) setUser(effectiveStore.userProfile);
+        return;
       } else {
         // Fallback reload from local storage
         const store = loadUserStore();
@@ -714,21 +737,86 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Card Actions
   const addCard = (card: Omit<CreditCard, 'id'>) => {
     const newCard: CreditCard = { ...card, id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 5)}` };
-    setCards(prev => [...prev, newCard]);
+    setCards(prev => {
+      const updated = [...prev, newCard];
+      try {
+        const raw = localStorage.getItem(userStoreKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.cards = updated;
+          localStorage.setItem(userStoreKey, JSON.stringify(parsed));
+        }
+      } catch (e) {}
+      return updated;
+    });
+
+    if (currentUser && isSupabaseConfigured()) {
+      supabaseDb.upsertCard(currentUser.id, newCard).catch(e => {
+        console.warn('Supabase upsertCard notice:', e);
+      });
+    }
   };
 
   const updateCard = (id: string, data: Partial<CreditCard>) => {
-    setCards(prev => prev.map(c => (c.id === id ? { ...c, ...data } : c)));
+    setCards(prev => {
+      const updated = prev.map(c => (c.id === id ? { ...c, ...data } : c));
+      try {
+        const raw = localStorage.getItem(userStoreKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.cards = updated;
+          localStorage.setItem(userStoreKey, JSON.stringify(parsed));
+        }
+      } catch (e) {}
+      return updated;
+    });
+
+    if (currentUser && isSupabaseConfigured()) {
+      const targetCard = cards.find(c => c.id === id);
+      if (targetCard) {
+        supabaseDb.upsertCard(currentUser.id, { ...targetCard, ...data }).catch(() => {});
+      }
+    }
   };
 
   const deleteCard = (id: string) => {
     const card = cards.find(c => c.id === id);
     if (!card) return;
-    setCards(prev => prev.filter(c => c.id !== id));
+    setCards(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      try {
+        const raw = localStorage.getItem(userStoreKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.cards = updated;
+          localStorage.setItem(userStoreKey, JSON.stringify(parsed));
+        }
+      } catch (e) {}
+      return updated;
+    });
+
+    if (currentUser && isSupabaseConfigured()) {
+      supabaseDb.deleteCard(currentUser.id, id).catch(() => {});
+    }
+
     showUndo({
       message: `Cartão "${card.name}" excluído`,
       onUndo: () => {
-        setCards(prev => [...prev, card]);
+        setCards(prev => {
+          const updated = [...prev, card];
+          try {
+            const raw = localStorage.getItem(userStoreKey);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              parsed.cards = updated;
+              localStorage.setItem(userStoreKey, JSON.stringify(parsed));
+            }
+          } catch (e) {}
+          return updated;
+        });
+        if (currentUser && isSupabaseConfigured()) {
+          supabaseDb.upsertCard(currentUser.id, card).catch(() => {});
+        }
       },
     });
   };

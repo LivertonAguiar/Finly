@@ -1,25 +1,24 @@
 {
-  "version": "1.1.40",
-  "latestVersion": "1.1.40",
+  "version": "1.1.41",
+  "latestVersion": "1.1.41",
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-08",
-  "notes": "Novidades da v1.1.40: Restrição do modal de atualização e downloads de APK exclusivamente para o aplicativo nativo Android; no acesso Web as atualizações são automáticas sem pop-ups.",
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.40/finly-v1.1.40.apk",
+  "notes": "Novidades da v1.1.41: Correção do formulário de cartões (digitação estável sem reset), bloqueio de alertas prematuros de faturas zeradas e sincronização bidirecional em tempo real entre Web e Android.",
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.41/finly-v1.1.41.apk",
   "isLatest": true,
   "sections": {
     "features": [
-      "Isolamento de Atualizações: modal de atualização e botão de download de APK restritos exclusivamente ao app Android nativo",
-      "Experiência Web Silenciosa: no navegador e PWA, as atualizações ocorrem de forma transparente pelo servidor sem pop-ups intrusivos",
-      "Histórico Permanente de Notificações: suas notificações ficam salvas no histórico até você clicar em limpar tudo ou apagar individualmente",
-      "Som Interno no Celular: áudio finly_chime.wav integrado ao canal de notificação nativo do Android"
+      "Sincronização Híbrida em Tempo Real: cartões e transações cadastrados no App Android refletem imediatamente na Web e vice-versa",
+      "Autenticação Dual: interoperabilidade transparente entre tokens de sessão Finly e tokens JWT do Supabase"
     ],
     "fixes": [
-      "Pop-up Web de Atualização: eliminado o modal de atualização com opção de download de APK que surgia indevidamente na versão Web",
-      "Direcionamento de Notificações: cliques em notificações de atualização na Web agora levam diretamente à aba Sobre com as notas de versão"
+      "Digitação Estável em Cartões: eliminado o reset involuntário de nome, limite e vencimento enquanto o usuário digita",
+      "Alertas de Fatura Prematuros: notificações de vencimento bloqueadas para cartões novos ou faturas com saldo R$ 0,00",
+      "Sincronização Multiplataforma: compatibilidade de identificadores UUID no Supabase e conciliação atômica com o servidor VPS"
     ],
     "improvements": [
-      "Guarda de plataforma antecipada nos componentes UpdateNoticeCard e AppUpdateModal",
-      "Central de Ajuda sincronizada explicando a diferença de atualização contínua Web vs. APK Android"
+      "Persistência imediata no LocalStorage ao adicionar ou alterar cartões",
+      "Mapeamento canônico de usuários com aliases de e-mail no backend"
     ]
   },
   "highlights": [

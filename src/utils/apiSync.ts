@@ -30,7 +30,26 @@ class ApiSyncService {
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {};
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('finly_auth_token');
+      let token = localStorage.getItem('finly_auth_token');
+      // If native token is absent, check for active Supabase session token in localStorage
+      if (!token) {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('sb-') || key.includes('supabase')) && key.endsWith('-auth-token')) {
+              const raw = localStorage.getItem(key);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.access_token) {
+                  token = parsed.access_token;
+                  break;
+                }
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }

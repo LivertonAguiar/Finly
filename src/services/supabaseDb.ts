@@ -29,10 +29,26 @@ export interface UserStoreData {
 
 export class SupabaseDbService {
   /**
+   * Helper to validate or resolve UUID string for Postgres user_id columns
+   */
+  public getValidUserId(userId: string): string | null {
+    if (!userId) return null;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+      return userId;
+    }
+    // Backward-compatible alias mappings for default/seed users
+    if (userId === 'usr-default-liverton') return 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b';
+    if (userId === 'usr-demo-financeiro') return '75a44ea2-c56f-474f-aaf1-4688f6e778a2';
+    return null;
+  }
+
+  /**
    * Fetch all user data across normalized tables
    */
   public async fetchUserStore(userId: string): Promise<UserStoreData | null> {
     if (!isSupabaseConfigured()) return null;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return null;
 
     try {
       const [
@@ -48,18 +64,23 @@ export class SupabaseDbService {
         familyRes,
         notificationsRes,
       ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-        supabase.from('accounts').select('*').eq('user_id', userId),
-        supabase.from('credit_cards').select('*').eq('user_id', userId),
-        supabase.from('categories').select('*').eq('user_id', userId),
-        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }),
-        supabase.from('budgets').select('*').eq('user_id', userId),
-        supabase.from('goals').select('*').eq('user_id', userId),
-        supabase.from('debts').select('*').eq('user_id', userId),
-        supabase.from('investments').select('*').eq('user_id', userId),
-        supabase.from('family_members').select('*').eq('user_id', userId),
-        supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('profiles').select('*').eq('id', targetUserId).maybeSingle(),
+        supabase.from('accounts').select('*').eq('user_id', targetUserId),
+        supabase.from('credit_cards').select('*').eq('user_id', targetUserId),
+        supabase.from('categories').select('*').eq('user_id', targetUserId),
+        supabase.from('transactions').select('*').eq('user_id', targetUserId).order('date', { ascending: false }),
+        supabase.from('budgets').select('*').eq('user_id', targetUserId),
+        supabase.from('goals').select('*').eq('user_id', targetUserId),
+        supabase.from('debts').select('*').eq('user_id', targetUserId),
+        supabase.from('investments').select('*').eq('user_id', targetUserId),
+        supabase.from('family_members').select('*').eq('user_id', targetUserId),
+        supabase.from('notifications').select('*').eq('user_id', targetUserId).order('created_at', { ascending: false }),
       ]);
+
+      // If cardsRes failed, warn instead of silently treating as empty
+      if (cardsRes.error) {
+        console.warn('Supabase fetch cards notice:', cardsRes.error.message);
+      }
 
       // If no data exists at all on Supabase yet
       if (
@@ -250,12 +271,14 @@ export class SupabaseDbService {
    */
   public async saveEntireStore(userId: string, store: UserStoreData): Promise<boolean> {
     if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
 
     try {
       // 1. Profile Upsert
       if (store.userProfile) {
         await supabase.from('profiles').upsert({
-          id: userId,
+          id: targetUserId,
           name: store.userProfile.name,
           email: store.userProfile.email,
           phone: store.userProfile.phone,
@@ -276,7 +299,7 @@ export class SupabaseDbService {
       if (store.accounts && store.accounts.length > 0) {
         const rows = store.accounts.map(a => ({
           id: a.id,
-          user_id: userId,
+          user_id: targetUserId,
           name: a.name,
           type: a.type,
           balance: a.balance,
@@ -293,23 +316,26 @@ export class SupabaseDbService {
       if (store.cards && store.cards.length > 0) {
         const rows = store.cards.map(c => ({
           id: c.id,
-          user_id: userId,
-          name: c.name,
+          user_id: targetUserId,
+          name: c.name || 'Cartão de Crédito',
           brand: c.brand || 'Mastercard',
-          limit: c.limit,
-          closing_day: c.closingDay,
-          due_day: c.dueDay,
+          limit: Number(c.limit) || 0,
+          closing_day: Number(c.closingDay) || 1,
+          due_day: Number(c.dueDay) || 10,
           color: c.color || '#820ad1',
-          default_account_id: c.defaultAccountId,
+          default_account_id: c.defaultAccountId || null,
         }));
-        await supabase.from('credit_cards').upsert(rows);
+        const { error: cardsErr } = await supabase.from('credit_cards').upsert(rows);
+        if (cardsErr) {
+          console.error('❌ Supabase cards upsert error:', cardsErr);
+        }
       }
 
       // 4. Categories Upsert
       if (store.categories && store.categories.length > 0) {
         const rows = store.categories.map(c => ({
           id: c.id,
-          user_id: userId,
+          user_id: targetUserId,
           name: c.name,
           icon: c.icon || '📁',
           color: c.color || '#10b981',
@@ -323,7 +349,7 @@ export class SupabaseDbService {
       if (store.transactions && store.transactions.length > 0) {
         const rows = store.transactions.map(t => ({
           id: t.id,
-          user_id: userId,
+          user_id: targetUserId,
           description: t.description,
           amount: t.amount,
           type: t.type,
@@ -358,7 +384,7 @@ export class SupabaseDbService {
       if (store.budgets && store.budgets.length > 0) {
         const rows = store.budgets.map(b => ({
           id: b.id,
-          user_id: userId,
+          user_id: targetUserId,
           category_id: b.categoryId,
           subcategory_id: b.subcategoryId,
           month: b.month,
@@ -371,7 +397,7 @@ export class SupabaseDbService {
       if (store.goals && store.goals.length > 0) {
         const rows = store.goals.map(g => ({
           id: g.id,
-          user_id: userId,
+          user_id: targetUserId,
           title: g.title,
           description: g.description,
           target_amount: g.targetAmount,
@@ -392,7 +418,7 @@ export class SupabaseDbService {
       if (store.debts && store.debts.length > 0) {
         const rows = store.debts.map(d => ({
           id: d.id,
-          user_id: userId,
+          user_id: targetUserId,
           title: d.title,
           creditor: d.creditor,
           total_amount: d.totalAmount,
@@ -413,7 +439,7 @@ export class SupabaseDbService {
       if (store.investments && store.investments.length > 0) {
         const rows = store.investments.map(i => ({
           id: i.id,
-          user_id: userId,
+          user_id: targetUserId,
           name: i.name,
           ticker: i.ticker,
           type: i.type,
@@ -542,20 +568,25 @@ export class SupabaseDbService {
    */
   public async upsertCard(userId: string, c: CreditCard): Promise<boolean> {
     if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
     try {
       const { error } = await supabase.from('credit_cards').upsert({
         id: c.id,
-        user_id: userId,
-        name: c.name,
+        user_id: targetUserId,
+        name: c.name || 'Cartão de Crédito',
         brand: c.brand || 'Mastercard',
-        limit: c.limit,
-        closing_day: c.closingDay,
-        due_day: c.dueDay,
+        limit: Number(c.limit) || 0,
+        closing_day: Number(c.closingDay) || 1,
+        due_day: Number(c.dueDay) || 10,
         color: c.color || '#820ad1',
-        default_account_id: c.defaultAccountId,
+        default_account_id: c.defaultAccountId || null,
       });
+      if (error) console.error('❌ Supabase upsertCard error:', error);
       return !error;
-    } catch {
+    } catch (e) {
+      console.error('❌ Supabase upsertCard exception:', e);
       return false;
     }
   }
@@ -565,11 +596,14 @@ export class SupabaseDbService {
    */
   public async deleteCard(userId: string, id: string): Promise<boolean> {
     if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
     try {
       const { error } = await supabase
         .from('credit_cards')
         .delete()
-        .eq('user_id', userId)
+        .eq('user_id', targetUserId)
         .eq('id', id);
       return !error;
     } catch {

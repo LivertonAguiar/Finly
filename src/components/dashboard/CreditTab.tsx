@@ -62,6 +62,11 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
     }
   }, [initialCardDetailId]);
 
+  const handleOpenNewCard = () => {
+    setActiveCardDetailId(null);
+    onOpenNewCard();
+  };
+
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCardType | null>(null);
@@ -746,7 +751,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 />
 
                 <button
-                  onClick={onOpenNewCard}
+                  onClick={handleOpenNewCard}
                   className="w-9 h-9 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                   title="Novo cartão"
                 >
@@ -769,7 +774,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     >
                       <button
                         onClick={() => {
-                          onOpenNewCard();
+                          handleOpenNewCard();
                           setIsHeaderMenuOpen(false);
                         }}
                         className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
@@ -862,7 +867,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
               )}
 
               <button
-                onClick={onOpenNewCard}
+                onClick={handleOpenNewCard}
                 className="w-10 h-10 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                 title="Novo cartão"
               >
@@ -885,7 +890,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   >
                     <button
                       onClick={() => {
-                        onOpenNewCard();
+                        handleOpenNewCard();
                         setIsHeaderMenuOpen(false);
                       }}
                       className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
@@ -1005,7 +1010,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             <div className="flex flex-col gap-2.5">
               {/* Novo Cartao Row */}
               <div
-                onClick={onOpenNewCard}
+                onClick={handleOpenNewCard}
                 className="p-3.5 rounded-2xl border-2 border-dashed border-slate-200/80 dark:border-slate-800 hover:border-purple-500/60 dark:hover:border-purple-500/60 bg-white/40 dark:bg-[#18181B]/40 hover:bg-slate-50 dark:hover:bg-[#202024] flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 group"
               >
                 <Plus className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
@@ -1120,7 +1125,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* + Novo Cartão Card */}
               <div
-                onClick={onOpenNewCard}
+                onClick={handleOpenNewCard}
                 className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] hover:bg-slate-50 dark:hover:bg-[#202024] border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm hover:shadow-md dark:hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-200 flex flex-col items-center justify-center gap-2.5 cursor-pointer min-h-[220px] group"
               >
                 <div className="w-11 h-11 rounded-full border-2 border-purple-500/80 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">

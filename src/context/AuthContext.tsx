@@ -98,6 +98,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (activeId === DEFAULT_DEMO_USER.id) return;
 
       if (session?.user) {
+        if (session.access_token && !localStorage.getItem('finly_auth_token')) {
+          localStorage.setItem('finly_auth_token', session.access_token);
+        }
         const u = session.user;
         const mappedUser: AuthUser = {
           id: u.id,
@@ -115,6 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
+        if (session.access_token) {
+          localStorage.setItem('finly_auth_token', session.access_token);
+        }
         const u = session.user;
         const mappedUser: AuthUser = {
           id: u.id,
@@ -194,6 +200,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.warn('Supabase login warning, falling back to API server:', error.message);
         } else if (data.user) {
+          if (data.session?.access_token) {
+            localStorage.setItem('finly_auth_token', data.session.access_token);
+          }
           const u = data.user;
           const loggedUser: AuthUser = {
             id: u.id,

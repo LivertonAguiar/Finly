@@ -158,8 +158,8 @@ const recoveryLimiter = createRateLimiter({
   message: 'Limite de solicitações de recuperação atingido. Tente novamente em 15 minutos.',
 });
 
-// 4. Token Authentication Middleware (Closes BOLA / IDOR)
-const authenticateToken = (req, res, next) => {
+// 4. Token Authentication Middleware (Closes BOLA / IDOR + Dual Finly & Supabase Support)
+const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = (authHeader && authHeader.startsWith('Bearer '))
     ? authHeader.slice(7).trim()
@@ -174,16 +174,31 @@ const authenticateToken = (req, res, next) => {
   }
 
   const verification = verifySessionToken(token, APP_SECRET);
-  if (!verification.valid || !verification.payload) {
-    return res.status(401).json({
-      success: false,
-      code: 'TOKEN_INVALID_OR_EXPIRED',
-      message: `Sessão inválida ou expirada (${verification.error || 'Token não autorizado'}). Faça login novamente.`,
-    });
+  if (verification.valid && verification.payload) {
+    req.user = verification.payload;
+    return next();
   }
 
-  req.user = verification.payload;
-  next();
+  // Dual compatibility: verify Supabase JWT if Finly HMAC failed
+  if (supabaseAdmin) {
+    try {
+      const { data: sbData, error: sbErr } = await supabaseAdmin.auth.getUser(token);
+      if (!sbErr && sbData?.user) {
+        req.user = {
+          userId: sbData.user.id,
+          email: sbData.user.email,
+          role: sbData.user.user_metadata?.role || 'admin',
+        };
+        return next();
+      }
+    } catch (_) {}
+  }
+
+  return res.status(401).json({
+    success: false,
+    code: 'TOKEN_INVALID_OR_EXPIRED',
+    message: `Sessão inválida ou expirada (${verification.error || 'Token não autorizado'}). Faça login novamente.`,
+  });
 };
 
 // App Version & Update Endpoint (Dynamic Single Source of Truth)
@@ -226,9 +241,24 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(STORES_DIR)) fs.mkdirSync(STORES_DIR, { recursive: true });
 
-// Helpers for User Store
+// Helpers for User Store & Cross-Platform Canonical Mapping
+const CANONICAL_USER_MAP = {
+  'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b': 'usr-default-liverton',
+  'a4d9cc05-b5fa-4656-bee3-60a6dbd2340b': 'usr-default-liverton',
+  '75a44ea2-c56f-474f-aaf1-4688f6e778a2': 'usr-demo-financeiro',
+  'liverton.aguiar@hotmail.com': 'usr-default-liverton',
+  'liverton.aguiar.sup@gmail.com': 'usr-default-liverton',
+  'demo@finly.com': 'usr-demo-financeiro',
+};
+
 const getUserStorePath = (userId) => {
-  const safeId = userId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  if (!userId) return path.join(STORES_DIR, 'anonymous.json');
+  let canonicalId = CANONICAL_USER_MAP[userId] || userId;
+  if (typeof canonicalId === 'string' && canonicalId.includes('@')) {
+    const user = findUserByEmail(canonicalId);
+    if (user) canonicalId = user.id;
+  }
+  const safeId = canonicalId.replace(/[^a-zA-Z0-9_-]/g, '_');
   return path.join(STORES_DIR, `${safeId}.json`);
 };
 

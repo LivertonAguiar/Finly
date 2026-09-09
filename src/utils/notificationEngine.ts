@@ -378,11 +378,22 @@ export function checkAndTriggerScheduledAlerts(data: {
   };
 
   // 1. Faturas de Cartão de Crédito
-  if (prefs.cardInvoices && data.cards) {
+  if (prefs.cardInvoices && data.cards && Array.isArray(data.cards)) {
     const today = new Date();
     const currentDay = today.getDate();
+    const currentMonthPrefix = todayStr.substring(0, 7);
 
     data.cards.forEach(card => {
+      // Calculate current invoice balance for this card
+      const cardExpenses = (data.transactions || []).filter(
+        (t: any) => t.cardId === card.id && t.type === 'expense' && !t.ignored && t.date?.startsWith(currentMonthPrefix)
+      );
+      const invoiceTotal = cardExpenses.reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+      const isPaid = cardExpenses.length > 0 && cardExpenses.every((t: any) => t.status === 'completed');
+
+      // CRITICAL: Do NOT notify if there is no invoice to pay (zero expenses or already paid)
+      if (invoiceTotal <= 0 || isPaid) return;
+
       const dueDay = card.dueDay || 10;
       const daysUntilDue = dueDay - currentDay;
 

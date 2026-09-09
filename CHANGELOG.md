@@ -3,6 +3,27 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.41] - 2026-09-08
+
+### 💳 Estabilidade de Cadastro de Cartões & Sincronização Híbrida Web/Android
+- **Digitação Estável no Formulário de Cartão (`CardModal.tsx`)**:
+  - Eliminação completa do reset involuntário dos campos de texto (Nome do Cartão, Limite, Dia de Fechamento e Dia de Vencimento) enquanto o usuário digitava.
+  - O estado do formulário agora inicializa estritamente na abertura do modal (`isOpen && !prevIsOpenRef.current`), desacoplado das revalidações de rede em segundo plano e do foco de janela (`window.focus`).
+  - Correção na comparação de cartões em edição (`prevEditingCardIdRef`) que antes tratava falsamente qualquer cartão novo como uma troca permanente de cartão.
+  - Higienização numérica rigorosa no salvamento para limites (`replace(/\./g, '').replace(',', '.')`) e limitação segura de dias entre 1 e 31.
+- **Bloqueio de Alertas de Fatura Prematuros (`notificationEngine.ts`)**:
+  - Correção na regra de agendamento de notificações de cartão de crédito: o alerta de vencimento agora exige obrigatoriamente que haja fatura aberta com valor maior que zero (`invoiceTotal > 0 && !isPaid`).
+  - Cartões recém-cadastrados ou sem compras registradas no mês nunca mais disparam notificações indevidas informando que a fatura vence em x dias.
+- **Sincronização Híbrida em Tempo Real entre Web e App Android (`FinancialContext.tsx` & `apiSync.ts`)**:
+  - Resolução definitiva do problema onde cartões cadastrados no aplicativo não apareciam ao acessar pelo navegador.
+  - Conciliação bidirecional inteligente (`pullData` e `refreshData`): os dados agora são unificados mesclando tanto o Supabase PostgreSQL quanto a store do servidor Express (`usr-default-liverton.json`), garantindo que nenhuma fonte sobrescreva a outra com lista vazia.
+  - Persistência síncrona imediata no `localStorage` ao chamar `addCard`, `updateCard` e `deleteCard`.
+- **Compatibilidade de Identificadores UUID no Supabase (`supabaseDb.ts`)**:
+  - Implementação de resolvedor canônico `getValidUserId` que traduz identificadores locais (`usr-default-liverton`, `usr-demo-financeiro` e e-mails) para os UUIDs correspondentes exigidos pela chave estrangeira `auth.users(id)` no PostgreSQL, eliminando o erro 400 (`22P02 - invalid input syntax for type uuid`).
+- **Autenticação Dual no Backend (`apiServer.js`)**:
+  - O middleware de autenticação do servidor agora valida tokens de sessão Finly (HMAC-SHA256) e tokens JWT do Supabase Auth de forma transparente.
+  - Resolução de rotas de dados (`getUserStorePath`) com mapeamento canônico para usuários e aliases, eliminando falhas de BOLA/IDOR e garantindo o mesmo repositório persistente para todas as plataformas.
+
 ## [1.1.40] - 2026-09-08
 
 ### 🚀 Restrição de Modais e Notificações de APK ao App Android Nativo

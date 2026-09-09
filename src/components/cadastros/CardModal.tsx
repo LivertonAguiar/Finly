@@ -24,43 +24,46 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
   const [defaultAccountId, setDefaultAccountId] = useState(accounts[0]?.id || '');
 
   const prevIsOpenRef = React.useRef(false);
-  const prevEditingIdRef = React.useRef<string | null>(null);
+  const prevEditingCardIdRef = React.useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const isOpening = isOpen && !prevIsOpenRef.current;
-    const isSwitching = editingCard?.id !== prevEditingIdRef.current;
+    const isSwitchingCard = isOpen && editingCard?.id !== prevEditingCardIdRef.current;
 
     prevIsOpenRef.current = isOpen;
-    prevEditingIdRef.current = editingCard?.id || null;
+    prevEditingCardIdRef.current = editingCard?.id;
 
     if (!isOpen) return;
 
-    if (isOpening || isSwitching) {
+    if (isOpening || isSwitchingCard) {
       if (editingCard) {
-        setName(editingCard.name);
-        setBrand(editingCard.brand);
-        setLimit(editingCard.limit !== undefined ? Number(editingCard.limit).toFixed(2) : '0');
-        setClosingDay(editingCard.closingDay.toString());
-        setDueDay(editingCard.dueDay.toString());
-        setColor(editingCard.color);
+        setName(editingCard.name || '');
+        setBrand(editingCard.brand || 'Mastercard');
+        setLimit(editingCard.limit !== undefined ? Number(editingCard.limit).toString() : '0');
+        setClosingDay(editingCard.closingDay ? editingCard.closingDay.toString() : '20');
+        setDueDay(editingCard.dueDay ? editingCard.dueDay.toString() : '27');
+        setColor(editingCard.color || '#820ad1');
         setDefaultAccountId(editingCard.defaultAccountId || accounts[0]?.id || '');
 
         // Match bank from name if possible
-        const foundBank = ALL_BANKS.find(b => editingCard.name.toLowerCase().includes(b.name.toLowerCase()) || editingCard.name.toLowerCase().includes(b.id));
+        const foundBank = ALL_BANKS.find(b =>
+          (editingCard.name && editingCard.name.toLowerCase().includes(b.name.toLowerCase())) ||
+          (editingCard.name && editingCard.name.toLowerCase().includes(b.id))
+        );
         if (foundBank) setSelectedBankId(foundBank.id);
       } else {
         const defaultBank = ALL_BANKS[0]; // Nubank
         setSelectedBankId(defaultBank.id);
         setName(`${defaultBank.name} Crédito`);
         setBrand('Mastercard');
-        setLimit('5000.00');
+        setLimit('5000');
         setClosingDay('20');
         setDueDay('27');
         setColor(defaultBank.color);
         setDefaultAccountId(accounts[0]?.id || '');
       }
     }
-  }, [isOpen, editingCard?.id, accounts]);
+  }, [isOpen, editingCard?.id]);
 
   const handleSelectBank = (bank: typeof ALL_BANKS[0]) => {
     setSelectedBankId(bank.id);
@@ -74,13 +77,15 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const numLimit = parseFloat(limit) || 0;
-    const cDay = parseInt(closingDay) || 20;
-    const dDay = parseInt(dueDay) || 27;
+    const cleanLimitStr = limit.toString().replace(/\./g, '').replace(',', '.');
+    const numLimit = parseFloat(cleanLimitStr) || parseFloat(limit) || 0;
+    const cDay = Math.min(31, Math.max(1, parseInt(closingDay, 10) || 20));
+    const dDay = Math.min(31, Math.max(1, parseInt(dueDay, 10) || 27));
+    const finalName = name.trim() || 'Cartão de Crédito';
 
     if (editingCard) {
       updateCard(editingCard.id, {
-        name,
+        name: finalName,
         brand,
         limit: numLimit,
         closingDay: cDay,
@@ -90,7 +95,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
       });
     } else {
       addCard({
-        name,
+        name: finalName,
         brand,
         limit: numLimit,
         closingDay: cDay,
