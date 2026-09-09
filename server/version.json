@@ -1,20 +1,21 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-09",
-  "notes": "Sincronização push em tempo real via Server-Sent Events (SSE), prevenção de perda de dados e reconciliação definitiva de cartões entre Web e Mobile.",
+  "notes": "Desacoplamento e liberdade total na personalização de cores de cartões e contas bancárias, com paletas de cores rápidas e restauração da cor oficial.",
   "isLatest": true,
   "sections": {
     "features": [
-      "Sincronização bidirecional em tempo real via push SSE conectando Web e App Mobile instantaneamente",
-      "Novo canal SSE dedicado em /api/sync/events com reconexão automática e heartbeat resiliente"
+      "Personalização livre de cores para cartões de crédito e contas bancárias independente do emissor",
+      "Novo seletor de cores aprimorado com paletas rápidas e inserção direta de código HEX (#)",
+      "Botão de 1-clique para restaurar a qualquer momento a cor oficial do banco selecionado"
     ],
     "fixes": [
-      "Correção definitiva da exclusão acidental de cartões durante ciclos de sincronização",
-      "Preservação integral dos dados preenchidos no modal de cadastro e edição de cartões"
+      "Fim do bloqueio que sobrescrevia a cor personalizada do usuário ao selecionar ou editar bancos",
+      "Indicadores de fatura e limites no dashboard agora refletem 100% a cor escolhida pelo usuário"
     ],
     "improvements": [
-      "Trava de integridade na esteira de compilação do APK Android no GitHub Actions",
-      "Notificações instantâneas de atualizações de saldo e lançamentos entre múltiplos dispositivos"
+      "Layout dos formulários de cartões e contas otimizado para mobile e desktop",
+      "FAQ atualizado na Central de Ajuda detalhando a personalização de cores e temas"
     ]
   }
 }

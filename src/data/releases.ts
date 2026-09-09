@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-09',
+    summary: 'Desacoplamento e liberdade total de customização de cores para cartões e contas, paletas visuais rápidas e restauração da cor do banco.',
+    highlights: [
+      {
+        title: 'Cores Desacopladas do Banco',
+        description: 'Personalização livre de cores para cartões e contas sem que a escolha do banco sobrescreva a cor desejada.',
+        type: 'feature',
+      },
+      {
+        title: 'Paletas Rápidas e Seletor HEX',
+        description: 'Novo seletor com chips de cores vibrantes e elegantes, além de suporte a qualquer código hexadecimal.',
+        type: 'visual',
+      },
+      {
+        title: 'Restauração da Cor Oficial',
+        description: 'Botão de 1-clique para restaurar a cor oficial do banco selecionado a qualquer momento.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.50',
+    releaseDate: '2026-09-09',
     summary: 'Sincronização em tempo real via SSE (Server-Sent Events), prevenção contra exclusão indevida de cartões e esteira de build do APK estável.',
     highlights: [
       {

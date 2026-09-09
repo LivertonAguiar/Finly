@@ -3,6 +3,19 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.51] - 2026-09-09
+
+### 🎨 Desacoplamento e Liberdade de Personalização de Cores (Cartões e Contas)
+- **Desacoplamento de Cor e Banco**:
+  - A seleção de banco/emissor agora sugere a cor oficial apenas se o usuário ainda não tiver escolhido uma cor personalizada.
+  - As cores escolhidas pelo usuário para cartões e contas bancárias são rigorosamente preservadas ao alternar de banco ou editar registros existentes.
+- **Seletor Visual Aprimorado**:
+  - Adição de paleta de cores elegantes e presets rápidos em `CardModal.tsx` e `AccountModal.tsx`.
+  - Inserção direta e edição de códigos hexadecimais (`#HEX`).
+  - Botão de 1-clique para restaurar a qualquer instante a cor original oficial do emissor.
+- **Fidelidade Visual no Dashboard**:
+  - Barras de progresso da fatura e indicadores visuais em `CreditTab.tsx` e `OverviewTab.tsx` agora refletem 100% a cor customizada do cartão.
+
 ## [1.1.50] - 2026-09-09
 
 ### 🔄 Sincronização em Tempo Real via SSE & Estabilidade da Esteira de Build
