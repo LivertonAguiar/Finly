@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-08',
+    summary: 'Barreiras automáticas validam a versão no bundle, dentro do APK, no GitHub e após o deploy da VPS antes de concluir uma publicação.',
+    highlights: [
+      {
+        title: 'Inspeção Interna do APK',
+        description: 'O pipeline confere versionName, versionCode e o manifesto do bundle Web antes de disponibilizar o instalador.',
+        type: 'improvement',
+      },
+      {
+        title: 'Deploy com Trava de Consistência',
+        description: 'A implantação é bloqueada se o Git não estiver sincronizado, se o APK ainda não existir ou se API e frontend responderem versões diferentes.',
+        type: 'improvement',
+      },
+      {
+        title: 'Histórico de Versões Protegido',
+        description: 'A validação garante que somente a versão atual seja dinâmica, mantendo todas as versões anteriores imutáveis.',
+        type: 'fix',
+      },
+    ],
+  },
+  {
+    version: '1.1.45',
+    releaseDate: '2026-09-08',
     summary: 'Versão do aplicativo, APK e servidor agora sincronizada automaticamente por uma única fonte, com atualização Android confiável.',
     highlights: [
       {

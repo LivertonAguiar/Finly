@@ -3,6 +3,19 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.46] - 2026-09-08
+
+### 🧱 Barreiras Preventivas para Publicações Web, Android e VPS
+- **Validação Interna do APK**:
+  - O GitHub Actions inspeciona `versionName`, `versionCode` e o manifesto `app-version.json` embarcado antes de criar a release.
+  - Qualquer divergência interrompe a publicação e impede que um APK inconsistente chegue aos usuários.
+- **Deploy Protegido e Verificável**:
+  - O deploy exige worktree limpo, commit sincronizado com `origin/main`, fontes de versão consistentes e APK oficial já publicado.
+  - Após recriar o contêiner, o script compara automaticamente a versão da API com a versão do bundle servido pela VPS.
+- **Manifesto Gerado no Build**:
+  - O Vite gera `app-version.json` diretamente do `package.json`, e todo build falha se o artefato não carregar a versão esperada.
+  - O histórico de releases passa a permitir somente uma entrada dinâmica, evitando que versões antigas mudem acidentalmente.
+
 ## [1.1.45] - 2026-09-08
 
 ### 🔄 Sincronização Única de Versão no Web, Android, VPS e GitHub
