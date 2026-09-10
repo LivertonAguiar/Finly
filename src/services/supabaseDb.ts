@@ -211,8 +211,8 @@ export class SupabaseDbService {
         recurring: Boolean(r.recurring),
         recurrenceFrequency: r.recurrence_frequency,
         installments: r.installments,
-        debtId: r.installments?.debtId,
-        debtInstallmentNumber: r.installments?.debtInstallmentNumber,
+        debtId: r.debt_id || r.installments?.debtId,
+        debtInstallmentNumber: r.debt_installment_number ?? r.installments?.debtInstallmentNumber,
         tags: Array.isArray(r.tags) ? r.tags : [],
         notes: r.notes,
         attachmentUrl: r.attachment_url,
@@ -266,6 +266,15 @@ export class SupabaseDbService {
         nextDueDate: r.next_due_date || '',
         notes: r.notes,
         payments: Array.isArray(r.payments) ? r.payments : [],
+        contractType: r.contract_type || 'loan',
+        amortizationSystem: r.amortization_system || 'PRICE',
+        indexer: r.indexer || 'TR',
+        indexerRate: r.indexer_rate != null ? Number(r.indexer_rate) : undefined,
+        insuranceMonthly: r.insurance_monthly != null ? Number(r.insurance_monthly) : undefined,
+        adminFeeMonthly: r.admin_fee_monthly != null ? Number(r.admin_fee_monthly) : undefined,
+        contractNumber: r.contract_number || undefined,
+        defaultAccountId: r.default_account_id || undefined,
+        syncToTransactions: r.sync_to_transactions !== false,
       }));
 
       const investments: InvestmentAsset[] = (investmentsRes.data || []).map(r => ({
@@ -503,6 +512,8 @@ export class SupabaseDbService {
           third_party_name: t.thirdPartyName,
           reimbursed: Boolean(t.reimbursed),
           created_at: t.createdAt || new Date().toISOString(),
+          debt_id: t.debtId || null,
+          debt_installment_number: t.debtInstallmentNumber ?? null,
         }));
         await supabase.from('transactions').upsert(rows);
       } else {
@@ -561,6 +572,15 @@ export class SupabaseDbService {
           next_due_date: d.nextDueDate || null,
           notes: d.notes,
           payments: d.payments || [],
+          contract_type: d.contractType || 'loan',
+          amortization_system: d.amortizationSystem || 'PRICE',
+          indexer: d.indexer || 'TR',
+          indexer_rate: d.indexerRate ?? null,
+          insurance_monthly: d.insuranceMonthly ?? null,
+          admin_fee_monthly: d.adminFeeMonthly ?? null,
+          contract_number: d.contractNumber || null,
+          default_account_id: d.defaultAccountId || null,
+          sync_to_transactions: d.syncToTransactions !== false,
         }));
         await supabase.from('debts').upsert(rows);
       }

@@ -1,5 +1,6 @@
 import type { Account, Debt, Transaction } from '../types';
 import { getTodayString, round2 } from './formatters';
+import { generateAmortizationSchedule } from './financingCalculations';
 
 export interface DebtTransactionSyncOptions {
   horizonMonths?: number;
@@ -33,6 +34,19 @@ export const getDebtTransactionCategory = (debt: Debt) => {
   return { categoryId: 'cat-desp-financeiro', subcategoryId: 'sub-fin-pagamento-dividas' };
 };
 
+/**
+ * Determines if a debt is a structured financing (real_estate / vehicle with
+ * interest rate) that should use the amortization schedule engine, or a simple
+ * loan that uses the flat installmentAmount.
+ */
+const isStructuredFinancing = (debt: Debt): boolean => {
+  if (!debt.interestRate || debt.interestRate <= 0) return false;
+  if (debt.contractType && debt.contractType !== 'loan') return true;
+  // Also treat as structured if amortization system is explicitly set and there are interest
+  if (debt.amortizationSystem && debt.interestRate > 0) return true;
+  return false;
+};
+
 export const buildDebtInstallmentTransactions = (
   debt: Debt,
   horizonMonths: number,
@@ -41,11 +55,67 @@ export const buildDebtInstallmentTransactions = (
 ): Transaction[] => {
   const { categoryId, subcategoryId } = getDebtTransactionCategory(debt);
   const startInstallment = (debt.paidInstallments || 0) + 1;
-  const endInstallment = Math.min(debt.totalInstallments, startInstallment + horizonMonths - 1);
+  const remainingCount = Math.max(0, debt.totalInstallments - (debt.paidInstallments || 0));
+  const count = Math.min(horizonMonths, remainingCount);
+  if (count <= 0) return [];
+
   const baseDueDateStr = debt.nextDueDate || getTodayString();
   const createdAt = now.toISOString();
 
-  return Array.from({ length: Math.max(0, endInstallment - startInstallment + 1) }, (_, offset) => {
+  const baseTags = [
+    debt.contractType === 'loan' || !debt.contractType ? 'divida' : 'financiamento',
+    'parcela',
+    ...(debt.creditor ? [debt.creditor.toLowerCase().replace(/\s+/g, '-')] : []),
+  ];
+  const baseNotes = debt.contractNumber ? `Contrato nº ${debt.contractNumber}` : undefined;
+
+  // ── Structured Financing: use amortization schedule for real values ──
+  if (isStructuredFinancing(debt)) {
+    const schedule = generateAmortizationSchedule({
+      principal: debt.remainingAmount,
+      nominalAnnualRate: debt.interestRate!,
+      remainingMonths: remainingCount,
+      paidInstallments: debt.paidInstallments || 0,
+      system: debt.amortizationSystem || 'PRICE',
+      monthlyTR: debt.indexer === 'TR' ? (debt.indexerRate || 0) : 0,
+      monthlyInsurance: debt.insuranceMonthly || 0,
+      adminFee: debt.adminFeeMonthly || 0,
+      startDate: new Date(`${baseDueDateStr.substring(0, 10)}T12:00:00`),
+    });
+
+    return schedule.schedule.slice(0, count).map((row, offset) => {
+      const installmentNumber = startInstallment + offset;
+      const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
+
+      return {
+        id: `tx-debt-${debt.id}-${installmentNumber}-${now.getTime()}-${offset}`,
+        description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
+        amount: round2(row.totalInstallment),
+        type: 'expense' as const,
+        date: dateStr,
+        dueDate: dateStr,
+        categoryId,
+        subcategoryId,
+        accountId,
+        status: 'pending' as const,
+        recurring: false,
+        installments: {
+          current: installmentNumber,
+          total: debt.totalInstallments,
+          debtId: debt.id,
+          debtInstallmentNumber: installmentNumber,
+        },
+        debtId: debt.id,
+        debtInstallmentNumber: installmentNumber,
+        tags: [...baseTags],
+        notes: baseNotes,
+        createdAt,
+      };
+    });
+  }
+
+  // ── Simple Loan: flat installmentAmount for all installments ──
+  return Array.from({ length: count }, (_, offset) => {
     const installmentNumber = startInstallment + offset;
     const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
 
@@ -53,13 +123,13 @@ export const buildDebtInstallmentTransactions = (
       id: `tx-debt-${debt.id}-${installmentNumber}-${now.getTime()}-${offset}`,
       description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
       amount: round2(debt.installmentAmount),
-      type: 'expense',
+      type: 'expense' as const,
       date: dateStr,
       dueDate: dateStr,
       categoryId,
       subcategoryId,
       accountId,
-      status: 'pending',
+      status: 'pending' as const,
       recurring: false,
       installments: {
         current: installmentNumber,
@@ -69,12 +139,8 @@ export const buildDebtInstallmentTransactions = (
       },
       debtId: debt.id,
       debtInstallmentNumber: installmentNumber,
-      tags: [
-        debt.contractType === 'loan' || !debt.contractType ? 'divida' : 'financiamento',
-        'parcela',
-        ...(debt.creditor ? [debt.creditor.toLowerCase().replace(/\s+/g, '-')] : []),
-      ],
-      notes: debt.contractNumber ? `Contrato nº ${debt.contractNumber}` : undefined,
+      tags: [...baseTags],
+      notes: baseNotes,
       createdAt,
     };
   });

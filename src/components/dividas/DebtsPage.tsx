@@ -29,6 +29,21 @@ import { getOfficialDailyTR } from '../../utils/marketRatesService';
 import { FinancingScheduleModal } from './FinancingScheduleModal';
 import { ExtraordinaryAmortizationModal } from './ExtraordinaryAmortizationModal';
 
+/**
+ * Infers the contract type for legacy debts that were created before the
+ * contract_type column existed in Supabase. Uses keyword matching on
+ * title + creditor to avoid defaulting everything to "loan".
+ */
+const inferContractType = (d: Debt): DebtContractType => {
+  if (d.contractType && d.contractType !== 'loan') return d.contractType;
+  if (d.contractType === 'loan') return 'loan';
+  // No contractType stored — try to infer from text
+  const text = `${d.title} ${d.creditor || ''}`.toLowerCase();
+  if (/imob|habita|casa|apto|apartamento|sfi|sfh|caixa.*habit|financ.*imov/i.test(text)) return 'real_estate';
+  if (/veíc|veiculo|carro|auto|moto|consórcio.*auto|financ.*veic/i.test(text)) return 'vehicle';
+  return 'loan';
+};
+
 export const DebtsPage: React.FC = () => {
   const {
     debts,
@@ -129,7 +144,7 @@ export const DebtsPage: React.FC = () => {
 
   const handleOpenEdit = (d: Debt) => {
     setEditingDebt(d);
-    setContractType(d.contractType || 'loan');
+    setContractType(inferContractType(d));
     setTitle(d.title);
     setCreditor(d.creditor || '');
     setContractNumber(d.contractNumber || '');
