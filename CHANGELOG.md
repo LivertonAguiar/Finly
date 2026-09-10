@@ -3,6 +3,17 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.54] - 2026-09-09
+
+### Correções no Extrato de Transações
+- **Despesas adicionadas novamente no extrato**:
+  - Corrigido o envio de transações simples, que fechava o formulário sem incluir o lançamento.
+  - Removida a transação extra criada indevidamente ao usar repetição ou parcelamento.
+- **Dívidas e financiamentos legados integrados**:
+  - Reconciliação automática cria as parcelas pendentes de contratos existentes ao carregar ou atualizar os dados.
+  - Vínculo entre parcela e contrato preservado no Supabase sem depender de novas colunas no banco.
+  - Migração idempotente evita duplicidade em recargas, logins e sincronizações futuras.
+
 ## [1.1.53] - 2026-09-09
 
 ### 🏠 Financiamento Habitacional Caixa, TR Oficial do BACEN & Simulador de Amortização Extraordinária

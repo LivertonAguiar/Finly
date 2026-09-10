@@ -403,6 +403,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             });
           }
         }
+      } else {
         addTransaction(txData);
       }
 

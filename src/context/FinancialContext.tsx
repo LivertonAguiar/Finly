@@ -22,6 +22,12 @@ import { isSupabaseConfigured } from '../services/supabaseClient';
 import { useUndoToast } from './UndoToastContext';
 import { saveOrShareFile } from '../utils/fileDownloadHelper';
 import { applyTheme, ThemePreset, CardRadius, PRESET_COLORS } from '../utils/themeEngine';
+import {
+  buildDebtInstallmentTransactions,
+  calculateInstallmentDueDate,
+  getDebtTransactionCategory,
+  reconcileDebtTransactions,
+} from '../utils/debtTransactionSync';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -506,6 +512,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return [...DEFAULT_CATEGORIES, ...userCustomCats];
   };
 
+  const withDebtTransactionBackfill = (store: UserStoreData): UserStoreData => {
+    const reconciled = reconcileDebtTransactions(store.debts, store.transactions, store.accounts);
+    return {
+      ...store,
+      debts: reconciled.debts,
+      transactions: reconciled.transactions,
+    };
+  };
+
   // Helper to load user's initial state
   const loadUserStore = (): UserStoreData => {
     const isDemo = userId === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com';
@@ -518,7 +533,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (isDemo && (!Array.isArray(parsed.transactions) || parsed.transactions.length === 0 || !Array.isArray(parsed.accounts) || parsed.accounts.length === 0)) {
           // Fall through to generateRealisticDemoStore below
         } else {
-          return sanitizeStoredData({
+          return withDebtTransactionBackfill(sanitizeStoredData({
             accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
             cards: Array.isArray(parsed.cards) ? parsed.cards.filter((c: any) => c && !GHOST_CARD_IDS.has(c.id)) : [],
             categories: mergeCategories(parsed.categories),
@@ -554,7 +569,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 showValues: parsed.userProfile?.showValues !== false,
               };
             })(),
-          });
+          }));
         }
       }
     } catch (e) {
@@ -568,7 +583,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       try {
         localStorage.setItem(userStoreKey, JSON.stringify(demo));
       } catch (e) {}
-      return sanitizeStoredData({
+      return withDebtTransactionBackfill(sanitizeStoredData({
         accounts: demo.accounts,
         cards: demo.cards,
         categories: demo.categories,
@@ -590,7 +605,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           cardRadius: localAppearance?.cardRadius || 'squircle',
           showValues: true,
         },
-      });
+      }));
     }
 
     // Default clean initial store for REAL users with standard Carteira
@@ -735,14 +750,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
             );
             const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-            setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+            const cleanAccounts = sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT];
+            const reconciledDebts = reconcileDebtTransactions(sbStore.debts || [], cleanTxs, cleanAccounts);
+            setAccounts(cleanAccounts);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
             setBudgets(sbStore.budgets || []);
             setGoals(sbStore.goals || []);
-            setDebts(sbStore.debts || []);
+            setDebts(reconciledDebts.debts);
             setInvestments(sbStore.investments || []);
-            setTransactions(cleanTxs);
+            setTransactions(reconciledDebts.transactions);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
@@ -757,8 +774,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             // Sync server store and local storage to match Supabase truth
             const cleanStore = {
               ...sbStore,
+              accounts: cleanAccounts,
               cards: cleanCards,
-              transactions: cleanTxs,
+              debts: reconciledDebts.debts,
+              transactions: reconciledDebts.transactions,
               userProfile: mergedUserProfile,
             };
             try {
@@ -788,14 +807,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
         );
         const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-        setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+        const cleanAccounts = serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT];
+        const reconciledDebts = reconcileDebtTransactions(serverStore.debts || [], cleanTxs, cleanAccounts);
+        setAccounts(cleanAccounts);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
         setBudgets(serverStore.budgets || []);
         setGoals(serverStore.goals || []);
-        setDebts(serverStore.debts || []);
+        setDebts(reconciledDebts.debts);
         setInvestments(serverStore.investments || []);
-        setTransactions(cleanTxs);
+        setTransactions(reconciledDebts.transactions);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
@@ -937,14 +958,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
             );
             const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-            setAccounts(sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+            const cleanAccounts = sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT];
+            const reconciledDebts = reconcileDebtTransactions(sbStore.debts || [], cleanTxs, cleanAccounts);
+            setAccounts(cleanAccounts);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
             setBudgets(sbStore.budgets || []);
             setGoals(sbStore.goals || []);
-            setDebts(sbStore.debts || []);
+            setDebts(reconciledDebts.debts);
             setInvestments(sbStore.investments || []);
-            setTransactions(cleanTxs);
+            setTransactions(reconciledDebts.transactions);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
@@ -959,8 +982,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             // Update server store to match Supabase
             const cleanStore = {
               ...sbStore,
+              accounts: cleanAccounts,
               cards: cleanCards,
-              transactions: cleanTxs,
+              debts: reconciledDebts.debts,
+              transactions: reconciledDebts.transactions,
               userProfile: mergedUserProfile,
             };
             try {
@@ -985,14 +1010,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
         );
         const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-        setAccounts(serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]);
+        const cleanAccounts = serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT];
+        const reconciledDebts = reconcileDebtTransactions(serverStore.debts || [], cleanTxs, cleanAccounts);
+        setAccounts(cleanAccounts);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
         setBudgets(serverStore.budgets || []);
         setGoals(serverStore.goals || []);
-        setDebts(serverStore.debts || []);
+        setDebts(reconciledDebts.debts);
         setInvestments(serverStore.investments || []);
-        setTransactions(cleanTxs);
+        setTransactions(reconciledDebts.transactions);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
@@ -1731,80 +1758,6 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Debts
-  const calculateInstallmentDueDate = (baseDueDateStr: string, defaultDueDay: number, offsetMonths: number): string => {
-    try {
-      const base = new Date(`${baseDueDateStr.substring(0, 10)}T12:00:00`);
-      if (isNaN(base.getTime())) {
-        const now = new Date();
-        now.setMonth(now.getMonth() + offsetMonths);
-        return now.toISOString().substring(0, 10);
-      }
-      const targetYear = base.getFullYear();
-      const targetMonth = base.getMonth() + offsetMonths;
-      const firstOfMonth = new Date(targetYear, targetMonth, 1);
-      const daysInMonth = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth() + 1, 0).getDate();
-      const targetDay = Math.min(defaultDueDay || base.getDate() || 10, daysInMonth);
-      const finalDate = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), targetDay);
-      return finalDate.toISOString().substring(0, 10);
-    } catch (e) {
-      return getTodayString();
-    }
-  };
-
-  const getDebtTransactionCategory = (debt: Debt) => {
-    if (debt.contractType === 'real_estate') {
-      return { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-financiamento-apto' };
-    }
-    if (debt.contractType === 'vehicle') {
-      return { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-financiamento' };
-    }
-    return { categoryId: 'cat-desp-financeiro', subcategoryId: 'sub-fin-pagamento-dividas' };
-  };
-
-  const buildDebtInstallmentTransactions = (
-    debt: Debt,
-    horizonMonths: number,
-    accountId?: string
-  ): Transaction[] => {
-    const { categoryId, subcategoryId } = getDebtTransactionCategory(debt);
-    const startInstallment = (debt.paidInstallments || 0) + 1;
-    const endInstallment = Math.min(debt.totalInstallments, startInstallment + horizonMonths - 1);
-    const baseDueDateStr = debt.nextDueDate || getTodayString();
-    const createdAt = new Date().toISOString();
-
-    return Array.from({ length: Math.max(0, endInstallment - startInstallment + 1) }, (_, offset) => {
-      const installmentNumber = startInstallment + offset;
-      const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
-
-      return {
-        id: `tx-debt-${debt.id}-${installmentNumber}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
-        amount: round2(debt.installmentAmount),
-        type: 'expense',
-        date: dateStr,
-        dueDate: dateStr,
-        categoryId,
-        subcategoryId,
-        accountId,
-        status: 'pending',
-        recurring: false,
-        installments: {
-          current: installmentNumber,
-          total: debt.totalInstallments,
-        },
-        debtId: debt.id,
-        debtInstallmentNumber: installmentNumber,
-        tags: [
-          debt.contractType === 'loan' || !debt.contractType ? 'divida' : 'financiamento',
-          'parcela',
-          ...(debt.creditor ? [debt.creditor.toLowerCase().replace(/\s+/g, '-')] : []),
-        ],
-        notes: debt.contractNumber ? `Contrato nº ${debt.contractNumber}` : undefined,
-        createdAt,
-      } satisfies Transaction;
-    });
-  };
-
   const generateDebtTransactions = (
     debtId: string,
     options?: { horizonMonths?: number; accountId?: string; replaceExisting?: boolean }

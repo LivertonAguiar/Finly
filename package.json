@@ -1,11 +1,12 @@
 {
   "name": "finly",
   "private": true,
-  "version": "1.1.53",
+  "version": "1.1.54",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "server": "node server/apiServer.js",
+    "test:debt-sync": "node scripts/run-ts-test.mjs tests/debtTransactionSync.test.ts",
     "check:version": "node scripts/check-version-sync.mjs",
     "verify:build-version": "node scripts/verify-built-version.mjs",
     "build": "tsc && vite build && npm run verify:build-version",

@@ -27,6 +27,18 @@ export interface UserStoreData {
   userProfile: UserProfile;
 }
 
+const serializeTransactionInstallments = (transaction: Transaction) => {
+  if (!transaction.installments && !transaction.debtId) return undefined;
+
+  return {
+    ...(transaction.installments || {}),
+    ...(transaction.debtId ? {
+      debtId: transaction.debtId,
+      debtInstallmentNumber: transaction.debtInstallmentNumber,
+    } : {}),
+  };
+};
+
 export class SupabaseDbService {
   private storeSaveQueue: Array<{
     userId: string;
@@ -199,6 +211,8 @@ export class SupabaseDbService {
         recurring: Boolean(r.recurring),
         recurrenceFrequency: r.recurrence_frequency,
         installments: r.installments,
+        debtId: r.installments?.debtId,
+        debtInstallmentNumber: r.installments?.debtInstallmentNumber,
         tags: Array.isArray(r.tags) ? r.tags : [],
         notes: r.notes,
         attachmentUrl: r.attachment_url,
@@ -475,7 +489,7 @@ export class SupabaseDbService {
           status: t.status || 'completed',
           recurring: Boolean(t.recurring),
           recurrence_frequency: t.recurrenceFrequency,
-          installments: t.installments,
+          installments: serializeTransactionInstallments(t),
           tags: t.tags || [],
           notes: t.notes,
           attachment_url: t.attachmentUrl,
@@ -600,7 +614,7 @@ export class SupabaseDbService {
         status: t.status || 'completed',
         recurring: Boolean(t.recurring),
         recurrence_frequency: t.recurrenceFrequency,
-        installments: t.installments,
+        installments: serializeTransactionInstallments(t),
         tags: t.tags || [],
         notes: t.notes,
         attachment_url: t.attachmentUrl,

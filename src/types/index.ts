@@ -61,6 +61,8 @@ export interface Transaction {
     current: number;
     total: number;
     parentId?: string;
+    debtId?: string;
+    debtInstallmentNumber?: number;
   };
   debtId?: string; // Vinculado a uma dívida ou financiamento
   debtInstallmentNumber?: number; // Número da parcela correspondente (ex: 1, 2, ... total)

@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-09',
+    summary: 'Correção do cadastro de despesas e migração automática das parcelas de dívidas e financiamentos para o extrato.',
+    highlights: [
+      {
+        title: 'Despesas restauradas em Transações',
+        description: 'Lançamentos simples voltam a ser incluídos imediatamente no extrato; repetições também deixam de criar uma cópia extra.',
+        type: 'fix',
+      },
+      {
+        title: 'Parcelas antigas migradas automaticamente',
+        description: 'Contratos de dívida e financiamento já existentes passam a gerar suas parcelas pendentes no Extrato e no Calendário.',
+        type: 'fix',
+      },
+      {
+        title: 'Vínculos duráveis e sem duplicidade',
+        description: 'A associação entre parcela e contrato agora sobrevive à sincronização com o Supabase e às recargas do aplicativo.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.53',
+    releaseDate: '2026-09-09',
     summary: 'Financiamento Habitacional Caixa, Tabela Price e SAC com correção monetária pela TR diária oficial do Banco Central (SGS), cronograma de 420 parcelas e simulador de amortização extraordinária.',
     highlights: [
       {
