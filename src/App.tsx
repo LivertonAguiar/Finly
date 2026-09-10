@@ -36,6 +36,7 @@ import { WebWhatsNewModal } from './components/common/WebWhatsNewModal';
 import { HelpCenterPage } from './components/help/HelpCenterPage';
 import { setRootBackHandler } from './utils/backButtonManager';
 import { PinLockScreen } from './components/common/PinLockScreen';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import {
   isSecurityLockEnabled,
   isAppLocked,
@@ -478,15 +479,17 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <UndoToastProvider>
-        <FinancialProvider>
-          <ConfirmProvider>
-            <AppContent />
-          </ConfirmProvider>
-        </FinancialProvider>
-      </UndoToastProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <UndoToastProvider>
+          <FinancialProvider>
+            <ConfirmProvider>
+              <AppContent />
+            </ConfirmProvider>
+          </FinancialProvider>
+        </UndoToastProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

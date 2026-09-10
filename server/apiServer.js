@@ -236,6 +236,46 @@ app.get('/api/app/version', (req, res) => {
   res.json(getAppVersionInfo());
 });
 
+// Market Indicators (BACEN SGS: TR Série 226, IPCA Série 433)
+let cachedMarketIndicators = {
+  tr: 0.1708,
+  trDate: '08/09/2026',
+  ipca: 0.38,
+  ipcaDate: '01/07/2026',
+  updatedAt: new Date().toISOString(),
+};
+
+async function fetchBacenMarketRates() {
+  try {
+    const trRes = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.226/dados/ultimos/1?formato=json', { signal: AbortSignal.timeout(4000) });
+    if (trRes.ok) {
+      const data = await trRes.json();
+      if (Array.isArray(data) && data.length > 0 && data[0].valor) {
+        cachedMarketIndicators.tr = parseFloat(data[0].valor.replace(',', '.')) || cachedMarketIndicators.tr;
+        cachedMarketIndicators.trDate = data[0].data || cachedMarketIndicators.trDate;
+      }
+    }
+    const ipcaRes = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json', { signal: AbortSignal.timeout(4000) });
+    if (ipcaRes.ok) {
+      const data = await ipcaRes.json();
+      if (Array.isArray(data) && data.length > 0 && data[0].valor) {
+        cachedMarketIndicators.ipca = parseFloat(data[0].valor.replace(',', '.')) || cachedMarketIndicators.ipca;
+        cachedMarketIndicators.ipcaDate = data[0].data || cachedMarketIndicators.ipcaDate;
+      }
+    }
+    cachedMarketIndicators.updatedAt = new Date().toISOString();
+  } catch (err) {
+    console.warn('⚠️ Falha ao atualizar indicadores do BACEN em background:', err.message);
+  }
+}
+
+setInterval(fetchBacenMarketRates, 6 * 60 * 60 * 1000);
+setTimeout(fetchBacenMarketRates, 5000);
+
+app.get('/api/market-indicators/latest', (req, res) => {
+  res.json(cachedMarketIndicators);
+});
+
 const DATA_DIR = path.join(__dirname, 'data');
 const STORES_DIR = path.join(DATA_DIR, 'stores');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');

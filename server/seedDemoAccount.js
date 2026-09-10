@@ -31,7 +31,6 @@ const demoUserData = {
   id: DEMO_USER_ID,
   name: 'Conta Demonstração',
   email: DEMO_EMAIL,
-  password: 'demo',
   phone: '11999998888',
   role: 'admin',
   createdAt: '2026-01-01',
@@ -40,7 +39,7 @@ const demoUserData = {
 if (demoUserIndex >= 0) {
   users[demoUserIndex] = { ...users[demoUserIndex], ...demoUserData };
 } else {
-  users.push(demoUserData);
+  users.push({ ...demoUserData, password: 'demo' });
 }
 
 fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
@@ -52,6 +51,11 @@ const month = String(now.getMonth() + 1).padStart(2, '0');
 const currentMonthPrefix = `${year}-${month}`;
 
 const getDateInCurrentMonth = (day) => `${year}-${month}-${String(day).padStart(2, '0')}`;
+const getDateInOffsetMonth = (offset, day) => {
+  const target = new Date(year, now.getMonth() + offset + 1, 0);
+  const safeDay = Math.min(day, target.getDate());
+  return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`;
+};
 
 const getOffsetMonthPrefix = (offset) => {
   const d = new Date(year, now.getMonth() + offset, 1);
@@ -156,10 +160,17 @@ const cards = [
 
 let categories = [];
 try {
-  const livertonStore = path.join(STORES_DIR, 'usr-default-liverton.json');
-  if (fs.existsSync(livertonStore)) {
-    const raw = JSON.parse(fs.readFileSync(livertonStore, 'utf8'));
-    if (raw.categories) categories = raw.categories;
+  const categorySources = [
+    path.join(STORES_DIR, `${DEMO_USER_ID}.json`),
+    path.join(STORES_DIR, 'usr-default-liverton.json'),
+  ];
+  for (const source of categorySources) {
+    if (!fs.existsSync(source)) continue;
+    const raw = JSON.parse(fs.readFileSync(source, 'utf8'));
+    if (Array.isArray(raw.categories) && raw.categories.length > 0) {
+      categories = raw.categories;
+      break;
+    }
   }
 } catch (e) {}
 
@@ -634,14 +645,23 @@ const debts = [
     id: 'debt-financiamento-caixa',
     title: 'Financiamento Imobiliário Caixa',
     creditor: 'Caixa Econômica Federal',
+    contractType: 'real_estate',
+    contractNumber: 'CAIXA-SFH-2024-001',
     totalAmount: 180000.00,
     remainingAmount: 164000.00,
     interestRate: 9.5,
+    amortizationSystem: 'SAC',
+    indexer: 'TR',
+    indexerRate: 0.1708,
+    insuranceMonthly: 38.50,
+    adminFeeMonthly: 25.00,
     totalInstallments: 360,
     paidInstallments: 24,
     installmentAmount: 1480.00,
     dueDay: 15,
     nextDueDate: getDateInCurrentMonth(15),
+    defaultAccountId: 'acc-demo-itau',
+    syncToTransactions: true,
     payments: [
       { id: 'pay-d1', amount: 1480.00, date: getDateInCurrentMonth(15), installmentNumber: 24 }
     ]
@@ -650,19 +670,56 @@ const debts = [
     id: 'debt-consorcio-auto',
     title: 'Consórcio Veículo Porto Seguro',
     creditor: 'Porto Seguro Consórcios',
+    contractType: 'vehicle',
+    contractNumber: 'PORTO-AUTO-2023-027',
     totalAmount: 40000.00,
     remainingAmount: 22000.00,
     interestRate: 0,
+    amortizationSystem: 'PRICE',
+    indexer: 'FIXED',
+    indexerRate: 0,
+    insuranceMonthly: 0,
+    adminFeeMonthly: 0,
     totalInstallments: 60,
     paidInstallments: 27,
     installmentAmount: 780.00,
     dueDay: 20,
     nextDueDate: getDateInCurrentMonth(20),
+    defaultAccountId: 'acc-demo-nubank',
+    syncToTransactions: true,
     payments: [
       { id: 'pay-d2', amount: 780.00, date: getDateInCurrentMonth(20), installmentNumber: 27 }
     ]
   }
 ];
+
+debts.forEach(debt => {
+  const remainingInstallments = Math.min(12, debt.totalInstallments - debt.paidInstallments);
+  for (let offset = 0; offset < remainingInstallments; offset++) {
+    const installmentNumber = debt.paidInstallments + offset + 1;
+    const dueDate = getDateInOffsetMonth(offset, debt.dueDay);
+    const isRealEstate = debt.contractType === 'real_estate';
+    transactions.push({
+      id: `tx-debt-${debt.id}-${installmentNumber}`,
+      description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
+      amount: debt.installmentAmount,
+      type: 'expense',
+      date: dueDate,
+      dueDate,
+      categoryId: isRealEstate ? 'cat-desp-moradia' : 'cat-desp-transporte',
+      subcategoryId: isRealEstate ? 'sub-mor-financiamento-apto' : 'sub-trans-financiamento',
+      accountId: debt.defaultAccountId,
+      status: 'pending',
+      recurring: false,
+      installments: { current: installmentNumber, total: debt.totalInstallments },
+      debtId: debt.id,
+      debtInstallmentNumber: installmentNumber,
+      tags: ['financiamento', 'parcela'],
+      notes: debt.contractNumber ? `Contrato nº ${debt.contractNumber}` : undefined,
+      createdAt: now.toISOString(),
+    });
+  }
+});
 
 const investments = [
   {

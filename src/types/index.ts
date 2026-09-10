@@ -62,6 +62,8 @@ export interface Transaction {
     total: number;
     parentId?: string;
   };
+  debtId?: string; // Vinculado a uma dívida ou financiamento
+  debtInstallmentNumber?: number; // Número da parcela correspondente (ex: 1, 2, ... total)
   tags: string[];
   notes?: string;
   attachmentUrl?: string;
@@ -119,13 +121,18 @@ export interface DebtPayment {
   installmentNumber: number;
 }
 
+export type DebtContractType = 'loan' | 'real_estate' | 'vehicle';
+export type AmortizationSystem = 'PRICE' | 'SAC';
+export type DebtIndexer = 'TR' | 'IPCA' | 'FIXED';
+
 export interface Debt {
   id: string;
   title: string;
   creditor: string;
   totalAmount: number;
   remainingAmount: number;
-  interestRate?: number;
+  interestRate?: number; // Taxa nominal anual (%)
+  effectiveInterestRate?: number; // Taxa efetiva anual (%)
   installmentAmount: number;
   totalInstallments: number;
   paidInstallments: number;
@@ -133,6 +140,18 @@ export interface Debt {
   nextDueDate: string;
   notes?: string;
   payments: DebtPayment[];
+
+  // Campos avançados para financiamentos estruturados (Imobiliário / Veicular)
+  contractType?: DebtContractType;
+  amortizationSystem?: AmortizationSystem;
+  indexer?: DebtIndexer;
+  indexerRate?: number; // Taxa do indexador vigente (% a.m.)
+  insuranceMonthly?: number; // Seguro consolidado MIP + DFI
+  adminFeeMonthly?: number; // Taxa operacional / de administração
+  contractNumber?: string; // Número do contrato bancário
+  anniversaryDay?: number; // Dia de aniversário do saldo
+  defaultAccountId?: string; // Conta bancária padrão vinculada para pagamento das parcelas
+  syncToTransactions?: boolean; // Se as parcelas estão sincronizadas no extrato de transações
 }
 
 export interface InvestmentAsset {

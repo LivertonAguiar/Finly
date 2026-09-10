@@ -1,9 +1,9 @@
-# 🚀 Finly `v1.1.52`
+# 🚀 Finly `v1.1.53`
 
 > Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade Web e Mobile Android.
 
 [![Build Android APK & Release](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml/badge.svg)](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml)
-[![Version](https://img.shields.io/badge/version-1.1.52-purple.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.1.53-purple.svg)](package.json)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
@@ -116,7 +116,7 @@ finly/
 | Rota | Componente | Descrição |
 | :--- | :--- | :--- |
 | `/dashboard` | `DashboardPage` | Painel principal com KPIs, gráficos e widgets configuráveis em grade responsiva com encaixe automático conforme o espaço útil. |
-| `/transacoes` | `TransactionsPage` | Extrato diário com filtro rápido por popover (Todas, Despesas, Receitas, Transferências) e busca. |
+| `/transacoes` | `TransactionsPage` | Extrato diário com filtros, busca e parcelas sincronizadas de dívidas/financiamentos. |
 | `/contas` | `AccountsPage` | Grid compacto de contas bancárias, saldos reais, saldos previstos e menu de reajuste. |
 | `/cartoes` | `CreditTab` | Gestão de múltiplos cartões, limites disponíveis, faturas abertas/fechadas e pagamento. |
 | `/planejamento` | `BudgetPage` | Wizard de 3 etapas (`criarNovoPlanejamento`), teto de gastos por categoria e comparativos. |
@@ -126,7 +126,7 @@ finly/
 | `/ajuda` | `HelpPage` | Central de Ajuda interativa com simulador visual fiel do app Android. |
 | `/mais` | `MorePage` | Hub de ferramentas adicionais exclusivas (sem duplicatas da barra lateral). |
 | `/metas` | `GoalsPage` | Objetivos financeiros com barras de progresso, aportes e comemoração visual. |
-| `/dividas` | `DebtsPage` | Controle de parcelas, juros, credores e histórico de amortizações. |
+| `/dividas` | `DebtsPage` | Controle de dívidas e financiamentos, cronograma Price/SAC, amortização e integração com o Extrato. |
 | `/investimentos` | `InvestmentsTab` | Consolidação patrimonial por classe de ativos e rendimento mensal. |
 | `/whatsapp` | `WhatsAppPage` | Integração de assistente virtual para lançamentos via chat. |
 | `/familia` | `FamilyPage` | Controle financeiro compartilhado multi-usuário com permissões. |

@@ -45,16 +45,45 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
 
   const dragIndexRef = useRef<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
+  const mountTimeRef = useRef<number>(Date.now());
+  const isBackdropPointerDownRef = useRef<boolean>(false);
 
   // Sync on modal open
   useEffect(() => {
     if (isOpen) {
       setActiveItems(getStoredSidebarItems());
       setSearchTerm('');
+      mountTimeRef.current = Date.now();
+      isBackdropPointerDownRef.current = false;
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleEndDrag = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    dragIndexRef.current = null;
+    setDraggedIndex(null);
+
+    saveStoredSidebarItems(activeItemsRef.current);
+    onItemsChange?.(activeItemsRef.current);
+  };
+
+  // Global safety listener to release drag if released anywhere
+  useEffect(() => {
+    const handleGlobalEnd = () => {
+      if (isDraggingRef.current) {
+        handleEndDrag();
+      }
+    };
+    window.addEventListener('pointerup', handleGlobalEnd);
+    window.addEventListener('touchend', handleGlobalEnd);
+    window.addEventListener('touchcancel', handleGlobalEnd);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalEnd);
+      window.removeEventListener('touchend', handleGlobalEnd);
+      window.removeEventListener('touchcancel', handleGlobalEnd);
+    };
+  }, []);
 
   const handleToggleItem = (id: string) => {
     // Keep at least dashboard or at least 1 item
@@ -84,23 +113,6 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
     saveStoredSidebarItems(reordered);
     onItemsChange?.(reordered);
   };
-
-  // Global safety listener to release drag if released anywhere
-  useEffect(() => {
-    const handleGlobalEnd = () => {
-      if (isDraggingRef.current) {
-        handleEndDrag();
-      }
-    };
-    window.addEventListener('pointerup', handleGlobalEnd);
-    window.addEventListener('touchend', handleGlobalEnd);
-    window.addEventListener('touchcancel', handleGlobalEnd);
-    return () => {
-      window.removeEventListener('pointerup', handleGlobalEnd);
-      window.removeEventListener('touchend', handleGlobalEnd);
-      window.removeEventListener('touchcancel', handleGlobalEnd);
-    };
-  }, []);
 
   // Touch and Pointer Drag and Drop
   const handleStartDrag = (index: number, clientY: number) => {
@@ -154,21 +166,24 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
     }
   };
 
-  const handleEndDrag = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    dragIndexRef.current = null;
-    setDraggedIndex(null);
-
-    saveStoredSidebarItems(activeItemsRef.current);
-    onItemsChange?.(activeItemsRef.current);
-  };
-
   const handleResetToDefault = () => {
     setActiveItems(DEFAULT_SIDEBAR_ORDER);
     saveStoredSidebarItems(DEFAULT_SIDEBAR_ORDER);
     onItemsChange?.(DEFAULT_SIDEBAR_ORDER);
   };
+
+  const handleBackdropMouseDown = (e: React.MouseEvent) => {
+    isBackdropPointerDownRef.current = (e.target === e.currentTarget);
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (Date.now() - mountTimeRef.current < 250) return;
+    if (!isBackdropPointerDownRef.current) return;
+    onClose();
+  };
+
+  if (!isOpen) return null;
 
   const itemMap = new Map(ALL_SIDEBAR_ITEMS.map(item => [item.id, item]));
 
@@ -193,12 +208,14 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
 
   return (
     <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in cursor-pointer"
+      onMouseDown={handleBackdropMouseDown}
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in cursor-pointer"
     >
       <div
         className="w-full max-w-2xl bg-white dark:bg-[#18181B] rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200 cursor-default"
         onClick={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">

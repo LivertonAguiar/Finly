@@ -1,21 +1,23 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-09",
-  "notes": "Design System Fikri Studio com Bento Grid e ambient glow, cartão oficial Bradesco Neo com gradiente tricolor, emissor Credicard On, teclado inteligente sem cortes e notificações centralizadas.",
+  "notes": "Financiamento Habitacional Caixa, Tabela Price e SAC com correção monetária pela TR diária oficial do Banco Central (SGS), cronograma de 420 parcelas e simulador de amortização extraordinária.",
   "isLatest": true,
   "sections": {
     "features": [
-      "Design System Fikri Studio: Hero Bento Card com ambient glow, números monoespelhados e micro-pílulas de contexto",
-      "Novo cartão oficial Bradesco Neo com gradiente tricolor diagonal (vermelho, violeta e azul) e suporte completo ao Credicard On",
-      "Teclado virtual inteligente com redimensionamento dinâmico sem cortes em modais e formulários (Android e Web)"
+      "Módulo de Financiamento Habitacional e Veicular com suporte completo a Tabela Price (TP) e SAC",
+      "Integração em tempo real com o Banco Central do Brasil para busca oficial de TR diária (SGS 226) e IPCA (SGS 433)",
+      "Cronograma e demonstrativo mês a mês idêntico ao da Caixa Econômica com até 420 parcelas, busca e paginação",
+      "Parcelas de dívidas e financiamentos integradas ao Extrato e Calendário com pagamento e saldo devedor sincronizados",
+      "Simulador de Amortização Extraordinária: comparação de FGTS e aportes extras entre Reduzir Prazo vs Reduzir Parcela com juros economizados"
     ],
     "fixes": [
-      "Ajuste na rolagem de modais quando o teclado virtual Android é acionado, prevenindo sobreposição de botões e inputs",
-      "Centralização de histórico de notificações exclusivamente no cabeçalho, despoluindo a aba Mais Opções"
+      "Ajuste na tipagem e responsividade dos modais em telas amplas e dispositivos móveis",
+      "Suporte a campos detalhados de seguros MIP/DFI e taxa administrativa mensal"
     ],
     "improvements": [
-      "Cards modulares de Receitas e Despesas com micro-barras de progresso proporcional e acentos neon",
-      "Balanço semestral e trimestral atualizados com glassmorphism e bordas ultrafinas"
+      "Visualização rica estilo Bento Grid para contratos de financiamento na aba Dívidas",
+      "Consulta e cache inteligente de indicadores econômicos com fallback de rede"
     ]
   }
 }

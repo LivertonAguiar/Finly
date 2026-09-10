@@ -478,9 +478,71 @@ export const HELP_GUIDES: HelpGuide[] = [
     ],
     relatedFaqIds: ['faq-alterar-senha-biometria', 'faq-seguranca-dados'],
   },
+  {
+    id: 'como-gerenciar-financiamento-habitacional',
+    title: 'Como cadastrar e simular amortizações de financiamento (Caixa / TR)',
+    category: 'planejamento',
+    categoryLabel: 'Orçamento & Metas',
+    summary: 'Acompanhe seu financiamento imobiliário ou veicular com Tabela Price ou SAC, correção oficial pela TR do Banco Central e simulação de amortização extraordinária.',
+    readTime: '3 min',
+    badge: 'Novo',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Cadastrar o Financiamento',
+        description: 'Na aba Dívidas & Financiamentos, clique em "Cadastrar Financiamento / Dívida" e selecione a opção "Imobiliário" ou "Veículo".',
+        webInstruction: 'Selecione "Imobiliário", preencha o credor (ex: Caixa), número do contrato bancário, valor financiado e saldo devedor atual.',
+        androidInstruction: 'Toque em "Imobiliário", preencha o contrato, valor original e o saldo devedor informado no seu aplicativo de habitação.',
+      },
+      {
+        stepNumber: 2,
+        title: 'Configurar Sistema de Amortização & Taxa TR Oficial',
+        description: 'Defina se seu contrato é Tabela Price (TP) ou SAC e consulte a TR atualizada diretamente do Banco Central.',
+        webInstruction: 'Escolha Tabela Price ou SAC, clique no botão "Buscar TR Hoje (BACEN)" para puxar a alíquota diária oficial da Série 226 do SGS e informe os seguros MIP/DFI.',
+        androidInstruction: 'Selecione a amortização, toque no botão de buscar TR oficial e inclua o valor dos seguros obrigatórios (MIP + DFI).',
+      },
+      {
+        stepNumber: 3,
+        title: 'Explorar Cronograma Completo e Simular Amortizações',
+        description: 'Abra a evolução mês a mês e simule o impacto de aportes extras com FGTS ou reservas.',
+        webInstruction: 'No card do financiamento, clique em "Cronograma" para auditar mês a mês o saldo corrigido, amortização e seguros; ou em "Simular Amortização" para comparar Reduzir Prazo vs Reduzir Parcela.',
+        androidInstruction: 'Toque em "Cronograma" para navegar pelas 420 parcelas ou em "Amortizar" para verificar quantos anos e juros você economiza aportando um valor extra.',
+      },
+      {
+        stepNumber: 4,
+        title: 'Lançar Parcelas no Extrato & Confirmar Pagamento',
+        description: 'Integre os vencimentos mensais diretamente ao seu fluxo de caixa e extrato de despesas.',
+        webInstruction: 'Ative "Lançar parcelas no Extrato de Transações" no formulário da dívida e escolha a conta bancária de débito padrão. As parcelas aparecerão como despesas pendentes no Extrato e no Calendário. Para pagar, use o botão "Pagar Parcela" na Dívida ou marque como paga diretamente no Extrato.',
+        androidInstruction: 'Marque a opção de sincronização com o extrato ao cadastrar a dívida. Toque em "Pagar Parcela" para selecionar a conta de débito e a data de pagamento.',
+        tip: 'Para financiamentos longos (como 420 meses da Caixa), use o horizonte padrão de 12 meses para manter seu extrato rápido e limpo.',
+      },
+    ],
+    relatedFaqIds: ['faq-financiamento-caixa-tr', 'faq-amortizacao-extraordinaria', 'faq-parcelas-dividas-transacoes'],
+  },
 ];
 
 export const HELP_FAQS: HelpFaqItem[] = [
+  {
+    id: 'faq-parcelas-dividas-transacoes',
+    question: 'Como as parcelas de financiamento e dívida se integram ao meu Extrato e Calendário?',
+    answer: 'Ao cadastrar ou editar uma dívida/financiamento com a opção "Lançar parcelas no Extrato" ativada, o Finly cria automaticamente as despesas pendentes com os vencimentos futuros, calculando corretamente o dia do mês e a categoria (Moradia, Transporte ou Financeiro). No extrato e no calendário, essas despesas recebem a etiqueta "Dívida / financiamento". Quando você marca a despesa como paga no extrato ou clica em "Pagar Parcela" na tela de Dívidas, o sistema quita a parcela, debita o valor da conta bancária escolhida e abate imediatamente o saldo devedor do contrato.',
+    category: 'transacoes',
+    tags: ['divida', 'financiamento', 'parcelas', 'extrato', 'calendario', 'sincronizacao', 'saldo devedor'],
+  },
+  {
+    id: 'faq-financiamento-caixa-tr',
+    question: 'Como funciona o cálculo da TR e juros no financiamento Caixa Habitação?',
+    answer: 'Nos financiamentos atrelados à TR (como os da Caixa Econômica Federal), a prestação é composta por: 1) Amortização do saldo principal; 2) Juros remuneratórios nominais calculados sobre o saldo corrigido pela TR; 3) Seguros obrigatórios (MIP - Morte/Invalidez Permanente e DFI - Danos Físicos ao Imóvel); e 4) Taxa de administração operacional. O Finly integra a API oficial do Banco Central (Série 226 do SGS) para buscar a taxa referencial diária em tempo real.',
+    category: 'planejamento',
+    tags: ['financiamento', 'caixa', 'habitacional', 'tr', 'bacen', 'price', 'sac', 'mip', 'dfi'],
+  },
+  {
+    id: 'faq-amortizacao-extraordinaria',
+    question: 'O que é melhor: amortizar para reduzir prazo ou reduzir a parcela?',
+    answer: 'Depende do seu objetivo financeiro: 1) Reduzir o Prazo (Tempo) é matematicamente a opção mais vantajosa para economizar dinheiro, pois elimina parcelas inteiras do final do contrato e reduz drasticamente o volume total de juros futuros; 2) Reduzir a Parcela (Prestação) é ideal para aliviar o fluxo de caixa mensal imediato, mantendo o prazo original. Use o "Simulador de Amortização Extraordinária" do Finly no card do seu contrato para comparar ambos lado a lado.',
+    category: 'planejamento',
+    tags: ['amortizacao', 'extraordinaria', 'prazo', 'parcela', 'fgts', 'economia', 'juros'],
+  },
   {
     id: 'faq-dashboard-responsivo',
     question: 'Por que os cards do dashboard mudam de coluna ou posição?',

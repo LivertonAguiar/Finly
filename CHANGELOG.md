@@ -3,6 +3,28 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.53] - 2026-09-09
+
+### 🏠 Financiamento Habitacional Caixa, TR Oficial do BACEN & Simulador de Amortização Extraordinária
+- **Sistema Especializado de Financiamento Estruturado**:
+  - Novo seletor de contratos em Dívidas: Empréstimo Pessoal, Financiamento Imobiliário e Financiamento de Veículo.
+  - Suporte completo a sistemas de amortização: Tabela Price (TP - Prestações Constantes) e SAC (Amortização Constante / Prestações Decrescentes).
+  - Campos dedicados para seguros obrigatórios habitacionais (MIP - Morte e Invalidez Permanente e DFI - Danos Físicos ao Imóvel) e taxa de administração.
+- **Integração em Tempo Real com o Banco Central do Brasil (BACEN SGS)**:
+  - Consumo direto e oficial da Taxa Referencial (TR diária - Série 226) e inflação oficial (IPCA - Série 433).
+  - Botão de 1-clique "Buscar TR Hoje (BACEN)" para carregar e atualizar a alíquota de correção monetária vigente sem necessidade de digitação manual.
+  - Endpoint de backend com cache em memória e sincronização periódica de 6h.
+- **Evolução & Cronograma Detalhado (420 Parcelas)**:
+  - Modal interativo com visualização mês a mês de todo o fluxo do financiamento: saldo devedor, correção pela TR, amortização, juros, seguros e prestação total.
+  - Filtro por número de parcela/ano e paginação fluida para contratos de longo prazo.
+- **Parcelas Integradas ao Extrato de Transações**:
+  - Geração das parcelas pendentes de dívidas e financiamentos no Extrato e no Calendário, com horizonte configurável de 12, 24 ou todas as parcelas restantes.
+  - Sincronização bidirecional de pagamento, saldo devedor, quantidade de parcelas pagas e conta bancária, sem duplicar lançamentos já concluídos.
+  - Categorização automática por contrato: Moradia para financiamento imobiliário, Transporte para veículos e Financeiro para empréstimos/dívidas.
+- **Simulador de Amortização Extraordinária**:
+  - Simulação de aportes extras com FGTS ou reservas próprias (aporte único e/ou aportes mensais recorrentes).
+  - Comparativo dinâmico lado a lado entre **Reduzir Prazo** vs **Reduzir Parcela**, detalhando economia real de juros futuros e anos ganhos de liberdade financeira.
+
 ## [1.1.52] - 2026-09-09
 
 ### 🎨 Design System Fikri Studio, Cartão Bradesco Neo Oficial, Teclado Inteligente & Notificações

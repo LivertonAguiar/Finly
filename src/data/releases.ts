@@ -42,6 +42,38 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-09',
+    summary: 'Financiamento Habitacional Caixa, Tabela Price e SAC com correção monetária pela TR diária oficial do Banco Central (SGS), cronograma de 420 parcelas e simulador de amortização extraordinária.',
+    highlights: [
+      {
+        title: 'Financiamento Imobiliário & Habitacional Caixa',
+        description: 'Módulo dedicado para gestão de contratos habitacionais com suporte a Tabela Price (TP) e SAC, seguros MIP/DFI e taxa de administração.',
+        type: 'feature',
+      },
+      {
+        title: 'Taxa TR Oficial em Tempo Real (BACEN SGS)',
+        description: 'Integração direta com o Banco Central do Brasil para buscar automaticamente a TR diária da Série 226 e IPCA da Série 433.',
+        type: 'feature',
+      },
+      {
+        title: 'Evolução & Cronograma Completo (420 Meses)',
+        description: 'Demonstrativo interativo idêntico ao da Caixa com detalhamento de amortização, juros corrigidos, seguros e saldo devedor.',
+        type: 'feature',
+      },
+      {
+        title: 'Parcelas de Dívidas no Extrato',
+        description: 'Parcelas pendentes de dívidas e financiamentos agora aparecem no Extrato e no Calendário, com pagamento e saldo devedor sincronizados sem duplicidades.',
+        type: 'feature',
+      },
+      {
+        title: 'Simulador de Amortização Extraordinária',
+        description: 'Simulação de aportes únicos (FGTS) e aportes mensais recorrentes comparando lado a lado a redução de prazo contra a redução de prestação.',
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    version: '1.1.52',
+    releaseDate: '2026-09-09',
     summary: 'Design System Fikri Studio com Bento Grid e iluminação radial, novo cartão oficial Bradesco Neo, banco Credicard On, teclado virtual inteligente sem cortes e notificações centralizadas.',
     highlights: [
       {

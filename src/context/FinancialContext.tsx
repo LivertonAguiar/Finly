@@ -140,10 +140,19 @@ interface FinancialContextType {
 
   // Debts
   debts: Debt[];
-  addDebt: (debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'> & { remainingAmount?: number; paidInstallments?: number }) => void;
-  updateDebt: (id: string, data: Partial<Debt>) => void;
+  addDebt: (
+    debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'> & { remainingAmount?: number; paidInstallments?: number },
+    options?: { syncToTransactions?: boolean; horizonMonths?: number; accountId?: string }
+  ) => void;
+  updateDebt: (
+    id: string,
+    data: Partial<Debt>,
+    options?: { syncToTransactions?: boolean; horizonMonths?: number; accountId?: string }
+  ) => void;
   deleteDebt: (id: string) => void;
-  payDebtInstallment: (debtId: string, accountId?: string) => void;
+  payDebtInstallment: (debtId: string, accountId?: string, paymentDate?: string, paidAmount?: number) => void;
+  generateDebtTransactions: (debtId: string, options?: { horizonMonths?: number; accountId?: string; replaceExisting?: boolean }) => void;
+  removeDebtTransactions: (debtId: string) => void;
 
   // Investments
   investments: InvestmentAsset[];
@@ -1544,6 +1553,57 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const toggleTransactionStatus = (id: string) => {
+    const tx = transactions.find(t => t.id === id);
+    if (tx?.debtId) {
+      const debt = debts.find(d => d.id === tx.debtId);
+      if (debt) {
+        if (tx.status === 'pending') {
+          // Becoming completed: mark debt installment as paid
+          setDebts(prev =>
+            prev.map(d => {
+              if (d.id !== tx.debtId) return d;
+              const installmentNumber = tx.debtInstallmentNumber || d.paidInstallments + 1;
+              if ((d.payments || []).some(p => p.installmentNumber === installmentNumber)) return d;
+              const paid = d.paidInstallments + 1;
+              const rem = Math.max(0, d.remainingAmount - tx.amount);
+              const newPay = {
+                id: `pay-${Date.now()}`,
+                amount: tx.amount,
+                date: tx.date,
+                installmentNumber,
+              };
+              return {
+                ...d,
+                paidInstallments: paid,
+                remainingAmount: rem,
+                nextDueDate: calculateInstallmentDueDate(d.nextDueDate || tx.dueDate || tx.date, d.dueDay, 1),
+                payments: [newPay, ...(d.payments || [])],
+              };
+            })
+          );
+        } else {
+          // Becoming pending: revert paid installment
+          setDebts(prev =>
+            prev.map(d => {
+              if (d.id !== tx.debtId) return d;
+              const installmentNumber = tx.debtInstallmentNumber;
+              const hasRegisteredPayment = (d.payments || []).some(p => p.installmentNumber === installmentNumber);
+              if (!hasRegisteredPayment) return d;
+              const paid = Math.max(0, d.paidInstallments - 1);
+              const rem = d.remainingAmount + tx.amount;
+              return {
+                ...d,
+                paidInstallments: paid,
+                remainingAmount: rem,
+                nextDueDate: tx.dueDate || tx.date,
+                payments: (d.payments || []).filter(p => p.installmentNumber !== tx.debtInstallmentNumber),
+              };
+            })
+          );
+        }
+      }
+    }
+
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev =>
       prev.map(t => {
@@ -1671,63 +1731,325 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Debts
-  const addDebt = (debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'> & { remainingAmount?: number; paidInstallments?: number }) => {
+  const calculateInstallmentDueDate = (baseDueDateStr: string, defaultDueDay: number, offsetMonths: number): string => {
+    try {
+      const base = new Date(`${baseDueDateStr.substring(0, 10)}T12:00:00`);
+      if (isNaN(base.getTime())) {
+        const now = new Date();
+        now.setMonth(now.getMonth() + offsetMonths);
+        return now.toISOString().substring(0, 10);
+      }
+      const targetYear = base.getFullYear();
+      const targetMonth = base.getMonth() + offsetMonths;
+      const firstOfMonth = new Date(targetYear, targetMonth, 1);
+      const daysInMonth = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth() + 1, 0).getDate();
+      const targetDay = Math.min(defaultDueDay || base.getDate() || 10, daysInMonth);
+      const finalDate = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), targetDay);
+      return finalDate.toISOString().substring(0, 10);
+    } catch (e) {
+      return getTodayString();
+    }
+  };
+
+  const getDebtTransactionCategory = (debt: Debt) => {
+    if (debt.contractType === 'real_estate') {
+      return { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-financiamento-apto' };
+    }
+    if (debt.contractType === 'vehicle') {
+      return { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-financiamento' };
+    }
+    return { categoryId: 'cat-desp-financeiro', subcategoryId: 'sub-fin-pagamento-dividas' };
+  };
+
+  const buildDebtInstallmentTransactions = (
+    debt: Debt,
+    horizonMonths: number,
+    accountId?: string
+  ): Transaction[] => {
+    const { categoryId, subcategoryId } = getDebtTransactionCategory(debt);
+    const startInstallment = (debt.paidInstallments || 0) + 1;
+    const endInstallment = Math.min(debt.totalInstallments, startInstallment + horizonMonths - 1);
+    const baseDueDateStr = debt.nextDueDate || getTodayString();
+    const createdAt = new Date().toISOString();
+
+    return Array.from({ length: Math.max(0, endInstallment - startInstallment + 1) }, (_, offset) => {
+      const installmentNumber = startInstallment + offset;
+      const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
+
+      return {
+        id: `tx-debt-${debt.id}-${installmentNumber}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
+        amount: round2(debt.installmentAmount),
+        type: 'expense',
+        date: dateStr,
+        dueDate: dateStr,
+        categoryId,
+        subcategoryId,
+        accountId,
+        status: 'pending',
+        recurring: false,
+        installments: {
+          current: installmentNumber,
+          total: debt.totalInstallments,
+        },
+        debtId: debt.id,
+        debtInstallmentNumber: installmentNumber,
+        tags: [
+          debt.contractType === 'loan' || !debt.contractType ? 'divida' : 'financiamento',
+          'parcela',
+          ...(debt.creditor ? [debt.creditor.toLowerCase().replace(/\s+/g, '-')] : []),
+        ],
+        notes: debt.contractNumber ? `Contrato nº ${debt.contractNumber}` : undefined,
+        createdAt,
+      } satisfies Transaction;
+    });
+  };
+
+  const generateDebtTransactions = (
+    debtId: string,
+    options?: { horizonMonths?: number; accountId?: string; replaceExisting?: boolean }
+  ) => {
+    const debt = debts.find(d => d.id === debtId);
+    if (!debt) return;
+
+    const remainingCount = Math.max(0, debt.totalInstallments - (debt.paidInstallments || 0));
+    if (remainingCount <= 0) return;
+
+    const horizon = options?.horizonMonths && options.horizonMonths > 0
+      ? Math.min(options.horizonMonths, remainingCount)
+      : remainingCount <= 24 ? remainingCount : 12;
+
+    const accountId = options?.accountId || debt.defaultAccountId || accounts[0]?.id;
+    const newTransactions = buildDebtInstallmentTransactions(debt, horizon, accountId);
+
+    setTransactions(prev => {
+      const base = options?.replaceExisting
+        ? prev.filter(t => !(t.debtId === debtId && t.status === 'pending'))
+        : prev;
+      const existingInstallments = new Set(
+        base
+          .filter(t => t.debtId === debtId)
+          .map(t => t.debtInstallmentNumber || t.installments?.current)
+          .filter((value): value is number => value !== undefined)
+      );
+      return [
+        ...newTransactions.filter(t => !existingInstallments.has(t.debtInstallmentNumber ?? -1)),
+        ...base,
+      ];
+    });
+    setDebts(prev => prev.map(d => (d.id === debtId ? { ...d, syncToTransactions: true } : d)));
+  };
+
+  const removeDebtTransactions = (debtId: string) => {
+    setTransactions(prev => prev.filter(t => !(t.debtId === debtId && t.status === 'pending')));
+    setDebts(prev => prev.map(d => (d.id === debtId ? { ...d, syncToTransactions: false } : d)));
+  };
+
+  const addDebt = (
+    debt: Omit<Debt, 'id' | 'remainingAmount' | 'paidInstallments' | 'payments'> & { remainingAmount?: number; paidInstallments?: number },
+    options?: { syncToTransactions?: boolean; horizonMonths?: number; accountId?: string }
+  ) => {
     const paid = debt.paidInstallments ?? 0;
     const remaining = debt.remainingAmount !== undefined ? debt.remainingAmount : Math.max(0, debt.totalAmount - paid * debt.installmentAmount);
+    const debtId = `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const shouldSync = options?.syncToTransactions ?? debt.syncToTransactions ?? true;
+
     const newDebt: Debt = {
       ...debt,
-      id: `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: debtId,
       remainingAmount: remaining,
       paidInstallments: paid,
       payments: [],
+      syncToTransactions: shouldSync,
+      defaultAccountId: options?.accountId || debt.defaultAccountId || accounts[0]?.id,
     };
+
     setDebts(prev => [...prev, newDebt]);
+
+    if (shouldSync) {
+      const remainingCount = Math.max(0, newDebt.totalInstallments - paid);
+      if (remainingCount > 0) {
+        const horizon = options?.horizonMonths && options.horizonMonths > 0
+          ? Math.min(options.horizonMonths, remainingCount)
+          : remainingCount <= 24 ? remainingCount : 12;
+
+        const accountId = options?.accountId || newDebt.defaultAccountId || accounts[0]?.id;
+        const newTxs = buildDebtInstallmentTransactions(newDebt, horizon, accountId);
+        if (newTxs.length > 0) {
+          setTransactions(prev => [...newTxs, ...prev]);
+        }
+      }
+    }
   };
 
-  const updateDebt = (id: string, data: Partial<Debt>) => {
-    setDebts(prev => prev.map(d => (d.id === id ? { ...d, ...data } : d)));
+  const updateDebt = (
+    id: string,
+    data: Partial<Debt>,
+    options?: { syncToTransactions?: boolean; horizonMonths?: number; accountId?: string }
+  ) => {
+    const currentDebt = debts.find(d => d.id === id);
+    if (!currentDebt) return;
+
+    const hasSyncInstruction = options?.syncToTransactions !== undefined || data.syncToTransactions !== undefined;
+    const shouldSync = options?.syncToTransactions ?? data.syncToTransactions ?? currentDebt.syncToTransactions ?? false;
+    const updatedDebt: Debt = {
+      ...currentDebt,
+      ...data,
+      defaultAccountId: options?.accountId || data.defaultAccountId || currentDebt.defaultAccountId,
+      ...(hasSyncInstruction ? { syncToTransactions: shouldSync } : {}),
+    };
+
+    setDebts(prev => prev.map(d => (d.id === id ? updatedDebt : d)));
+
+    if (hasSyncInstruction && !shouldSync) {
+      setTransactions(prev => prev.filter(t => !(t.debtId === id && t.status === 'pending')));
+      return;
+    }
+
+    if (hasSyncInstruction && shouldSync) {
+      const remainingCount = Math.max(0, updatedDebt.totalInstallments - (updatedDebt.paidInstallments || 0));
+      const requestedHorizon = options?.horizonMonths && options.horizonMonths > 0 ? options.horizonMonths : 12;
+      const horizon = Math.min(requestedHorizon, remainingCount);
+      const newTransactions = buildDebtInstallmentTransactions(
+        updatedDebt,
+        horizon,
+        updatedDebt.defaultAccountId || accounts[0]?.id
+      );
+
+      setTransactions(prev => {
+        const preserved = prev.filter(t => !(t.debtId === id && t.status === 'pending'));
+        const completedInstallments = new Set(
+          preserved
+            .filter(t => t.debtId === id && t.status === 'completed')
+            .map(t => t.debtInstallmentNumber || t.installments?.current)
+            .filter((value): value is number => value !== undefined)
+        );
+        return [
+          ...newTransactions.filter(t => !completedInstallments.has(t.debtInstallmentNumber ?? -1)),
+          ...preserved,
+        ];
+      });
+      return;
+    }
+
+    if (data.title || data.installmentAmount !== undefined || data.totalInstallments !== undefined || data.defaultAccountId) {
+      setTransactions(prev =>
+        prev.map(t => {
+          if (t.debtId !== id || t.status !== 'pending') return t;
+          const num = t.debtInstallmentNumber || t.installments?.current || 1;
+          return {
+            ...t,
+            description: `${updatedDebt.title} (${num}/${updatedDebt.totalInstallments})`,
+            amount: round2(updatedDebt.installmentAmount),
+            accountId: updatedDebt.defaultAccountId || t.accountId,
+            installments: { ...t.installments, current: num, total: updatedDebt.totalInstallments },
+          };
+        })
+      );
+    }
   };
 
   const deleteDebt = (id: string) => {
     const d = debts.find(item => item.id === id);
     if (!d) return;
+    const removedPendingTxs = transactions.filter(t => t.debtId === id && t.status === 'pending');
     setDebts(prev => prev.filter(item => item.id !== id));
+    setTransactions(prev => prev.filter(t => !(t.debtId === id && t.status === 'pending')));
     showUndo({
       message: `Dívida "${d.title}" excluída`,
       onUndo: () => {
         setDebts(prev => [...prev, d]);
+        if (removedPendingTxs.length > 0) {
+          setTransactions(prev => [...removedPendingTxs, ...prev]);
+        }
       },
     });
   };
 
-  const payDebtInstallment = (debtId: string, accountId?: string) => {
+  const payDebtInstallment = (debtId: string, accountId?: string, paymentDate?: string, paidAmount?: number) => {
+    const d = debts.find(item => item.id === debtId);
+    if (!d) return;
+
+    const currentInstallmentNum = d.paidInstallments + 1;
+    const finalAmount = paidAmount !== undefined ? round2(paidAmount) : round2(d.installmentAmount);
+    const payDate = paymentDate || getTodayString();
+    const finalAccountId = accountId || d.defaultAccountId || accounts[0]?.id;
+
+    // Advance next due date by 1 month
+    const baseDueDateStr = d.nextDueDate || getTodayString();
+    const calculatedNextDueDate = calculateInstallmentDueDate(baseDueDateStr, d.dueDay, 1);
+
+    const paid = d.paidInstallments + 1;
+    const rem = Math.max(0, d.remainingAmount - finalAmount);
+    const newPay = {
+      id: `pay-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      amount: finalAmount,
+      date: payDate,
+      installmentNumber: paid,
+    };
+
     setDebts(prev =>
-      prev.map(d => {
-        if (d.id !== debtId) return d;
-        const paid = d.paidInstallments + 1;
-        const rem = Math.max(0, d.remainingAmount - d.installmentAmount);
-        const newPay = { id: `pay-${Date.now()}`, amount: d.installmentAmount, date: getTodayString(), installmentNumber: paid };
-        return { ...d, paidInstallments: paid, remainingAmount: rem, payments: [newPay, ...d.payments] };
-      })
+      prev.map(item =>
+        item.id === debtId
+          ? {
+              ...item,
+              paidInstallments: paid,
+              remainingAmount: rem,
+              nextDueDate: calculatedNextDueDate,
+              payments: [newPay, ...(item.payments || [])],
+            }
+          : item
+      )
     );
 
-    const d = debts.find(item => item.id === debtId);
-    if (d && accountId) {
-      // Create an expense transaction so balance is auto-recalculated by derived effect
-      setTransactions(prev => [{
-        id: `tx-debt-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-        description: `Pagamento Dívida: ${d.title}`,
-        amount: round2(d.installmentAmount),
-        type: 'expense' as const,
-        date: getTodayString(),
-        categoryId: 'cat-desp-dividas',
-        accountId,
-        status: 'completed' as const,
+    // Sync into transactions:
+    setTransactions(prev => {
+      // Find matching pending installment transaction
+      const existingPendingIdx = prev.findIndex(
+        t => t.debtId === debtId
+          && t.status === 'pending'
+          && (t.debtInstallmentNumber === currentInstallmentNum || t.description.includes(`(${currentInstallmentNum}/${d.totalInstallments})`))
+      );
+
+      if (existingPendingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingPendingIdx] = {
+          ...updated[existingPendingIdx],
+          status: 'completed',
+          date: payDate,
+          dueDate: payDate,
+          amount: finalAmount,
+          accountId: finalAccountId,
+        };
+        return updated;
+      }
+
+      // Otherwise create a new completed expense transaction
+      const { categoryId, subcategoryId } = getDebtTransactionCategory(d);
+      const newTx: Transaction = {
+        id: `tx-debt-${debtId}-${currentInstallmentNum}-${Date.now()}`,
+        description: `${d.title} (${currentInstallmentNum}/${d.totalInstallments})`,
+        amount: finalAmount,
+        type: 'expense',
+        date: payDate,
+        dueDate: payDate,
+        categoryId,
+        subcategoryId,
+        accountId: finalAccountId,
+        status: 'completed',
         recurring: false,
-        tags: ['divida', 'parcela'],
+        installments: {
+          current: currentInstallmentNum,
+          total: d.totalInstallments,
+        },
+        debtId: d.id,
+        debtInstallmentNumber: currentInstallmentNum,
+        tags: [d.contractType === 'loan' || !d.contractType ? 'divida' : 'financiamento', 'parcela', ...(d.creditor ? [d.creditor.toLowerCase().replace(/\s+/g, '-')] : [])],
+        notes: d.contractNumber ? `Contrato nº ${d.contractNumber}` : undefined,
         createdAt: new Date().toISOString(),
-      }, ...prev]);
-    }
+      };
+      return [newTx, ...prev];
+    });
   };
 
   // Investments
@@ -2097,6 +2419,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateDebt,
         deleteDebt,
         payDebtInstallment,
+        generateDebtTransactions,
+        removeDebtTransactions,
         investments,
         addInvestment,
         updateInvestment,

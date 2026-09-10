@@ -23,6 +23,7 @@ import {
   Download,
   ExternalLink,
   Repeat,
+  Landmark,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -54,6 +55,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     categories,
     accounts,
     cards,
+    debts,
     transactions,
     deleteTransaction,
     toggleTransactionStatus,
@@ -343,6 +345,37 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 2.1 DEBT / FINANCING INSTALLMENT BANNER */}
+        {/* ========================================================================= */}
+        {transaction.debtId && (
+          <div className="p-4 rounded-2xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                  <Landmark className="w-4 h-4" />
+                </span>
+                <div>
+                  <span className="text-xs font-black text-indigo-950 dark:text-indigo-200 block">
+                    Parcela de Financiamento / Dívida
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold block">
+                    {debts.find(d => d.id === transaction.debtId)?.title || 'Contrato de Financiamento'}
+                    {transaction.debtInstallmentNumber ? ` • Parcela ${transaction.debtInstallmentNumber}` : ''}
+                    {debts.find(d => d.id === transaction.debtId)?.totalInstallments ? ` de ${debts.find(d => d.id === transaction.debtId)?.totalInstallments}` : ''}
+                  </span>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+                Sincronizado
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+              Esta transação está integrada ao controle de dívidas e financiamentos. Ao alternar para &quot;Paga&quot;, o saldo devedor e as parcelas pagas são sincronizados automaticamente.
+            </p>
           </div>
         )}
 

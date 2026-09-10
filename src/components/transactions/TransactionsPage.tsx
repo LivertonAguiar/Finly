@@ -823,10 +823,17 @@ export const TransactionsPage: React.FC = () => {
 
                         {/* Description & Metadata with full space */}
                         <div className="min-w-0 flex-1 pr-1">
-                          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                            {t.description}
-                          </p>
-                          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {t.description}
+                            </p>
+                            {t.debtId && (
+                              <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono font-bold">
+                                Dívida / financiamento
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate mt-0.5">
                             <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
                             <span className="shrink-0 font-medium text-slate-500 dark:text-slate-400">• {formatDateShort(t.date)}</span>
                             {card ? (
@@ -956,7 +963,16 @@ export const TransactionsPage: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">{t.description}</td>
+                    <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">
+                      <div className="flex items-center gap-1.5">
+                        <span>{t.description}</span>
+                        {t.debtId && (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-mono font-bold">
+                            Dívida / financiamento
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 px-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                         {cat?.name || 'Geral'}
