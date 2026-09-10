@@ -88,7 +88,7 @@ export const buildDebtInstallmentTransactions = (
       const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
 
       return {
-        id: `tx-debt-${debt.id}-${installmentNumber}-${now.getTime()}-${offset}`,
+        id: `tx-debt-${debt.id}-${installmentNumber}`,
         description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
         amount: round2(row.totalInstallment),
         type: 'expense' as const,
@@ -120,7 +120,7 @@ export const buildDebtInstallmentTransactions = (
     const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
 
     return {
-      id: `tx-debt-${debt.id}-${installmentNumber}-${now.getTime()}-${offset}`,
+      id: `tx-debt-${debt.id}-${installmentNumber}`,
       description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
       amount: round2(debt.installmentAmount),
       type: 'expense' as const,
@@ -154,19 +154,9 @@ export const reconcileDebtTransactions = (
 ) => {
   const horizonMonths = Math.max(1, options.horizonMonths || 12);
   const now = options.now || new Date();
-  const normalizedTransactions = transactions.map(transaction => ({
-    ...transaction,
-    debtId: transaction.debtId || transaction.installments?.debtId,
-    debtInstallmentNumber:
-      transaction.debtInstallmentNumber || transaction.installments?.debtInstallmentNumber,
-  }));
-  const existingKeys = new Set(
-    normalizedTransactions
-      .filter(transaction => transaction.debtId && transaction.debtInstallmentNumber)
-      .map(transaction => `${transaction.debtId}:${transaction.debtInstallmentNumber}`)
-  );
-  const additions: Transaction[] = [];
 
+  // Mapear candidatos por chave debtId:installmentNumber
+  const candidateMap = new Map<string, Transaction>();
   const normalizedDebts = debts.map(debt => {
     if (debt.syncToTransactions === false) return debt;
 
@@ -183,18 +173,88 @@ export const reconcileDebtTransactions = (
       now
     );
 
-    candidates.forEach(transaction => {
-      const key = `${transaction.debtId}:${transaction.debtInstallmentNumber}`;
-      if (existingKeys.has(key)) return;
-      existingKeys.add(key);
-      additions.push(transaction);
+    candidates.forEach(cand => {
+      const key = `${cand.debtId}:${cand.debtInstallmentNumber}`;
+      candidateMap.set(key, cand);
     });
+
     return normalizedDebt;
+  });
+
+  const seenPendingKeys = new Set<string>();
+  const updatedTransactions: Transaction[] = [];
+
+  // Normalizar e atualizar transações existentes, removendo duplicatas legadas
+  transactions.forEach(transaction => {
+    const debtId = transaction.debtId || transaction.installments?.debtId;
+    const installmentNumber =
+      transaction.debtInstallmentNumber || transaction.installments?.debtInstallmentNumber;
+
+    if (!debtId || !installmentNumber) {
+      updatedTransactions.push(transaction);
+      return;
+    }
+
+    const key = `${debtId}:${installmentNumber}`;
+
+    // Parcelas pagas/concluídas são sagradas: mantém exatamente como estão
+    if (transaction.status === 'completed') {
+      updatedTransactions.push({
+        ...transaction,
+        debtId,
+        debtInstallmentNumber: installmentNumber,
+      });
+      return;
+    }
+
+    // Se já processamos uma transação pendente para este mesmo número de parcela, descartar duplicata
+    if (seenPendingKeys.has(key)) {
+      return;
+    }
+    seenPendingKeys.add(key);
+
+    // Se existe candidato atualizado pelo novo cálculo de financiamento/seguro, refletir os dados
+    if (candidateMap.has(key)) {
+      const cand = candidateMap.get(key)!;
+      updatedTransactions.push({
+        ...transaction,
+        id: transaction.id || cand.id,
+        description: cand.description,
+        amount: cand.amount,
+        categoryId: cand.categoryId,
+        subcategoryId: cand.subcategoryId,
+        dueDate: cand.dueDate,
+        date: cand.date,
+        tags: cand.tags,
+        notes: cand.notes,
+        installments: cand.installments,
+        debtId,
+        debtInstallmentNumber: installmentNumber,
+      });
+    } else {
+      updatedTransactions.push({
+        ...transaction,
+        debtId,
+        debtInstallmentNumber: installmentNumber,
+      });
+    }
+  });
+
+  // Adicionar candidatos faltantes que ainda não existiam no extrato
+  const additions: Transaction[] = [];
+  candidateMap.forEach((cand, key) => {
+    const alreadyExists = updatedTransactions.some(
+      t => (t.debtId || t.installments?.debtId) === cand.debtId &&
+           (t.debtInstallmentNumber || t.installments?.debtInstallmentNumber) === cand.debtInstallmentNumber
+    );
+    if (!alreadyExists) {
+      additions.push(cand);
+    }
   });
 
   return {
     debts: normalizedDebts,
-    transactions: additions.length > 0 ? [...additions, ...normalizedTransactions] : normalizedTransactions,
+    transactions: additions.length > 0 ? [...additions, ...updatedTransactions] : updatedTransactions,
     createdCount: additions.length,
   };
 };
