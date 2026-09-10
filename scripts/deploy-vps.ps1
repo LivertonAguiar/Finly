@@ -79,7 +79,7 @@ scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $archivePath "$($server)
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao enviar o pacote para a VPS." }
 
 Write-Host "Reconstruindo container Docker no servidor..." -ForegroundColor Yellow
-$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" && rm -f finly-update.tar.gz && docker compose up -d --build'
+$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" && rm -f finly-update.tar.gz && docker compose up -d --build --remove-orphans'
 ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server $cmd
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou durante a reconstrucao do container." }
 
