@@ -85,6 +85,12 @@
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "computedHash": "336547f3ff285e822fc70b69b170dc58bceef9c8ed5fad18de0046287d6be837"
     },
+    "extract-design-system": {
+      "source": "arvindrk/extract-design-system",
+      "sourceType": "github",
+      "skillPath": "skills/extract-design-system/SKILL.md",
+      "computedHash": "c66852c6bc6e0267dbcc9651fa698701387fc11c5058104bc33e67f495936f7e"
+    },
     "find-docs": {
       "source": "upstash/context7",
       "sourceType": "github",
@@ -187,6 +193,12 @@
       "skillPath": "nano-banana-2/SKILL.md",
       "computedHash": "bd54876d7d58a56eb64c3279dedc9894d0266ffa4cbf1c110fbfc91597abbb3c"
     },
+    "nextjs-typescript-tailwindcss-supabase": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "nextjs-typescript-tailwindcss-supabase/SKILL.md",
+      "computedHash": "8f4b8ac7ae5483ed7e75ed8b7e8dcc32b5049ef935edfbf7fa5a11022737048f"
+    },
     "penetration-testing-with-strix": {
       "source": "usestrix/strix",
       "sourceType": "github",
@@ -198,6 +210,12 @@
       "sourceType": "github",
       "skillPath": "skills/playwright-cli/SKILL.md",
       "computedHash": "235fc46cba70822cb151893d1819314f6eedcd263434272f9d8341e92fdbd29e"
+    },
+    "postgresql-optimization": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/postgresql-optimization/SKILL.md",
+      "computedHash": "8022448de70ba9a485e3b5bce34c5bbc644f93eb39b68431c9f7dabcf03aeb09"
     },
     "proxmox-admin": {
       "source": "bastos/skills",
@@ -216,6 +234,18 @@
       "sourceType": "github",
       "skillPath": "skills/pwa-development/SKILL.md",
       "computedHash": "2219041ce92f6361ba77eb06c9a927dc7a1ba48f40ff5132321a29c4154ebc7a"
+    },
+    "react-state-management": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/frontend-mobile-development/skills/react-state-management/SKILL.md",
+      "computedHash": "ad235563b998dde651611d5b733f12c3cdcc61f6e9368551230a1dbfeec2313e"
+    },
+    "redesign-existing-projects": {
+      "source": "leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/redesign-skill/SKILL.md",
+      "computedHash": "47eced3e960a2c961d3cbee11fa1216264f589344b586a5cbd03967cd6b9c54b"
     },
     "research": {
       "source": "mattpocock/skills",
@@ -259,6 +289,12 @@
       "skillPath": "skills/supabase/SKILL.md",
       "computedHash": "a6260582f48df8ba53380bb9b9e870ed2ae5fe147799e90ed783b8aa25167d50"
     },
+    "supabase-pentest": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "skillPath": "skills/orchestration/supabase-pentest/SKILL.md",
+      "computedHash": "cf53e79ad50403d471080df4d76380ab447e8fa07e3b31d5f074e37999d273e1"
+    },
     "tailwindcss-mobile-first": {
       "source": "josiahsiegel/claude-plugin-marketplace",
       "sourceType": "github",
@@ -294,6 +330,12 @@
       "sourceType": "github",
       "skillPath": "plugins/beagle-docs/skills/tutorial-docs/SKILL.md",
       "computedHash": "1e2f34a0c84f5494830c6191d9fb62c35c047d7d99baa56493f0834f1fb9ffba"
+    },
+    "typescript": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "typescript/SKILL.md",
+      "computedHash": "4d7494a8eb35339459ba2e999bd0774d453d422af905fa1ed0ab333ba4758b90"
     },
     "typeui-fundamentals": {
       "source": "bergside/typeui",

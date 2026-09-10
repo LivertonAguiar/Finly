@@ -3,6 +3,21 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.56] - 2026-09-10
+
+### 🏠 Decomposição de Parcelas em Tempo Real & Sincronização Determinística de Transações
+- **Estimativa Visual e Decomposição de Financiamentos ao Vivo**:
+  - Exibição em tempo real dos componentes da prestação: Amortização, Juros Nominais/Efetivos, Seguros Obrigatórios (MIP e DFI) e Taxa de Administração.
+  - Botão de 1-clique "Aplicar ao Valor da Parcela" para preencher a parcela mensal calculada diretamente no contrato.
+- **Propagação Automática para Parcelas Pendentes**:
+  - Alterações salvas na prestação mensal, seguros ou taxa de juros atualizam instantaneamente todas as transações pendentes vinculadas no Extrato e no Calendário.
+  - Sincronização atômica bilateral garantindo paridade entre o estado local (`FinancialContext`) e o Supabase.
+- **Sincronização Determinística e Limpeza de Resíduos**:
+  - Geração de IDs determinísticos (`tx-debt-${debtId}-${installmentNumber}`) prevenindo transações duplicadas em edições e recargas.
+  - Exclusão atômica de contratos no Supabase com remoção automática de todas as transações pendentes associadas (`deletePendingDebtTransactions`).
+- **Compatibilidade Aprimorada na Edição de Contratos Legados**:
+  - Inferência inteligente mantida e reforçada para abrir imediatamente na aba correta (Financiamento Imobiliário, Financiamento de Veículo ou Empréstimo Pessoal).
+
 ## [1.1.55] - 2026-09-10
 
 ### 🏦 Financiamentos: Persistência no Supabase, Cálculo Price/SAC e Conciliação Estruturada

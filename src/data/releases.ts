@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-10',
+    summary: 'Cálculo de parcelas em tempo real com decomposição detalhada (Amortização, Juros, Seguros MIP/DFI e Taxa de Administração), sincronização determinística e atualização automática de parcelas pendentes.',
+    highlights: [
+      {
+        title: 'Estimativa de Parcela em Tempo Real',
+        description: 'Detalhamento visual ao vivo de amortização, juros, seguros e taxas no formulário de dívidas com botão de aplicação instantânea.',
+        type: 'feature',
+      },
+      {
+        title: 'Reflexo Automático nas Parcelas Pendentes',
+        description: 'Alterações no valor da prestação, seguros ou taxa de juros atualizam instantaneamente as parcelas não pagas vinculadas.',
+        type: 'feature',
+      },
+      {
+        title: 'Exclusão Atômica e Limpeza de Vínculos',
+        description: 'Exclusão completa e sincronizada de contratos de financiamento e todas as suas transações pendentes tanto no estado local quanto no Supabase.',
+        type: 'fix',
+      },
+      {
+        title: 'Sincronização Determinística de Transações',
+        description: 'Identificadores estáveis por contrato e parcela evitam criação de transações duplicadas e garantem integridade referencial.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.55',
+    releaseDate: '2026-09-10',
     summary: 'Cálculo automático de parcelas Price/SAC, persistência bilateral de financiamentos no Supabase e conciliação estruturada.',
     highlights: [
       {
