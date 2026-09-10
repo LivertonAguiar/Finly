@@ -313,6 +313,102 @@ if (SUPABASE_KEY) {
   console.log('⚠️ SUPABASE_SERVICE_ROLE_KEY não configurada no ambiente. Teste live pulado.');
 }
 
+// ==============================================================================
+// TEST SUITE 5: Edição de Financiamento Atualiza Parcelas Pendentes e Preserva Pagas
+// ==============================================================================
+console.log('\n--- 5. TESTE DE ATUALIZAÇÃO DE PARCELAS PENDENTES AO EDITAR DÍVIDA ---');
+
+const baseDebtForEdit: Debt = {
+  id: 'debt-edit-test-001',
+  title: 'Financiamento Ap Caixa',
+  creditor: 'Caixa',
+  totalAmount: 100000,
+  remainingAmount: 100000,
+  installmentAmount: 1000,
+  totalInstallments: 10,
+  paidInstallments: 1,
+  dueDay: 10,
+  nextDueDate: '2026-11-10',
+  interestRate: 0,
+  contractType: 'real_estate',
+  insuranceMonthly: 0,
+  adminFeeMonthly: 0,
+  syncToTransactions: true,
+};
+
+// 1. Criar 3 parcelas simuladas (parcela 1 concluída/paga, parcelas 2 e 3 pendentes)
+const initialTxs: Transaction[] = [
+  {
+    id: `tx-debt-${baseDebtForEdit.id}-1`,
+    description: 'Financiamento Ap Caixa (1/10)',
+    amount: 1000,
+    type: 'expense',
+    date: '2026-10-10',
+    dueDate: '2026-10-10',
+    categoryId: 'cat-desp-moradia',
+    status: 'completed', // PAGA
+    debtId: baseDebtForEdit.id,
+    debtInstallmentNumber: 1,
+  },
+  {
+    id: `tx-debt-${baseDebtForEdit.id}-2`,
+    description: 'Financiamento Ap Caixa (2/10)',
+    amount: 1000,
+    type: 'expense',
+    date: '2026-11-10',
+    dueDate: '2026-11-10',
+    categoryId: 'cat-desp-moradia',
+    status: 'pending', // PENDENTE
+    debtId: baseDebtForEdit.id,
+    debtInstallmentNumber: 2,
+  },
+  {
+    id: `tx-debt-${baseDebtForEdit.id}-3`,
+    description: 'Financiamento Ap Caixa (3/10)',
+    amount: 1000,
+    type: 'expense',
+    date: '2026-12-10',
+    dueDate: '2026-12-10',
+    categoryId: 'cat-desp-moradia',
+    status: 'pending', // PENDENTE
+    debtId: baseDebtForEdit.id,
+    debtInstallmentNumber: 3,
+  },
+];
+
+// 2. Usuário edita o financiamento: adiciona Seguro MIP/DFI de R$ 85,00 e altera valor da parcela para R$ 1.085,00
+const updatedDebtWithInsurance: Debt = {
+  ...baseDebtForEdit,
+  installmentAmount: 1085,
+  insuranceMonthly: 85,
+};
+
+// 3. Reconciliar
+const reconcileResult = reconcileDebtTransactions([updatedDebtWithInsurance], initialTxs, [dummyAccount], { horizonMonths: 5, now: NOW });
+
+// 4. Validações
+const p1Tx = reconcileResult.transactions.find(t => t.debtInstallmentNumber === 1);
+const p2Tx = reconcileResult.transactions.find(t => t.debtInstallmentNumber === 2);
+const p3Tx = reconcileResult.transactions.find(t => t.debtInstallmentNumber === 3);
+
+assert.ok(p1Tx, 'Parcela 1 deve existir');
+assert.equal(p1Tx.status, 'completed', 'Parcela 1 concluída deve manter status completed');
+assert.equal(p1Tx.amount, 1000, 'Parcela 1 paga deve manter o valor histórico original (R$ 1000.00)');
+
+assert.ok(p2Tx, 'Parcela 2 deve existir');
+assert.equal(p2Tx.status, 'pending', 'Parcela 2 deve ser pending');
+assert.equal(p2Tx.amount, 1085, 'Parcela 2 pendente deve ser atualizada para R$ 1085.00 com seguro');
+
+assert.ok(p3Tx, 'Parcela 3 deve existir');
+assert.equal(p3Tx.status, 'pending', 'Parcela 3 deve ser pending');
+assert.equal(p3Tx.amount, 1085, 'Parcela 3 pendente deve ser atualizada para R$ 1085.00 com seguro');
+
+// Verificar ausência de duplicatas
+const countP2 = reconcileResult.transactions.filter(t => t.debtInstallmentNumber === 2).length;
+assert.equal(countP2, 1, 'Não deve haver transações duplicadas para a parcela 2');
+
+console.log('✅ Edição de financiamento refletiu com precisão nas parcelas pendentes e preservou as pagas!');
+
 console.log('\n=============================================================');
 console.log('🎉 TODOS OS TESTES E2E HEADLESS FORAM APROVADOS COM SUCESSO!');
 console.log('=============================================================\n');

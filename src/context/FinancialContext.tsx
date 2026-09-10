@@ -1794,8 +1794,12 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const removeDebtTransactions = (debtId: string) => {
-    setTransactions(prev => prev.filter(t => !(t.debtId === debtId && t.status === 'pending')));
+    const isThisDebt = (t: Transaction) => (t.debtId === debtId || t.installments?.debtId === debtId);
+    setTransactions(prev => prev.filter(t => !(isThisDebt(t) && t.status === 'pending')));
     setDebts(prev => prev.map(d => (d.id === debtId ? { ...d, syncToTransactions: false } : d)));
+    if (currentUser?.id) {
+      void supabaseDb.deletePendingDebtTransactions(currentUser.id, debtId);
+    }
   };
 
   const addDebt = (
@@ -1854,8 +1858,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setDebts(prev => prev.map(d => (d.id === id ? updatedDebt : d)));
 
+    const isThisDebtPending = (t: Transaction) =>
+      (t.debtId === id || t.installments?.debtId === id) && t.status === 'pending';
+
     if (hasSyncInstruction && !shouldSync) {
-      setTransactions(prev => prev.filter(t => !(t.debtId === id && t.status === 'pending')));
+      setTransactions(prev => prev.filter(t => !isThisDebtPending(t)));
+      if (currentUser?.id) {
+        void supabaseDb.deletePendingDebtTransactions(currentUser.id, id);
+      }
       return;
     }
 
@@ -1870,10 +1880,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       );
 
       setTransactions(prev => {
-        const preserved = prev.filter(t => !(t.debtId === id && t.status === 'pending'));
+        const preserved = prev.filter(t => !isThisDebtPending(t));
         const completedInstallments = new Set(
           preserved
-            .filter(t => t.debtId === id && t.status === 'completed')
+            .filter(t => (t.debtId === id || t.installments?.debtId === id) && t.status === 'completed')
             .map(t => t.debtInstallmentNumber || t.installments?.current)
             .filter((value): value is number => value !== undefined)
         );
@@ -1882,13 +1892,18 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           ...preserved,
         ];
       });
+
+      // Limpar no Supabase quaisquer transações pendentes antigas com IDs timestamp legados
+      if (currentUser?.id) {
+        void supabaseDb.deletePendingDebtTransactions(currentUser.id, id);
+      }
       return;
     }
 
     if (data.title || data.installmentAmount !== undefined || data.totalInstallments !== undefined || data.defaultAccountId) {
       setTransactions(prev =>
         prev.map(t => {
-          if (t.debtId !== id || t.status !== 'pending') return t;
+          if ((t.debtId !== id && t.installments?.debtId !== id) || t.status !== 'pending') return t;
           const num = t.debtInstallmentNumber || t.installments?.current || 1;
           return {
             ...t,
@@ -1905,9 +1920,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const deleteDebt = (id: string) => {
     const d = debts.find(item => item.id === id);
     if (!d) return;
-    const removedPendingTxs = transactions.filter(t => t.debtId === id && t.status === 'pending');
+    const isThisDebt = (t: Transaction) => (t.debtId === id || t.installments?.debtId === id);
+    const removedPendingTxs = transactions.filter(t => isThisDebt(t) && t.status === 'pending');
     setDebts(prev => prev.filter(item => item.id !== id));
-    setTransactions(prev => prev.filter(t => !(t.debtId === id && t.status === 'pending')));
+    setTransactions(prev => prev.filter(t => !(isThisDebt(t) && t.status === 'pending')));
+    if (currentUser?.id) {
+      void supabaseDb.deleteDebt(currentUser.id, id);
+    }
     showUndo({
       message: `Dívida "${d.title}" excluída`,
       onUndo: () => {

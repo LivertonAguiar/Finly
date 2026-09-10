@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TrendingDown,
   Plus,
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
+import { formatCurrency, formatDate, getTodayString, round2 } from '../../utils/formatters';
 import { Modal } from '../ui/Modal';
 import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { Debt, DebtContractType, AmortizationSystem, DebtIndexer } from '../../types';
@@ -29,6 +29,7 @@ import { getOfficialDailyTR } from '../../utils/marketRatesService';
 import { FinancingScheduleModal } from './FinancingScheduleModal';
 import { ExtraordinaryAmortizationModal } from './ExtraordinaryAmortizationModal';
 import { inferContractType } from '../../utils/debtContractInference';
+import { generateAmortizationSchedule } from '../../utils/financingCalculations';
 
 export { inferContractType };
 
@@ -103,6 +104,59 @@ export const DebtsPage: React.FC = () => {
       setIsFetchingTR(false);
     }
   };
+
+  // Cálculo automático da prestação estimada considerando juros, SAC/Price, seguros (MIP/DFI) e taxas
+  const calculatedEstimate = useMemo(() => {
+    const tot = parseFloat(totalAmount) || 0;
+    const rem = parseFloat(remainingAmount) || tot;
+    const tInst = parseInt(totalInstallments) || 0;
+    const pInst = parseInt(paidInstallments) || 0;
+    const remainingMonths = Math.max(1, tInst - pInst);
+    const rate = parseFloat(interestRate) || 0;
+    const ins = parseFloat(insuranceMonthly) || 0;
+    const adm = parseFloat(adminFeeMonthly) || 0;
+    const tr = indexer === 'TR' ? (parseFloat(indexerRate) || 0) : 0;
+
+    if (tot <= 0 || remainingMonths <= 0) return null;
+
+    if (contractType !== 'loan' && rate > 0) {
+      try {
+        const schedule = generateAmortizationSchedule({
+          principal: rem > 0 ? rem : tot,
+          nominalAnnualRate: rate,
+          remainingMonths,
+          system: amortizationSystem,
+          monthlyTR: tr,
+          monthlyInsurance: ins,
+          adminFee: adm,
+        });
+        if (schedule.schedule.length > 0) {
+          const firstRow = schedule.schedule[0];
+          return {
+            total: round2(firstRow.totalInstallment),
+            amortization: round2(firstRow.amortizationAmount),
+            interest: round2(firstRow.interestAmount),
+            insurance: round2(firstRow.insuranceAmount),
+            adminFee: round2(firstRow.adminFeeAmount),
+            isStructured: true,
+          };
+        }
+      } catch (e) {
+        console.warn('Erro ao calcular prestação do financiamento:', e);
+      }
+    }
+
+    const baseInstallment = tot / Math.max(1, tInst);
+    const totalWithFees = baseInstallment + ins + adm;
+    return {
+      total: round2(totalWithFees),
+      amortization: round2(baseInstallment),
+      interest: 0,
+      insurance: round2(ins),
+      adminFee: round2(adm),
+      isStructured: false,
+    };
+  }, [totalAmount, remainingAmount, totalInstallments, paidInstallments, interestRate, insuranceMonthly, adminFeeMonthly, indexer, indexerRate, amortizationSystem, contractType]);
 
   const handleOpenNew = () => {
     setEditingDebt(null);
@@ -187,7 +241,10 @@ export const DebtsPage: React.FC = () => {
   const handleSaveDebt = (e: React.FormEvent) => {
     e.preventDefault();
     const tot = parseFloat(totalAmount) || 0;
-    const inst = parseFloat(installmentAmount) || 0;
+    let inst = parseFloat(installmentAmount) || 0;
+    if ((inst <= 0 || isNaN(inst)) && calculatedEstimate) {
+      inst = calculatedEstimate.total;
+    }
     const tInst = parseInt(totalInstallments) || 12;
     const pInst = parseInt(paidInstallments) || 0;
     const dDay = parseInt(dueDay) || 10;
@@ -874,7 +931,19 @@ export const DebtsPage: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Valor da Prestação Mensal (R$) *
                 </label>
-                {totalAmount && totalInstallments && (
+                {calculatedEstimate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInstallmentAmount(String(calculatedEstimate.total));
+                    }}
+                    className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3 text-purple-500" />
+                    <span>Aplicar Calculado ({formatCurrency(calculatedEstimate.total, 'BRL', false)})</span>
+                  </button>
+                )}
+                {!calculatedEstimate && totalAmount && totalInstallments && (
                   <button
                     type="button"
                     onClick={() => {
@@ -899,6 +968,27 @@ export const DebtsPage: React.FC = () => {
                 onChange={e => setInstallmentAmount(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white"
               />
+
+              {calculatedEstimate && contractType !== 'loan' && (
+                <div className="mt-2 p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40 text-[11px] space-y-1">
+                  <div className="flex items-center justify-between font-bold text-purple-900 dark:text-purple-200">
+                    <span>Composição Inicial ({amortizationSystem}):</span>
+                    <span className="text-xs font-black text-purple-700 dark:text-purple-300">
+                      {formatCurrency(calculatedEstimate.total, 'BRL', false)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-slate-600 dark:text-slate-400 font-semibold pt-1 border-t border-purple-200/40 dark:border-purple-800/30">
+                    <div>Amortização: <span className="font-bold text-slate-800 dark:text-slate-200">{formatCurrency(calculatedEstimate.amortization, 'BRL', false)}</span></div>
+                    <div>Juros: <span className="font-bold text-slate-800 dark:text-slate-200">{formatCurrency(calculatedEstimate.interest, 'BRL', false)}</span></div>
+                    <div className="text-emerald-700 dark:text-emerald-300 font-bold">
+                      Seguros MIP/DFI: <span>{formatCurrency(calculatedEstimate.insurance, 'BRL', false)}</span>
+                    </div>
+                    {calculatedEstimate.adminFee > 0 && (
+                      <div>Taxa Adm: <span className="font-bold text-slate-800 dark:text-slate-200">{formatCurrency(calculatedEstimate.adminFee, 'BRL', false)}</span></div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
