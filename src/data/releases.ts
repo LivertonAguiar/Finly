@@ -36,11 +36,33 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-09';
+export const CURRENT_BUILD_DATE = '2026-09-10';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-10',
+    summary: 'Cálculo automático de parcelas Price/SAC, persistência bilateral de financiamentos no Supabase e conciliação estruturada.',
+    highlights: [
+      {
+        title: 'Cálculo Automático Price e SAC',
+        description: 'Prestação calculada com precisão incluindo juros, correção pela TR oficial do BACEN, seguros MIP/DFI e taxa de administração.',
+        type: 'feature',
+      },
+      {
+        title: 'Persistência Completa no Supabase',
+        description: 'Tabela de dívidas e transações agora persistem tipo de contrato, sistema de amortização, indexador e vínculos de parcelas.',
+        type: 'feature',
+      },
+      {
+        title: 'Inferência Inteligente de Legados',
+        description: 'Dívidas existentes sem tipo de contrato são classificadas automaticamente por heurística de título e credor ao editar.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.54',
     releaseDate: '2026-09-09',
     summary: 'Correção do cadastro de despesas e migração automática das parcelas de dívidas e financiamentos para o extrato.',
     highlights: [

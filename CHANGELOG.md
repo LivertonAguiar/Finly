@@ -3,6 +3,23 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.55] - 2026-09-10
+
+### 🏦 Financiamentos: Persistência no Supabase, Cálculo Price/SAC e Conciliação Estruturada
+- **Persistência Completa de Financiamentos no Supabase**:
+  - Migration SQL (`20260910000000_debts_financing_columns.sql`) adiciona 9 colunas na tabela `debts`: `contract_type`, `amortization_system`, `indexer`, `indexer_rate`, `insurance_monthly`, `admin_fee_monthly`, `contract_number`, `default_account_id` e `sync_to_transactions`.
+  - Novas colunas indexadas na tabela `transactions` (`debt_id`, `debt_installment_number`) com backfill automático a partir do JSONB legado.
+  - Leitura e escrita bilaterais no `supabaseDb.ts` com tipagem estrita e preservação de dados entre recargas e aparelhos.
+- **Cálculo Automático de Prestações com Motor de Amortização**:
+  - Cálculo automático em tempo real no formulário ao alternar entre Empréstimo, Financiamento Imobiliário e Veículo.
+  - Suporte completo a juros efetivos, correção pela Taxa Referencial (TR diária do BACEN), seguros obrigatórios (MIP e DFI) e taxas administrativas.
+  - Geração precisa do cronograma Price e SAC com saldo devedor atualizado parcela a parcela.
+- **Inferência Inteligente e Compatibilidade para Dívidas Legadas**:
+  - Função `inferContractType` analisa título e credor para classificar automaticamente dívidas criadas antes da migração.
+  - Edição de contratos antigos abre diretamente na aba correspondente (Imobiliário, Veículo ou Empréstimo).
+- **Testes de Regressão Automatizados**:
+  - Testes unitários com `node:assert` cobrindo 11 cenários de cálculo de amortização e sincronização de parcelas no extrato.
+
 ## [1.1.54] - 2026-09-09
 
 ### Correções no Extrato de Transações

@@ -641,4 +641,11 @@ export const HELP_FAQS: HelpFaqItem[] = [
     category: 'configuracoes',
     tags: ['limpar dados', 'excluir dados', 'reset', 'recomecar', 'cache', 'sistema'],
   },
+  {
+    id: 'faq-financiamento-calculo-parcelas',
+    question: 'Como funciona o cálculo automático e a sincronização de Financiamentos (Imobiliário e Veículo)?',
+    answer: 'Ao cadastrar um Financiamento Imobiliário ou de Veículo na aba Dívidas, o Finly calcula automaticamente o valor exato da parcela mensal utilizando a Tabela Price (prestações fixas) ou SAC (prestações decrescentes). O cálculo incorpora a taxa de juros do contrato, correção monetária pela TR oficial do Banco Central, seguros obrigatórios (MIP e DFI) e taxas administrativas. Todas as parcelas futuras são geradas no Extrato e sincronizadas com a nuvem em tempo real, atualizando o saldo devedor conforme os pagamentos são efetuados.',
+    category: 'planejamento',
+    tags: ['financiamento', 'imobiliario', 'veiculo', 'price', 'sac', 'tr', 'parcelas', 'dividas'],
+  },
 ];
