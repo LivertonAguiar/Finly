@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-09',
+    summary: 'Design System Fikri Studio com Bento Grid e iluminação radial, novo cartão oficial Bradesco Neo, banco Credicard On, teclado virtual inteligente sem cortes e notificações centralizadas.',
+    highlights: [
+      {
+        title: 'Design System Fikri Studio & Bento Grid',
+        description: 'Hero Balance Card com iluminação radial violeta, métricas monoespelhadas, micro-pílulas de contexto e cards modulares de receitas e despesas com barras de proporção.',
+        type: 'visual',
+      },
+      {
+        title: 'Cartão Oficial Bradesco Neo & Credicard On',
+        description: 'Tema fiel ao cartão físico Bradesco Neo com gradiente tricolor diagonal (vermelho, violeta e azul) e suporte completo ao emissor Credicard On.',
+        type: 'visual',
+      },
+      {
+        title: 'Teclado Virtual Inteligente sem Cortes',
+        description: 'Modais e campos de texto com ajuste dinâmico ao abrir o teclado virtual no Android e Web, mantendo a área de digitação e botões sempre visíveis.',
+        type: 'improvement',
+      },
+      {
+        title: 'Centralização de Notificações',
+        description: 'Gerenciamento de notificações unificado exclusivamente no ícone do sino no cabeçalho, simplificando a navegação na aba Mais Opções.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.51',
+    releaseDate: '2026-09-09',
     summary: 'Desacoplamento e liberdade total de customização de cores para cartões e contas, paletas visuais rápidas e restauração da cor do banco.',
     highlights: [
       {

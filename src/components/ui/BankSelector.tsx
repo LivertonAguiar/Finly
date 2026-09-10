@@ -16,9 +16,9 @@ interface BankSelectorProps {
 }
 
 // Emissores classificados para navegação rápida
-const POPULAR_IDS = ['nubank', 'inter', 'itau', 'bradesco', 'bb', 'santander', 'caixa', 'c6'];
+const POPULAR_IDS = ['nubank', 'inter', 'itau', 'bradesco', 'bb', 'santander', 'caixa', 'c6', 'credicard'];
 const RETAIL_IDS = ['amazon', 'casasbahia', 'americanas', 'carrefour', 'bradescard', 'santanderway', 'bradesconeo'];
-const DIGITAL_IDS = ['nubank', 'inter', 'c6', 'picpay', 'mercadopago', 'pagbank', 'will', 'neon', 'nomad', 'wise'];
+const DIGITAL_IDS = ['nubank', 'inter', 'c6', 'credicard', 'picpay', 'mercadopago', 'pagbank', 'will', 'neon', 'nomad', 'wise'];
 const TRADITIONAL_IDS = ['itau', 'bradesco', 'santander', 'bb', 'caixa', 'btg', 'xp', 'safra', 'sicredi', 'sicoob'];
 
 export const BankSelector: React.FC<BankSelectorProps> = ({

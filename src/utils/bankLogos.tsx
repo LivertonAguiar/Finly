@@ -298,29 +298,74 @@ export const BradescoNeoIcon: React.FC<{ size?: number; radius?: number; classNa
   >
     <defs>
       <linearGradient id="neo-hd-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#002244" />
-        <stop offset="100%" stopColor="#000e1c" />
+        <stop offset="0%" stopColor="#d60036" />
+        <stop offset="48%" stopColor="#7a1862" />
+        <stop offset="100%" stopColor="#162970" />
       </linearGradient>
+      <pattern id="neo-icon-lines" width="10" height="10" patternTransform="rotate(28 0 0)" patternUnits="userSpaceOnUse">
+        <line x1="0" y1="0" x2="0" y2="10" stroke="#ff3b69" strokeWidth="1.2" opacity="0.4" />
+      </pattern>
     </defs>
+    {/* Gradiente Oficial Tricolor (Vermelho -> Violeta -> Azul) */}
     <rect width="100" height="100" rx={radius * 2} fill="url(#neo-hd-bg)" />
-    <path
-      d="M40 40h-4v-14h4v14zm8 0h-5v-20h5v20zm-17-17c3-9 11-13 20-13s17 4 20 13c-2-2-6-3-9-3-8 0-11 3-11 3s-3-3-11-3c-3 0-6 1-9 3z"
-      fill="#ffffff"
-      transform="translate(4, 2) scale(0.92)"
-    />
+    
+    {/* Padrão de Linhas Diagonais */}
+    <rect width="100" height="100" rx={radius * 2} fill="url(#neo-icon-lines)" />
+
+    {/* Símbolo + Nome Bradesco no canto superior esquerdo */}
+    <g transform="translate(10, 13) scale(0.62)">
+      <path
+        d="M12 20h-3v-9h3v9zm4 0h-3v-13h3v13zm-8-10.5c1.8-4.5 5.5-6.5 9.5-6.5s7.7 2 9.5 6.5c-1-1-2.8-1.5-4.2-1.5-3.5 0-5.3 1.5-5.3 1.5s-1.8-1.5-5.3-1.5c-1.4 0-3.2.5-4.2 1.5z"
+        fill="#ffffff"
+      />
+      <text
+        x="24"
+        y="17"
+        fill="#ffffff"
+        fontSize="13"
+        fontWeight="800"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        letterSpacing="-0.5"
+      >
+        bradesco
+      </text>
+    </g>
+
+    {/* Símbolo Contactless no canto superior direito */}
+    <g transform="translate(76, 14) scale(0.7)">
+      <path d="M12 2c2.2 2.2 3.5 5.2 3.5 8.5s-1.3 6.3-3.5 8.5" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.9" />
+      <path d="M8 5c1.4 1.4 2.2 3.3 2.2 5.5s-.8 4.1-2.2 5.5" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.9" />
+      <path d="M4 8c.6.6 1 1.5 1 2.5s-.4 1.9-1 2.5" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.9" />
+    </g>
+
+    {/* Tipografia Central Característica: N E O */}
     <text
-      x="48"
-      y="78"
+      x="50"
+      y="66"
       textAnchor="middle"
-      fill="#00e5ff"
-      fontSize="26"
+      fill="#ffffff"
+      fontSize="17"
       fontWeight="900"
       fontFamily="system-ui, -apple-system, sans-serif"
-      letterSpacing="-1.5"
+      letterSpacing="4"
     >
-      neo
+      NEO
     </text>
-    <circle cx="77" cy="62" r="3.5" fill="#00e5ff" />
+
+    {/* Flag Visa no canto inferior */}
+    <text
+      x="78"
+      y="88"
+      textAnchor="middle"
+      fill="#ffffff"
+      fontSize="9"
+      fontWeight="900"
+      fontFamily="Arial, sans-serif"
+      letterSpacing="0.5"
+      opacity="0.95"
+    >
+      VISA
+    </text>
   </svg>
 );
 
@@ -359,6 +404,71 @@ export const CarrefourCardIcon: React.FC<{ size?: number; radius?: number; class
   </svg>
 );
 
+/** High-Definition Official Credicard On Vector Icon */
+export const CredicardOnIcon: React.FC<{ size?: number; radius?: number; className?: string }> = ({
+  size = 32,
+  radius = 6,
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 100 100"
+    fill="none"
+    className={className}
+    role="img"
+    aria-label="Credicard On"
+  >
+    <defs>
+      <linearGradient id="credicard-hd-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#003559" />
+        <stop offset="100%" stopColor="#001a2c" />
+      </linearGradient>
+      <linearGradient id="credicard-on-pill" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#00e5ff" />
+        <stop offset="100%" stopColor="#00b4d8" />
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" rx={radius * 2} fill="url(#credicard-hd-bg)" />
+    
+    {/* Credicard Ribbon / Símbolo clássico com anéis entrelaçados */}
+    <g transform="translate(18, 20)">
+      <circle cx="24" cy="18" r="13" stroke="#ffffff" strokeWidth="4" fill="none" opacity="0.95" />
+      <circle cx="40" cy="18" r="13" stroke="#00e5ff" strokeWidth="4" fill="none" opacity="0.95" />
+    </g>
+
+    {/* Tipografia Oficial: credicard */}
+    <text
+      x="39"
+      y="69"
+      textAnchor="middle"
+      fill="#ffffff"
+      fontSize="13"
+      fontWeight="900"
+      fontFamily="Arial, system-ui, -apple-system, sans-serif"
+      letterSpacing="-0.5"
+    >
+      credicard
+    </text>
+
+    {/* Badge Neon: on */}
+    <g transform="translate(68, 56)">
+      <rect width="18" height="15" rx="7.5" fill="url(#credicard-on-pill)" />
+      <text
+        x="9"
+        y="11.5"
+        textAnchor="middle"
+        fill="#001a2c"
+        fontSize="10"
+        fontWeight="900"
+        fontFamily="Arial, sans-serif"
+      >
+        on
+      </text>
+    </g>
+  </svg>
+);
+
 export const ALL_BANKS: BankInfo[] = [
   { id: 'nubank', name: 'Nubank', code: '260', color: '#820ad1', textColor: '#ffffff', bgGradient: 'from-[#820ad1] to-[#590594]' },
   { id: 'inter', name: 'Banco Inter', code: '077', color: '#ff7a00', textColor: '#ffffff', bgGradient: 'from-[#ff7a00] to-[#e05600]' },
@@ -385,8 +495,9 @@ export const ALL_BANKS: BankInfo[] = [
   { id: 'casasbahia', name: 'Casas Bahia Card', code: '000', color: '#0033c5', textColor: '#ffffff', bgGradient: 'from-[#0033c5] to-[#001c73]' },
   { id: 'americanas', name: 'Cartão Americanas', code: '000', color: '#f80032', textColor: '#ffffff', bgGradient: 'from-[#f80032] to-[#a80022]' },
   { id: 'santanderway', name: 'Santander Way', code: '033', color: '#ea1d25', textColor: '#ffffff', bgGradient: 'from-[#ea1d25] to-[#800000]' },
-  { id: 'bradesconeo', name: 'Bradesco Neo', code: '237', color: '#001e3d', textColor: '#00e5ff', bgGradient: 'from-[#002f6c] to-[#001026]' },
+  { id: 'bradesconeo', name: 'Bradesco Neo', code: '237', color: '#d60036', textColor: '#ffffff', bgGradient: 'from-[#d60036] via-[#7a1862] to-[#162970]' },
   { id: 'carrefour', name: 'Cartão Carrefour', code: '000', color: '#00387b', textColor: '#ffffff', bgGradient: 'from-[#00387b] to-[#001c3d]' },
+  { id: 'credicard', name: 'Credicard On', code: '000', color: '#002b49', textColor: '#ffffff', bgGradient: 'from-[#003559] to-[#001726]' },
   { id: 'carteira', name: 'Carteira', code: '000', color: '#10b981', textColor: '#ffffff', bgGradient: 'from-[#10b981] to-[#047857]' },
 ];
 
@@ -444,6 +555,7 @@ export function getCardBankInfo(cardOrName?: string | { name?: string; bankId?: 
   if (norm.includes('bahia') || norm.includes('casas bahia')) return ALL_BANKS.find(b => b.id === 'casasbahia');
   if (norm.includes('americana') || norm.includes('americanas')) return ALL_BANKS.find(b => b.id === 'americanas');
   if (norm.includes('carrefour') || norm.includes('csf')) return ALL_BANKS.find(b => b.id === 'carrefour');
+  if (norm.includes('credicard') || norm.includes('credicard on')) return ALL_BANKS.find(b => b.id === 'credicard');
   if (norm.includes('c6') || norm.includes('336')) return ALL_BANKS.find(b => b.id === 'c6');
   if (norm.includes('btg') || norm.includes('208')) return ALL_BANKS.find(b => b.id === 'btg');
   if (norm.includes('xp') || norm.includes('102') || norm.includes('348')) return ALL_BANKS.find(b => b.id === 'xp');
@@ -510,6 +622,9 @@ export const BankLogo: React.FC<{
   }
   if (norm === 'carrefour' || norm.includes('carrefour')) {
     return <CarrefourCardIcon size={size} radius={radius} className={className} />;
+  }
+  if (norm === 'credicard' || norm.includes('credicard') || norm.includes('credicard on')) {
+    return <CredicardOnIcon size={size} radius={radius} className={className} />;
   }
 
   if (norm.includes('nu') || norm.includes('260') || norm.includes('roxo') || norm.includes('ultravioleta')) return <Nubank size={size} radius={radius} className={className} />;

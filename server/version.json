@@ -1,21 +1,21 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-09",
-  "notes": "Desacoplamento e liberdade total na personalização de cores de cartões e contas bancárias, com paletas de cores rápidas e restauração da cor oficial.",
+  "notes": "Design System Fikri Studio com Bento Grid e ambient glow, cartão oficial Bradesco Neo com gradiente tricolor, emissor Credicard On, teclado inteligente sem cortes e notificações centralizadas.",
   "isLatest": true,
   "sections": {
     "features": [
-      "Personalização livre de cores para cartões de crédito e contas bancárias independente do emissor",
-      "Novo seletor de cores aprimorado com paletas rápidas e inserção direta de código HEX (#)",
-      "Botão de 1-clique para restaurar a qualquer momento a cor oficial do banco selecionado"
+      "Design System Fikri Studio: Hero Bento Card com ambient glow, números monoespelhados e micro-pílulas de contexto",
+      "Novo cartão oficial Bradesco Neo com gradiente tricolor diagonal (vermelho, violeta e azul) e suporte completo ao Credicard On",
+      "Teclado virtual inteligente com redimensionamento dinâmico sem cortes em modais e formulários (Android e Web)"
     ],
     "fixes": [
-      "Fim do bloqueio que sobrescrevia a cor personalizada do usuário ao selecionar ou editar bancos",
-      "Indicadores de fatura e limites no dashboard agora refletem 100% a cor escolhida pelo usuário"
+      "Ajuste na rolagem de modais quando o teclado virtual Android é acionado, prevenindo sobreposição de botões e inputs",
+      "Centralização de histórico de notificações exclusivamente no cabeçalho, despoluindo a aba Mais Opções"
     ],
     "improvements": [
-      "Layout dos formulários de cartões e contas otimizado para mobile e desktop",
-      "FAQ atualizado na Central de Ajuda detalhando a personalização de cores e temas"
+      "Cards modulares de Receitas e Despesas com micro-barras de progresso proporcional e acentos neon",
+      "Balanço semestral e trimestral atualizados com glassmorphism e bordas ultrafinas"
     ]
   }
 }

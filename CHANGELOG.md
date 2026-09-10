@@ -3,6 +3,21 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.52] - 2026-09-09
+
+### 🎨 Design System Fikri Studio, Cartão Bradesco Neo Oficial, Teclado Inteligente & Notificações
+- **Design System Fikri Studio & Bento Grid**:
+  - Novo Hero Balance Card com cantos ergonômicos de `28px`, iluminação radial violeta difusa e métricas monoespelhadas de alta precisão técnica.
+  - Micro-pílulas flutuantes para taxa de poupança/consumo (`pill-tag-mint`, `pill-tag-rose`) e cards modulares de receitas e despesas com barras de proporção.
+  - Balanço semestral e trimestral atualizados com arquitetura `.bento-card` e tooltips foscos com backdrop blur.
+- **Cartão Bradesco Neo Oficial & Credicard On**:
+  - Novo tema de alta fidelidade para o cartão Bradesco Neo com gradiente tricolor diagonal (vermelho, violeta e azul) e tipografia espaçada oficial.
+  - Inclusão do emissor Credicard On com paleta escura moderna e logotipo dedicado.
+- **Teclado Virtual Inteligente sem Cortes**:
+  - Integração do `@capacitor/keyboard` com modo `adjustPan` e rolagem dinâmica no Android e Web, garantindo que botões e campos de formulários nunca fiquem escondidos pelo teclado.
+- **Centralização de Notificações**:
+  - Histórico de notificações desvinculado da aba Mais Opções > Geral e mantido exclusivamente no ícone do sino (`Bell`) no cabeçalho.
+
 ## [1.1.51] - 2026-09-09
 
 ### 🎨 Desacoplamento e Liberdade de Personalização de Cores (Cartões e Contas)

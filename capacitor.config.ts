@@ -22,6 +22,9 @@ const config: CapacitorConfig = {
       backgroundColor: '#121214',
       overlaysWebView: true,
     },
+    Keyboard: {
+      resizeOnFullScreen: true,
+    },
     LocalNotifications: {
       smallIcon: 'ic_stat_finly_notification',
       iconColor: '#7C4DFF',

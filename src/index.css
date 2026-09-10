@@ -527,3 +527,157 @@ html.dark ::-webkit-scrollbar-thumb {
     width: 20rem;
   }
 }
+
+/* ==========================================================================
+   FIKRI STUDIO DESIGN TOKENS & UTILITIES (FINLY HIGH-END SUITE)
+   ========================================================================== */
+
+/* 1. Bento Grid Card & Hairline Borders */
+.bento-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.dark .bento-card {
+  background: rgba(20, 20, 25, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
+/* Hairline border utility */
+.hairline-border {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+html.dark .hairline-border {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 2. Iluminação Radial Suave (Ambient Glows) */
+.ambient-glow-purple {
+  position: relative;
+  overflow: hidden;
+}
+.ambient-glow-purple::before {
+  content: '';
+  position: absolute;
+  top: -25%;
+  right: 15%;
+  width: 260px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, rgba(99, 102, 241, 0.06) 45%, transparent 70%);
+  filter: blur(35px);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 9999px;
+}
+
+html:not(.dark) .ambient-glow-purple::before {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+}
+
+.ambient-glow-mint {
+  position: relative;
+  overflow: hidden;
+}
+.ambient-glow-mint::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: 10%;
+  width: 220px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.16) 0%, transparent 70%);
+  filter: blur(35px);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 9999px;
+}
+
+/* 3. Tipografia Técnica de Métricas */
+.mono-metric {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: -0.025em;
+  font-feature-settings: "tnum" on, "lnum" on, "zero" on;
+}
+
+/* 4. Micro-Pílulas Flutuantes */
+.pill-tag-mint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(45, 212, 191, 0.12);
+  color: #0d9488;
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+html.dark .pill-tag-mint {
+  background: rgba(45, 212, 191, 0.14);
+  color: #5eead4;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.pill-tag-rose {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(244, 63, 94, 0.12);
+  color: #e11d48;
+  border: 1px solid rgba(244, 63, 94, 0.28);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+html.dark .pill-tag-rose {
+  background: rgba(244, 63, 94, 0.14);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.pill-tag-purple {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.12);
+  color: #9333ea;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  font-size: 11px;
+  font-weight: 700;
+}
+html.dark .pill-tag-purple {
+  background: rgba(168, 85, 247, 0.14);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.pill-tag-amber {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  font-size: 11px;
+  font-weight: 700;
+}
+html.dark .pill-tag-amber {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+

@@ -1933,13 +1933,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
   // Right 2: Balanço Semestral
   const renderBalancoSemestral = () => (
-    <div key="balancoSemestral" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="balancoSemestral" className="bento-card p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço semestral (6 meses)</h3>
           <p className="text-[11px] text-slate-400">Comparativo histórico de receitas x despesas</p>
         </div>
-        <span className="text-xs text-slate-400 font-bold">Semestre</span>
+        <span className="pill-tag-purple">Semestre</span>
       </div>
 
       <div className="h-44 w-full">
@@ -1949,30 +1949,30 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
             <Tooltip
               formatter={(val: any, name: any) => [formatCurrency(Number(val) || 0, user.currency), name === 'receitas' ? 'Receitas' : 'Despesas']}
-              contentStyle={{ backgroundColor: '#18181B', borderColor: '#334155', borderRadius: '12px', fontSize: '11px', color: '#fff' }}
+              contentStyle={{ backgroundColor: '#141418', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '11px', color: '#fff', backdropFilter: 'blur(12px)' }}
             />
-            <Bar dataKey="receitas" fill="#66bb6a" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="despesas" fill="#ef5350" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="receitas" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="despesas" fill="#fb7185" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-500">
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#66bb6a]" /> Receitas</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#ef5350]" /> Despesas</span>
+      <div className="pt-2 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between text-xs font-bold text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#2dd4bf]" /> Receitas</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#fb7185]" /> Despesas</span>
       </div>
     </div>
   );
 
   // Right 3: Balanço Trimestral
   const renderBalancoTrimestral = () => (
-    <div key="balancoTrimestral" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="balancoTrimestral" className="bento-card p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço trimestral (3 meses)</h3>
           <p className="text-[11px] text-slate-400">Tendência recente de fluxo de caixa</p>
         </div>
-        <span className="text-xs text-slate-400 font-bold">Trimestre</span>
+        <span className="pill-tag-purple">Trimestre</span>
       </div>
 
       <div className="h-44 w-full">
@@ -1982,17 +1982,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
             <Tooltip
               formatter={(val: any, name: any) => [formatCurrency(Number(val) || 0, user.currency), name === 'receitas' ? 'Receitas' : 'Despesas']}
-              contentStyle={{ backgroundColor: '#18181B', borderColor: '#334155', borderRadius: '12px', fontSize: '11px', color: '#fff' }}
+              contentStyle={{ backgroundColor: '#141418', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '11px', color: '#fff', backdropFilter: 'blur(12px)' }}
             />
-            <Bar dataKey="receitas" fill="#66bb6a" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="despesas" fill="#ef5350" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="receitas" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="despesas" fill="#fb7185" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-500">
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#66bb6a]" /> Receitas</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#ef5350]" /> Despesas</span>
+      <div className="pt-2 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between text-xs font-bold text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#2dd4bf]" /> Receitas</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#fb7185]" /> Despesas</span>
       </div>
     </div>
   );
@@ -2313,64 +2313,114 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         </div>
       </div>
 
-      {/* 2. HERO BALANCE CARD */}
-      <div className="p-6 rounded-[28px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 text-center">
-        <div className="space-y-1">
-          <span className="text-xs text-slate-400 dark:text-slate-400 font-semibold tracking-wide block">
-            {t('common.total_balance', 'Saldo em contas')}
-          </span>
-          <div className="flex items-center justify-center gap-2">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-              {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
-            </h1>
+      {/* 2. HERO BALANCE BENTO CARD (FIKRI STUDIO SIGNATURE) */}
+      <div className="bento-card ambient-glow-purple p-6 sm:p-7 space-y-5 text-left relative overflow-hidden">
+        {/* Top Meta Bar */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-slate-400 font-bold block">
+              {t('common.total_balance', 'Saldo em contas')}
+            </span>
+            <div className="flex items-center gap-2 pt-0.5">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white mono-metric">
+                {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
+              </h1>
+              <button
+                type="button"
+                onClick={toggleHideValues}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                title={user.showValues ? t('common.hide_values', 'Ocultar valores') : t('common.hide_values', 'Mostrar valores')}
+              >
+                {user.showValues ? (
+                  <Eye className="w-4 h-4 text-slate-400 hover:text-purple-400 transition-colors" />
+                ) : (
+                  <EyeOff className="w-4 h-4 text-purple-400" />
+                )}
+              </button>
+            </div>
           </div>
-          <div className="flex justify-center pt-0.5">
-            <button
-              type="button"
-              onClick={toggleHideValues}
-              className="p-1.5 rounded-full text-slate-400 hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-[#222226] transition-colors cursor-pointer"
-              title={user.showValues ? t('common.hide_values', 'Ocultar valores') : t('common.hide_values', 'Mostrar valores')}
-            >
-              {user.showValues ? (
-                <Eye className="w-4.5 h-4.5 text-slate-400 hover:text-purple-400 transition-colors" />
-              ) : (
-                <EyeOff className="w-4.5 h-4.5 text-purple-400" />
-              )}
-            </button>
+
+          {/* Floating Pill Tag Indicator */}
+          <div className="shrink-0">
+            {monthlyIncome > 0 && (monthlyIncome - monthlyExpense) > 0 ? (
+              <span className="pill-tag-mint" title="Taxa de poupança no mês">
+                <TrendingUp className="w-3 h-3" />
+                <span>+{Math.round(((monthlyIncome - monthlyExpense) / monthlyIncome) * 100)}% este mês</span>
+              </span>
+            ) : monthlyIncome > 0 && monthlyExpense > monthlyIncome ? (
+              <span className="pill-tag-rose" title="Despesas superiores às receitas">
+                <TrendingDown className="w-3 h-3" />
+                <span>{Math.round((monthlyExpense / monthlyIncome) * 100)}% consumo</span>
+              </span>
+            ) : (
+              <span className="pill-tag-purple">
+                <Sparkles className="w-3 h-3" />
+                <span>{capitalizedMonth}</span>
+              </span>
+            )}
           </div>
         </div>
 
-        {/* RECEITAS & DESPESAS CAPSULE CARDS */}
-        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+        {/* RECEITAS & DESPESAS BENTO TWIN CARDS */}
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Receitas */}
           <div
             onClick={() => setActiveTab('transacoes')}
-            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-100 dark:border-slate-800/60 flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-transform text-left"
+            className="group p-4 rounded-[22px] bg-emerald-500/[0.04] dark:bg-emerald-950/20 border border-emerald-500/20 dark:border-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer space-y-2.5"
           >
-            <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-black shrink-0">
-              <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-black shrink-0">
+                  <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <span className="text-[10.5px] font-mono uppercase tracking-wider text-slate-500 dark:text-emerald-400/80 font-bold">
+                  {t('common.incomes', 'Receitas')}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400/70 font-semibold group-hover:underline">
+                Ver tudo →
+              </span>
             </div>
-            <div className="min-w-0">
-              <span className="text-[11px] text-slate-400 font-semibold block">{t('common.incomes', 'Receitas')}</span>
-              <span className="text-xs sm:text-sm font-black text-[#66bb6a] block truncate">
+            <div>
+              <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-[#5eead4] block truncate mono-metric">
                 {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
               </span>
+            </div>
+            <div className="w-full h-1 bg-emerald-500/10 dark:bg-emerald-950/50 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: '100%' }} />
             </div>
           </div>
 
           {/* Despesas */}
           <div
             onClick={() => setActiveTab('transacoes')}
-            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#222226] border border-slate-100 dark:border-slate-800/60 flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-transform text-left"
+            className="group p-4 rounded-[22px] bg-rose-500/[0.04] dark:bg-rose-950/20 border border-rose-500/20 dark:border-rose-500/20 hover:border-rose-500/40 transition-all cursor-pointer space-y-2.5"
           >
-            <div className="w-9 h-9 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center font-black shrink-0">
-              <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center font-black shrink-0">
+                  <ArrowDownRight className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <span className="text-[10.5px] font-mono uppercase tracking-wider text-slate-500 dark:text-rose-400/80 font-bold">
+                  {t('common.expenses', 'Despesas')}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-rose-600 dark:text-rose-400/70 font-semibold group-hover:underline">
+                Ver tudo →
+              </span>
             </div>
-            <div className="min-w-0">
-              <span className="text-[11px] text-slate-400 font-semibold block">{t('common.expenses', 'Despesas')}</span>
-              <span className="text-xs sm:text-sm font-black text-[#ef5350] block truncate">
+            <div>
+              <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-[#fb7185] block truncate mono-metric">
                 {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
               </span>
+            </div>
+            <div className="w-full h-1 bg-rose-500/10 dark:bg-rose-950/50 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-rose-500 rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, monthlyIncome > 0 ? (monthlyExpense / monthlyIncome) * 100 : (monthlyExpense > 0 ? 100 : 0))}%`,
+                }}
+              />
             </div>
           </div>
         </div>

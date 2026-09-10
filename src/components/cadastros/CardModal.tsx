@@ -101,6 +101,9 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
     if (!isCustomColor) {
       setColor(bank.color);
     }
+    if (bank.id === 'bradesconeo' && (!editingCard || brand === 'Mastercard')) {
+      setBrand('Visa');
+    }
     // Only update name if empty or if it was the default generated name
     const isDefaultName =
       !name.trim() ||
@@ -165,18 +168,34 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editingCard ? 'Editar Cartão' : 'Novo Cartão de Crédito'} maxWidth="lg">
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1 scrollbar-thin">
+      <form onSubmit={handleSubmit} className="space-y-4 pr-1">
         {/* ========================================================================= */}
         {/* 1. REALISTIC CARD PREVIEW (TEMA ATIVO DINÂMICO + ÍCONE DO BANCO PROEMINENTE) */}
         {/* ========================================================================= */}
         <div
           className="relative w-full h-48 rounded-[26px] p-5 text-white shadow-2xl overflow-hidden flex flex-col justify-between transition-all duration-500 border"
           style={{
-            background: `linear-gradient(135deg, ${color} 0%, ${color}dd 42%, #0f172a 100%)`,
+            background: (selectedBankId === 'bradesconeo' && !isCustomColor)
+              ? 'linear-gradient(125deg, #d60036 0%, #7a1862 48%, #162970 100%)'
+              : `linear-gradient(135deg, ${color} 0%, ${color}dd 42%, #0f172a 100%)`,
             borderColor: `${color}80`,
             boxShadow: `0 16px 36px -6px ${color}60, 0 4px 14px rgba(0,0,0,0.45)`,
           }}
         >
+          {/* Padrão dinâmico de linhas diagonais para o Bradesco Neo */}
+          {selectedBankId === 'bradesconeo' && !isCustomColor && (
+            <div className="absolute inset-0 pointer-events-none opacity-40 overflow-hidden">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="modal-neo-lines" width="12" height="12" patternTransform="rotate(28 0 0)" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="0" x2="0" y2="12" stroke="#ff3b69" strokeWidth="1.3" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#modal-neo-lines)" />
+              </svg>
+            </div>
+          )}
+
           {/* Top of Card: Bank Logo (Prominent) + Bank Emblem */}
           <div className="flex items-center justify-between z-10">
             {/* Bank / Emissor (PROMINENT & LARGE) */}
@@ -211,12 +230,18 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
             </div>
           </div>
 
-          {/* Chip & Contactless Wave */}
+          {/* Chip & Contactless Wave / NEO Branding */}
           <div className="flex items-center gap-3 z-10 my-auto">
             <div className="w-10 h-7 rounded-lg bg-gradient-to-tr from-amber-300 via-amber-400 to-amber-200 border border-amber-500/60 shadow-md flex items-center justify-center">
               <div className="w-full h-[1px] bg-amber-600/50" />
             </div>
-            <span className="text-lg opacity-75 drop-shadow-sm">📶</span>
+            {selectedBankId === 'bradesconeo' ? (
+              <span className="text-sm font-black tracking-[0.3em] text-white/95 uppercase drop-shadow-md ml-1">
+                NEO
+              </span>
+            ) : (
+              <span className="text-lg opacity-75 drop-shadow-sm">📶</span>
+            )}
           </div>
 
           {/* Bottom: Cardholder and Limit */}
