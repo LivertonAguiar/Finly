@@ -838,6 +838,52 @@ export class SupabaseDbService {
       return false;
     }
   }
+
+  /**
+   * Remove transações pendentes vinculadas a uma dívida específica no Supabase
+   */
+  public async deletePendingDebtTransactions(userId: string, debtId: string): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId || !debtId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+    try {
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', targetUserId)
+        .eq('debt_id', debtId)
+        .eq('status', 'pending');
+      return true;
+    } catch (e) {
+      console.warn('Erro ao deletar transações pendentes no Supabase:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Remove uma dívida e suas transações vinculadas no Supabase
+   */
+  public async deleteDebt(userId: string, debtId: string): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId || !debtId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+    try {
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', targetUserId)
+        .eq('debt_id', debtId);
+      await supabase
+        .from('debts')
+        .delete()
+        .eq('user_id', targetUserId)
+        .eq('id', debtId);
+      return true;
+    } catch (e) {
+      console.warn('Erro ao deletar dívida no Supabase:', e);
+      return false;
+    }
+  }
 }
 
 export const supabaseDb = new SupabaseDbService();
