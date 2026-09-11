@@ -36,11 +36,33 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-10';
+export const CURRENT_BUILD_DATE = '2026-09-11';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-11',
+    summary: 'Progressão monetária contínua para financiamentos Price + TR (Caixa Econômica Federal) ancorados na parcela emitida e indexação escalonada de seguros MIP/DFI.',
+    highlights: [
+      {
+        title: 'Progressão Real da Tabela Price com TR',
+        description: 'As parcelas futuras de financiamentos habitacionais agora progridem mensalmente pela TR a partir do mês base, eliminando reduções indevidas em relação ao mês vigente.',
+        type: 'fix',
+      },
+      {
+        title: 'Indexação de Seguros Habitacionais (MIP/DFI)',
+        description: 'Os prêmios de seguro e encargos acompanham a evolução monetária do contrato, reproduzindo com exatidão centesimal os demonstrativos oficiais da Caixa.',
+        type: 'improvement',
+      },
+      {
+        title: 'Saneamento e Deduplicação Atômica',
+        description: 'Reconciliação e limpeza automática de parcelas pendentes legadas no banco de dados e extrato.',
+        type: 'fix',
+      },
+    ],
+  },
+  {
+    version: '1.1.58',
     releaseDate: '2026-09-10',
     summary: 'Unificação do cronograma de financiamentos habitacionais (SFH / Caixa): regras matemáticas de amortização e liquidação exatas, cálculo Price/SAC com TR e quitação precisa do saldo devedor.',
     highlights: [

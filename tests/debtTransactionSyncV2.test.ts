@@ -101,6 +101,58 @@ const NOW = new Date('2026-09-01T12:00:00Z');
 }
 
 // ────────────────────────────────────────────────────────────────
+// 2b. Financiamento Caixa Price + TR — progressão mensal (Demonstrativo Caixa)
+// As parcelas futuras nunca caem abaixo do mês base de setembro e progridem pela TR
+// ────────────────────────────────────────────────────────────────
+{
+  const caixaDebt: Debt = {
+    id: 'debt-caixa-real',
+    title: 'Financiamento Habitacional Caixa',
+    creditor: 'Caixa Econômica Federal',
+    contractType: 'real_estate',
+    amortizationSystem: 'PRICE',
+    indexer: 'TR',
+    indexerRate: 0.1708, // 0.1708% a.m.
+    totalAmount: 152350,
+    remainingAmount: 154207.98,
+    installmentAmount: 749.60, // Setembro
+    insuranceMonthly: 28.34,
+    interestRate: 4.33,
+    totalInstallments: 420,
+    paidInstallments: 19,
+    dueDay: 21,
+    nextDueDate: '2026-09-21',
+    payments: [],
+    syncToTransactions: true,
+  };
+
+  const txs = buildDebtInstallmentTransactions(caixaDebt, 12, 'acc-test', NOW);
+  assert.equal(txs.length, 12);
+
+  // Parcela 1 (Setembro): R$ 749.60
+  assert.equal(txs[0].amount, 749.60, 'Parcela 1 (Setembro) = 749.60');
+
+  // Parcelas 2 a 12 (Outubro em diante): NUNCA abaixo de Setembro, estritamente crescentes
+  for (let i = 1; i < txs.length; i++) {
+    assert.ok(
+      txs[i].amount > txs[i - 1].amount,
+      `Parcela ${i + 1} (${txs[i].amount}) deve ser maior que parcela ${i} (${txs[i - 1].amount}) devido à TR da Caixa`
+    );
+    assert.ok(
+      txs[i].amount >= 749.60,
+      `Parcela ${i + 1} (${txs[i].amount}) não pode ficar abaixo de Setembro (749.60)`
+    );
+  }
+
+  // Verificar valores projetados com precisão
+  assert.equal(txs[1].amount, 750.88, 'Outubro = 750.88');
+  assert.equal(txs[2].amount, 752.16, 'Novembro = 752.16');
+  assert.equal(txs[3].amount, 753.45, 'Dezembro = 753.45');
+
+  console.log('OK: financiamento Caixa Price + TR — progressão estritamente crescente validada!');
+}
+
+// ────────────────────────────────────────────────────────────────
 // 3. Financiamento veicular SAC — parcelas decrescentes
 // ────────────────────────────────────────────────────────────────
 {

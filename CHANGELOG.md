@@ -3,6 +3,16 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.59] - 2026-09-11
+
+### 📈 Financiamentos Habitacionais: Progressão Contínua Price + TR (Caixa Econômica Federal)
+- **Progressão Monetária Exata pela TR**:
+  - Em financiamentos habitacionais na Tabela Price com TR, as parcelas futuras são ancoradas na prestação do mês base emitida e progridem exponencialmente com a taxa do indexador ($PMT_t = PMT_{t-1} \times (1 + TR)$).
+  - Elimina quedas artificiais para valores abaixo da parcela corrente (ex: parcelas que caíam indevidamente abaixo do valor de setembro).
+  - Prêmios de seguro habitacional obrigatório (MIP e DFI) acompanham a evolução monetária do contrato, reproduzindo com precisão os demonstrativos de valores cobrados da Caixa.
+- **Saneamento e Deduplicação no Banco de Dados**:
+  - Reconciliação atômica de transações pendentes de financiamento, removendo duplicatas e garantindo 12 parcelas futuras consistentes no Extrato e Calendário.
+
 ## [1.1.58] - 2026-09-10
 
 ### 🏦 Financiamentos Habitacionais: Unificação do Cronograma SFH / Caixa & Quitação Determinística

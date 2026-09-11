@@ -90,19 +90,46 @@ export const buildDebtInstallmentTransactions = (
       const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
 
       // Parcela 1 (offset 0): é a parcela imediatamente vigente emitida pelo banco.
-      // O valor salvo no contrato sobrescreve APENAS a parcela emitida (mês corrente).
-      // Parcelas futuras (offset > 0) seguem estritamente a projeção matemática calculada pelo cronograma.
+      // Em contratos indexados (Tabela Price + TR ou IPCA, padrão Caixa Econômica Federal):
+      // A prestação base é corrigida mensalmente pelo indexador (PMT_t = PMT_{t-1} * (1 + indexer)).
+      // Quando o valor cadastrado está alinhado ao contrato (dentro de 20% do cálculo teórico),
+      // ele serve como âncora real e os meses seguintes progridem monetariamente conforme o demonstrativo
+      // oficial da Caixa, nunca caindo abaixo do mês base.
+      // Se houver uma discrepância extrema (>20%), tratou-se de um aporte/ajuste atípico no mês e as futuras
+      // seguem o cronograma matemático progressivo.
       const isFirstPending = offset === 0;
       const isRealIssued = isFirstPending && debt.installmentAmount > 0;
-      const amount = isRealIssued ? round2(debt.installmentAmount) : round2(row.totalInstallment);
+      const isIndexedPrice =
+        (debt.amortizationSystem === 'PRICE' || !debt.amortizationSystem) &&
+        (debt.indexer === 'TR' || debt.indexer === 'IPCA') &&
+        (debt.indexerRate ?? 0) > 0 &&
+        debt.installmentAmount > 0;
+
+      const indexerMonthlyDecimal = (debt.indexerRate ?? 0) / 100;
+      const isContractualBase =
+        isIndexedPrice &&
+        row.totalInstallment > 0 &&
+        Math.abs(debt.installmentAmount - row.totalInstallment) / row.totalInstallment <= 0.20;
+
+      let amount = row.totalInstallment;
+      if (isContractualBase) {
+        amount = round2(debt.installmentAmount * Math.pow(1 + indexerMonthlyDecimal, offset));
+      } else if (isRealIssued) {
+        amount = round2(debt.installmentAmount);
+      } else {
+        amount = round2(row.totalInstallment);
+      }
 
       const interest = round2(row.interestAmount);
-      const insurance = round2(row.insuranceAmount);
+      const insurance = round2(
+        (debt.insuranceMonthly || row.insuranceAmount || 0) *
+          (isIndexedPrice ? Math.pow(1 + indexerMonthlyDecimal, offset) : 1)
+      );
       const adminFee = round2(row.adminFeeAmount);
       const correction = round2(row.trCorrection);
       let amortization = round2(row.amortizationAmount);
 
-      if (isRealIssued) {
+      if (isRealIssued || isContractualBase) {
         const nonAmortizing = interest + insurance + adminFee;
         amortization = Math.max(0, round2(amount - nonAmortizing));
       }

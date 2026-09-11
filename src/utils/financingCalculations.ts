@@ -161,21 +161,32 @@ export function generateAmortizationSchedule(options: {
     const interest = correctedBalance * iMonthly;
     totalInterest += interest;
 
-    // 3. Amortização teórica conforme sistema contratado
+    // 3. Seguro mensal indexado pela TR (conforme apólice Caixa MIP/DFI)
+    const currentInsurance = monthlyInsurance > 0 && indexerMonthlyDecimal > 0
+      ? monthlyInsurance * Math.pow(1 + indexerMonthlyDecimal, m - 1)
+      : monthlyInsurance;
+
+    // 4. Amortização e prestação conforme sistema contratado
     let amortization = 0;
+    let installmentTotal = 0;
+
     if (remainingTerm <= 1) {
       // No último mês, a amortização quita exatamente o saldo devedor corrigido
       amortization = correctedBalance;
+      installmentTotal = amortization + interest + currentInsurance + adminFee;
     } else if (system === 'SAC') {
       // SAC: Quota de amortização sobre o saldo corrigido dividido pelo prazo restante
       amortization = correctedBalance / remainingTerm;
+      installmentTotal = amortization + interest + currentInsurance + adminFee;
     } else {
       // PRICE: Recálculo da prestação base sobre o saldo corrigido para o prazo restante
       if (iMonthly > 0) {
         const pmtBase = calculatePricePMT(correctedBalance, iMonthly, remainingTerm);
         amortization = pmtBase - interest;
+        installmentTotal = amortization + interest + currentInsurance + adminFee;
       } else {
         amortization = correctedBalance / remainingTerm;
+        installmentTotal = amortization + interest + currentInsurance + adminFee;
       }
     }
 
@@ -185,17 +196,16 @@ export function generateAmortizationSchedule(options: {
       amortization = 0;
     } else if (amortization > correctedBalance) {
       amortization = correctedBalance;
+      installmentTotal = amortization + interest + currentInsurance + adminFee;
     }
 
     totalAmortization += amortization;
 
-    // 4. Saldo devedor final do mês: saldo corrigido menos amortização
+    // 5. Saldo devedor final do mês: saldo corrigido menos amortização
     const finalBalance = Math.max(0, correctedBalance - amortization);
 
-    // 5. Total da prestação do mês (Amortização + Juros + Seguro + Taxa Administrativa)
-    const installmentTotal = amortization + interest + monthlyInsurance + adminFee;
     totalPaid += installmentTotal;
-    totalInsurance += monthlyInsurance;
+    totalInsurance += currentInsurance;
 
     schedule.push({
       installmentNumber,
@@ -205,7 +215,7 @@ export function generateAmortizationSchedule(options: {
       trCorrection: Math.round(trCorrection * 100) / 100,
       interestAmount: Math.round(interest * 100) / 100,
       amortizationAmount: Math.round(amortization * 100) / 100,
-      insuranceAmount: Math.round(monthlyInsurance * 100) / 100,
+      insuranceAmount: Math.round(currentInsurance * 100) / 100,
       adminFeeAmount: Math.round(adminFee * 100) / 100,
       totalInstallment: Math.round(installmentTotal * 100) / 100,
       finalBalance: Math.round(finalBalance * 100) / 100,

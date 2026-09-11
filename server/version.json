@@ -1,7 +1,7 @@
 {
   "minSupportedVersion": "1.0.0",
-  "releaseDate": "2026-09-09",
-  "notes": "Correção do cadastro de despesas e migração automática das parcelas de dívidas e financiamentos para o extrato.",
+  "releaseDate": "2026-09-11",
+  "notes": "Progressão monetária contínua para financiamentos habitacionais Price + TR (Caixa) e indexação de seguros.",
   "isLatest": true,
   "sections": {
     "features": [
