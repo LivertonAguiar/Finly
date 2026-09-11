@@ -158,6 +158,43 @@ export const DebtsPage: React.FC = () => {
     };
   }, [totalAmount, remainingAmount, totalInstallments, paidInstallments, interestRate, insuranceMonthly, adminFeeMonthly, indexer, indexerRate, amortizationSystem, contractType]);
 
+  // Diagnóstico analítico de financiamentos (Eficiência e impacto da TR)
+  const financingDiagnosis = useMemo(() => {
+    const map: Record<string, { efficiency: number; isIncreasing: boolean; netVariation: number }> = {};
+    debts.forEach(d => {
+      const isStruct = d.contractType === 'real_estate' || d.contractType === 'vehicle' || Boolean(d.amortizationSystem);
+      if (isStruct && d.remainingAmount > 0) {
+        try {
+          const isFixed = d.indexer === 'FIXED';
+          const rate = isFixed ? 0 : (d.indexerRate ?? 0);
+          const sched = generateAmortizationSchedule({
+            principal: d.remainingAmount,
+            nominalAnnualRate: d.interestRate || 4.25,
+            remainingMonths: Math.max(1, d.totalInstallments - (d.paidInstallments || 0)),
+            paidInstallments: d.paidInstallments || 0,
+            system: d.amortizationSystem || 'PRICE',
+            indexer: d.indexer || 'TR',
+            monthlyIndexerRate: rate,
+            monthlyTR: d.indexer === 'TR' ? rate : 0,
+            monthlyInsurance: d.insuranceMonthly || 0,
+            adminFee: d.adminFeeMonthly || 0,
+          });
+          if (sched.schedule.length > 0) {
+            const first = sched.schedule[0];
+            map[d.id] = {
+              efficiency: first.installmentEfficiency,
+              isIncreasing: first.isBalanceIncreasing,
+              netVariation: first.netBalanceVariation,
+            };
+          }
+        } catch {
+          // ignore
+        }
+      }
+    });
+    return map;
+  }, [debts]);
+
   const handleOpenNew = () => {
     setEditingDebt(null);
     setContractType('loan');
@@ -607,6 +644,30 @@ export const DebtsPage: React.FC = () => {
                       <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
                         {formatCurrency(d.insuranceMonthly, user.currency, !user.showValues)}
                       </span>
+                    </div>
+                  )}
+
+                  {/* Diagnóstico Educativo Amigo do Pai Rico / Caixa */}
+                  {financingDiagnosis[d.id] && (
+                    <div className={`mt-2 px-3 py-1.5 rounded-xl border flex items-center justify-between text-[10.5px] transition-all ${
+                      financingDiagnosis[d.id].isIncreasing
+                        ? 'bg-amber-500/[0.04] dark:bg-amber-950/20 border-amber-500/25 text-amber-800 dark:text-amber-300'
+                        : 'bg-emerald-500/[0.04] dark:bg-emerald-950/20 border-emerald-500/25 text-emerald-800 dark:text-[#5eead4]'
+                    }`}>
+                      <div className="flex items-center gap-1 font-medium">
+                        <Percent className="w-3 h-3 opacity-80" />
+                        <span>Eficiência: <strong className="font-mono font-bold">{financingDiagnosis[d.id].efficiency.toFixed(1)}%</strong> amortiza dívida</span>
+                      </div>
+                      {financingDiagnosis[d.id].isIncreasing ? (
+                        <span className="font-bold font-mono text-[10px] flex items-center gap-1 text-amber-600 dark:text-amber-400" title="A correção pela TR supera a amortização neste mês">
+                          <span>TR &gt; Amort. (+{formatCurrency(financingDiagnosis[d.id].netVariation, user.currency, !user.showValues)})</span>
+                          <span className="text-[10px]">⚠️</span>
+                        </span>
+                      ) : (
+                        <span className="font-bold text-[10px] text-emerald-600 dark:text-[#5eead4]">
+                          Saldo em queda ✓
+                        </span>
+                      )}
                     </div>
                   )}
 

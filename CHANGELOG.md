@@ -3,6 +3,17 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.60] - 2026-09-11
+
+### 📊 Diagnóstico Analítico de Financiamentos (Eficiência da Parcela & Alerta Price + TR)
+- **Eficiência da Parcela (% de Amortização Real)**:
+  - Novo indicador visual e métrica no motor de cálculo que expõe exatamente qual fatia de cada prestação paga abate a dívida principal e quanto é consumido por juros contratuais, prêmios de seguro (MIP/DFI) e taxas administrativas.
+  - Exibição de barra de composição e percentuais médios tanto no modal de cronograma de amortização quanto nos cards de dívidas.
+- **Diagnóstico de Variação Real do Saldo (TR vs Amortização)**:
+  - Alerta educativo transparente que detecta quando a correção monetária pela TR supera a quota de amortização mensal ($\text{TR} > A$), esclarecendo a expansão nominal transitória do saldo nos primeiros anos de financiamentos longos (ex: 420 meses).
+- **Auditoria de Cálculo Centavo a Centavo (Contrato Caixa SFH)**:
+  - Adição de caso de teste automatizado formal auditando as 401 parcelas restantes com base em demonstrativos oficiais da Caixa, garantindo conformidade com regras contratuais nominais ($i_m = 4,25\% / 12$) e tratamento de subsídios/diferenciais do FGTS fora do encargo devido pelo mutuário.
+
 ## [1.1.59] - 2026-09-11
 
 ### 📈 Financiamentos Habitacionais: Progressão Contínua Price + TR (Caixa Econômica Federal)

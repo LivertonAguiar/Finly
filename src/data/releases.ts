@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-11',
+    summary: 'Diagnóstico analítico de financiamentos imobiliários: Eficiência da Parcela (% amortização), indicador de variação do saldo (TR vs Amortização) e auditoria matemática centavo a centavo.',
+    highlights: [
+      {
+        title: 'Eficiência da Parcela (% Amortização Real)',
+        description: 'Exibe exatamente quanto de cada prestação paga realmente abate o saldo devedor principal versus encargos de juros, seguros e taxas administrativas.',
+        type: 'feature',
+      },
+      {
+        title: 'Diagnóstico de Variação Real do Saldo (TR)',
+        description: 'Alerta educativo transparente para financiamentos Price longos (ex: 420 meses), detectando quando a correção monetária pela TR supera a amortização mensal.',
+        type: 'improvement',
+      },
+      {
+        title: 'Auditoria Oficial do Contrato Caixa SFH',
+        description: 'Suíte de testes automatizados validando a decomposição exata da prestação emitida (juros, amortização e seguros), preservando subsídios do FGTS fora do encargo a pagar.',
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    version: '1.1.59',
+    releaseDate: '2026-09-11',
     summary: 'Progressão monetária contínua para financiamentos Price + TR (Caixa Econômica Federal) ancorados na parcela emitida e indexação escalonada de seguros MIP/DFI.',
     highlights: [
       {

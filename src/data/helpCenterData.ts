@@ -648,4 +648,11 @@ export const HELP_FAQS: HelpFaqItem[] = [
     category: 'planejamento',
     tags: ['financiamento', 'imobiliario', 'veiculo', 'price', 'sac', 'tr', 'mip', 'dfi', 'parcelas', 'dividas'],
   },
+  {
+    id: 'faq-financiamento-eficiencia-tr',
+    question: 'O que é Eficiência da Parcela e por que minha dívida pode subir mesmo pagando em dia (Price + TR)?',
+    answer: 'A Eficiência da Parcela mede a porcentagem de cada pagamento que efetivamente reduz o saldo devedor (amortização real) versus o que é consumido por juros, seguros habitacionais (MIP/DFI) e taxas. Em financiamentos longos na Tabela Price indexados pela TR (padrão Caixa SFH), nos primeiros anos a amortização inicial é pequena e a correção monetária pela TR incide sobre o saldo devedor integral. Quando a correção mensal da TR supera a amortização (TR > Amortização), o saldo devedor nominal tem um aumento transitório no mês mesmo com a prestação paga em dia. O Finly exibe esse diagnóstico educativo com clareza nos cards de dívidas e no modal de cronograma completo.',
+    category: 'planejamento',
+    tags: ['eficiencia', 'amortizacao', 'tr', 'saldo devedor', 'price', 'caixa', 'sfh', 'juros'],
+  },
 ];

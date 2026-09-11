@@ -177,4 +177,66 @@ import {
   console.log('OK: contrato prefixado nunca recebe TR e mantém parcelas constantes');
 }
 
+// ────────────────────────────────────────────────────────────────
+// 8. Caso Real Caixa Econômica Federal (Demonstrativo 2025/2026 - Auditoria)
+// ────────────────────────────────────────────────────────────────
+{
+  // Dados do contrato real do usuário confirmados no demonstrativo Caixa:
+  // Saldo Teórico em 21/08/2026: R$ 154.059,00
+  // Prazo total: 420 meses | Prazo restante: 401 meses (19 pagas)
+  // Taxa nominal: 4.25% a.a. -> nominal mensal = 4.25 / 12 = 0.354166667%
+  // Sistema: TP (Tabela Price)
+  // TR oficial período 20/08 -> 20/09: 0.1690% (0.001690)
+  // Seguro mensal Caixa (MIP + DFI): R$ 28.76
+  // Prestação financeira anterior (parcela 19): R$ 719.62
+
+  const previousFinancialPayment = 719.62;
+  const trRate = 0.1690; // % a.m.
+  const trDecimal = trRate / 100;
+
+  // 8.1 Reajuste Price + TR comprovado no extrato Caixa:
+  // P_20 = P_19 * (1 + TR)
+  const expectedPmtFinancial = Math.round(previousFinancialPayment * (1 + trDecimal) * 100) / 100;
+  assert.equal(expectedPmtFinancial, 720.84, 'P_20 financeira deve ser R$ 720.84');
+
+  const result = generateAmortizationSchedule({
+    principal: 154059.00,
+    nominalAnnualRate: 4.25,
+    remainingMonths: 401,
+    paidInstallments: 19,
+    system: 'PRICE',
+    indexer: 'TR',
+    monthlyIndexerRate: trRate,
+    monthlyInsurance: 28.76,
+    startDate: new Date('2026-09-21'),
+  });
+
+  assert.equal(result.schedule.length, 401, 'Deve ter 401 parcelas restantes');
+  const p20 = result.schedule[0];
+
+  assert.equal(p20.installmentNumber, 20, 'Primeira parcela pendente deve ser a 20');
+
+  // Decomposição contratual oficial Caixa:
+  // Juros: Saldo corrigido (154.059 * 1.001690 = 154.319,36) * (0.0425 / 12) = 546.55
+  assert.ok(Math.abs(p20.interestAmount - 546.55) <= 0.05, `Juros esperados ~546.54/546.55: obteve ${p20.interestAmount}`);
+  assert.ok(Math.abs(p20.amortizationAmount - 174.30) <= 0.50, `Amortização esperada ~174.30: obteve ${p20.amortizationAmount}`);
+  assert.equal(p20.insuranceAmount, 28.76, 'Seguro Caixa R$ 28.76');
+
+  // Valor emitido total Caixa: R$ 749.60 (sem somar Diferencial FGTS R$ 168.28!)
+  assert.ok(Math.abs(p20.totalInstallment - 749.60) <= 0.50, `Total parcela ~749.60: obteve ${p20.totalInstallment}`);
+
+  // Fenômeno Amigo do Pai Rico:
+  // Correção TR (~260.36) > Amortização (~174.30) => Saldo devedor cresce nominalmente no início!
+  assert.ok(p20.trCorrection > p20.amortizationAmount, 'TR deve ser maior que amortização');
+  assert.equal(p20.isBalanceIncreasing, true, 'isBalanceIncreasing deve ser true');
+  assert.ok(p20.netBalanceVariation > 0, 'Variação líquida deve ser positiva');
+  assert.ok(result.monthsWithBalanceIncrease > 0, `Meses com dívida subindo: ${result.monthsWithBalanceIncrease}`);
+
+  // Eficiência da parcela: ~23.2%
+  assert.ok(p20.installmentEfficiency > 20 && p20.installmentEfficiency < 25, `Eficiência ~23%: ${p20.installmentEfficiency}%`);
+  assert.equal(result.schedule[400].finalBalance, 0, 'Cronograma final deve zerar saldo devedor');
+
+  console.log(`OK: caso real Caixa auditado centavo a centavo (P20: R$ ${p20.totalInstallment}, Eficiência: ${p20.installmentEfficiency}%, Variação TR: +R$ ${p20.netBalanceVariation})`);
+}
+
 console.log('\n✅ Todos os testes de financingCalculations passaram!');

@@ -131,6 +131,84 @@ export const FinancingScheduleModal: React.FC<FinancingScheduleModalProps> = ({
           </div>
         </div>
 
+        {/* Diagnostic Insights: Eficiência da Parcela & Fenômeno Price + TR */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Eficiência da Parcela */}
+          <div className="p-4 rounded-[20px] bg-slate-50 dark:bg-[#18181C] border border-slate-200/80 dark:border-white/[0.08] space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Percent className="w-4 h-4 text-indigo-500" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Eficiência da Próxima Parcela
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                {scheduleResult.firstInstallmentEfficiency.toFixed(1)}% do valor pago
+              </span>
+            </div>
+            
+            {/* Progress bar visualizing Amortization vs Interest/Fees */}
+            <div className="space-y-1">
+              <div className="w-full bg-rose-500/20 h-2.5 rounded-full overflow-hidden flex">
+                <div 
+                  className="bg-emerald-500 h-full transition-all" 
+                  style={{ width: `${Math.min(100, Math.max(0, scheduleResult.firstInstallmentEfficiency))}%` }} 
+                  title={`Amortização: ${scheduleResult.firstInstallmentEfficiency.toFixed(1)}%`}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
+                <span className="text-emerald-600 dark:text-[#5eead4] font-semibold">
+                  ● Abate a dívida: {scheduleResult.firstInstallmentEfficiency.toFixed(1)}%
+                </span>
+                <span className="text-rose-500 font-semibold">
+                  ● Juros, seguro e taxas: {(100 - scheduleResult.firstInstallmentEfficiency).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+            <p className="text-[10.5px] text-slate-400 leading-relaxed">
+              Média projetada no contrato: <strong className="text-slate-700 dark:text-slate-300 font-mono">{scheduleResult.averageEfficiency.toFixed(1)}%</strong> de amortização.
+            </p>
+          </div>
+
+          {/* Diagnóstico de Variação da Dívida pela TR */}
+          <div className={`p-4 rounded-[20px] border space-y-2 ${
+            scheduleResult.firstMonthBalanceVariation > 0
+              ? 'bg-amber-500/[0.04] dark:bg-amber-950/20 border-amber-500/30'
+              : 'bg-emerald-500/[0.04] dark:bg-emerald-950/20 border-emerald-500/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <TrendingDown className={`w-4 h-4 ${
+                  scheduleResult.firstMonthBalanceVariation > 0 ? 'text-amber-500' : 'text-emerald-500'
+                }`} />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Variação Real do Saldo (TR vs Amortização)
+                </span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black ${
+                scheduleResult.firstMonthBalanceVariation > 0
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'bg-emerald-500/10 text-emerald-600 dark:text-[#5eead4]'
+              }`}>
+                {scheduleResult.firstMonthBalanceVariation > 0 ? '+' : ''}
+                {formatCurrency(scheduleResult.firstMonthBalanceVariation, currency)} / mês
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              {scheduleResult.firstMonthBalanceVariation > 0 ? (
+                <>
+                  <strong className="text-amber-600 dark:text-amber-400 font-bold">Aviso Caixa:</strong> Neste início, a correção pela TR supera a amortização em <strong className="font-mono text-slate-900 dark:text-white">{scheduleResult.monthsWithBalanceIncrease} meses</strong>, fazendo a dívida nominal crescer ligeiramente mesmo em dia.
+                </>
+              ) : (
+                <>
+                  <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Redução Efetiva:</strong> A amortização supera os encargos de correção, garantindo que sua dívida diminui a cada prestação paga.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+
         {/* Search & Metadata Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
           <div className="relative w-full sm:w-72">
@@ -169,10 +247,13 @@ export const FinancingScheduleModal: React.FC<FinancingScheduleModalProps> = ({
                 <tr>
                   <th className="py-3 px-3.5 text-center">Nº</th>
                   <th className="py-3 px-3.5">Vencimento</th>
-                  <th className="py-3 px-3.5 text-right">Saldo Devedor</th>
+                  <th className="py-3 px-3.5 text-right">Saldo Corrigido</th>
                   <th className="py-3 px-3.5 text-right">Amortização</th>
                   <th className="py-3 px-3.5 text-right">Juros</th>
                   <th className="py-3 px-3.5 text-right">Seguro</th>
+                  <th className="py-3 px-3.5 text-right">TR / Índice</th>
+                  <th className="py-3 px-3.5 text-right">Eficiência</th>
+                  <th className="py-3 px-3.5 text-right">Impacto Dívida</th>
                   <th className="py-3 px-3.5 text-right font-black text-slate-900 dark:text-white">Parcela Total</th>
                 </tr>
               </thead>
@@ -185,7 +266,7 @@ export const FinancingScheduleModal: React.FC<FinancingScheduleModalProps> = ({
                     <td className="py-2.5 px-3.5 text-center font-bold text-slate-500 dark:text-slate-400">
                       {row.installmentNumber}
                     </td>
-                    <td className="py-2.5 px-3.5 text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       {formatDate(row.dueDate)}
                     </td>
                     <td className="py-2.5 px-3.5 text-right font-medium text-slate-800 dark:text-slate-200">
@@ -200,7 +281,32 @@ export const FinancingScheduleModal: React.FC<FinancingScheduleModalProps> = ({
                     <td className="py-2.5 px-3.5 text-right text-purple-400 font-medium">
                       {formatCurrency(row.insuranceAmount, currency)}
                     </td>
-                    <td className="py-2.5 px-3.5 text-right font-black text-slate-900 dark:text-white text-[12.5px]">
+                    <td className="py-2.5 px-3.5 text-right text-slate-400 font-medium">
+                      {row.trCorrection > 0 ? `+${formatCurrency(row.trCorrection, currency)}` : 'R$ 0,00'}
+                    </td>
+                    <td className="py-2.5 px-3.5 text-right font-semibold">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                        row.installmentEfficiency >= 50
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-[#5eead4]'
+                          : row.installmentEfficiency >= 25
+                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {row.installmentEfficiency.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3.5 text-right font-bold whitespace-nowrap text-[11px]">
+                      {row.isBalanceIncreasing ? (
+                        <span className="text-amber-500 dark:text-amber-400 inline-flex items-center gap-1" title="A correção pela TR superou a amortização, aumentando a dívida">
+                          +{formatCurrency(row.netBalanceVariation, currency)} <span className="text-[10px]">⚠️</span>
+                        </span>
+                      ) : (
+                        <span className="text-emerald-600 dark:text-[#5eead4]">
+                          -{formatCurrency(Math.abs(row.netBalanceVariation), currency)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3.5 text-right font-black text-slate-900 dark:text-white text-[12.5px] whitespace-nowrap">
                       {formatCurrency(row.totalInstallment, currency)}
                     </td>
                   </tr>

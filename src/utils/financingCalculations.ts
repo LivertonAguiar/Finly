@@ -20,6 +20,12 @@ export interface FinancingInstallmentRow {
   totalInstallment: number;
   finalBalance: number;
   isEstimated?: boolean;
+  /** Variação líquida do saldo devedor no mês: trCorrection - amortizationAmount (> 0 indica que a dívida subiu nominalmente) */
+  netBalanceVariation: number;
+  /** Eficiência da parcela: percentual do total pago que efetivamente reduziu o saldo devedor (0 a 100%) */
+  installmentEfficiency: number;
+  /** Indica se neste mês a correção monetária (TR/IPCA) foi maior que a amortização, fazendo a dívida crescer */
+  isBalanceIncreasing: boolean;
 }
 
 export interface AmortizationScheduleResult {
@@ -31,6 +37,14 @@ export interface AmortizationScheduleResult {
   totalCorrection: number;
   estimatedEndDate: string;
   hasNegativeAmortization?: boolean;
+  /** Eficiência da primeira parcela projetada (% amortização) */
+  firstInstallmentEfficiency: number;
+  /** Variação líquida do saldo na primeira parcela (R$) */
+  firstMonthBalanceVariation: number;
+  /** Eficiência média de todas as parcelas no período (% amortização) */
+  averageEfficiency: number;
+  /** Quantidade de meses em que a dívida aumentou nominalmente por conta do indexador superando a amortização */
+  monthsWithBalanceIncrease: number;
 }
 
 export interface ExtraAmortizationSimulation {
@@ -204,6 +218,13 @@ export function generateAmortizationSchedule(options: {
     // 5. Saldo devedor final do mês: saldo corrigido menos amortização
     const finalBalance = Math.max(0, correctedBalance - amortization);
 
+    // Métricas analíticas ("Amigo do Pai Rico" / Auditoria Caixa)
+    const netBalanceVariation = Math.round((trCorrection - amortization) * 100) / 100;
+    const isBalanceIncreasing = netBalanceVariation > 0;
+    const installmentEfficiency = installmentTotal > 0
+      ? Math.round((amortization / installmentTotal) * 10000) / 100
+      : 0;
+
     totalPaid += installmentTotal;
     totalInsurance += currentInsurance;
 
@@ -220,12 +241,21 @@ export function generateAmortizationSchedule(options: {
       totalInstallment: Math.round(installmentTotal * 100) / 100,
       finalBalance: Math.round(finalBalance * 100) / 100,
       isEstimated: true,
+      netBalanceVariation,
+      installmentEfficiency,
+      isBalanceIncreasing,
     });
 
     currentBalance = finalBalance;
   }
 
   const lastDate = schedule.length > 0 ? schedule[schedule.length - 1].dueDate : startDate.toISOString().split('T')[0];
+  const firstRow = schedule[0];
+  const monthsWithBalanceIncrease = schedule.filter(r => r.isBalanceIncreasing).length;
+  const totalEfficiencySum = schedule.reduce((acc, r) => acc + r.installmentEfficiency, 0);
+  const averageEfficiency = schedule.length > 0
+    ? Math.round((totalEfficiencySum / schedule.length) * 100) / 100
+    : 0;
 
   return {
     schedule,
@@ -236,6 +266,10 @@ export function generateAmortizationSchedule(options: {
     totalCorrection: Math.round(totalCorrection * 100) / 100,
     estimatedEndDate: lastDate,
     hasNegativeAmortization,
+    firstInstallmentEfficiency: firstRow ? firstRow.installmentEfficiency : 0,
+    firstMonthBalanceVariation: firstRow ? firstRow.netBalanceVariation : 0,
+    averageEfficiency,
+    monthsWithBalanceIncrease,
   };
 }
 
