@@ -329,7 +329,7 @@ const baseDebtForEdit: Debt = {
   paidInstallments: 1,
   dueDay: 10,
   nextDueDate: '2026-11-10',
-  interestRate: 0,
+  interestRate: 5,
   contractType: 'real_estate',
   insuranceMonthly: 0,
   adminFeeMonthly: 0,

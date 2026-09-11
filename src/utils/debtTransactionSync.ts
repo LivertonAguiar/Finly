@@ -83,6 +83,14 @@ export const buildDebtInstallmentTransactions = (
       startDate: new Date(`${baseDueDateStr.substring(0, 10)}T12:00:00`),
     });
 
+    // O valor salvo no contrato é a prestação real informada pelo usuário.
+    // Use-o como base da primeira parcela e preserve a variação calculada
+    // pelo Price/SAC nas parcelas seguintes (TR, juros, seguros e taxas).
+    const calculatedFirstInstallment = schedule.schedule[0]?.totalInstallment || 0;
+    const installmentAdjustment = debt.installmentAmount > 0 && calculatedFirstInstallment > 0
+      ? debt.installmentAmount - calculatedFirstInstallment
+      : 0;
+
     return schedule.schedule.slice(0, count).map((row, offset) => {
       const installmentNumber = startInstallment + offset;
       const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
@@ -90,7 +98,7 @@ export const buildDebtInstallmentTransactions = (
       return {
         id: `tx-debt-${debt.id}-${installmentNumber}`,
         description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
-        amount: round2(row.totalInstallment),
+        amount: round2(Math.max(0, row.totalInstallment + installmentAdjustment)),
         type: 'expense' as const,
         date: dateStr,
         dueDate: dateStr,

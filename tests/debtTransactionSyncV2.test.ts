@@ -145,7 +145,46 @@ const NOW = new Date('2026-09-01T12:00:00Z');
 }
 
 // ────────────────────────────────────────────────────────────────
-// 4. Parcelas pagas não são recriadas (reconciliação)
+// 4. Edição do valor da prestação em financiamento estruturado
+// ────────────────────────────────────────────────────────────────
+{
+  const financing: Debt = {
+    id: 'debt-structured-edit',
+    title: 'Financiamento Price editado',
+    creditor: 'Banco teste',
+    contractType: 'real_estate',
+    amortizationSystem: 'PRICE',
+    indexer: 'FIXED',
+    totalAmount: 100000,
+    remainingAmount: 100000,
+    installmentAmount: 1250,
+    interestRate: 5,
+    totalInstallments: 120,
+    paidInstallments: 0,
+    dueDay: 10,
+    nextDueDate: '2026-10-10',
+    payments: [],
+    syncToTransactions: true,
+  };
+
+  const initialTransactions = buildDebtInstallmentTransactions(financing, 3, 'acc-test', NOW);
+  const editedDebt = { ...financing, installmentAmount: 1375 };
+  const reconciled = reconcileDebtTransactions([editedDebt], initialTransactions, accounts, {
+    horizonMonths: 3,
+    now: NOW,
+  });
+  const pending = reconciled.transactions
+    .filter(t => t.debtId === financing.id && t.status === 'pending')
+    .sort((a, b) => (a.debtInstallmentNumber || 0) - (b.debtInstallmentNumber || 0));
+
+  assert.equal(pending.length, 3, 'Financiamento editado deve manter as três parcelas pendentes');
+  assert.equal(pending[0].amount, 1375, 'Primeira parcela deve refletir o valor mensal salvo no contrato');
+  assert.equal(pending[1].amount, 1375, 'Parcelas Price pendentes devem ser atualizadas após a edição');
+  console.log('OK: edição da prestação atualiza financiamento estruturado com juros');
+}
+
+// ────────────────────────────────────────────────────────────────
+// 5. Parcelas pagas não são recriadas (reconciliação)
 // ────────────────────────────────────────────────────────────────
 {
   const debt: Debt = {
@@ -217,7 +256,7 @@ const NOW = new Date('2026-09-01T12:00:00Z');
 }
 
 // ────────────────────────────────────────────────────────────────
-// 5. Empréstimo simples mantém backward compat (regressão do teste original)
+// 6. Empréstimo simples mantém backward compat (regressão do teste original)
 // ────────────────────────────────────────────────────────────────
 {
   const legacyDebt: Debt = {

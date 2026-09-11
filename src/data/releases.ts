@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-10',
+    summary: 'Financiamentos estruturados agora conciliam as parcelas pendentes do Extrato usando o valor real salvo no contrato, preservando parcelas pagas e evitando divergências entre a dívida e os lançamentos.',
+    highlights: [
+      {
+        title: 'Parcelas pelo Valor Real do Contrato',
+        description: 'Lançamentos pendentes de financiamentos Price/SAC com juros passam a respeitar a prestação mensal salva, evitando valores calculados abaixo do esperado.',
+        type: 'fix',
+      },
+      {
+        title: 'Edições Refletidas no Extrato',
+        description: 'Ao alterar o financiamento, a reconciliação atualiza as parcelas futuras vinculadas sem duplicar transações e sem alterar pagamentos já concluídos.',
+        type: 'fix',
+      },
+      {
+        title: 'Cobertura de Regressão',
+        description: 'Novo teste cobre financiamento estruturado com juros para impedir que a divergência de parcelas retorne em alterações futuras.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.56',
+    releaseDate: '2026-09-10',
     summary: 'Cálculo de parcelas em tempo real com decomposição detalhada (Amortização, Juros, Seguros MIP/DFI e Taxa de Administração), sincronização determinística e atualização automática de parcelas pendentes.',
     highlights: [
       {

@@ -3,6 +3,15 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.57] - 2026-09-10
+
+### Financiamentos: Parcelas Reconciliadas pelo Valor Real
+- **Correção do Valor das Parcelas no Extrato**:
+  - Financiamentos estruturados com juros agora respeitam o valor mensal salvo no contrato ao gerar e atualizar lançamentos pendentes.
+  - A reconciliação preserva parcelas pagas e recalcula somente parcelas futuras vinculadas ao financiamento.
+- **Regressão Automatizada**:
+  - Adicionado cenário com juros em financiamento estruturado para garantir que edições futuras continuem refletindo no Extrato.
+
 ## [1.1.56] - 2026-09-10
 
 ### 🏠 Decomposição de Parcelas em Tempo Real & Sincronização Determinística de Transações
