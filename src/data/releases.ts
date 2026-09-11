@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-10',
+    summary: 'Unificação do cronograma de financiamentos habitacionais (SFH / Caixa): regras matemáticas de amortização e liquidação exatas, cálculo Price/SAC com TR e quitação precisa do saldo devedor.',
+    highlights: [
+      {
+        title: 'Amortização & Saldo Devedor SFH/Caixa',
+        description: 'Baixa de parcelas passa a amortizar estritamente o principal após correção monetária, separando juros, seguros e taxas administrativas.',
+        type: 'feature',
+      },
+      {
+        title: 'Convergência Exata na Tabela Price com TR',
+        description: 'Recálculo mês a mês sobre o prazo remanescente garante que o saldo devedor convirja para R$ 0,00 no término do contrato.',
+        type: 'fix',
+      },
+      {
+        title: 'Parcelas Reais vs Futuras',
+        description: 'Edições na parcela emitida aplicam-se exclusivamente ao mês vigente, preservando a projeção matemática das parcelas futuras.',
+        type: 'fix',
+      },
+      {
+        title: 'Suporte a Contratos Prefixados',
+        description: 'Contratos prefixados passam a operar com taxa de indexação zero, sem aplicação indevida de TR.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.57',
+    releaseDate: '2026-09-10',
     summary: 'Financiamentos estruturados agora conciliam as parcelas pendentes do Extrato usando o valor real salvo no contrato, preservando parcelas pagas e evitando divergências entre a dívida e os lançamentos.',
     highlights: [
       {

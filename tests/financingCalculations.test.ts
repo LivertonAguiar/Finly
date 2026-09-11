@@ -63,18 +63,21 @@ import {
   assert.ok(first.adminFeeAmount === 25, `Taxa admin: ${first.adminFeeAmount}`);
   assert.ok(first.trCorrection > 0, 'TR correction > 0');
 
-  // Com TR acumulada, o saldo pode não zerar no modelo simplificado.
-  // Validamos que o cronograma foi gerado completamente e os totais são coerentes.
+  // Com a regra da Caixa, o saldo devedor é atualizado e amortizado progressivamente até zerar
+  const last = result.schedule[419];
+  assert.equal(last.finalBalance, 0, `Price com TR deve zerar exatamente no final: ${last.finalBalance}`);
+  assert.equal(result.hasNegativeAmortization, false, 'Contrato normal não deve ter amortização negativa');
+
   assert.ok(result.totalPaid > 0, `Total pago > 0: ${result.totalPaid}`);
   assert.ok(result.totalInterest > 0, 'Total juros > 0');
   assert.ok(result.totalCorrection > 0, 'Total correção TR > 0');
   assert.ok(result.totalInsurance > 0, 'Total seguro > 0');
 
-  console.log('OK: cronograma Price 420m com TR, seguro e taxa');
+  console.log('OK: cronograma Price 420m com TR, seguro, taxa e saldo zerado em 0.00');
 }
 
 // ────────────────────────────────────────────────────────────────
-// 4. Cronograma SAC — parcelas decrescentes
+// 4. Cronograma SAC — parcelas decrescentes e saldo zerado
 // ────────────────────────────────────────────────────────────────
 {
   const result = generateAmortizationSchedule({
@@ -100,7 +103,11 @@ import {
   const amort50 = result.schedule[49].amortizationAmount;
   assert.ok(Math.abs(amort1 - amort50) < 1, 'SAC: amortização deve ser constante');
 
-  console.log('OK: cronograma SAC com parcelas decrescentes');
+  // Saldo final deve zerar
+  const last = result.schedule[119];
+  assert.equal(last.finalBalance, 0, 'SAC deve zerar saldo devedor');
+
+  console.log('OK: cronograma SAC com parcelas decrescentes e saldo final 0.00');
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -119,6 +126,7 @@ import {
   assert.ok(Math.abs(first.totalInstallment - 1000) < 0.01, `Price 0%: parcela ${first.totalInstallment}`);
   assert.equal(first.interestAmount, 0, 'Sem juros: interest = 0');
   assert.equal(result.totalInterest, 0, 'Total juros = 0');
+  assert.equal(result.schedule[59].finalBalance, 0, 'Price 0% zera saldo final');
 
   console.log('OK: Price sem juros = parcelas iguais (valor/meses)');
 }
@@ -137,8 +145,36 @@ import {
 
   assert.equal(result.schedule[0].installmentNumber, 20, 'Primeira parcela = 20 (19 pagas)');
   assert.equal(result.schedule.length, 401);
+  assert.equal(result.schedule[400].finalBalance, 0, 'Price com offset zera saldo no final');
 
   console.log('OK: offset de parcelas pagas');
+}
+
+// ────────────────────────────────────────────────────────────────
+// 7. Contrato Prefixado (FIXED) nunca recebe TR mesmo com taxa informada
+// ────────────────────────────────────────────────────────────────
+{
+  const result = generateAmortizationSchedule({
+    principal: 100000,
+    nominalAnnualRate: 10,
+    remainingMonths: 60,
+    system: 'PRICE',
+    indexer: 'FIXED',
+    monthlyTR: 0.1708, // Deve ser ignorado porque indexer é FIXED
+  });
+
+  assert.equal(result.totalCorrection, 0, 'Contrato FIXED deve ter correção 0');
+  assert.equal(result.schedule[0].trCorrection, 0, 'Linha 1 de FIXED tem trCorrection 0');
+  assert.equal(result.schedule[59].finalBalance, 0, 'FIXED deve zerar saldo devedor');
+
+  // Parcelas Price prefixadas são estritamente iguais
+  const p1 = result.schedule[0].totalInstallment;
+  const p30 = result.schedule[29].totalInstallment;
+  const p60 = result.schedule[59].totalInstallment;
+  assert.equal(p1, p30, 'Parcela 1 == Parcela 30 em Price prefixado');
+  assert.equal(p1, p60, 'Parcela 1 == Parcela 60 em Price prefixado');
+
+  console.log('OK: contrato prefixado nunca recebe TR e mantém parcelas constantes');
 }
 
 console.log('\n✅ Todos os testes de financingCalculations passaram!');

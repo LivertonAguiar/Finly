@@ -19,6 +19,7 @@ export interface FinancingInstallmentRow {
   adminFeeAmount: number;
   totalInstallment: number;
   finalBalance: number;
+  isEstimated?: boolean;
 }
 
 export interface AmortizationScheduleResult {
@@ -29,6 +30,7 @@ export interface AmortizationScheduleResult {
   totalInsurance: number;
   totalCorrection: number;
   estimatedEndDate: string;
+  hasNegativeAmortization?: boolean;
 }
 
 export interface ExtraAmortizationSimulation {
@@ -81,6 +83,11 @@ export function calculatePricePMT(principal: number, monthlyRate: number, totalM
 
 /**
  * Gera a tabela completa de evolução da dívida (Tabela Price ou SAC)
+ * Regra oficial da Caixa Econômica Federal / SFH:
+ * 1. Atualização monetária do saldo anterior pelo indexador (TR ou IPCA)
+ * 2. Cálculo dos juros contratuais sobre o saldo devedor corrigido
+ * 3. Amortização real calculada sobre o saldo corrigido e prazo remanescente
+ * 4. Quitação exata no término do prazo (saldo final = 0)
  */
 export function generateAmortizationSchedule(options: {
   principal: number; // Saldo devedor atual
@@ -88,7 +95,9 @@ export function generateAmortizationSchedule(options: {
   remainingMonths: number; // Ex: 401
   paidInstallments?: number; // Ex: 19
   system?: 'PRICE' | 'SAC';
-  monthlyTR?: number; // Ex: 0.1708 (% a.m.)
+  indexer?: 'TR' | 'IPCA' | 'FIXED';
+  monthlyIndexerRate?: number; // Taxa mensal do indexador (% a.m.)
+  monthlyTR?: number; // Compatibilidade retroativa (% a.m.)
   monthlyInsurance?: number; // Ex: 28.76
   adminFee?: number; // Ex: 0.00
   startDate?: Date; // Data da próxima parcela
@@ -99,6 +108,8 @@ export function generateAmortizationSchedule(options: {
     remainingMonths,
     paidInstallments = 0,
     system = 'PRICE',
+    indexer,
+    monthlyIndexerRate,
     monthlyTR = 0,
     monthlyInsurance = 0,
     adminFee = 0,
@@ -107,7 +118,21 @@ export function generateAmortizationSchedule(options: {
 
   const schedule: FinancingInstallmentRow[] = [];
   const iMonthly = getMonthlyInterestRate(nominalAnnualRate);
-  const trMonthlyDecimal = Math.max(0, monthlyTR) / 100;
+
+  // Determinar taxa do indexador conforme tipo de contrato:
+  // - FIXED (prefixado): taxa estritamente 0% (nunca aplica TR)
+  // - TR ou IPCA: taxa mensal aplicável
+  // - Omissão: fallback retroativo para monthlyTR ou monthlyIndexerRate
+  let effectiveIndexerRate = 0;
+  if (indexer === 'FIXED') {
+    effectiveIndexerRate = 0;
+  } else if (indexer === 'TR' || indexer === 'IPCA') {
+    effectiveIndexerRate = monthlyIndexerRate !== undefined ? monthlyIndexerRate : monthlyTR;
+  } else {
+    effectiveIndexerRate = monthlyIndexerRate !== undefined ? monthlyIndexerRate : monthlyTR;
+  }
+
+  const indexerMonthlyDecimal = Math.max(0, effectiveIndexerRate) / 100;
 
   let currentBalance = Math.max(0, principal);
   let totalPaid = 0;
@@ -115,47 +140,59 @@ export function generateAmortizationSchedule(options: {
   let totalAmortization = 0;
   let totalInsurance = 0;
   let totalCorrection = 0;
-
-  // No Price, a prestação base de amortização + juros
-  const basePMT = system === 'PRICE' ? calculatePricePMT(currentBalance, iMonthly, remainingMonths) : 0;
-  // No SAC, a amortização base é constante
-  const baseAmortization = system === 'SAC' ? currentBalance / remainingMonths : 0;
+  let hasNegativeAmortization = false;
 
   for (let m = 1; m <= remainingMonths; m++) {
     if (currentBalance <= 0) break;
 
     const installmentNumber = paidInstallments + m;
+    const remainingTerm = remainingMonths - m + 1; // k meses restantes incluindo este
+
     const dueDate = new Date(startDate);
     dueDate.setMonth(dueDate.getMonth() + (m - 1));
     const dueDateStr = dueDate.toISOString().split('T')[0];
 
-    // 1. Correção monetária pela TR do mês
-    const trCorrection = currentBalance * trMonthlyDecimal;
+    // 1. Atualização monetária do saldo anterior pelo indexador contratado
+    const trCorrection = currentBalance * indexerMonthlyDecimal;
     const correctedBalance = currentBalance + trCorrection;
     totalCorrection += trCorrection;
 
-    // 2. Juros do mês sobre o saldo corrigido
+    // 2. Juros contratuais do mês sobre o saldo corrigido
     const interest = correctedBalance * iMonthly;
     totalInterest += interest;
 
-    // 3. Amortização real
+    // 3. Amortização teórica conforme sistema contratado
     let amortization = 0;
-    if (system === 'PRICE') {
-      amortization = Math.max(0, basePMT - interest);
+    if (remainingTerm <= 1) {
+      // No último mês, a amortização quita exatamente o saldo devedor corrigido
+      amortization = correctedBalance;
+    } else if (system === 'SAC') {
+      // SAC: Quota de amortização sobre o saldo corrigido dividido pelo prazo restante
+      amortization = correctedBalance / remainingTerm;
     } else {
-      amortization = Math.min(correctedBalance, baseAmortization);
+      // PRICE: Recálculo da prestação base sobre o saldo corrigido para o prazo restante
+      if (iMonthly > 0) {
+        const pmtBase = calculatePricePMT(correctedBalance, iMonthly, remainingTerm);
+        amortization = pmtBase - interest;
+      } else {
+        amortization = correctedBalance / remainingTerm;
+      }
     }
 
-    // Se a amortização superar o saldo, quita
-    if (amortization > correctedBalance) {
+    // Sinalizar e proteger contra amortização negativa
+    if (amortization < 0) {
+      hasNegativeAmortization = true;
+      amortization = 0;
+    } else if (amortization > correctedBalance) {
       amortization = correctedBalance;
     }
+
     totalAmortization += amortization;
 
-    // 4. Saldo final do mês
+    // 4. Saldo devedor final do mês: saldo corrigido menos amortização
     const finalBalance = Math.max(0, correctedBalance - amortization);
 
-    // 5. Total da parcela a pagar
+    // 5. Total da prestação do mês (Amortização + Juros + Seguro + Taxa Administrativa)
     const installmentTotal = amortization + interest + monthlyInsurance + adminFee;
     totalPaid += installmentTotal;
     totalInsurance += monthlyInsurance;
@@ -172,6 +209,7 @@ export function generateAmortizationSchedule(options: {
       adminFeeAmount: Math.round(adminFee * 100) / 100,
       totalInstallment: Math.round(installmentTotal * 100) / 100,
       finalBalance: Math.round(finalBalance * 100) / 100,
+      isEstimated: true,
     });
 
     currentBalance = finalBalance;
@@ -187,6 +225,7 @@ export function generateAmortizationSchedule(options: {
     totalInsurance: Math.round(totalInsurance * 100) / 100,
     totalCorrection: Math.round(totalCorrection * 100) / 100,
     estimatedEndDate: lastDate,
+    hasNegativeAmortization,
   };
 }
 
@@ -200,6 +239,8 @@ export function simulateExtraordinaryAmortization(options: {
   nominalAnnualRate: number; // 4.25%
   remainingMonths: number; // 401 meses
   system?: 'PRICE' | 'SAC';
+  indexer?: 'TR' | 'IPCA' | 'FIXED';
+  monthlyIndexerRate?: number;
   monthlyTR?: number;
   monthlyInsurance?: number;
   adminFee?: number;
@@ -211,6 +252,8 @@ export function simulateExtraordinaryAmortization(options: {
     nominalAnnualRate,
     remainingMonths,
     system = 'PRICE',
+    indexer,
+    monthlyIndexerRate,
     monthlyTR = 0,
     monthlyInsurance = 0,
     adminFee = 0,
@@ -224,6 +267,8 @@ export function simulateExtraordinaryAmortization(options: {
     nominalAnnualRate,
     remainingMonths,
     system,
+    indexer,
+    monthlyIndexerRate,
     monthlyTR,
     monthlyInsurance,
     adminFee,
@@ -239,30 +284,40 @@ export function simulateExtraordinaryAmortization(options: {
   // CENÁRIO A: REDUZIR PRAZO (mantém prestação base, quita mais rápido)
   // -------------------------------------------------------------
   const iMonthly = getMonthlyInterestRate(nominalAnnualRate);
-  const trMonthlyDecimal = Math.max(0, monthlyTR) / 100;
-  const basePMT = system === 'PRICE' ? calculatePricePMT(currentBalance, iMonthly, remainingMonths) : 0;
-  const standardSACAmort = system === 'SAC' ? currentBalance / remainingMonths : 0;
+  let effectiveIndexerRate = 0;
+  if (indexer === 'FIXED') {
+    effectiveIndexerRate = 0;
+  } else if (indexer === 'TR' || indexer === 'IPCA') {
+    effectiveIndexerRate = monthlyIndexerRate !== undefined ? monthlyIndexerRate : monthlyTR;
+  } else {
+    effectiveIndexerRate = monthlyIndexerRate !== undefined ? monthlyIndexerRate : monthlyTR;
+  }
+  const indexerMonthlyDecimal = Math.max(0, effectiveIndexerRate) / 100;
+  const baseOriginalPMT = original.schedule.length > 0
+    ? original.schedule[0].amortizationAmount + original.schedule[0].interestAmount
+    : 0;
+  const recurringExtra = Math.max(0, extraMonthlyPayment);
 
   let simBalance = balanceAfterLumpSum;
   let newMonthsCount = 0;
   let newTotalInterestTerm = 0;
-  const recurringExtra = Math.max(0, extraMonthlyPayment);
 
-  while (simBalance > 0 && newMonthsCount < remainingMonths) {
+  while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
     newMonthsCount++;
-    const trCorrection = simBalance * trMonthlyDecimal;
+    const trCorrection = simBalance * indexerMonthlyDecimal;
     const corrected = simBalance + trCorrection;
     const interest = corrected * iMonthly;
     newTotalInterestTerm += interest;
 
     let amort = 0;
     if (system === 'PRICE') {
-      amort = Math.max(0, basePMT - interest) + recurringExtra;
+      amort = Math.max(0, baseOriginalPMT - interest) + recurringExtra;
     } else {
-      amort = standardSACAmort + recurringExtra;
+      const remainingTerm = Math.max(1, remainingMonths - newMonthsCount + 1);
+      amort = (corrected / remainingTerm) + recurringExtra;
     }
 
-    if (amort > corrected) {
+    if (amort >= corrected) {
       amort = corrected;
     }
 
@@ -284,6 +339,8 @@ export function simulateExtraordinaryAmortization(options: {
     nominalAnnualRate,
     remainingMonths,
     system,
+    indexer,
+    monthlyIndexerRate,
     monthlyTR,
     monthlyInsurance,
     adminFee,

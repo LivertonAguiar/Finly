@@ -39,7 +39,7 @@ export const getDebtTransactionCategory = (debt: Debt) => {
  * interest rate) that should use the amortization schedule engine, or a simple
  * loan that uses the flat installmentAmount.
  */
-const isStructuredFinancing = (debt: Debt): boolean => {
+export const isStructuredFinancing = (debt: Debt): boolean => {
   if (!debt.interestRate || debt.interestRate <= 0) return false;
   if (debt.contractType && debt.contractType !== 'loan') return true;
   // Also treat as structured if amortization system is explicitly set and there are interest
@@ -73,32 +73,44 @@ export const buildDebtInstallmentTransactions = (
   if (isStructuredFinancing(debt)) {
     const schedule = generateAmortizationSchedule({
       principal: debt.remainingAmount,
-      nominalAnnualRate: debt.interestRate!,
+      nominalAnnualRate: debt.interestRate || 0,
       remainingMonths: remainingCount,
       paidInstallments: debt.paidInstallments || 0,
       system: debt.amortizationSystem || 'PRICE',
-      monthlyTR: debt.indexer === 'TR' ? (debt.indexerRate || 0) : 0,
+      indexer: debt.indexer || (debt.contractType === 'loan' ? 'FIXED' : 'TR'),
+      monthlyIndexerRate: (debt.indexer === 'TR' || debt.indexer === 'IPCA') ? (debt.indexerRate ?? 0) : 0,
+      monthlyTR: debt.indexer === 'TR' ? (debt.indexerRate ?? 0) : 0,
       monthlyInsurance: debt.insuranceMonthly || 0,
       adminFee: debt.adminFeeMonthly || 0,
       startDate: new Date(`${baseDueDateStr.substring(0, 10)}T12:00:00`),
     });
 
-    // O valor salvo no contrato é a prestação real informada pelo usuário.
-    // Use-o como base da primeira parcela e preserve a variação calculada
-    // pelo Price/SAC nas parcelas seguintes (TR, juros, seguros e taxas).
-    const calculatedFirstInstallment = schedule.schedule[0]?.totalInstallment || 0;
-    const installmentAdjustment = debt.installmentAmount > 0 && calculatedFirstInstallment > 0
-      ? debt.installmentAmount - calculatedFirstInstallment
-      : 0;
-
     return schedule.schedule.slice(0, count).map((row, offset) => {
       const installmentNumber = startInstallment + offset;
       const dateStr = calculateInstallmentDueDate(baseDueDateStr, debt.dueDay, offset);
 
+      // Parcela 1 (offset 0): é a parcela imediatamente vigente emitida pelo banco.
+      // O valor salvo no contrato sobrescreve APENAS a parcela emitida (mês corrente).
+      // Parcelas futuras (offset > 0) seguem estritamente a projeção matemática calculada pelo cronograma.
+      const isFirstPending = offset === 0;
+      const isRealIssued = isFirstPending && debt.installmentAmount > 0;
+      const amount = isRealIssued ? round2(debt.installmentAmount) : round2(row.totalInstallment);
+
+      const interest = round2(row.interestAmount);
+      const insurance = round2(row.insuranceAmount);
+      const adminFee = round2(row.adminFeeAmount);
+      const correction = round2(row.trCorrection);
+      let amortization = round2(row.amortizationAmount);
+
+      if (isRealIssued) {
+        const nonAmortizing = interest + insurance + adminFee;
+        amortization = Math.max(0, round2(amount - nonAmortizing));
+      }
+
       return {
         id: `tx-debt-${debt.id}-${installmentNumber}`,
         description: `${debt.title} (${installmentNumber}/${debt.totalInstallments})`,
-        amount: round2(Math.max(0, row.totalInstallment + installmentAdjustment)),
+        amount,
         type: 'expense' as const,
         date: dateStr,
         dueDate: dateStr,
@@ -115,6 +127,14 @@ export const buildDebtInstallmentTransactions = (
         },
         debtId: debt.id,
         debtInstallmentNumber: installmentNumber,
+        debtBreakdown: {
+          amortizationAmount: amortization,
+          interestAmount: interest,
+          correctionAmount: correction,
+          insuranceAmount: insurance,
+          adminFeeAmount: adminFee,
+          isEstimated: !isRealIssued,
+        },
         tags: [...baseTags],
         notes: baseNotes,
         createdAt,
@@ -147,6 +167,14 @@ export const buildDebtInstallmentTransactions = (
       },
       debtId: debt.id,
       debtInstallmentNumber: installmentNumber,
+      debtBreakdown: {
+        amortizationAmount: round2(debt.installmentAmount),
+        interestAmount: 0,
+        correctionAmount: 0,
+        insuranceAmount: 0,
+        adminFeeAmount: 0,
+        isEstimated: false,
+      },
       tags: [...baseTags],
       notes: baseNotes,
       createdAt,
@@ -238,6 +266,7 @@ export const reconcileDebtTransactions = (
         installments: cand.installments,
         debtId,
         debtInstallmentNumber: installmentNumber,
+        debtBreakdown: cand.debtBreakdown,
       });
     } else {
       updatedTransactions.push({

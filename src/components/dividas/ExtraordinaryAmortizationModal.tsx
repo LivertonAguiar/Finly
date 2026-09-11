@@ -34,12 +34,16 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
   const monthlyExtra = parseFloat(monthlyExtraStr) || 0;
 
   const simulation = useMemo(() => {
+    const isFixed = debt.indexer === 'FIXED';
+    const rate = isFixed ? 0 : (debt.indexerRate ?? 0);
     return simulateExtraordinaryAmortization({
       currentBalance: debt.remainingAmount || debt.totalAmount,
       nominalAnnualRate: debt.interestRate || 4.25,
       remainingMonths: debt.totalInstallments - (debt.paidInstallments || 0),
       system: debt.amortizationSystem || 'PRICE',
-      monthlyTR: debt.indexerRate || 0.1708,
+      indexer: debt.indexer || (debt.contractType === 'loan' ? 'FIXED' : 'TR'),
+      monthlyIndexerRate: rate,
+      monthlyTR: debt.indexer === 'TR' ? rate : 0,
       monthlyInsurance: debt.insuranceMonthly || 0,
       adminFee: debt.adminFeeMonthly || 0,
       extraLumpSum: lumpSum,

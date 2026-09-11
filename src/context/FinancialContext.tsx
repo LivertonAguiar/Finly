@@ -7,6 +7,7 @@ import {
   Budget,
   Goal,
   Debt,
+  DebtPayment,
   InvestmentAsset,
   UserProfile,
   FamilyMember,
@@ -27,7 +28,9 @@ import {
   calculateInstallmentDueDate,
   getDebtTransactionCategory,
   reconcileDebtTransactions,
+  isStructuredFinancing,
 } from '../utils/debtTransactionSync';
+import { getMonthlyInterestRate } from '../utils/financingCalculations';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -1592,12 +1595,55 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               const installmentNumber = tx.debtInstallmentNumber || d.paidInstallments + 1;
               if ((d.payments || []).some(p => p.installmentNumber === installmentNumber)) return d;
               const paid = d.paidInstallments + 1;
-              const rem = Math.max(0, d.remainingAmount - tx.amount);
+
+              let amortization = 0;
+              let interest = 0;
+              let correction = 0;
+              let insurance = 0;
+              let adminFee = 0;
+              let rem = 0;
+
+              if (isStructuredFinancing(d)) {
+                if (tx.debtBreakdown) {
+                  interest = round2(tx.debtBreakdown.interestAmount);
+                  insurance = round2(tx.debtBreakdown.insuranceAmount);
+                  adminFee = round2(tx.debtBreakdown.adminFeeAmount);
+                  correction = round2(tx.debtBreakdown.correctionAmount);
+                  amortization = round2(tx.debtBreakdown.amortizationAmount);
+                  const correctedBalance = round2(d.remainingAmount + correction);
+                  rem = Math.max(0, round2(correctedBalance - amortization));
+                } else {
+                  const indexerRate = (d.indexer === 'TR' || d.indexer === 'IPCA') ? (d.indexerRate ?? 0) : 0;
+                  const indexerDecimal = indexerRate / 100;
+                  const iMonthly = getMonthlyInterestRate(d.interestRate || 0);
+
+                  correction = round2(d.remainingAmount * indexerDecimal);
+                  const correctedBalance = round2(d.remainingAmount + correction);
+                  interest = round2(correctedBalance * iMonthly);
+                  insurance = round2(d.insuranceMonthly || 0);
+                  adminFee = round2(d.adminFeeMonthly || 0);
+
+                  const nonAmortizing = interest + insurance + adminFee;
+                  amortization = Math.max(0, round2(tx.amount - nonAmortizing));
+                  if (amortization > correctedBalance) amortization = correctedBalance;
+                  rem = Math.max(0, round2(correctedBalance - amortization));
+                }
+              } else {
+                amortization = tx.amount;
+                rem = Math.max(0, round2(d.remainingAmount - tx.amount));
+              }
+
               const newPay = {
                 id: `pay-${Date.now()}`,
                 amount: tx.amount,
                 date: tx.date,
                 installmentNumber,
+                amortizationAmount: amortization,
+                interestAmount: interest,
+                correctionAmount: correction,
+                insuranceAmount: insurance,
+                adminFeeAmount: adminFee,
+                remainingBalanceAfter: rem,
               };
               return {
                 ...d,
@@ -1614,10 +1660,18 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             prev.map(d => {
               if (d.id !== tx.debtId) return d;
               const installmentNumber = tx.debtInstallmentNumber;
-              const hasRegisteredPayment = (d.payments || []).some(p => p.installmentNumber === installmentNumber);
-              if (!hasRegisteredPayment) return d;
+              const registeredPayment = (d.payments || []).find(p => p.installmentNumber === installmentNumber);
+              if (!registeredPayment) return d;
               const paid = Math.max(0, d.paidInstallments - 1);
-              const rem = d.remainingAmount + tx.amount;
+
+              let rem = 0;
+              if (registeredPayment.amortizationAmount !== undefined) {
+                // Reversão exata: Saldo anterior = Saldo atual + amortização - correção
+                rem = Math.min(d.totalAmount, Math.max(0, round2(d.remainingAmount + registeredPayment.amortizationAmount - (registeredPayment.correctionAmount || 0))));
+              } else {
+                rem = d.remainingAmount + tx.amount;
+              }
+
               return {
                 ...d,
                 paidInstallments: paid,
@@ -1901,19 +1955,42 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     if (data.title || data.installmentAmount !== undefined || data.totalInstallments !== undefined || data.defaultAccountId) {
-      setTransactions(prev =>
-        prev.map(t => {
-          if ((t.debtId !== id && t.installments?.debtId !== id) || t.status !== 'pending') return t;
-          const num = t.debtInstallmentNumber || t.installments?.current || 1;
-          return {
-            ...t,
-            description: `${updatedDebt.title} (${num}/${updatedDebt.totalInstallments})`,
-            amount: round2(updatedDebt.installmentAmount),
-            accountId: updatedDebt.defaultAccountId || t.accountId,
-            installments: { ...t.installments, current: num, total: updatedDebt.totalInstallments },
-          };
-        })
-      );
+      if (isStructuredFinancing(updatedDebt)) {
+        const remainingCount = Math.max(0, updatedDebt.totalInstallments - (updatedDebt.paidInstallments || 0));
+        const horizon = Math.min(12, remainingCount);
+        const newTransactions = buildDebtInstallmentTransactions(
+          updatedDebt,
+          horizon,
+          updatedDebt.defaultAccountId || accounts[0]?.id
+        );
+        setTransactions(prev => {
+          const preserved = prev.filter(t => !isThisDebtPending(t));
+          const completedInstallments = new Set(
+            preserved
+              .filter(t => (t.debtId === id || t.installments?.debtId === id) && t.status === 'completed')
+              .map(t => t.debtInstallmentNumber || t.installments?.current)
+              .filter((value): value is number => value !== undefined)
+          );
+          return [
+            ...newTransactions.filter(t => !completedInstallments.has(t.debtInstallmentNumber ?? -1)),
+            ...preserved,
+          ];
+        });
+      } else {
+        setTransactions(prev =>
+          prev.map(t => {
+            if ((t.debtId !== id && t.installments?.debtId !== id) || t.status !== 'pending') return t;
+            const num = t.debtInstallmentNumber || t.installments?.current || 1;
+            return {
+              ...t,
+              description: `${updatedDebt.title} (${num}/${updatedDebt.totalInstallments})`,
+              amount: round2(updatedDebt.installmentAmount),
+              accountId: updatedDebt.defaultAccountId || t.accountId,
+              installments: { ...t.installments, current: num, total: updatedDebt.totalInstallments },
+            };
+          })
+        );
+      }
     }
   };
 
@@ -1952,12 +2029,49 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const calculatedNextDueDate = calculateInstallmentDueDate(baseDueDateStr, d.dueDay, 1);
 
     const paid = d.paidInstallments + 1;
-    const rem = Math.max(0, d.remainingAmount - finalAmount);
-    const newPay = {
+
+    let amortization = 0;
+    let interest = 0;
+    let correction = 0;
+    let insurance = 0;
+    let adminFee = 0;
+    let rem = 0;
+
+    if (isStructuredFinancing(d)) {
+      // Obter ou calcular composição da parcela conforme regra da Caixa:
+      // Saldo final = Saldo anterior + correção monetária - amortização
+      const indexerRate = (d.indexer === 'TR' || d.indexer === 'IPCA') ? (d.indexerRate ?? 0) : 0;
+      const indexerDecimal = indexerRate / 100;
+      const iMonthly = getMonthlyInterestRate(d.interestRate || 0);
+
+      correction = round2(d.remainingAmount * indexerDecimal);
+      const correctedBalance = round2(d.remainingAmount + correction);
+      interest = round2(correctedBalance * iMonthly);
+      insurance = round2(d.insuranceMonthly || 0);
+      adminFee = round2(d.adminFeeMonthly || 0);
+
+      const nonAmortizing = interest + insurance + adminFee;
+      amortization = Math.max(0, round2(finalAmount - nonAmortizing));
+      if (amortization > correctedBalance) {
+        amortization = correctedBalance;
+      }
+      rem = Math.max(0, round2(correctedBalance - amortization));
+    } else {
+      amortization = finalAmount;
+      rem = Math.max(0, round2(d.remainingAmount - finalAmount));
+    }
+
+    const newPay: DebtPayment = {
       id: `pay-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       amount: finalAmount,
       date: payDate,
       installmentNumber: paid,
+      amortizationAmount: amortization,
+      interestAmount: interest,
+      correctionAmount: correction,
+      insuranceAmount: insurance,
+      adminFeeAmount: adminFee,
+      remainingBalanceAfter: rem,
     };
 
     setDebts(prev =>
@@ -1992,6 +2106,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           dueDate: payDate,
           amount: finalAmount,
           accountId: finalAccountId,
+          debtBreakdown: {
+            amortizationAmount: amortization,
+            interestAmount: interest,
+            correctionAmount: correction,
+            insuranceAmount: insurance,
+            adminFeeAmount: adminFee,
+            isEstimated: false,
+          },
         };
         return updated;
       }
@@ -2016,6 +2138,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         },
         debtId: d.id,
         debtInstallmentNumber: currentInstallmentNum,
+        debtBreakdown: {
+          amortizationAmount: amortization,
+          interestAmount: interest,
+          correctionAmount: correction,
+          insuranceAmount: insurance,
+          adminFeeAmount: adminFee,
+          isEstimated: false,
+        },
         tags: [d.contractType === 'loan' || !d.contractType ? 'divida' : 'financiamento', 'parcela', ...(d.creditor ? [d.creditor.toLowerCase().replace(/\s+/g, '-')] : [])],
         notes: d.contractNumber ? `Contrato nº ${d.contractNumber}` : undefined,
         createdAt: new Date().toISOString(),

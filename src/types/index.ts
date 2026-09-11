@@ -82,7 +82,17 @@ export interface Transaction {
   isThirdParty?: boolean; // Compra feita para terceiro / cartão emprestado
   thirdPartyName?: string; // Nome da pessoa para quem comprou (ex: "Carlos", "Mãe")
   reimbursed?: boolean; // Se o terceiro já pagou/reembolsou o valor
+  debtBreakdown?: DebtInstallmentBreakdown;
   createdAt: string;
+}
+
+export interface DebtInstallmentBreakdown {
+  amortizationAmount: number;
+  interestAmount: number;
+  correctionAmount: number;
+  insuranceAmount: number;
+  adminFeeAmount: number;
+  isEstimated?: boolean;
 }
 
 export interface Budget {
@@ -121,6 +131,12 @@ export interface DebtPayment {
   amount: number;
   date: string;
   installmentNumber: number;
+  amortizationAmount?: number;
+  interestAmount?: number;
+  correctionAmount?: number;
+  insuranceAmount?: number;
+  adminFeeAmount?: number;
+  remainingBalanceAfter?: number;
 }
 
 export type DebtContractType = 'loan' | 'real_estate' | 'vehicle';

@@ -397,11 +397,14 @@ assert.equal(p1Tx.amount, 1000, 'Parcela 1 paga deve manter o valor histórico o
 
 assert.ok(p2Tx, 'Parcela 2 deve existir');
 assert.equal(p2Tx.status, 'pending', 'Parcela 2 deve ser pending');
-assert.equal(p2Tx.amount, 1085, 'Parcela 2 pendente deve ser atualizada para R$ 1085.00 com seguro');
+assert.equal(p2Tx.amount, 1085, 'Parcela 2 emitida deve ser atualizada para R$ 1085.00 informada no contrato');
+assert.equal(p2Tx.debtBreakdown?.isEstimated, false, 'Parcela 2 emitida tem isEstimated = false');
 
 assert.ok(p3Tx, 'Parcela 3 deve existir');
 assert.equal(p3Tx.status, 'pending', 'Parcela 3 deve ser pending');
-assert.equal(p3Tx.amount, 1085, 'Parcela 3 pendente deve ser atualizada para R$ 1085.00 com seguro');
+assert.notEqual(p3Tx.amount, 1085, 'Parcela 3 futura NÃO deve copiar cegamente o valor emitido da parcela 2');
+assert.equal(p3Tx.amount, 11428.88, 'Parcela 3 futura deve seguir rigorosamente o cronograma Price com seguro');
+assert.equal(p3Tx.debtBreakdown?.isEstimated, true, 'Parcela 3 futura tem isEstimated = true');
 
 // Verificar ausência de duplicatas
 const countP2 = reconcileResult.transactions.filter(t => t.debtInstallmentNumber === 2).length;

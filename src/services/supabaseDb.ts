@@ -28,13 +28,16 @@ export interface UserStoreData {
 }
 
 const serializeTransactionInstallments = (transaction: Transaction) => {
-  if (!transaction.installments && !transaction.debtId) return undefined;
+  if (!transaction.installments && !transaction.debtId && !transaction.debtBreakdown) return undefined;
 
   return {
     ...(transaction.installments || {}),
     ...(transaction.debtId ? {
       debtId: transaction.debtId,
       debtInstallmentNumber: transaction.debtInstallmentNumber,
+    } : {}),
+    ...(transaction.debtBreakdown ? {
+      debtBreakdown: transaction.debtBreakdown,
     } : {}),
   };
 };
@@ -211,6 +214,7 @@ export class SupabaseDbService {
         recurring: Boolean(r.recurring),
         recurrenceFrequency: r.recurrence_frequency,
         installments: r.installments,
+        debtBreakdown: r.installments?.debtBreakdown || undefined,
         debtId: r.debt_id || r.installments?.debtId,
         debtInstallmentNumber: r.debt_installment_number ?? r.installments?.debtInstallmentNumber,
         tags: Array.isArray(r.tags) ? r.tags : [],

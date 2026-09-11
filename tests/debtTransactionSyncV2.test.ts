@@ -178,9 +178,16 @@ const NOW = new Date('2026-09-01T12:00:00Z');
     .sort((a, b) => (a.debtInstallmentNumber || 0) - (b.debtInstallmentNumber || 0));
 
   assert.equal(pending.length, 3, 'Financiamento editado deve manter as três parcelas pendentes');
-  assert.equal(pending[0].amount, 1375, 'Primeira parcela deve refletir o valor mensal salvo no contrato');
-  assert.equal(pending[1].amount, 1375, 'Parcelas Price pendentes devem ser atualizadas após a edição');
-  console.log('OK: edição da prestação atualiza financiamento estruturado com juros');
+  assert.equal(pending[0].amount, 1375, 'Primeira parcela deve refletir o valor mensal emitido no contrato');
+  assert.equal(pending[0].debtBreakdown?.isEstimated, false, 'Primeira parcela é real emitida (isEstimated false)');
+
+  // Parcela 2 e 3 devem seguir o cronograma Price (1060.66) e NÃO replicar cegamente o 1375 de setembro
+  assert.notEqual(pending[1].amount, 1375, 'Setembro real (1375) não pode ser replicado cegamente para as parcelas futuras');
+  assert.equal(pending[1].amount, 1060.66, 'Parcelas futuras devem seguir estritamente o cronograma Price');
+  assert.equal(pending[2].amount, 1060.66, 'Parcela 3 deve seguir estritamente o cronograma Price');
+  assert.equal(pending[1].debtBreakdown?.isEstimated, true, 'Parcelas futuras são marcadas como estimadas');
+
+  console.log('OK: edição da prestação sobrescreve apenas o mês emitido e parcelas futuras seguem o cronograma');
 }
 
 // ────────────────────────────────────────────────────────────────

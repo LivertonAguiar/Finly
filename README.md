@@ -1,9 +1,9 @@
-# 🚀 Finly `v1.1.57`
+# 🚀 Finly `v1.1.58`
 
 > Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade Web e Mobile Android.
 
 [![Build Android APK & Release](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml/badge.svg)](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml)
-[![Version](https://img.shields.io/badge/version-1.1.57-purple.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.1.58-purple.svg)](package.json)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
@@ -221,8 +221,10 @@ npm run deploy:vps
 A cada push na branch `main`, o fluxo automatizado:
 - Compila a aplicação Web (`npm run build`).
 - Sincroniza os assets no Capacitor Android (`npx cap sync android`).
-- Gera o arquivo `.apk` de produção assinado.
+- Gera e valida o arquivo `.apk` dentro do GitHub Actions.
 - Cria uma release oficial no GitHub com download direto do APK e notas de versão.
+
+> Regra operacional: a build/publicação do APK é feita somente pelo GitHub Actions. A máquina local pode sincronizar o Capacitor (`npm run cap:sync`), mas não deve ser usada como fonte oficial para gerar APK de release.
 
 ### 3. Hospedagem Web (Vercel / Netlify / Cloudflare Pages):
 - **Build Command**: `npm run build`

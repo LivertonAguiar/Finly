@@ -34,13 +34,17 @@ export const FinancingScheduleModal: React.FC<FinancingScheduleModalProps> = ({
 
   // Cálculo do cronograma completo
   const scheduleResult = useMemo(() => {
+    const isFixed = debt.indexer === 'FIXED';
+    const rate = isFixed ? 0 : (debt.indexerRate ?? 0);
     return generateAmortizationSchedule({
       principal: debt.remainingAmount || debt.totalAmount,
       nominalAnnualRate: debt.interestRate || 4.25,
       remainingMonths: debt.totalInstallments - (debt.paidInstallments || 0),
       paidInstallments: debt.paidInstallments || 0,
       system: debt.amortizationSystem || 'PRICE',
-      monthlyTR: debt.indexerRate || 0.1708,
+      indexer: debt.indexer || (debt.contractType === 'loan' ? 'FIXED' : 'TR'),
+      monthlyIndexerRate: rate,
+      monthlyTR: debt.indexer === 'TR' ? rate : 0,
       monthlyInsurance: debt.insuranceMonthly || 0,
       adminFee: debt.adminFeeMonthly || 0,
       startDate: debt.nextDueDate ? new Date(debt.nextDueDate) : new Date(),
@@ -145,7 +149,11 @@ export const FinancingScheduleModal: React.FC<FinancingScheduleModalProps> = ({
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <span className="pill-tag-mint">
-              TR Ref: {debt.indexerRate ? `${debt.indexerRate}% a.m.` : '0.1708% a.m.'}
+              {debt.indexer === 'FIXED'
+                ? 'Prefixado (Sem correção)'
+                : debt.indexer === 'IPCA'
+                ? `IPCA Ref: ${debt.indexerRate ?? 0}% a.m. (Estimada)`
+                : `TR Ref: ${debt.indexerRate ?? 0}% a.m. (Estimada)`}
             </span>
             <span className="text-xs text-slate-400 font-mono">
               Exibindo {paginatedRows.length} de {filteredSchedule.length} parcelas

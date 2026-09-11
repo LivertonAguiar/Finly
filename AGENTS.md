@@ -25,6 +25,7 @@ Este documento estabelece as diretrizes obrigatórias de governança de código,
      - Registrar commit claro com mensagem semântica (ex: `feat: ...`, `fix: ...`, `refactor: ...`).
      - Realizar push para o repositório remoto: `git push origin main`.
   3. **Deploy Automatizado no Servidor VPS (Oracle Cloud)**:
+     - **APK Android**: a build/publicação do APK deve ser feita somente pelo GitHub Actions (`.github/workflows/build-apk.yml`), nunca como etapa obrigatória local. Localmente, usar apenas `npm run cap:sync` quando necessário para sincronizar assets; não tratar falha de Gradle por SDK local ausente como bloqueio de release se o CI do GitHub gerar e validar o APK.
      - Executar o script de implantação em produção:
        ```powershell
        powershell -ExecutionPolicy Bypass -File .\scripts\deploy-vps.ps1
@@ -327,5 +328,4 @@ Depois de implementar:
 Se alguma dessas funcionalidades só existir no Antigravity CLI e não dentro da interface visual do Antigravity IDE, informe claramente essa limitação.
 
 Não simule suporte inexistente.
-
 

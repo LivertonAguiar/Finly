@@ -3,6 +3,19 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.58] - 2026-09-10
+
+### 🏦 Financiamentos Habitacionais: Unificação do Cronograma SFH / Caixa & Quitação Determinística
+- **Regras de Amortização e Saldo Devedor Caixa / SFH**:
+  - Pagamento de parcelas abate estritamente a amortização após a atualização monetária pelo indexador (`Saldo = Saldo Anterior + Correção - Amortização`).
+  - Encargos não-amortizantes (juros nominais/efetivos, seguro MIP/DFI e taxa administrativa) são segregados no registro do pagamento (`debtBreakdown`).
+  - Estorno simétrico de parcelas restaura os centavos do saldo devedor com precisão absoluta.
+- **Convergência Matemática Price & SAC**:
+  - Recálculo contínuo da prestação base da Tabela Price sobre o saldo corrigido e prazo remanescente ($k$), garantindo quitação em R$ 0,00 no término do contrato.
+  - Correção do cálculo para contratos prefixados (`FIXED`), garantindo taxa de indexação zero sem aplicação indevida de TR.
+- **Independência das Parcelas Futuras**:
+  - Ajustes de boleto emitido informados pelo usuário sobrepõem unicamente a parcela vigente, mantendo as parcelas futuras alinhadas ao cronograma projetado.
+
 ## [1.1.57] - 2026-09-10
 
 ### Financiamentos: Parcelas Reconciliadas pelo Valor Real

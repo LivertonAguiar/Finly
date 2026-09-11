@@ -199,8 +199,9 @@ export const DebtsPage: React.FC = () => {
     setNextDueDate(d.nextDueDate || getTodayString());
     setInterestRate(d.interestRate !== undefined ? String(d.interestRate) : '');
     setAmortizationSystem(d.amortizationSystem || 'PRICE');
-    setIndexer(d.indexer || 'TR');
-    setIndexerRate(d.indexerRate !== undefined ? String(d.indexerRate) : '0.1708');
+    const currentIndexer = d.indexer || 'TR';
+    setIndexer(currentIndexer);
+    setIndexerRate(currentIndexer === 'FIXED' ? '0' : (d.indexerRate !== undefined ? String(d.indexerRate) : (currentIndexer === 'TR' ? '0.1708' : '0')));
     setInsuranceMonthly(d.insuranceMonthly !== undefined ? String(d.insuranceMonthly) : '');
     setAdminFeeMonthly(d.adminFeeMonthly !== undefined ? String(d.adminFeeMonthly) : '0');
     setDefaultAccountId(d.defaultAccountId || accounts[0]?.id || '');
@@ -249,7 +250,7 @@ export const DebtsPage: React.FC = () => {
     const pInst = parseInt(paidInstallments) || 0;
     const dDay = parseInt(dueDay) || 10;
     const iRate = interestRate ? parseFloat(interestRate) : undefined;
-    const idxRateVal = indexerRate ? parseFloat(indexerRate) : undefined;
+    const idxRateVal = indexer === 'FIXED' ? 0 : (indexerRate ? parseFloat(indexerRate) : undefined);
     const insVal = insuranceMonthly ? parseFloat(insuranceMonthly) : undefined;
     const adminVal = adminFeeMonthly ? parseFloat(adminFeeMonthly) : undefined;
 

@@ -13,6 +13,12 @@
       "skillPath": "skills/ai-agent-cost-optimizer/SKILL.md",
       "computedHash": "1f87edf57a23d37c9173b46f0b4caf1ba56b474ecfdc89f7e9b221498288c6b6"
     },
+    "browser-act": {
+      "source": "browser-act/skills",
+      "sourceType": "github",
+      "skillPath": "browser-act/SKILL.md",
+      "computedHash": "3e3edc42bc0c7328ea3ecb91b16561f87c917e823de5a86a91fc1cfbf342d43d"
+    },
     "browser-use": {
       "source": "browser-use/browser-use",
       "sourceType": "github",
