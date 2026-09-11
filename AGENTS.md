@@ -15,24 +15,29 @@ Este documento estabelece as diretrizes obrigatórias de governança de código,
 
 ---
 
-### 📌 Regra 2: Cadência de Ciclos (A Cada 4 Mudanças / Tarefas)
-- **Gatilho**: Ao acumular **4 alterações/funcionalidades/correções concluídas** no projeto.
-- **Ações Obrigatórias do Ciclo**:
-  1. **Validação Técnica**:
+### 📌 Regra 2: Cadência de Ciclos (A Cada 4 Mudanças / Tarefas ou Pedido Explícito de Deploy/Release)
+- **Gatilho**: Ao acumular **4 alterações/funcionalidades/correções concluídas** no projeto ou quando o usuário solicitar *"Realizar Commit, Deploy e Apk Atualizar"*.
+- **Ações Obrigatórias do Ciclo (Ordem Rigorosa)**:
+  1. **Incremento e Sincronização de Versão**:
+     - Incrementar a versão semântica (`package.json`, `package-lock.json`, `src/data/releases.ts`, `README.md`, `CHANGELOG.md` e `src/data/helpCenterData.ts` quando houver novidades visuais).
+     - Executar `npm run check:version` para validar que as 6 fontes de versão estão idênticas.
+  2. **Validação Técnica Local & Sincronização**:
+     - Executar testes unitários e de integração: `npm run test:all-debts`.
      - Executar checagem de tipos: `npx tsc --noEmit`.
      - Executar build de produção: `npm run build`.
-  2. **Git Commit Semântico & Push**:
-     - Registrar commit claro com mensagem semântica (ex: `feat: ...`, `fix: ...`, `refactor: ...`).
+     - Executar sincronização de assets do Capacitor: `npm run cap:sync`.
+  3. **Git Commit Semântico & Push**:
+     - Registrar commit claro com mensagem semântica (ex: `feat: ... vX.X.XX`).
      - Realizar push para o repositório remoto: `git push origin main`.
-  3. **Deploy Automatizado no Servidor VPS (Oracle Cloud)**:
-     - **APK Android**: a build/publicação do APK deve ser feita somente pelo GitHub Actions (`.github/workflows/build-apk.yml`), nunca como etapa obrigatória local. Localmente, usar apenas `npm run cap:sync` quando necessário para sincronizar assets; não tratar falha de Gradle por SDK local ausente como bloqueio de release se o CI do GitHub gerar e validar o APK.
+  4. **Compilação do APK Android no GitHub Actions**:
+     - **APK Android**: a build e publicação do APK deve ser feita exclusivamente pelo GitHub Actions (`.github/workflows/build-apk.yml`), nunca localmente.
+     - O agente **DEVE aguardar a conclusão** do workflow no GitHub Actions (`check-runs` com `conclusion: success`) e a disponibilidade do APK nas Releases antes de avançar para o deploy na VPS.
+  5. **Deploy Automatizado no Servidor VPS (Oracle Cloud)**:
      - Executar o script de implantação em produção:
        ```powershell
        powershell -ExecutionPolicy Bypass -File .\scripts\deploy-vps.ps1
        ```
-     - Validar que a API, serviço de email e frontend em produção estejam operacionais.
-  4. **Atualização da Documentação & Notas de Versão**:
-     - Atualizar notas e documentações do projeto (`README.md`, `CHANGELOG.md`, `walkthrough.md` e releases do GitHub se aplicável).
+     - Validar que a API (`/api/app/version`) e frontend (`/app-version.json`) no servidor VPS estejam ativos e na nova versão.
 
 ---
 
