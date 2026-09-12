@@ -429,6 +429,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "name": "Software / Aplicativos",
         "icon": "💻",
         "categoryId": "cat-desp-compras-pessoal"
+      },
+      {
+        "id": "sub-comp-clubes-assinaturas",
+        "name": "Clubes de Benefícios / Assinaturas",
+        "icon": "📦",
+        "categoryId": "cat-desp-compras-pessoal"
       }
     ]
   },

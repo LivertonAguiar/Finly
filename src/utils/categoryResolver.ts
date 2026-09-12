@@ -34,6 +34,9 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'sub-mov-emprestimo-recebido': { categoryId: 'cat-mov-emprestimos', subcategoryId: 'sub-mov-emprestimo-tomado', name: 'Empréstimos', icon: '🤝' },
   'sub-mov-pagamento-emp': { categoryId: 'cat-mov-emprestimos', subcategoryId: 'sub-mov-pagamento-emp-tomado', name: 'Empréstimos', icon: '🤝' },
   'sub-mov-recebimento-emp': { categoryId: 'cat-mov-emprestimos', subcategoryId: 'sub-mov-recebimento-emp-concedido', name: 'Empréstimos', icon: '🤝' },
+  'sub-comp-clubes-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
+  'clubes-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
+  'clube-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
 };
 
 /**

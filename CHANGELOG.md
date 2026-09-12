@@ -3,6 +3,15 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.66] - 2026-09-12
+
+### 🛍️ Nova Subcategoria: Clubes de Benefícios / Assinaturas em Compras & Pessoal
+- **Expansão da Taxonomia Financeira de Compras & Pessoal**:
+  - Inclusão da subcategoria oficial `Clubes de Benefícios / Assinaturas` (`sub-comp-clubes-assinaturas`, ícone `📦`) vinculada à categoria `cat-desp-compras-pessoal`.
+  - Controle dedicado para clubes de fidelidade, planos de vantagens, compras coletivas e assinaturas diversas.
+- **Inteligência do Motor de Resolução de Categorias**:
+  - Adicionados aliases automáticos (`clubes-beneficios`, `clube-beneficios`, `sub-comp-clubes-beneficios`) para resolução transparente de ícones e nomes em relatórios e importações.
+
 ## [1.1.65] - 2026-09-12
 
 ### 💳 Ordenação Cronológica de Cartões por Vencimento e Nitidez Tipográfica em Temas Escuros

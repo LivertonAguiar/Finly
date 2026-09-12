@@ -42,6 +42,23 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Inclusão da nova subcategoria oficial "Clubes de Benefícios / Assinaturas" na categoria Compras & Pessoal, expandindo a árvore taxonômica financeira e o motor inteligente de resolução de transações.',
+    highlights: [
+      {
+        title: 'Nova Subcategoria: Clubes de Benefícios / Assinaturas',
+        description: 'Adicionada a subcategoria dedicada "Clubes de Benefícios / Assinaturas" (ícone 📦) sob Compras & Pessoal para controle preciso de programas de vantagens, clubes de compras e serviços recorrentes.',
+        type: 'feature',
+      },
+      {
+        title: 'Motor de Resolução de Categorias Aprimorado',
+        description: 'Implementados novos aliases inteligentes no categoryResolver para mapeamento e autocompletar instantâneo de transações associadas a clubes e assinaturas.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.65',
+    releaseDate: '2026-09-12',
     summary: 'Ordenação automática de cartões de crédito em ordem crescente de data de vencimento da fatura com critério de desempate refinado, e elevação universal de contraste e luminosidade tipográfica (padrão WCAG AAA) em todos os 9 temas escuros do aplicativo.',
     highlights: [
       {
