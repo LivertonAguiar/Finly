@@ -44,7 +44,7 @@ try {
   const deadline = Date.now() + 8000;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`http://localhost:${apiPort}/api/app/version`);
+      const response = await fetch(`http://127.0.0.1:${apiPort}/api/app/version`);
       if (response.ok) {
         apiInfo = await response.json();
         break;
