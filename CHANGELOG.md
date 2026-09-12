@@ -3,6 +3,20 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.67] - 2026-09-12
+
+### 💳 Compra Recorrente no Cartão de Crédito & Ação "Encerrar Recorrência"
+- **Compra Recorrente no Cartão de Crédito**:
+  - Acionamento integrado na gaveta de "Mais detalhes" (`TransactionModalV2.tsx`), localizado imediatamente acima do anexo de comprovantes.
+  - Exclusivo para despesas pagas com cartão de crédito, com periodicidade configurável (Mensal padrão, Semanal, Anual) e data de término opcional.
+  - Mútua exclusão inteligente com compras parceladas para evitar inconsistências contábeis.
+  - Alocação automática em faturas mensais e vencimentos reais do cartão via `allocateCardTransaction`.
+- **Identificação Visual na Aba Transações**:
+  - Badge visual `Recorrente (Cartão)` com ícone `Repeat` exibido na Timeline (mobile/lista) e na Tabela de transações (desktop).
+- **Ação "ENCERRAR RECORRÊNCIA" com Preservação de Histórico**:
+  - Opção destacada no card de recorrência e no rodapé de ações em `TransactionDetailModal.tsx`.
+  - Cancelamento seguro no escopo `current_and_future`: mantém intactos todos os lançamentos passados no histórico e cancela exclusivamente a cobrança atual e as futuras.
+
 ## [1.1.66] - 2026-09-12
 
 ### 🛍️ Nova Subcategoria: Clubes de Benefícios / Assinaturas em Compras & Pessoal

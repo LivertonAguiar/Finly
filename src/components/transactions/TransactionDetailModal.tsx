@@ -8,6 +8,7 @@ import {
   CreditCard as CardIcon,
   Building2,
   Calendar,
+  CalendarX,
   Tag as TagIcon,
   FileText,
   User as UserIcon,
@@ -62,6 +63,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     transactions,
     transactionSeries,
     deleteTransaction,
+    deleteTransactionSeriesScope,
     toggleTransactionStatus,
     reimburseThirdPartyTransaction,
     user,
@@ -72,6 +74,27 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
   // Intercept Android back button & swipe gestures
   useBackButton(isOpen && !!transaction, onClose);
+
+  const handleEndRecurrence = async () => {
+    if (!transaction) return;
+    const isCardRec = Boolean(transaction.cardId);
+    const ok = await confirm({
+      title: isCardRec ? 'Encerrar Recorrência do Cartão?' : 'Encerrar Recorrência?',
+      message: `Deseja encerrar a recorrência de "${transaction.description}"? As cobranças anteriores serão mantidas intactas no histórico, e somente este lançamento atual e os futuros serão cancelados.`,
+      confirmText: 'Encerrar Recorrência',
+      cancelText: 'Voltar',
+      type: 'warning',
+    });
+
+    if (!ok) return;
+
+    if (transaction.seriesId) {
+      deleteTransactionSeriesScope(transaction.id, 'current_and_future');
+    } else {
+      deleteTransaction(transaction.id);
+    }
+    onClose();
+  };
 
   if (!transaction) return null;
 
@@ -459,14 +482,14 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   color: category?.color || '#7c4dff',
                 }}
               >
-                {category?.icon || '📁'}
+                {subcategory?.icon || category?.icon || '📁'}
               </div>
               <div className="min-w-0 flex-1 leading-snug" title={`${category?.name || 'Geral'}${subcategory ? ` • ${subcategory.name}` : ''}`}>
                 <div className="text-xs font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-x-1.5 gap-y-1">
                   <span className="break-words">{category?.name || 'Geral'}</span>
                   {subcategory && (
                     <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 px-2 py-0.5 rounded-lg shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                      <span>{subcategory.icon || '•'}</span>
                       {subcategory.name}
                     </span>
                   )}
@@ -704,13 +727,32 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           </div>
         )}
 
-        {/* Lançamento Fixo */}
+        {/* Lançamento Fixo ou Recorrente no Cartão */}
         {transaction.recurring && (
-          <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center gap-2 text-xs">
-            <Repeat className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-            <span className="font-bold text-purple-900 dark:text-purple-300">
-              Lançamento Fixo ({transaction.recurrenceFrequency === 'yearly' ? 'Anual' : transaction.recurrenceFrequency === 'weekly' ? 'Semanal' : transaction.recurrenceFrequency === 'daily' ? 'Diário' : 'Mensal'})
-            </span>
+          <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between gap-2 text-xs flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <Repeat className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="font-bold text-purple-900 dark:text-purple-300 block truncate">
+                  {transaction.cardId ? 'Recorrente no Cartão' : 'Lançamento Fixo'} ({transaction.recurrenceFrequency === 'yearly' ? 'Anual' : transaction.recurrenceFrequency === 'weekly' ? 'Semanal' : transaction.recurrenceFrequency === 'daily' ? 'Diário' : 'Mensal'})
+                </span>
+                <span className="text-[10px] text-purple-700/80 dark:text-purple-400/80 block">
+                  {transaction.cardId
+                    ? 'Cobrança periódica na fatura do cartão'
+                    : 'Despesa fixa cadastrada'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleEndRecurrence}
+              className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0 shadow-2xs"
+              title="Encerrar recorrência mantendo as transações anteriores e removendo a atual e futuras"
+            >
+              <CalendarX className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>ENCERRAR RECORRÊNCIA</span>
+            </button>
           </div>
         )}
 
@@ -801,14 +843,27 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         {/* 7. ACTION FOOTER BUTTONS */}
         {/* ========================================================================= */}
         <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setDeleteCandidate(transaction)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Excluir</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setDeleteCandidate(transaction)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Excluir</span>
+            </button>
+
+            {transaction.recurring && (
+              <button
+                type="button"
+                onClick={handleEndRecurrence}
+                className="px-3 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-1.5 transition-colors cursor-pointer border border-amber-300/60 dark:border-amber-700/60"
+              >
+                <CalendarX className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Encerrar Recorrência</span>
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             {onDuplicate && (

@@ -72,7 +72,11 @@ export interface CardInstallmentSeries extends TransactionSeriesBase {
 
 export interface RecurringExpenseSeries extends TransactionSeriesBase {
   kind: 'recurring_expense';
-  accountId: string;
+  accountId?: string;
+  cardId?: string;
+  cardClosingDay?: number;
+  cardDueDay?: number;
+  paymentMethod?: 'account' | 'card';
   frequency: SupportedRecurrenceFrequency;
   firstDueDate?: string;
   defaultAmount: number;
@@ -144,6 +148,8 @@ export interface Transaction {
   reimbursementForTransactionId?: string;
   reimbursementForSeriesId?: string;
   debtBreakdown?: DebtInstallmentBreakdown;
+  userId?: string; // Membro da família que realizou a transação
+  thirdPartyAmount?: number;
   createdAt: string;
 }
 

@@ -452,7 +452,7 @@ export const CalendarPage: React.FC = () => {
                                 color: cat?.color || '#7c4dff',
                               }}
                             >
-                              {cat?.icon || (isIncome ? '💰' : '📁')}
+                              {cat?.subIcon || cat?.icon || (isIncome ? '💰' : '📁')}
                             </div>
 
                             <div className="min-w-0">
@@ -460,7 +460,7 @@ export const CalendarPage: React.FC = () => {
                                 {t.description}
                               </p>
                               <span className="text-[10px] text-slate-400 truncate block">
-                                {formatDateShort(t.date)} • {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}
+                                {formatDateShort(t.date)} • {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}{cat?.subName ? ` • ${cat.subName}` : ''}
                               </span>
                             </div>
                           </div>

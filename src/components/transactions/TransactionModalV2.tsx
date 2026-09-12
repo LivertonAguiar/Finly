@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, ChevronDown, FileText, Layers, Paperclip, Tag, Trash2, Upload } from 'lucide-react';
+import { Bell, ChevronDown, FileText, Layers, Paperclip, Repeat, Tag, Trash2, Upload } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
@@ -83,6 +83,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [fixedExpense, setFixedExpense] = useState(false);
   const [frequency, setFrequency] = useState<SupportedRecurrenceFrequency>('monthly');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [isCardRecurring, setIsCardRecurring] = useState(false);
+  const [cardRecurrenceFrequency, setCardRecurrenceFrequency] = useState<SupportedRecurrenceFrequency>('monthly');
+  const [cardRecurrenceEndDate, setCardRecurrenceEndDate] = useState('');
   const [thirdParty, setThirdParty] = useState(false);
   const [thirdPartyName, setThirdPartyName] = useState('');
   const [ignored, setIgnored] = useState(false);
@@ -154,12 +157,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setAttachmentName(tx?.attachmentName);
     setTags(tx?.tags || []);
     setNotes(tx?.notes || '');
-    setFixedExpense(editingSeries?.kind === 'recurring_expense' || Boolean(tx?.recurring));
-    setFrequency(editingSeries?.kind === 'recurring_expense' ? editingSeries.frequency : (
+    setFixedExpense(editingSeries?.kind === 'recurring_expense' || Boolean(tx?.recurring && !tx?.cardId));
+    setFrequency(editingSeries?.kind === 'recurring_expense' && !editingSeries?.cardId ? editingSeries.frequency : (
       tx?.recurrenceFrequency === 'weekly' || tx?.recurrenceFrequency === 'yearly'
         ? tx.recurrenceFrequency : 'monthly'
     ));
-    setRecurrenceEndDate(editingSeries?.endDate || '');
+    setRecurrenceEndDate(editingSeries?.kind === 'recurring_expense' && !editingSeries?.cardId ? (editingSeries?.endDate || '') : '');
+    const isCardRec = Boolean(tx?.cardId && (editingSeries?.kind === 'recurring_expense' || tx?.recurring));
+    setIsCardRecurring(isCardRec);
+    setCardRecurrenceFrequency(editingSeries?.kind === 'recurring_expense' && editingSeries?.cardId ? editingSeries.frequency : (
+      tx?.recurrenceFrequency === 'weekly' || tx?.recurrenceFrequency === 'yearly'
+        ? tx.recurrenceFrequency : 'monthly'
+    ));
+    setCardRecurrenceEndDate(editingSeries?.kind === 'recurring_expense' && editingSeries?.cardId ? (editingSeries?.endDate || '') : '');
     setThirdParty(Boolean(tx?.isThirdParty));
     setThirdPartyName(tx?.thirdPartyName || '');
     setIgnored(Boolean(tx?.ignored));
@@ -369,8 +379,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     targetAccountId: isTransfer ? targetAccountId : undefined,
     cardId: isCard ? cardId : undefined,
     status: isCard ? 'pending' : status,
-    recurring: fixedExpense && type === 'expense' && !isCard,
-    recurrenceFrequency: fixedExpense && type === 'expense' && !isCard ? frequency : undefined,
+    recurring: (fixedExpense && type === 'expense' && !isCard) || (isCard && isCardRecurring),
+    recurrenceFrequency: (fixedExpense && type === 'expense' && !isCard)
+      ? frequency
+      : (isCard && isCardRecurring ? cardRecurrenceFrequency : undefined),
     tags: thirdParty && !tags.includes('Terceiros') ? [...tags, 'Terceiros'] : tags,
     notes: notes.trim() || undefined,
     attachmentUrl,
@@ -448,6 +460,45 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setError(cause instanceof Error ? cause.message : 'Não foi possível criar as parcelas.');
         return;
       }
+      onClose();
+      return;
+    }
+
+    if (isCard && isCardRecurring && selectedCard) {
+      const now = new Date().toISOString();
+      const series: RecurringExpenseSeries = {
+        id: makeId('series-recurring-card'),
+        kind: 'recurring_expense',
+        description: txData.description,
+        categoryId,
+        subcategoryId: subcategoryId || undefined,
+        cardId: selectedCard.id,
+        cardClosingDay: selectedCard.closingDay,
+        cardDueDay: selectedCard.dueDay,
+        paymentMethod: 'card',
+        startDate: date,
+        firstDueDate: getInvoiceDueDate(invoiceMonth, selectedCard.closingDay, selectedCard.dueDay),
+        endDate: cardRecurrenceEndDate || undefined,
+        frequency: cardRecurrenceFrequency,
+        defaultAmount: amountNumber,
+        amountRules: [],
+        tags: [...txData.tags],
+        notes: txData.notes,
+        attachmentUrl,
+        attachmentName,
+        ignored: Boolean(txData.ignored),
+        analyticsExclusionReason: txData.analyticsExclusionReason,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const reconciled = reconcileRecurringExpenseSeries({
+        series,
+        transactions: [],
+        today: getTodayString(),
+        horizonMonths: 12,
+        initialStatus: 'pending',
+      });
+      addTransactionSeries(series, reconciled.transactions);
       onClose();
       return;
     }
@@ -560,7 +611,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} required /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label className={labelClass}>CATEGORIA</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
-            <div><label className={labelClass}>SUBCATEGORIA</label><select className={fieldClass} value={subcategoryId} onChange={event => setSubcategoryId(event.target.value)}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}</select></div>
+            <div><label className={labelClass}>SUBCATEGORIA</label><select className={fieldClass} value={subcategoryId} onChange={event => setSubcategoryId(event.target.value)}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}</option>)}</select></div>
           </div>
           {isCard ? <>
             <div><label className={labelClass}>CARTÃO DE CRÉDITO</label><select className={fieldClass} value={cardId} onChange={event => setCardId(event.target.value)}>{cards.map(card => <option key={card.id} value={card.id}>{card.name} — {card.brand}</option>)}</select></div>
@@ -589,8 +640,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       onChange={event => {
                         const checked = event.target.checked;
                         setInstallment(checked);
-                        if (checked && installmentCount < 2) {
-                          setInstallmentCount(2);
+                        if (checked) {
+                          setIsCardRecurring(false);
+                          if (installmentCount < 2) {
+                            setInstallmentCount(2);
+                          }
                         }
                       }}
                       className="sr-only peer"
@@ -838,6 +892,69 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
         {moreDetails && <div className="space-y-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 p-3">
+          {/* Compra Recorrente no Cartão (somente na adição de despesa no cartão) */}
+          {isCard && type === 'expense' && !installment && !editingTransaction && (
+            <div className="rounded-2xl border border-purple-200 dark:border-purple-900/80 p-3.5 space-y-3 bg-white dark:bg-slate-800/80 shadow-xs">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 shadow-2xs border border-purple-200/60 dark:border-purple-800/40">
+                    <Repeat className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 block truncate">
+                      COMPRA RECORRENTE NO CARTÃO
+                    </span>
+                    <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium block">
+                      {isCardRecurring ? 'Repete a cada fatura mensal do cartão (ex: Netflix, academia)' : 'Ativar para assinaturas ou cobranças automáticas no cartão'}
+                    </span>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isCardRecurring}
+                    onChange={event => {
+                      const checked = event.target.checked;
+                      setIsCardRecurring(checked);
+                      if (checked) {
+                        setInstallment(false);
+                      }
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {isCardRecurring && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2.5 border-t border-purple-200/60 dark:border-purple-900/40 animate-in fade-in">
+                  <div>
+                    <label className={labelClass}>FREQUÊNCIA</label>
+                    <select
+                      className={fieldClass}
+                      value={cardRecurrenceFrequency}
+                      onChange={event => setCardRecurrenceFrequency(event.target.value as SupportedRecurrenceFrequency)}
+                    >
+                      <option value="monthly">Mensal (Padrão)</option>
+                      <option value="weekly">Semanal</option>
+                      <option value="yearly">Anual</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>TÉRMINO OPCIONAL</label>
+                    <input
+                      className={fieldClass}
+                      type="date"
+                      min={date}
+                      value={cardRecurrenceEndDate}
+                      onChange={event => setCardRecurrenceEndDate(event.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <div>

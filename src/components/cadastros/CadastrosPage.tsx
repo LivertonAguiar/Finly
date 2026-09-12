@@ -100,7 +100,12 @@ export const CadastrosPage: React.FC = () => {
 
   const filteredCategories = categories.filter(c => {
     if (categoryTypeFilter !== 'all' && c.type !== categoryTypeFilter) return false;
-    if (categorySearch && !c.name.toLowerCase().includes(categorySearch.toLowerCase())) return false;
+    if (categorySearch) {
+      const term = categorySearch.toLowerCase().trim();
+      const matchCat = c.name.toLowerCase().includes(term);
+      const matchSub = c.subcategories?.some(s => s.name.toLowerCase().includes(term));
+      if (!matchCat && !matchSub) return false;
+    }
     return true;
   });
 

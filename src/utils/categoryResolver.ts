@@ -6,6 +6,7 @@ export interface ResolvedCategoryInfo {
   name: string;
   icon: string;
   color: string;
+  subId?: string;
   subName?: string;
   subIcon?: string;
   isCustomFallback?: boolean;
@@ -21,8 +22,15 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'mercado': { categoryId: 'cat-desp-alimentacao', subcategoryId: 'sub-alim-mercado', name: 'Alimentação', icon: '🍽️' },
   'combustivel': { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-combustivel', name: 'Transporte', icon: '🚗' },
   'aluguel': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-aluguel', name: 'Moradia', icon: '🏠' },
-  'cat-rec-salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-sal-mensal', name: 'Salário & Trabalho', icon: '💼' },
-  'salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-sal-mensal', name: 'Salário & Trabalho', icon: '💼' },
+  'cat-rec-salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-rec-salario', name: 'Salário & Trabalho', icon: '💼' },
+  'salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-rec-salario', name: 'Salário & Trabalho', icon: '💼' },
+  'sub-sal-mensal': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-rec-salario', name: 'Salário & Trabalho', icon: '💼' },
+  'sub-inv-dividendos': { categoryId: 'cat-rec-investimentos', subcategoryId: 'sub-rec-dividendos', name: 'Investimentos & Rendas Passivas', icon: '📈' },
+  'sub-sau-plano': { categoryId: 'cat-desp-saude', subcategoryId: 'sub-saude-plano', name: 'Saúde', icon: '🩺' },
+  'sub-sau-academia': { categoryId: 'cat-desp-academia-esportes', subcategoryId: 'sub-acad-academia', name: 'Academia & Esportes', icon: '🏋️' },
+  'sub-tra-combustivel': { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-combustivel', name: 'Transporte', icon: '🚗' },
+  'sub-sau-medicamentos': { categoryId: 'cat-desp-saude', subcategoryId: 'sub-saude-farmacia', name: 'Saúde', icon: '🩺' },
+  'sub-tra-app': { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-uber', name: 'Transporte', icon: '🚗' },
   'cat-rec-outras': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
   'outras-receitas': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
   'sub-mor-telefone': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-plano-cel', name: 'Compras & Pessoal', icon: '🛍️' },
@@ -38,6 +46,21 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'clubes-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
   'clube-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
 };
+
+export function splitEmojiFromName(name: string, fallbackIcon?: string): { name: string; cleanName: string; icon?: string } {
+  if (!name) return { name: '', cleanName: '', icon: fallbackIcon };
+  const match = name.match(/^([\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}]+(?:\u{FE0F})?(?:\u{200D}[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}]+(?:\u{FE0F})?)*)\s+(.+)$/u);
+  if (match) {
+    const clean = match[2].trim();
+    return {
+      name: clean,
+      cleanName: clean,
+      icon: fallbackIcon || match[1]
+    };
+  }
+  const clean = name.trim();
+  return { name: clean, cleanName: clean, icon: fallbackIcon };
+}
 
 /**
  * Resolves any category and subcategory safely into a clean display name, icon, and color.
@@ -93,7 +116,21 @@ export function resolveCategory(
     }
   }
 
-  // 3. Known Aliases
+  // 2.5 Check Subcategory Alias if not found directly
+  if (!subItem && rawSubId) {
+    const subAlias = KNOWN_ALIASES[rawSubId.toLowerCase()];
+    if (subAlias) {
+      if (!directCat) {
+        directCat = categories.find(c => c.id === subAlias.categoryId) ||
+          DEFAULT_CATEGORIES.find(c => c.id === subAlias.categoryId);
+      }
+      if (directCat && subAlias.subcategoryId) {
+        subItem = directCat.subcategories?.find(s => s.id === subAlias.subcategoryId);
+      }
+    }
+  }
+
+  // 3. Known Aliases for Category
   if (!directCat && rawCatId) {
     const lower = rawCatId.toLowerCase();
     const alias = KNOWN_ALIASES[lower];
@@ -107,13 +144,17 @@ export function resolveCategory(
   }
 
   if (directCat) {
+    const parsedSub = subItem ? splitEmojiFromName(subItem.name, subItem.icon) : undefined;
+    const parsedCat = splitEmojiFromName(directCat.name, directCat.icon);
+
     return {
       id: directCat.id,
-      name: directCat.name,
-      icon: directCat.icon || (txType === 'income' ? '💰' : '🛍️'),
+      name: parsedCat.cleanName,
+      icon: parsedCat.icon || directCat.icon || (txType === 'income' ? '💰' : '🛍️'),
       color: directCat.color || '#8b5cf6',
-      subName: subItem?.name,
-      subIcon: subItem?.icon,
+      subId: subItem?.id || (rawSubId ? KNOWN_ALIASES[rawSubId.toLowerCase()]?.subcategoryId || rawSubId : undefined),
+      subName: parsedSub?.cleanName,
+      subIcon: parsedSub?.icon,
     };
   }
 

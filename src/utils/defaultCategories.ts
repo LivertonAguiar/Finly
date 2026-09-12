@@ -15,32 +15,32 @@ export const EMOJI_GROUPS: EmojiGroup[] = [
   {
     name: 'Alimentação',
     icon: '🍽️',
-    emojis: ['🍽️', '🛒', '🥦', '🥖', '🍕', '☕', '🍔', '🍟', '🍣', '🥩', '🍎', '🍇', '🍺', '🍷', '🍦', '🍰']
+    emojis: ['🍽️', '🛒', '🥦', '🥖', '🍕', '🛵', '☕', '🍔', '🍟', '🍣', '🥩', '🍎', '🍇', '🍺', '🍷', '🍦', '🍰']
   },
   {
     name: 'Casa & Contas',
     icon: '🏠',
-    emojis: ['🏠', '🏢', '🏗️', '🔑', '🚪', '⚡', '🚰', '🌐', '📱', '🧹', '🔧', '🛋️', '🧊', '📺', '🛏️', '🚿', '🪴']
+    emojis: ['🏠', '🏢', '🏗️', '🧱', '🔑', '🚪', '⚡', '🚰', '🚿', '🌐', '📱', '🧹', '🔧', '🛋️', '🧊', '📺', '🛏️', '🪴', '📝']
   },
   {
     name: 'Transporte',
     icon: '🚗',
-    emojis: ['🚗', '⛽', '🚕', '🚌', '🅿️', '🛣️', '🔧', '🛡️', '✈️', '🚲', '🛴', '🛵', '🚆', '🚢', '🚀']
+    emojis: ['🚗', '🚘', '⛽', '🚕', '🚌', '🅿️', '🛣️', '🔧', '🛡️', '✈️', '🚲', '🛴', '🛵', '🚆', '🚢', '🚀']
   },
   {
     name: 'Saúde & Esporte',
     icon: '🩺',
-    emojis: ['🩺', '💊', '🏥', '🧪', '🦷', '🧴', '🏋️', '⚽', '🥤', '🚴', '🏊', '🧘', '🩹', '💉', '🩻']
+    emojis: ['🩺', '💊', '🏥', '👨‍⚕️', '🧪', '🦷', '🧴', '🏋️', '⚽', '🥤', '🚴', '🏊', '🧘', '🩹', '💉', '🩻']
   },
   {
     name: 'Lazer & Família',
     icon: '🎮',
-    emojis: ['🎮', '👶', '🍼', '🧸', '🎡', '📺', '🎬', '🎉', '✈️', '🏨', '🐶', '🐱', '🙏', '🎁', '🛍️', '💈', '🏖️']
+    emojis: ['🎮', '🕹️', '👶', '🍼', '🧷', '🎒', '🧸', '🎡', '📺', '🎬', '🎉', '✈️', '🏨', '🐶', '🦴', '🎾', '🐱', '🙏', '🤲', '🎁', '🛍️', '💈', '🏖️']
   },
   {
     name: 'Financeiro & Renda',
     icon: '💰',
-    emojis: ['💰', '💵', '💳', '📈', '📊', '🏦', '🤝', '🏛️', '🧾', '📄', '🚨', '💸', '💎', '🪙', '💶', '💷', '💼', '👔', '💻', '🎯', '✨', '🏆', '🎁', '🔑', '🏷️', '📦', '📅', '🏖️', '⏰', '🛠️', '🚗', '🎨', '🌾', '🍽️', '⛽', '↩️', '👶', '⭐']
+    emojis: ['💰', '💵', '💳', '📈', '📉', '📊', '💹', '🏦', '🤝', '🏛️', '🦁', '🧾', '📄', '🚨', '💸', '💎', '🪙', '🔁', '💱', '💶', '💷', '💼', '👔', '💻', '🖥️', '🧑‍💻', '🎯', '✨', '🏆', '🎁', '🔑', '🏷️', '📦', '📅', '🏖️', '⏰', '🛠️', '🚗', '🎨', '🌾', '🍽️', '⛽', '↩️', '👶', '⭐']
   }
 ];
 
@@ -79,7 +79,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-alim-delivery",
         "name": "Delivery",
-        "icon": "🍕",
+        "icon": "🛵",
         "categoryId": "cat-desp-alimentacao"
       },
       {
@@ -100,13 +100,13 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-mor-itbi-registro",
         "name": "ITBI & Escritura / Registro",
-        "icon": "🏛️",
+        "icon": "📝",
         "categoryId": "cat-desp-moradia"
       },
       {
         "id": "sub-mor-taxa-obra",
         "name": "Taxa de Evolução de Obra",
-        "icon": "📄",
+        "icon": "🏗️",
         "categoryId": "cat-desp-moradia"
       },
       {
@@ -118,25 +118,25 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-mor-parcela-construtora",
         "name": "Parcela da Construtora / Entrada / Balão",
-        "icon": "🏗️",
+        "icon": "🧱",
         "categoryId": "cat-desp-moradia"
       },
       {
         "id": "sub-mor-amortizacao-imovel",
         "name": "Amortização do Financiamento",
-        "icon": "💸",
+        "icon": "📉",
         "categoryId": "cat-desp-moradia"
       },
       {
         "id": "sub-mor-financiamento-apto",
         "name": "Financiamento do Apartamento / Imóvel",
-        "icon": "🏢",
+        "icon": "🏦",
         "categoryId": "cat-desp-moradia"
       },
       {
         "id": "sub-mor-aluguel",
         "name": "Aluguel",
-        "icon": "🏠",
+        "icon": "🔑",
         "categoryId": "cat-desp-moradia"
       },
       {
@@ -154,7 +154,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-mor-agua",
         "name": "Água / Esgoto",
-        "icon": "🚰",
+        "icon": "🚿",
         "categoryId": "cat-desp-moradia"
       },
       {
@@ -241,7 +241,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-trans-financiamento",
         "name": "Financiamento do Veículo",
-        "icon": "🚗",
+        "icon": "🚘",
         "categoryId": "cat-desp-transporte"
       }
     ]
@@ -268,7 +268,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-saude-consultas",
         "name": "Consultas",
-        "icon": "🩺",
+        "icon": "👨‍⚕️",
         "categoryId": "cat-desp-saude"
       },
       {
@@ -328,7 +328,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-filhos-fraldas",
         "name": "Fraldas / Higiene",
-        "icon": "🧼",
+        "icon": "🧷",
         "categoryId": "cat-desp-filhos"
       },
       {
@@ -346,7 +346,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-filhos-escola",
         "name": "Educação / Escola",
-        "icon": "🎓",
+        "icon": "🎒",
         "categoryId": "cat-desp-filhos"
       },
       {
@@ -427,7 +427,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-comp-software",
         "name": "Software / Aplicativos",
-        "icon": "💻",
+        "icon": "🖥️",
         "categoryId": "cat-desp-compras-pessoal"
       },
       {
@@ -454,7 +454,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-educ-cursos",
         "name": "Cursos / Treinamentos",
-        "icon": "💻",
+        "icon": "🧑‍💻",
         "categoryId": "cat-desp-educacao"
       },
       {
@@ -499,7 +499,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-lazer-jogos",
         "name": "Jogos / Hobbies",
-        "icon": "🎮",
+        "icon": "🕹️",
         "categoryId": "cat-desp-lazer"
       },
       {
@@ -526,7 +526,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-pets-racao",
         "name": "Ração / Petiscos",
-        "icon": "🥩",
+        "icon": "🦴",
         "categoryId": "cat-desp-pets"
       },
       {
@@ -544,7 +544,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-pets-acessorios",
         "name": "Acessórios / Brinquedos",
-        "icon": "🧸",
+        "icon": "🎾",
         "categoryId": "cat-desp-pets"
       }
     ]
@@ -565,7 +565,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-igreja-ofertas",
         "name": "Ofertas",
-        "icon": "🎁",
+        "icon": "🤲",
         "categoryId": "cat-desp-igreja-doacoes"
       },
       {
@@ -592,7 +592,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-fin-amortizacao-extra",
         "name": "Amortização Extraordinária",
-        "icon": "💸",
+        "icon": "📉",
         "categoryId": "cat-desp-financeiro"
       },
       {
@@ -628,13 +628,13 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-fin-acordos",
         "name": "Acordos / Renegociações",
-        "icon": "🤝",
+        "icon": "📝",
         "categoryId": "cat-desp-financeiro"
       },
       {
         "id": "sub-fin-encargos",
         "name": "Outros Encargos Financeiros",
-        "icon": "📄",
+        "icon": "🧾",
         "categoryId": "cat-desp-financeiro"
       }
     ]
@@ -661,7 +661,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-imp-ir",
         "name": "Imposto de Renda",
-        "icon": "📄",
+        "icon": "🦁",
         "categoryId": "cat-desp-impostos"
       },
       {
@@ -790,7 +790,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-rec-dividendos",
         "name": "Dividendos de Ações & FIIs",
-        "icon": "📊",
+        "icon": "💹",
         "categoryId": "cat-rec-investimentos"
       },
       {
@@ -847,7 +847,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-rec-restituicao-ir",
         "name": "Restituição de Imposto de Renda",
-        "icon": "🏛️",
+        "icon": "🦁",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
@@ -865,7 +865,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-rec-auxilios",
         "name": "Auxílios & Pensão",
-        "icon": "💶",
+        "icon": "🤲",
         "categoryId": "cat-rec-beneficios-outras"
       },
       {
@@ -886,7 +886,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-mov-transf-contas",
         "name": "Transferência entre Contas",
-        "icon": "🏦",
+        "icon": "🔁",
         "categoryId": "cat-mov-transferencias"
       },
       {
@@ -907,7 +907,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-mov-aporte-renda-fixa",
         "name": "Aporte em Renda Fixa",
-        "icon": "💰",
+        "icon": "🏦",
         "categoryId": "cat-mov-investimentos"
       },
       {
@@ -931,7 +931,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       {
         "id": "sub-mov-resgate-cripto",
         "name": "Resgate / Venda de Criptomoedas",
-        "icon": "🪙",
+        "icon": "💱",
         "categoryId": "cat-mov-investimentos"
       }
     ]

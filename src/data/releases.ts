@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Suporte a Compra Recorrente no Cartão de Crédito com acionamento na seção Mais detalhes acima do anexo, identificador visual na aba Transações e opção dedicada para Encerrar Recorrência preservando o histórico.',
+    highlights: [
+      {
+        title: 'Compra Recorrente no Cartão de Crédito',
+        description: 'Adicionada a opção de ativar Compra Recorrente na gaveta Mais detalhes acima do anexo em despesas no cartão, com periodicidade configurável e data de término opcional.',
+        type: 'feature',
+      },
+      {
+        title: 'Identificação na Aba Transações',
+        description: 'Exibição de badge destacado "Recorrente (Cartão)" com ícone nas visualizações em Timeline e Tabela para visualização instantânea.',
+        type: 'visual',
+      },
+      {
+        title: 'Ação Encerrar Recorrência',
+        description: 'Opção dedicada nos detalhes da transação para cancelar a cobrança atual e as futuras mantendo todo o histórico de faturas passadas intacto.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.66',
+    releaseDate: '2026-09-12',
     summary: 'Inclusão da nova subcategoria oficial "Clubes de Benefícios / Assinaturas" na categoria Compras & Pessoal, expandindo a árvore taxonômica financeira e o motor inteligente de resolução de transações.',
     highlights: [
       {

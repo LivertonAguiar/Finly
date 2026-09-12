@@ -28,6 +28,7 @@ import {
   Scale,
   Building2,
   Check,
+  Repeat,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -294,11 +295,12 @@ export const TransactionsPage: React.FC = () => {
 
         // Search filter
         if (searchTerm.trim()) {
-          const term = searchTerm.toLowerCase();
+          const term = searchTerm.toLowerCase().trim();
           const descMatch = t.description.toLowerCase().includes(term);
           const cat = findCategory(t.categoryId, t.subcategoryId, t.type);
           const catMatch = cat ? cat.name.toLowerCase().includes(term) : false;
-          return descMatch || catMatch;
+          const subMatch = cat && cat.subName ? cat.subName.toLowerCase().includes(term) : false;
+          return descMatch || catMatch || subMatch;
         }
         return true;
       })
@@ -826,12 +828,12 @@ export const TransactionsPage: React.FC = () => {
                           className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-sm sm:text-base shrink-0 shadow-xs select-none"
                           style={{ backgroundColor: (cat?.color || '#7c4dff') + '20', color: cat?.color || '#7c4dff' }}
                         >
-                          {cat?.icon || (isIncome ? '💰' : '📁')}
+                          {cat?.subIcon || cat?.icon || (isIncome ? '💰' : '📁')}
                         </div>
 
                         {/* Description & Metadata with full space */}
                         <div className="min-w-0 flex-1 pr-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                             <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                               {t.description}
                             </p>
@@ -840,9 +842,24 @@ export const TransactionsPage: React.FC = () => {
                                 Dívida / financiamento
                               </span>
                             )}
+                            {t.cardId && t.recurring && (
+                              <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[10px] font-bold">
+                                <Repeat className="w-3 h-3" />
+                                Recorrente (Cartão)
+                              </span>
+                            )}
+                            {!t.cardId && t.recurring && (
+                              <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
+                                <Repeat className="w-3 h-3" />
+                                Fixa
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate mt-0.5">
                             <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
+                            {cat?.subName && (
+                              <span className="font-semibold text-purple-600 dark:text-purple-400 shrink-0">• {cat.subName}</span>
+                            )}
                             <span className="shrink-0 font-medium text-slate-500 dark:text-slate-400">• {formatDateShort(t.date)}</span>
                             {card ? (
                               <span className="truncate">• Cartão {card.name}</span>
@@ -974,19 +991,41 @@ export const TransactionsPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span>{t.description}</span>
                         {t.debtId && (
                           <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-mono font-bold">
                             Dívida / financiamento
                           </span>
                         )}
+                        {t.cardId && t.recurring && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[9px] font-bold">
+                            <Repeat className="w-2.5 h-2.5" />
+                            Recorrente (Cartão)
+                          </span>
+                        )}
+                        {!t.cardId && t.recurring && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[9px] font-bold">
+                            <Repeat className="w-2.5 h-2.5" />
+                            Fixa
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {cat?.name || 'Geral'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm shrink-0">{cat?.subIcon || cat?.icon || (isIncome ? '💰' : '📁')}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {cat?.name || 'Geral'}
+                          </span>
+                          {cat?.subName && (
+                            <span className="text-[9px] font-semibold text-purple-600 dark:text-purple-400 truncate pl-0.5">
+                              {cat.subName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
                       {card ? card.name : acc ? acc.name : '-'}

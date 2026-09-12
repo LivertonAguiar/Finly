@@ -4,6 +4,7 @@ import type {
   Transaction,
   TransactionStatus,
 } from '../types';
+import { allocateCardTransaction } from './invoiceCalculator';
 
 type ReconcileInput = {
   series: RecurringExpenseSeries;
@@ -92,31 +93,48 @@ const buildOccurrence = (
   date: string,
   sequence: number,
   status: TransactionStatus,
-): Transaction => ({
-  id: `tx-${series.id}-${date}`,
-  description: series.description,
-  amount: amountForDate(series, date),
-  type: 'expense',
-  date,
-  dueDate: dueDateForOccurrence(series, sequence - 1),
-  categoryId: series.categoryId,
-  subcategoryId: series.subcategoryId,
-  accountId: series.accountId,
-  status,
-  recurring: true,
-  recurrenceFrequency: series.frequency,
-  seriesId: series.id,
-  seriesSequence: sequence,
-  occurrenceKey: `recurring:${date}`,
-  tags: [...series.tags],
-  notes: series.notes,
-  attachmentUrl: series.attachmentUrl,
-  attachmentName: series.attachmentName,
-  reminder: series.reminder ? { ...series.reminder } : undefined,
-  ignored: series.ignored,
-  analyticsExclusionReason: series.analyticsExclusionReason,
-  createdAt: `${date}T12:00:00.000Z`,
-});
+): Transaction => {
+  const isCard = Boolean(series.cardId);
+  let invoiceMonth: string | undefined;
+  let dueDate: string | undefined;
+
+  if (isCard && series.cardClosingDay && series.cardDueDay) {
+    const allocation = allocateCardTransaction(date, series.cardClosingDay, series.cardDueDay);
+    invoiceMonth = allocation.invoiceMonth;
+    dueDate = allocation.dueDate;
+  } else {
+    dueDate = dueDateForOccurrence(series, sequence - 1);
+  }
+
+  return {
+    id: `tx-${series.id}-${date}`,
+    description: series.description,
+    amount: amountForDate(series, date),
+    type: 'expense',
+    date,
+    dueDate,
+    purchaseDate: isCard ? date : undefined,
+    invoiceMonth,
+    categoryId: series.categoryId,
+    subcategoryId: series.subcategoryId,
+    accountId: isCard ? undefined : series.accountId,
+    cardId: series.cardId,
+    status: isCard ? (status === 'completed' ? 'completed' : 'pending') : status,
+    recurring: true,
+    recurrenceFrequency: series.frequency,
+    seriesId: series.id,
+    seriesSequence: sequence,
+    occurrenceKey: `recurring:${date}`,
+    tags: [...series.tags],
+    notes: series.notes,
+    attachmentUrl: series.attachmentUrl,
+    attachmentName: series.attachmentName,
+    reminder: series.reminder ? { ...series.reminder } : undefined,
+    ignored: series.ignored,
+    analyticsExclusionReason: series.analyticsExclusionReason,
+    createdAt: `${date}T12:00:00.000Z`,
+  };
+};
 
 export const reconcileRecurringExpenseSeries = ({
   series,

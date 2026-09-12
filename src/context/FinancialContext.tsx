@@ -15,6 +15,7 @@ import {
   TransactionSeries,
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
+import { splitEmojiFromName, resolveCategory } from '../utils/categoryResolver';
 import { getCurrentMonth, getTodayString, round2, sortCardsByDueDay } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
@@ -526,14 +527,43 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     savedCats.forEach(c => {
       if (c && c.id && !standardIds.has(c.id) && c.id.startsWith('cat-custom-')) {
+        const customSubcategories = Array.isArray(c.subcategories)
+          ? c.subcategories.map((s: any) => {
+              const parsed = splitEmojiFromName(s.name || '');
+              return {
+                ...s,
+                name: parsed.name,
+                icon: s.icon || parsed.icon || undefined,
+              };
+            })
+          : [];
         userCustomCats.push({
           ...c,
-          subcategories: Array.isArray(c.subcategories) ? c.subcategories : []
+          subcategories: customSubcategories,
         });
       }
     });
 
     return [...DEFAULT_CATEGORIES, ...userCustomCats];
+  };
+
+  const normalizeStoredTransaction = (t: Transaction): Transaction => {
+    if (!t || (!t.subcategoryId && !t.categoryId)) return t;
+    const resolved = resolveCategory(DEFAULT_CATEGORIES, t.categoryId, t.subcategoryId, t.type || 'expense');
+    let updated = false;
+    let newSubId = t.subcategoryId;
+    let newCatId = t.categoryId;
+
+    if (resolved.subId && resolved.subId !== t.subcategoryId) {
+      newSubId = resolved.subId;
+      updated = true;
+    }
+    if (resolved.id && (!t.categoryId || resolved.id !== t.categoryId)) {
+      newCatId = resolved.id;
+      updated = true;
+    }
+
+    return updated ? { ...t, categoryId: newCatId, subcategoryId: newSubId } : t;
   };
 
   const withDebtTransactionBackfill = (store: UserStoreData): UserStoreData => {
@@ -559,8 +589,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const saved = localStorage.getItem(userStoreKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // If demo user but transactions/accounts are empty, regenerate complete demo store
-        if (isDemo && (!Array.isArray(parsed.transactions) || parsed.transactions.length === 0 || !Array.isArray(parsed.accounts) || parsed.accounts.length === 0)) {
+        // If demo user and stored dataset is legacy or incomplete, refresh to full comprehensive dataset
+        const isLegacyDemo = isDemo && (
+          !Array.isArray(parsed.transactions) ||
+          parsed.transactions.length < 50 ||
+          !Array.isArray(parsed.notifications) ||
+          parsed.notifications.length === 0
+        );
+        if (isLegacyDemo) {
           // Fall through to generateRealisticDemoStore below
         } else {
           return withDebtTransactionBackfill(sanitizeStoredData({
@@ -571,7 +607,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             goals: Array.isArray(parsed.goals) ? parsed.goals : [],
             debts: Array.isArray(parsed.debts) ? parsed.debts : [],
             investments: Array.isArray(parsed.investments) ? parsed.investments : [],
-            transactions: Array.isArray(parsed.transactions) ? parsed.transactions.filter((t: any) => !isGhostTransaction(t)) : [],
+            transactions: Array.isArray(parsed.transactions) ? parsed.transactions.filter((t: any) => !isGhostTransaction(t)).map(normalizeStoredTransaction) : [],
             transactionSeries: Array.isArray(parsed.transactionSeries) ? parsed.transactionSeries : [],
             familyMembers: Array.isArray(parsed.familyMembers) ? parsed.familyMembers : [
               { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
@@ -1527,7 +1563,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const addSubcategory = (categoryId: string, name: string, icon?: string) => {
-    const newSub = { id: `sub-${Date.now()}`, name, icon, categoryId };
+    const parsed = splitEmojiFromName(name);
+    const finalIcon = icon || parsed.icon || undefined;
+    const finalName = parsed.name;
+    const newSub = { id: `sub-${Date.now()}`, name: finalName, icon: finalIcon, categoryId };
     setCategories(prev =>
       prev.map(c => (c.id === categoryId ? { ...c, subcategories: [...c.subcategories, newSub] } : c))
     );
@@ -2566,13 +2605,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     replaceCardsWithPendingSync(demo.cards);
     setCategories(demo.categories);
     setTransactions(demo.transactions);
-    setTransactionSeries([]);
+    setTransactionSeries(demo.transactionSeries || []);
     setBudgets(demo.budgets);
     setGoals(demo.goals);
     setDebts(demo.debts);
     setInvestments(demo.investments);
     setFamilyMembers(demo.familyMembers);
+    if (demo.notifications) setNotifications(demo.notifications);
     if (demo.userProfile) setUser(prev => ({ ...prev, ...demo.userProfile }));
+    try {
+      localStorage.setItem(userStoreKey, JSON.stringify(demo));
+    } catch (_) {}
   };
 
   // Backup & Restore

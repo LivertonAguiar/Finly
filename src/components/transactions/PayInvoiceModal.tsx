@@ -314,7 +314,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
                           color: cat?.color || '#7c4dff',
                         }}
                       >
-                        {cat?.icon || '💳'}
+                        {sub?.icon || cat?.icon || '💳'}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
