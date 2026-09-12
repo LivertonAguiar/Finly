@@ -42,6 +42,38 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Central analítica avançada de relatórios: Comparativos MoM (mês a mês) e Orçado vs Realizado, Curvas e Projeções de Financiamentos com simulador de amortização extraordinária, Diagnóstico da Regra 50/30/20 com Score de Saúde Financeira e alternador de layout (Modo Focado vs Grade Bento).',
+    highlights: [
+      {
+        title: 'Comparativos MoM e Orçado vs Realizado',
+        description: 'Análise detalhada de variações de despesas categoria por categoria entre meses (+R$, -R$, +%, -%) e acompanhamento de aderência ao teto orçamentário planejado.',
+        type: 'feature',
+      },
+      {
+        title: 'Curvas e Projeção de Financiamentos & Dívidas',
+        description: 'Projeção matemática de decaimento do saldo devedor até a quitação, decomposição de parcelas (principal vs juros) e simulador interativo de amortização extraordinária (redução de prazo vs redução de parcela).',
+        type: 'feature',
+      },
+      {
+        title: 'Diagnóstico da Regra 50/30/20 & Score Financeiro',
+        description: 'Classificação automática em Necessidades (50%), Desejos (30%) e Poupança (20%), cálculo da taxa de poupança (Savings Rate) e recomendações acionáveis de saúde financeira.',
+        type: 'feature',
+      },
+      {
+        title: 'Alternador de Layouts (Modo Focado vs Grade Bento)',
+        description: 'Visualização adaptável permitindo alternar entre o modo focado detalhado e grade bento inspirada em dashboards modernos com persistência da preferência do usuário.',
+        type: 'visual',
+      },
+      {
+        title: 'Sincronização Contínua do Helpdesk',
+        description: 'Novo tutorial passo a passo e perguntas frequentes adicionadas à Central de Ajuda cobrindo todos os novos recursos de relatórios e análises.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.61',
+    releaseDate: '2026-09-12',
     summary: 'Séries explícitas de cartão de crédito e despesas fixas recorrentes: suporte a compras em andamento (05/12), Fatura de Destino autoritativa, rateio exato de centavos, horizonte de 12 meses, transferências unificadas e desacoplamento de impacto analítico vs financeiro.',
     highlights: [
       {

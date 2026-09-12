@@ -359,7 +359,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
         {/* Payment Date with Quick Chips */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Data do Pagamento *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">DATA DO PAGAMENTO</label>
             <div className="flex items-center gap-1 text-[10px] font-bold">
               <button
                 type="button"

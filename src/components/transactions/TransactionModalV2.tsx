@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, ChevronDown, Paperclip, Tag, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Bell, ChevronDown, FileText, Layers, Paperclip, Tag, Trash2, Upload } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
@@ -28,7 +28,7 @@ interface TransactionModalProps {
 }
 
 const fieldClass = 'w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-100';
-const labelClass = 'block mb-1 text-xs font-bold text-slate-700 dark:text-slate-300';
+const labelClass = 'block mb-1 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300';
 
 const makeId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
@@ -54,6 +54,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   } = useFinancial();
   const [type, setType] = useState<TransactionType>(initialType);
   const [paymentMethod, setPaymentMethod] = useState<'account' | 'card'>('account');
+  const [centsAmount, setCentsAmount] = useState<number>(0);
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState<TransactionStatus>('completed');
   const [date, setDate] = useState(getTodayString());
@@ -68,6 +69,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [installment, setInstallment] = useState(false);
   const [amountMode, setAmountMode] = useState<'total' | 'per_installment'>('total');
   const [installmentCount, setInstallmentCount] = useState(2);
+  const [isCustomInstallment, setIsCustomInstallment] = useState(false);
   const [alreadyStarted, setAlreadyStarted] = useState(false);
   const [firstTrackedInstallment, setFirstTrackedInstallment] = useState(1);
   const [moreDetails, setMoreDetails] = useState(false);
@@ -117,7 +119,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     const nextMethod = tx?.cardId ? 'card' : initialPaymentMethod || (initialCardId ? 'card' : 'account');
     setType(nextType);
     setPaymentMethod(nextMethod);
-    setAmount(tx ? String(tx.amount) : '');
+    if (tx?.amount) {
+      const parsedCents = Math.round(Number(tx.amount) * 100);
+      setCentsAmount(parsedCents);
+      setAmount((parsedCents / 100).toFixed(2));
+    } else {
+      setCentsAmount(0);
+      setAmount('');
+    }
     setStatus(tx?.status || 'completed');
     setDate(tx?.date || getTodayString());
     setDueDate(tx?.dueDate || '');
@@ -129,7 +138,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setCardId(tx?.cardId || initialCardId || cards[0]?.id || '');
     setInvoiceMonth(tx?.invoiceMonth || getTodayString().slice(0, 7));
     setInstallment(Boolean(tx?.installments));
-    setInstallmentCount(tx?.installments?.total || 2);
+    const count = tx?.installments?.total || 2;
+    setInstallmentCount(count);
+    setIsCustomInstallment(count > 24);
     setFirstTrackedInstallment(tx?.installments?.current || 1);
     setAlreadyStarted(Boolean(tx?.installments && (tx.installments.current || 1) > 1));
     setMoreDetails(false);
@@ -163,7 +174,44 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     category.type === (type === 'income' ? 'income' : 'expense'),
   );
   const selectedCategory = filteredCategories.find(category => category.id === categoryId);
-  const amountNumber = round2(Number(amount));
+  const amountNumber = round2(centsAmount / 100);
+
+  const formatCentsToDisplay = (cents: number): string => {
+    return (cents / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const displayAmount = useMemo(() => formatCentsToDisplay(centsAmount), [centsAmount]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '');
+    if (!digits || digits === '0') {
+      setCentsAmount(0);
+      setAmount('');
+      return;
+    }
+    const trimmed = digits.slice(-11);
+    const cents = parseInt(trimmed, 10) || 0;
+    setCentsAmount(cents);
+    setAmount(cents > 0 ? (cents / 100).toFixed(2) : '');
+  };
+
+  const handleAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const str = centsAmount.toString();
+      if (str.length <= 1) {
+        setCentsAmount(0);
+        setAmount('');
+      } else {
+        const nextCents = parseInt(str.slice(0, -1), 10) || 0;
+        setCentsAmount(nextCents);
+        setAmount(nextCents > 0 ? (nextCents / 100).toFixed(2) : '');
+      }
+    }
+  };
   const installmentPreview = useMemo(() => {
     if (!isCard || !installment || !selectedCard || amountNumber <= 0) return null;
     try {
@@ -182,10 +230,47 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
   }, [isCard, installment, selectedCard, amountNumber, amountMode, installmentCount, alreadyStarted, firstTrackedInstallment, date, invoiceMonth, description, categoryId, subcategoryId, ignored, thirdParty, thirdPartyName, tags, notes, attachmentUrl, attachmentName]);
 
-  const addTag = () => {
-    const value = tagInput.trim();
-    if (value && !tags.includes(value)) setTags(prev => [...prev, value]);
+  const formatInvoiceMonthShort = (monthStr?: string) => {
+    if (!monthStr) return '';
+    const [year, month] = monthStr.split('-');
+    const d = new Date(Number(year), Number(month) - 1, 1);
+    const formatted = d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '');
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
+
+  const calculateInstallmentOption = (count: number) => {
+    if (amountNumber <= 0) {
+      return { installmentAmount: 0, totalAmount: 0 };
+    }
+    if (amountMode === 'total') {
+      const installmentAmount = round2(amountNumber / count);
+      return { installmentAmount, totalAmount: amountNumber };
+    } else {
+      const totalAmount = round2(amountNumber * count);
+      return { installmentAmount: amountNumber, totalAmount };
+    }
+  };
+
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const addTag = (textToAdd?: string) => {
+    const candidate = typeof textToAdd === 'string' ? textToAdd : tagInput;
+    if (!candidate.trim()) {
+      tagInputRef.current?.focus();
+      return;
+    }
+    const parts = candidate.split(/[,;]+/).map(p => p.trim().replace(/^#+/, '')).filter(Boolean);
+    if (parts.length > 0) {
+      setTags(prev => {
+        const next = [...prev];
+        for (const part of parts) {
+          if (!next.includes(part)) next.push(part);
+        }
+        return next;
+      });
+    }
     setTagInput('');
+    tagInputRef.current?.focus();
   };
 
   const handleAttachment = (file?: File) => {
@@ -355,15 +440,37 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         </div>}
 
         <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-center bg-slate-50 dark:bg-slate-900/40">
-          <label className={labelClass}>Valor *</label>
+          <label className={labelClass}>VALOR</label>
           <div className="flex items-center justify-center gap-2">
-            <span className="text-xl font-black text-slate-400">R$</span>
-            <input aria-label="Valor" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} className="w-44 bg-transparent text-center text-3xl font-black text-purple-600 outline-none" required />
+            <span className="text-xl sm:text-2xl font-black text-slate-400 dark:text-slate-500 select-none">R$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label="VALOR"
+              value={displayAmount}
+              onKeyDown={handleAmountKeyDown}
+              onChange={handleAmountChange}
+              onFocus={e => {
+                const len = e.target.value.length;
+                e.target.setSelectionRange(len, len);
+              }}
+              onClick={e => {
+                const len = (e.target as HTMLInputElement).value.length;
+                (e.target as HTMLInputElement).setSelectionRange(len, len);
+              }}
+              className="borderless-money-input text-center text-3xl sm:text-4xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 text-purple-600 dark:text-purple-400"
+              style={{
+                width: `${Math.max(displayAmount.length + 1, 5)}ch`,
+                outline: 'none',
+                boxShadow: 'none',
+                border: 'none',
+              }}
+            />
           </div>
         </div>
 
         {!isCard && !isTransfer && <div>
-          <label className={labelClass}>Situação *</label>
+          <label className={labelClass}>SITUAÇÃO</label>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => setStatus('completed')} className={`py-2 rounded-xl text-sm font-bold ${status === 'completed' ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>{type === 'income' ? 'Recebido' : 'Pago'}</button>
             <button type="button" onClick={() => setStatus('pending')} className={`py-2 rounded-xl text-sm font-bold ${status !== 'completed' ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>{type === 'income' ? 'A receber' : 'Pendente'}</button>
@@ -371,45 +478,368 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         </div>}
 
         {isTransfer ? <>
-          <div><label className={labelClass}>Conta de origem *</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>
-          <div><label className={labelClass}>Conta de destino *</label><select className={fieldClass} value={targetAccountId} onChange={event => setTargetAccountId(event.target.value)}>{accounts.filter(account => account.id !== accountId).map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>
-          <div><label className={labelClass}>Data *</label><DatePicker value={date} onChange={value => { setDate(value); setStatus(value > getTodayString() ? 'scheduled' : 'completed'); }} variant="modal" /></div>
-          <div><label className={labelClass}>Descrição</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} placeholder="Ex: Reserva mensal" /></div>
+          <div><label className={labelClass}>CONTA DE ORIGEM</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>
+          <div><label className={labelClass}>CONTA DE DESTINO</label><select className={fieldClass} value={targetAccountId} onChange={event => setTargetAccountId(event.target.value)}>{accounts.filter(account => account.id !== accountId).map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>
+          <div><label className={labelClass}>DATA</label><DatePicker value={date} onChange={value => { setDate(value); setStatus(value > getTodayString() ? 'scheduled' : 'completed'); }} variant="modal" /></div>
+          <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} placeholder="Ex: Reserva mensal" /></div>
         </> : <>
-          <div><label className={labelClass}>Data *</label><DatePicker value={date} onChange={setDate} variant="modal" /></div>
-          <div><label className={labelClass}>Descrição *</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} required /></div>
+          <div><label className={labelClass}>DATA</label><DatePicker value={date} onChange={setDate} variant="modal" /></div>
+          <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} required /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label className={labelClass}>Categoria *</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
-            <div><label className={labelClass}>Subcategoria</label><select className={fieldClass} value={subcategoryId} onChange={event => setSubcategoryId(event.target.value)}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}</select></div>
+            <div><label className={labelClass}>CATEGORIA</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
+            <div><label className={labelClass}>SUBCATEGORIA</label><select className={fieldClass} value={subcategoryId} onChange={event => setSubcategoryId(event.target.value)}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}</select></div>
           </div>
           {isCard ? <>
-            <div><label className={labelClass}>Cartão de crédito *</label><select className={fieldClass} value={cardId} onChange={event => setCardId(event.target.value)}>{cards.map(card => <option key={card.id} value={card.id}>{card.name} — {card.brand}</option>)}</select></div>
-            {!editingTransaction && <div className="rounded-2xl border border-purple-200 dark:border-purple-900 p-3 space-y-3">
-              <label className="flex items-center justify-between text-sm font-bold"><span>Parcelas</span><input type="checkbox" checked={installment} onChange={event => setInstallment(event.target.checked)} /></label>
-              {installment && <>
-                <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setAmountMode('total')} className={`py-2 rounded-xl text-xs font-bold ${amountMode === 'total' ? 'bg-purple-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>Valor total</button><button type="button" onClick={() => setAmountMode('per_installment')} className={`py-2 rounded-xl text-xs font-bold ${amountMode === 'per_installment' ? 'bg-purple-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>Valor de cada parcela</button></div>
-                <div><label className={labelClass}>Quantidade total</label><input className={fieldClass} type="number" min={2} max={72} value={installmentCount} onChange={event => setInstallmentCount(Number(event.target.value))} /></div>
-                <label className="flex items-center justify-between text-xs font-bold"><span>Esta compra já está em andamento?</span><input type="checkbox" checked={alreadyStarted} onChange={event => { setAlreadyStarted(event.target.checked); if (!event.target.checked) setFirstTrackedInstallment(1); }} /></label>
-                {alreadyStarted && <div><label className={labelClass}>Parcela atual aberta</label><div className="flex items-center gap-2"><input className={fieldClass} type="number" min={1} max={installmentCount} value={firstTrackedInstallment} onChange={event => setFirstTrackedInstallment(Number(event.target.value))} /><span className="whitespace-nowrap text-sm font-black text-purple-600">de {installmentCount}</span></div><p className="mt-1 text-xs text-slate-500">{Math.max(0, firstTrackedInstallment - 1)} paga(s) antes do Finly</p></div>}
-                {installmentPreview && <div className="rounded-xl bg-purple-50 dark:bg-purple-950/30 p-2 text-xs text-purple-800 dark:text-purple-200">Controladas: {installmentPreview.transactions.length} • primeira {installmentPreview.transactions[0]?.installments?.current}/{installmentCount} • término {installmentPreview.transactions.at(-1)?.invoiceMonth} • total {formatCurrency(installmentPreview.series.totalAmount, user.currency)}</div>}
-              </>}
-            </div>}
-            <div><label className={labelClass}>Fatura de Destino *</label><select className={fieldClass} value={invoiceMonth} onChange={event => setInvoiceMonth(event.target.value)}>{invoiceMonths.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}</select></div>
-          </> : <div><label className={labelClass}>Conta bancária *</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>}
+            <div><label className={labelClass}>CARTÃO DE CRÉDITO</label><select className={fieldClass} value={cardId} onChange={event => setCardId(event.target.value)}>{cards.map(card => <option key={card.id} value={card.id}>{card.name} — {card.brand}</option>)}</select></div>
+            {!editingTransaction && (
+              <div className="rounded-2xl border border-purple-200 dark:border-purple-900/80 p-3.5 space-y-3.5 bg-purple-50/20 dark:bg-purple-950/10">
+                {/* Header com Toggle Switch */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 shadow-2xs border border-purple-200/60 dark:border-purple-800/40">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 block truncate">
+                        COMPRA PARCELADA
+                      </span>
+                      <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium block">
+                        {installment ? `${installmentCount}x nas faturas mensais` : 'Desmarque para compra à vista (1x)'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={installment}
+                      onChange={event => {
+                        const checked = event.target.checked;
+                        setInstallment(checked);
+                        if (checked && installmentCount < 2) {
+                          setInstallmentCount(2);
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+
+                {installment && (
+                  <div className="space-y-3 pt-1 animate-in fade-in">
+                    {/* Modo de Entrada do Valor */}
+                    <div className="space-y-1">
+                      <label className={labelClass}>O VALOR DIGITADO ACIMA É:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAmountMode('total')}
+                          className={`py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            amountMode === 'total'
+                              ? 'bg-purple-600 text-white shadow-xs'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          Valor Total da Compra
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAmountMode('per_installment')}
+                          className={`py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            amountMode === 'per_installment'
+                              ? 'bg-purple-600 text-white shadow-xs'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          Valor de Cada Parcela
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Seleção de Quantidade de Parcelas (2 a 24x) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className={labelClass}>QUANTIDADE DE PARCELAS (2 A 24X)</label>
+                        <span className="text-xs font-black text-purple-600 dark:text-purple-400">
+                          {installmentCount}x
+                        </span>
+                      </div>
+
+                      <select
+                        className={fieldClass}
+                        value={installmentCount <= 24 && !isCustomInstallment ? installmentCount : 'custom'}
+                        onChange={event => {
+                          const val = event.target.value;
+                          if (val === 'custom') {
+                            setIsCustomInstallment(true);
+                            if (installmentCount <= 24) setInstallmentCount(25);
+                          } else {
+                            setIsCustomInstallment(false);
+                            setInstallmentCount(Number(val));
+                          }
+                        }}
+                      >
+                        {Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
+                          const opt = calculateInstallmentOption(count);
+                          return (
+                            <option key={count} value={count}>
+                              {amountNumber > 0
+                                ? `${count}x de ${formatCurrency(opt.installmentAmount, user.currency)} (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
+                                : `${count}x parcelas`}
+                            </option>
+                          );
+                        })}
+                        <option value="custom">Outra quantidade personalizada (até 72x)...</option>
+                      </select>
+
+                      {/* Chips de Atalho Rápido para 1 Toque */}
+                      <div className="space-y-1 pt-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Atalhos Rápidos:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[2, 3, 4, 5, 6, 10, 12, 18, 24].map(quickCount => {
+                            const isSelected = installmentCount === quickCount && !isCustomInstallment;
+                            return (
+                              <button
+                                key={quickCount}
+                                type="button"
+                                onClick={() => {
+                                  setIsCustomInstallment(false);
+                                  setInstallmentCount(quickCount);
+                                }}
+                                className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-purple-600 text-white shadow-xs scale-105'
+                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-600'
+                                }`}
+                              >
+                                {quickCount}x
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Campo numérico para casos acima de 24x */}
+                      {(isCustomInstallment || installmentCount > 24) && (
+                        <div className="pt-2 animate-in fade-in space-y-1">
+                          <label className={labelClass}>DIGITE A QUANTIDADE PERSONALIZADA (ATÉ 72X)</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={2}
+                              max={72}
+                              className={fieldClass}
+                              value={installmentCount}
+                              onChange={event => setInstallmentCount(Math.min(72, Math.max(2, Number(event.target.value) || 2)))}
+                            />
+                            <span className="text-sm font-black text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                              vezes
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Resumo do Parcelamento */}
+                    {installmentPreview && (
+                      <div className="rounded-xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-900/60 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-purple-900 dark:text-purple-200">
+                            {installmentCount}x de {formatCurrency(round2(installmentPreview.series.totalAmount / installmentCount), user.currency)}
+                          </span>
+                          <span className="text-xs font-black text-slate-900 dark:text-white">
+                            Total: {formatCurrency(installmentPreview.series.totalAmount, user.currency)}
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] text-slate-600 dark:text-slate-400 flex items-center justify-between border-t border-purple-200/50 dark:border-purple-900/40 pt-2">
+                          <span>
+                            Fatura inicial: <strong className="text-purple-700 dark:text-purple-300 font-bold">{installmentPreview.transactions[0]?.invoiceMonth ? formatInvoiceMonthShort(installmentPreview.transactions[0].invoiceMonth) : ''}</strong>
+                          </span>
+                          <span>
+                            Término: <strong className="text-purple-700 dark:text-purple-300 font-bold">{installmentPreview.transactions.at(-1)?.invoiceMonth ? formatInvoiceMonthShort(installmentPreview.transactions.at(-1)?.invoiceMonth) : ''}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Compra já em andamento */}
+                    <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800/80 space-y-2">
+                      <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <span>Esta compra já está em andamento?</span>
+                        <input
+                          type="checkbox"
+                          checked={alreadyStarted}
+                          onChange={event => {
+                            setAlreadyStarted(event.target.checked);
+                            if (!event.target.checked) setFirstTrackedInstallment(1);
+                          }}
+                          className="w-4 h-4 rounded text-purple-600 cursor-pointer"
+                        />
+                      </label>
+
+                      {alreadyStarted && (
+                        <div className="space-y-1 animate-in fade-in">
+                          <label className={labelClass}>PARCELA ATUAL ABERTA</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              className={fieldClass}
+                              type="number"
+                              min={1}
+                              max={installmentCount}
+                              value={firstTrackedInstallment}
+                              onChange={event => setFirstTrackedInstallment(Number(event.target.value))}
+                            />
+                            <span className="whitespace-nowrap text-sm font-black text-purple-600 dark:text-purple-400">
+                              de {installmentCount}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {Math.max(0, firstTrackedInstallment - 1)} parcela(s) já paga(s) antes do Finly
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <div><label className={labelClass}>FATURA DE DESTINO</label><select className={fieldClass} value={invoiceMonth} onChange={event => setInvoiceMonth(event.target.value)}>{invoiceMonths.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}</select></div>
+          </> : <div><label className={labelClass}>CONTA BANCÁRIA</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>}
         </>}
 
-        {(type === 'expense' && !isCard && (status === 'pending' || reminderEnabled)) && <div><label className={labelClass}>Vencimento *</label><DatePicker value={dueDate} onChange={setDueDate} variant="modal" /></div>}
+        {(type === 'expense' && !isCard && (status === 'pending' || reminderEnabled)) && <div><label className={labelClass}>VENCIMENTO</label><DatePicker value={dueDate} onChange={setDueDate} variant="modal" /></div>}
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
         {moreDetails && <div className="space-y-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 p-3">
-          <div><label className={labelClass}><Paperclip className="inline w-3.5 h-3.5 mr-1" />Anexo</label>{attachmentName ? <div className="flex items-center justify-between rounded-xl bg-white dark:bg-slate-800 p-2 text-xs"><span className="truncate">{attachmentName}</span><button type="button" onClick={() => { setAttachmentName(undefined); setAttachmentUrl(undefined); }}><Trash2 className="w-4 h-4 text-rose-500" /></button></div> : <input className={fieldClass} type="file" onChange={event => handleAttachment(event.target.files?.[0])} />}</div>
-          <div><label className={labelClass}><Tag className="inline w-3.5 h-3.5 mr-1" />Tags</label><div className="flex gap-2"><input className={fieldClass} value={tagInput} onChange={event => setTagInput(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addTag(); } }} placeholder="Digite e pressione Enter" /><button type="button" onClick={addTag} className="px-3 rounded-xl bg-purple-600 text-white font-black">+</button></div>{tags.length > 0 && <div className="flex flex-wrap gap-1 mt-2">{tags.map(tag => <button type="button" key={tag} onClick={() => setTags(prev => prev.filter(item => item !== tag))} className="rounded-full bg-purple-100 dark:bg-purple-950 px-2 py-1 text-xs text-purple-700 dark:text-purple-200">{tag} ×</button>)}</div>}</div>
-          <div><label className={labelClass}>Observações</label><textarea className={fieldClass} rows={3} value={notes} onChange={event => setNotes(event.target.value)} /></div>
-          {type === 'expense' && !isCard && !isTransfer && <div className="space-y-2"><label className="flex items-center justify-between text-sm font-bold"><span>Despesa fixa</span><input type="checkbox" checked={fixedExpense} disabled={Boolean(editingTransaction)} onChange={event => setFixedExpense(event.target.checked)} /></label>{fixedExpense && <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label className={labelClass}>Frequência</label><select className={fieldClass} value={frequency} onChange={event => setFrequency(event.target.value as SupportedRecurrenceFrequency)}><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div><div><label className={labelClass}>Término opcional</label><input className={fieldClass} type="date" min={date} value={recurrenceEndDate} onChange={event => setRecurrenceEndDate(event.target.value)} /></div></div>}</div>}
-          {isCard && <div className="space-y-2"><label className="flex items-center justify-between text-sm font-bold"><span>Compra de terceiro</span><input type="checkbox" checked={thirdParty} onChange={event => { setThirdParty(event.target.checked); if (event.target.checked) setIgnored(true); }} /></label>{thirdParty && <input className={fieldClass} value={thirdPartyName} onChange={event => setThirdPartyName(event.target.value)} placeholder="Nome da pessoa" />}</div>}
-          {!isTransfer && <label className="flex items-center justify-between text-sm font-bold"><span>Ignorar no orçamento e relatórios</span><input type="checkbox" checked={ignored} disabled={thirdParty} onChange={event => setIgnored(event.target.checked)} /></label>}
-          {type === 'expense' && !isCard && !isTransfer && <div className="space-y-2"><label className="flex items-center justify-between text-sm font-bold"><span><Bell className="inline w-4 h-4 mr-1" />Lembrete</span><input type="checkbox" checked={reminderEnabled} onChange={event => setReminderEnabled(event.target.checked)} /></label>{reminderEnabled && <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Antecedência</label><select className={fieldClass} value={reminderDaysBefore} onChange={event => setReminderDaysBefore(Number(event.target.value))}><option value={0}>No vencimento</option><option value={1}>1 dia antes</option><option value={2}>2 dias antes</option><option value={7}>1 semana antes</option></select></div><div><label className={labelClass}>Horário</label><input className={fieldClass} type="time" value={reminderTime} onChange={event => setReminderTime(event.target.value)} /></div></div>}</div>}
-          {editingSeries?.kind === 'recurring_expense' && <div className="rounded-xl border border-amber-200 dark:border-amber-900 p-3 space-y-2"><p className="text-xs font-black">Aplicar alteração do valor</p><label className="flex gap-2 text-xs"><input type="radio" checked={fixedEditScope === 'single'} onChange={() => setFixedEditScope('single')} />Somente este mês</label><label className="flex gap-2 text-xs"><input type="radio" checked={fixedEditScope === 'current_and_future'} onChange={() => setFixedEditScope('current_and_future')} />Este e os próximos</label>{fixedEditScope === 'current_and_future' && <label className="flex gap-2 text-xs"><input type="checkbox" checked={overwriteExceptions} onChange={event => setOverwriteExceptions(event.target.checked)} />Sobrescrever valores excepcionais futuros</label>}</div>}
+          <div className="p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Paperclip className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  ANEXO
+                </span>
+                <p className="text-[10px] text-slate-400">
+                  Fotos de notas fiscais, recibos ou comprovantes PDF
+                </p>
+              </div>
+
+              <label className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0">
+                <Upload className="w-3.5 h-3.5" />
+                <span>{attachmentName ? 'Alterar Arquivo' : 'Escolher Arquivo'}</span>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={event => handleAttachment(event.target.files?.[0])}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {attachmentName && (
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-purple-200 dark:border-purple-900/50 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {attachmentUrl && attachmentUrl.startsWith('data:image') ? (
+                    <img src={attachmentUrl} alt="Preview" className="w-9 h-9 rounded-lg object-cover border border-purple-300 dark:border-purple-800 shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{attachmentName}</p>
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold block">✓ Comprovante anexado</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachmentName(undefined);
+                    setAttachmentUrl(undefined);
+                  }}
+                  className="p-1 rounded-lg text-slate-400 hover:text-rose-500 cursor-pointer transition-colors"
+                  title="Remover anexo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className={labelClass}><Tag className="inline w-3.5 h-3.5 mr-1" />TAGS</label>
+            <div className="flex gap-2">
+              <input
+                ref={tagInputRef}
+                className={fieldClass}
+                value={tagInput}
+                onChange={event => setTagInput(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ',') {
+                    event.preventDefault();
+                    addTag();
+                  }
+                }}
+                placeholder="Digite e pressione Enter ou toque em +"
+              />
+              <button
+                type="button"
+                onMouseDown={event => event.preventDefault()}
+                onClick={() => addTag()}
+                className="px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-lg cursor-pointer shadow-xs transition-colors shrink-0 flex items-center justify-center"
+                title="Adicionar tag"
+                aria-label="Adicionar tag"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Sugestões rápidas de Tags */}
+            <div className="flex flex-wrap gap-1 items-center pt-2">
+              <span className="text-[10px] font-bold text-slate-400">Sugestões:</span>
+              {['Aluguel', 'Mercado', 'Trabalho', 'Viagem', 'Lazer', 'Assinatura', 'Saúde', 'Educação'].map(sugg => (
+                <button
+                  key={sugg}
+                  type="button"
+                  onMouseDown={event => event.preventDefault()}
+                  onClick={() => addTag(sugg)}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-950/40 dark:hover:text-purple-300 transition-colors cursor-pointer"
+                >
+                  +{sugg}
+                </button>
+              ))}
+            </div>
+
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-xs font-bold"
+                  >
+                    #{tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags(prev => prev.filter(item => item !== tag))}
+                      className="hover:text-rose-500 cursor-pointer font-black text-sm leading-none"
+                      title="Remover tag"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div><label className={labelClass}>OBSERVAÇÕES</label><textarea className={fieldClass} rows={3} value={notes} onChange={event => setNotes(event.target.value)} /></div>
+          {type === 'expense' && !isCard && !isTransfer && <div className="space-y-2"><label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span>DESPESA FIXA</span><input type="checkbox" checked={fixedExpense} disabled={Boolean(editingTransaction)} onChange={event => setFixedExpense(event.target.checked)} /></label>{fixedExpense && <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label className={labelClass}>FREQUÊNCIA</label><select className={fieldClass} value={frequency} onChange={event => setFrequency(event.target.value as SupportedRecurrenceFrequency)}><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div><div><label className={labelClass}>TÉRMINO OPCIONAL</label><input className={fieldClass} type="date" min={date} value={recurrenceEndDate} onChange={event => setRecurrenceEndDate(event.target.value)} /></div></div>}</div>}
+          {isCard && <div className="space-y-2"><label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span>COMPRA DE TERCEIRO</span><input type="checkbox" checked={thirdParty} onChange={event => { setThirdParty(event.target.checked); if (event.target.checked) setIgnored(true); }} /></label>{thirdParty && <input className={fieldClass} value={thirdPartyName} onChange={event => setThirdPartyName(event.target.value)} placeholder="Nome da pessoa" />}</div>}
+          {!isTransfer && <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span>IGNORAR NO ORÇAMENTO E RELATÓRIOS</span><input type="checkbox" checked={ignored} disabled={thirdParty} onChange={event => setIgnored(event.target.checked)} /></label>}
+          {type === 'expense' && !isCard && !isTransfer && <div className="space-y-2"><label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span><Bell className="inline w-4 h-4 mr-1" />LEMBRETE</span><input type="checkbox" checked={reminderEnabled} onChange={event => setReminderEnabled(event.target.checked)} /></label>{reminderEnabled && <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>ANTECEDÊNCIA</label><select className={fieldClass} value={reminderDaysBefore} onChange={event => setReminderDaysBefore(Number(event.target.value))}><option value={0}>No vencimento</option><option value={1}>1 dia antes</option><option value={2}>2 dias antes</option><option value={7}>1 semana antes</option></select></div><div><label className={labelClass}>HORÁRIO</label><input className={fieldClass} type="time" value={reminderTime} onChange={event => setReminderTime(event.target.value)} /></div></div>}</div>}
+          {editingSeries?.kind === 'recurring_expense' && <div className="rounded-xl border border-amber-200 dark:border-amber-900 p-3 space-y-2"><p className="text-xs font-black uppercase tracking-wider">APLICAR ALTERAÇÃO DO VALOR</p><label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="radio" checked={fixedEditScope === 'single'} onChange={() => setFixedEditScope('single')} />Somente este mês</label><label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="radio" checked={fixedEditScope === 'current_and_future'} onChange={() => setFixedEditScope('current_and_future')} />Este e os próximos</label>{fixedEditScope === 'current_and_future' && <label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="checkbox" checked={overwriteExceptions} onChange={event => setOverwriteExceptions(event.target.checked)} />Sobrescrever valores excepcionais futuros</label>}</div>}
         </div>}
         {error && <p role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600">{error}</p>}
       </form>

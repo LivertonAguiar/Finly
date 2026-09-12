@@ -13,7 +13,15 @@ import {
   Check,
   FileText,
   FileSpreadsheet,
+  LayoutGrid,
+  Maximize2,
+  Building,
+  HeartPulse,
+  GitCompare,
 } from 'lucide-react';
+import { ComparativeReport } from './ComparativeReport';
+import { FinancingReport } from './FinancingReport';
+import { Health503020Report } from './Health503020Report';
 import {
   ResponsiveContainer,
   PieChart,
@@ -75,10 +83,33 @@ const renderActiveDonutShape = (props: any) => {
   );
 };
 
-export const ReportsPage: React.FC = () => {
-  const { transactions, categories, accounts, cards, user } = useFinancial();
+export type ReportMainTab = 'overview' | 'comparatives' | 'financing' | 'health_50_30_20';
+export type ReportLayoutMode = 'focused' | 'bento';
 
-  // Tab State: 'donut' | 'line' | 'bar'
+export const ReportsPage: React.FC = () => {
+  const { transactions, categories, accounts, cards, user, debts, budgets } = useFinancial();
+
+  // Módulo Principal de Relatórios
+  const [mainTab, setMainTab] = useState<ReportMainTab>('overview');
+
+  // Alternador de visualização: Grade Bento vs Modo Focado
+  const [layoutMode, setLayoutMode] = useState<ReportLayoutMode>(() => {
+    try {
+      return (localStorage.getItem('finly_reports_layout_mode') as ReportLayoutMode) || 'focused';
+    } catch (e) {
+      return 'focused';
+    }
+  });
+
+  const handleToggleLayout = () => {
+    const nextMode = layoutMode === 'focused' ? 'bento' : 'focused';
+    setLayoutMode(nextMode);
+    try {
+      localStorage.setItem('finly_reports_layout_mode', nextMode);
+    } catch (e) {}
+  };
+
+  // Tab State da Visão Geral: 'donut' | 'line' | 'bar'
   const [activeTab, setActiveTab] = useState<TabType>('donut');
 
   // Subtypes for each tab
@@ -612,11 +643,100 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOP HEADER (FINLY REPORTS SPEC: TITLE + 3 TABS + SUBTYPE DROPDOWN + FILTER) */}
+      {/* 0. CABEÇALHO GLOBAL & SELETOR DE LAYOUT (FOCADO VS GRADE BENTO) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-          Relatórios
-        </h2>
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Relatórios & Análises
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Inteligência financeira, comparações e projeções patrimoniais
+          </p>
+        </div>
+
+        {/* Botão de Alternância de Layout: Modo Focado vs Grade Bento */}
+        <button
+          onClick={handleToggleLayout}
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 shadow-xs active:scale-95 transition-all cursor-pointer"
+          title={layoutMode === 'bento' ? 'Mudar para Modo Focado' : 'Mudar para Modo Grade Bento'}
+        >
+          {layoutMode === 'bento' ? (
+            <>
+              <LayoutGrid className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Grade Bento</span>
+            </>
+          ) : (
+            <>
+              <Maximize2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Modo Focado</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* NAVEGAÇÃO ENTRE OS 4 MÓDULOS DE RELATÓRIO */}
+      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-none">
+        <button
+          onClick={() => setMainTab('overview')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'overview'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <PieIcon className="w-3.5 h-3.5" />
+          <span>Visão Geral</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('comparatives')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'comparatives'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <GitCompare className="w-3.5 h-3.5" />
+          <span>Comparativos MoM</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('financing')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'financing'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Building className="w-3.5 h-3.5" />
+          <span>Financiamentos & Dívidas</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('health_50_30_20')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'health_50_30_20'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <HeartPulse className="w-3.5 h-3.5" />
+          <span>Regra 50/30/20</span>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 1. MÓDULO VISÃO GERAL */}
+      {/* ========================================================================= */}
+      {mainTab === 'overview' && (
+        <div className="space-y-6 animate-in fade-in">
+          {/* 1. TOP HEADER (FINLY REPORTS SPEC: SUBTYPE DROPDOWN + FILTER + EXPORT) */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Exibição da Visão Geral:
+              </span>
+            </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* 3 Tabs Segmented Control Pill */}
@@ -1253,6 +1373,104 @@ export const ReportsPage: React.FC = () => {
           </div>
         )}
       </div>
+    </div>
+  )}
+
+  {/* ========================================================================= */}
+  {/* 2. MÓDULO COMPARATIVOS (MOM & ORÇADO VS REALIZADO) */}
+  {/* ========================================================================= */}
+  {mainTab === 'comparatives' && (
+    <div className="space-y-6 animate-in fade-in">
+      {/* Seletor de Mês */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          onClick={() => setSelectedMonthOffset(prev => prev - 1)}
+          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          title="Mês Anterior"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => setShowMonthPicker(!showMonthPicker)}
+          className="px-5 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
+        >
+          {capitalizedMonth} {yearNum}
+        </button>
+
+        <button
+          onClick={() => setSelectedMonthOffset(prev => prev + 1)}
+          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          title="Próximo Mês"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      <ComparativeReport
+        transactions={filteredTransactions}
+        categories={categories}
+        budgets={budgets}
+        currentMonth={currentMonthPrefix}
+        currency={user.currency}
+        isBento={layoutMode === 'bento'}
+      />
+    </div>
+  )}
+
+  {/* ========================================================================= */}
+  {/* 3. MÓDULO FINANCIAMENTOS & DÍVIDAS */}
+  {/* ========================================================================= */}
+  {mainTab === 'financing' && (
+    <div className="animate-in fade-in">
+      <FinancingReport
+        debts={debts}
+        currency={user.currency}
+        isBento={layoutMode === 'bento'}
+      />
+    </div>
+  )}
+
+  {/* ========================================================================= */}
+  {/* 4. MÓDULO REGRA 50/30/20 & DIAGNÓSTICO */}
+  {/* ========================================================================= */}
+  {mainTab === 'health_50_30_20' && (
+    <div className="space-y-6 animate-in fade-in">
+      {/* Seletor de Mês */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          onClick={() => setSelectedMonthOffset(prev => prev - 1)}
+          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          title="Mês Anterior"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => setShowMonthPicker(!showMonthPicker)}
+          className="px-5 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
+        >
+          {capitalizedMonth} {yearNum}
+        </button>
+
+        <button
+          onClick={() => setSelectedMonthOffset(prev => prev + 1)}
+          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+          title="Próximo Mês"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      <Health503020Report
+        transactions={filteredTransactions}
+        categories={categories}
+        currentMonth={currentMonthPrefix}
+        currency={user.currency}
+        isBento={layoutMode === 'bento'}
+      />
+    </div>
+  )}
     </div>
   );
 };

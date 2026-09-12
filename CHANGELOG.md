@@ -3,6 +3,29 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.62] - 2026-09-12
+
+### 📊 Central Analítica de Relatórios: Comparativos MoM, Financiamentos, Regra 50/30/20 & Grade Bento
+- **Módulo de Comparativos Mês a Mês (MoM)**:
+  - Análise comparativa detalhada de evolução de gastos entre o mês atual e o mês anterior.
+  - Badges visuais de variação absoluta (+R$, -R$) e percentual (+%, -%) por categoria com gráficos de barras lado a lado e ranking dinâmico de desvios.
+- **Orçado vs. Realizado (Budget vs. Actual)**:
+  - Acompanhamento automático de aderência ao teto orçamentário estabelecido para cada categoria.
+  - Termômetros visuais com alertas semânticos (`Dentro do limite`, `Atenção` e `Estourou R$`).
+- **Curvas e Projeções de Financiamentos & Dívidas**:
+  - Projeção matemática da curva de decaimento do saldo devedor até a data estimada de quitação.
+  - Decomposição das parcelas entre Amortização Real do Principal vs. Juros contratuais vs. Encargos/Seguros habitacionais.
+  - Simulador interativo de Amortização Extraordinária comparando os dois cenários oficiais do SFH:
+    - *Opção 1 (Redução de Prazo)*: Juros economizados (R$) e meses/anos antecipados.
+    - *Opção 2 (Alívio de Parcela)*: Redução mensal no boleto (R$/mês) e economia acumulada.
+- **Diagnóstico da Regra 50/30/20 & Saúde Financeira**:
+  - Classificação inteligente de despesas em Necessidades Básicas (50%), Desejos e Estilo de Vida (30%) e Poupança/Investimentos (20%).
+  - Cálculo da Taxa Líquida de Poupança (*Savings Rate*) e Score Geral de Saúde Financeira (0 a 100) com diagnósticos acionáveis.
+- **Alternador de Layouts (Modo Focado vs. Grade Bento)**:
+  - Novo controle visual permitindo alternar entre visualização ampla vertical (Modo Focado) e grade modular moderna de 2 a 4 colunas (Grade Bento) com persistência automática no navegador.
+- **Sincronização Contínua do Helpdesk**:
+  - Novo guia passo a passo estruturado e perguntas frequentes documentando todos os módulos e navegação no Web e Android.
+
 ## [1.1.61] - 2026-09-12
 
 ### 💳 Séries Explícitas de Cartão, Despesas Fixas (12 Meses), Transferências & Impacto Analítico

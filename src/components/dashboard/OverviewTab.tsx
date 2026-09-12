@@ -2008,7 +2008,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
       </div>
 
-      <div className="space-y-3 max-h-[480px] overflow-y-auto scrollbar-thin pr-1">
+      <div className="space-y-3 max-h-[520px] overflow-y-auto scrollbar-thin pr-1">
         {cardSummaries.length === 0 ? (
           <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
         ) : (
@@ -2018,48 +2018,61 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             <div
               key={card.id}
               onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-              className="p-3.5 rounded-2xl hover:bg-slate-100/90 dark:hover:bg-[#1E1E22] border transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
+              className="p-3.5 rounded-2xl bg-slate-50/90 dark:bg-[#1C1C1E] hover:bg-slate-100/90 dark:hover:bg-[#242428] border border-slate-200/90 dark:border-slate-800/80 border-l-4 transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
               style={{
-                backgroundColor: user.theme === 'dark' ? '#141416' : 'rgba(248, 250, 252, 0.7)',
-                borderColor: `${cardColor}30`,
-                borderLeftWidth: '3px',
                 borderLeftColor: cardColor,
               }}
               title="Clique para ver extrato e composição da fatura"
             >
-              <div className="flex items-center justify-between gap-2 min-w-0">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
+              {/* Header do Cartão: 2 linhas no lado esquerdo para nunca cortar a descrição */}
+              <div className="flex items-start justify-between gap-2.5 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center p-1 shrink-0 shadow-2xs border"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center p-1.5 shrink-0 shadow-2xs border"
                     style={{
-                      backgroundColor: `${cardColor}22`,
-                      borderColor: `${cardColor}40`,
+                      backgroundColor: `${cardColor}18`,
+                      borderColor: `${cardColor}35`,
                     }}
                   >
                     <BankLogo nameOrId={card.bankId || getCardBankInfo(card)?.id || card.name} size={18} radius={5} />
                   </div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide flex items-center gap-1.5 min-w-0 truncate">
-                    <span className="truncate">{card.name}</span>
-                    <span className="text-[10px] text-slate-400 font-semibold truncate lowercase">
-                      • {getCardBankInfo(card)?.name}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all shrink-0" />
-                  </h4>
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 inline-flex items-center border shadow-2xs ${card.statusColor}`}>
-                    {card.statusLabel}
-                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    {/* Linha 1: Nome do cartão com prioridade total de largura */}
+                    <div className="flex items-center gap-1 min-w-0">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white tracking-tight truncate leading-tight uppercase">
+                        {card.name}
+                      </h4>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover/card:opacity-100 group-hover/card:translate-x-0.5 transition-all shrink-0" />
+                    </div>
+
+                    {/* Linha 2: Badge de status e Instituição/Banco */}
+                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0 flex-wrap">
+                      <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 inline-flex items-center border shadow-2xs ${card.statusColor}`}>
+                        {card.statusLabel}
+                      </span>
+                      {getCardBankInfo(card)?.name && (
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
+                          • {getCardBankInfo(card)?.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <span className={`text-xs font-black block ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
+
+                {/* Coluna Direita: Valor e Percentual de Limite */}
+                <div className="text-right shrink-0 pl-1">
+                  <span className={`text-xs sm:text-sm font-black block tracking-tight ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
                     {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap block">
                     {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
                   </span>
                 </div>
               </div>
 
-              <div className="w-full bg-slate-200/80 dark:bg-[#18181B] h-2.5 rounded-full overflow-hidden flex shadow-inner">
+              {/* Barra de Progresso do Limite */}
+              <div className="w-full bg-slate-200/80 dark:bg-[#121214] h-2.5 rounded-full overflow-hidden flex shadow-inner">
                 {card.currentInvoicePercent > 0 && (
                   <div
                     style={{ width: `${Math.min(100, card.currentInvoicePercent)}%`, backgroundColor: cardColor }}
@@ -2076,67 +2089,68 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                 )}
               </div>
 
-              <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-1">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex items-center gap-1" style={{ color: cardColor }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cardColor }} />
-                    Mês: {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
+              {/* Linha de Totais e Disponível com Alto Contraste */}
+              <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-600 dark:text-slate-300 flex-wrap gap-1.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+                    <span className="w-2 h-2 rounded-full shrink-0 shadow-2xs" style={{ backgroundColor: cardColor }} />
+                    <span>Mês: <strong className="font-extrabold text-slate-900 dark:text-white">{formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}</strong></span>
                   </span>
                   {card.futureInstallmentsTotal > 0 && (
-                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00]" />
-                      Futuras: {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
+                    <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                      <span className="w-2 h-2 rounded-full bg-[#ff8a00] shrink-0 shadow-2xs" />
+                      <span>Futuras: <strong className="font-extrabold">{formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}</strong></span>
                     </span>
                   )}
                 </div>
 
-                {card.isOverLimit ? (
-                  <span className="text-rose-600 dark:text-rose-400 font-extrabold">
-                    Excedeu: {formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}
-                  </span>
-                ) : (
-                  <span>
-                    Disp: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong>
-                  </span>
-                )}
+                <div className="text-right">
+                  {card.isOverLimit ? (
+                    <span className="text-rose-600 dark:text-rose-400 font-extrabold">
+                      Excedeu: {formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Disp: <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong>
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="pt-1 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+              {/* Ações do Rodapé do Cartão */}
+              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
+                  className="text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer flex items-center gap-1 active:scale-95"
+                >
+                  <span>Ver Composição</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+
                 {card.isPaid ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
-                    </span>
-                    <button
-                      onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-                      className="text-[11px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                    >
-                      Ver Composição
-                    </button>
-                  </div>
+                  <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/40">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
+                  </span>
                 ) : (
-                  <div className="flex items-center justify-between w-full">
-                    <button
-                      onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400 group-hover/card:text-purple-600 dark:group-hover/card:text-purple-400 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
-                    >
-                      Ver Composição <ChevronRight className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (card.invoiceTotal > 0) {
-                          setSelectedCardForPay(card.id);
-                          setIsInvoiceModalOpen(true);
-                        } else {
-                          if (onOpenCardDetail) onOpenCardDetail(card.id);
-                          else setActiveTab('cartoes');
-                        }
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[10px] font-black uppercase tracking-wider cursor-pointer transition-colors"
-                    >
-                      {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (card.invoiceTotal > 0) {
+                        setSelectedCardForPay(card.id);
+                        setIsInvoiceModalOpen(true);
+                      } else {
+                        onOpenNewTransaction();
+                      }
+                    }}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-xs ${
+                      card.invoiceTotal > 0
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                    }`}
+                  >
+                    {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
+                  </button>
                 )}
               </div>
             </div>
@@ -2635,7 +2649,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[65vh] overflow-y-auto pr-1">
               {/* LEFT COLUMN CHECKBOXES */}
               <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider text-center select-none">
+                <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center select-none">
                   Cards Principais
                 </h4>
 
@@ -2655,7 +2669,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   return (
                     <div
                       key={item.key}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#28282A] dark:bg-[#2C2C2E] border border-slate-700/60 dark:border-slate-800/80 hover:border-purple-500/50 hover:bg-[#323235] dark:hover:bg-[#343437] transition-all shadow-xs gap-2"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-[#2C2C2E] border border-slate-200/90 dark:border-slate-800/80 hover:border-purple-300 dark:hover:border-purple-500/50 hover:bg-slate-100 dark:hover:bg-[#343437] transition-all shadow-xs gap-2"
                     >
                       <div
                         onClick={() => updateCardState(item.key as keyof DashboardCardsState, !checked)}
@@ -2665,13 +2679,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 ${
                             checked
                               ? 'bg-purple-600 text-white'
-                              : 'border-2 border-slate-500 group-hover:border-purple-400 bg-transparent'
+                              : 'border-2 border-slate-300 dark:border-slate-500 group-hover:border-purple-500 bg-white dark:bg-transparent'
                           }`}
                         >
                           {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
 
-                        <span className="text-xs font-semibold text-slate-200 dark:text-slate-200 leading-snug truncate">
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug truncate">
                           {item.label}
                         </span>
                       </div>
@@ -2685,8 +2699,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           }}
                           className={`hidden lg:flex px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all items-center gap-1 shrink-0 cursor-pointer ${
                             isFull
-                              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
-                              : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
+                              ? 'bg-purple-100 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/50 hover:bg-purple-200 dark:hover:bg-purple-600/40'
+                              : 'bg-slate-200/70 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600/50 hover:text-slate-900 dark:hover:text-slate-200'
                           }`}
                           title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
                         >
@@ -2710,7 +2724,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
               {/* RIGHT COLUMN CHECKBOXES */}
               <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider text-center select-none">
+                <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center select-none">
                   Cards Complementares
                 </h4>
 
@@ -2730,7 +2744,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   return (
                     <div
                       key={item.key}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#28282A] dark:bg-[#2C2C2E] border border-slate-700/60 dark:border-slate-800/80 hover:border-purple-500/50 hover:bg-[#323235] dark:hover:bg-[#343437] transition-all shadow-xs gap-2"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-[#2C2C2E] border border-slate-200/90 dark:border-slate-800/80 hover:border-purple-300 dark:hover:border-purple-500/50 hover:bg-slate-100 dark:hover:bg-[#343437] transition-all shadow-xs gap-2"
                     >
                       <div
                         onClick={() => updateCardState(item.key as keyof DashboardCardsState, !checked)}
@@ -2740,13 +2754,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors shrink-0 ${
                             checked
                               ? 'bg-purple-600 text-white'
-                              : 'border-2 border-slate-500 group-hover:border-purple-400 bg-transparent'
+                              : 'border-2 border-slate-300 dark:border-slate-500 group-hover:border-purple-500 bg-white dark:bg-transparent'
                           }`}
                         >
                           {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
 
-                        <span className="text-xs font-semibold text-slate-200 dark:text-slate-200 leading-snug truncate">
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug truncate">
                           {item.label}
                         </span>
                       </div>
@@ -2760,8 +2774,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                           }}
                           className={`hidden lg:flex px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all items-center gap-1 shrink-0 cursor-pointer ${
                             isFull
-                              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 hover:bg-purple-600/40'
-                              : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-200'
+                              ? 'bg-purple-100 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/50 hover:bg-purple-200 dark:hover:bg-purple-600/40'
+                              : 'bg-slate-200/70 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600/50 hover:text-slate-900 dark:hover:text-slate-200'
                           }`}
                           title={isFull ? 'Largura total (2 colunas) - clique para mudar para 1 coluna' : 'Meia largura (1 coluna) - clique para mudar para 2 colunas'}
                         >
@@ -2785,11 +2799,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-4 border-t border-slate-700/60 dark:border-slate-800 flex items-center justify-between select-none">
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between select-none">
               <button
                 type="button"
                 onClick={resetCardState}
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Restaurar Padrão</span>

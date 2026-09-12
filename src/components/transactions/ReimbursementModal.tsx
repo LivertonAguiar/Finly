@@ -54,9 +54,9 @@ export const ReimbursementModal: React.FC<{
   >
     <form id="reimbursement-form" onSubmit={submit} className="space-y-4">
       <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-3 text-xs space-y-1"><p>Total da compra: <strong>{formatCurrency(total, user.currency)}</strong></p><p>Já recebido: <strong>{formatCurrency(alreadyReceived, user.currency)}</strong></p><p>Restante: <strong>{formatCurrency(remaining, user.currency)}</strong></p></div>
-      <div><label className="block mb-1 text-xs font-bold">Valor recebido *</label><input type="number" min="0.01" max={remaining} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" /></div>
-      <div><label className="block mb-1 text-xs font-bold">Data do recebimento *</label><DatePicker value={date} onChange={setDate} variant="modal" /></div>
-      <div><label className="block mb-1 text-xs font-bold">Conta de destino *</label><select value={accountId} onChange={event => setAccountId(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>
+      <div><label className="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">VALOR RECEBIDO</label><input type="number" min="0.01" max={remaining} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" /></div>
+      <div><label className="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">DATA DO RECEBIMENTO</label><DatePicker value={date} onChange={setDate} variant="modal" /></div>
+      <div><label className="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">CONTA DE DESTINO</label><select value={accountId} onChange={event => setAccountId(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>
       {error && <p className="text-xs font-bold text-rose-600">{error}</p>}
     </form>
   </Modal>;
