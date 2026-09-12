@@ -3,6 +3,24 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.63] - 2026-09-12
+
+### 🎯 Campo Único Inteligente de Data, Controle Integrado de Parcelas e Sanitização Anti-Zero
+- **Campo Único Inteligente de Data no Cadastro de Transações**:
+  - Eliminação da redundância de múltiplos campos de data no formulário de despesas e receitas.
+  - O campo principal de data agora adapta seu significado dinamicamente:
+    - *Despesa Paga*: Rótulo `DATA DO PAGAMENTO`, com suporte a lançamentos no mesmo dia ou retroativos (ex: despesas pagas há 2 ou 3 dias lançadas agora).
+    - *Despesa Pendente*: Rótulo `DATA DE VENCIMENTO`, definindo com exatidão a data limite para liquidação do compromisso.
+    - *Compra no Cartão*: Rótulo `DATA DA COMPRA`, com a fatura e o vencimento derivados de forma 100% automática pelo Finly.
+    - *Receita*: Rótulos contextuais `DATA DO RECEBIMENTO` ou `DATA PREVISTA DE RECEBIMENTO`.
+  - Remoção do segundo campo duplicado de vencimento no rodapé do modal.
+- **Controle Integrado de Parcelas com Ajuste Rápido**:
+  - Implementado seletor direto com botões `[-]` e `[+]` lado a lado com o dropdown detalhado por parcela (2x a 24x) e chips rápidos de 1 toque.
+  - Sincronização bidirecional instantânea entre digitação, cliques rápidos e select.
+- **Sanitização Anti-Zero à Esquerda (`leading zero`)**:
+  - Correção definitiva no teclado virtual (Web e Android) onde o dígito `0` ficava preso à frente dos valores digitados na quantidade de parcelas.
+  - Limpeza imediata de zeros à esquerda aplicada aos campos de parcelas, parcelas pagas e dias de vencimento em todo o sistema.
+
 ## [1.1.62] - 2026-09-12
 
 ### 📊 Central Analítica de Relatórios: Comparativos MoM, Financiamentos, Regra 50/30/20 & Grade Bento

@@ -1083,7 +1083,10 @@ export const DebtsPage: React.FC = () => {
                 required
                 placeholder="420"
                 value={totalInstallments}
-                onChange={e => setTotalInstallments(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+                  setTotalInstallments(val);
+                }}
                 className="w-full px-2.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-center font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white"
               />
             </div>
@@ -1095,9 +1098,12 @@ export const DebtsPage: React.FC = () => {
               <input
                 type="number"
                 min="0"
-                placeholder="19"
+                placeholder="0"
                 value={paidInstallments}
-                onChange={e => setPaidInstallments(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+                  setPaidInstallments(val);
+                }}
                 className="w-full px-2.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-center font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
@@ -1112,7 +1118,10 @@ export const DebtsPage: React.FC = () => {
                 max="31"
                 required
                 value={dueDay}
-                onChange={e => setDueDay(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+                  setDueDay(val);
+                }}
                 className="w-full px-2.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-center font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white"
               />
             </div>

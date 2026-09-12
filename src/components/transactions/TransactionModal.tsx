@@ -1194,7 +1194,7 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
                           min="2"
                           max="72"
                           value={repeatAmount}
-                          onChange={e => setRepeatAmount(e.target.value)}
+                          onChange={e => setRepeatAmount(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, ''))}
                           className="w-16 px-2.5 py-1 rounded-xl border border-purple-300 bg-white dark:bg-slate-800 text-center font-black text-xs"
                         />
                         <span className="font-bold text-slate-500 text-xs">vezes</span>

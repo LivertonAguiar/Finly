@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Aprimoramento do fluxo de cadastro e parcelamento: campo único inteligente de data (Data do Pagamento x Vencimento x Data da Compra) eliminando duplicidades, novo controle integrado de parcelas com ajuste rápido [-] e [+] e sanitização completa anti-zero à esquerda no teclado.',
+    highlights: [
+      {
+        title: 'Campo Único Inteligente de Data no Cadastro',
+        description: 'Eliminada a necessidade de preencher dois campos de data. O campo principal adapta seu significado automaticamente: Data do Pagamento (com suporte a lançamentos retroativos), Data de Vencimento (para despesas pendentes) ou Data da Compra (no cartão com fatura automática).',
+        type: 'feature',
+      },
+      {
+        title: 'Controle Integrado de Parcelas com Ajuste Rápido',
+        description: 'Novo seletor direto com botões [-] e [+] lado a lado com o dropdown detalhado por parcela e atalhos rápidos de 1 toque, facilitando o parcelamento tanto na Web quanto no App Android.',
+        type: 'improvement',
+      },
+      {
+        title: 'Sanitização Anti-Zero à Esquerda (Leading Zero)',
+        description: 'Correção de comportamento no teclado virtual onde o zero ficava preso à frente dos valores digitados na seleção de parcelas e nos cadastros de dívidas e financiamentos.',
+        type: 'fix',
+      },
+      {
+        title: 'Sincronização Contábil & Lembretes',
+        description: 'Alinhamento automático das datas de vencimento com a conciliação de faturas, fluxo de caixa e alertas programados de pagamento.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.62',
+    releaseDate: '2026-09-12',
     summary: 'Central analítica avançada de relatórios: Comparativos MoM (mês a mês) e Orçado vs Realizado, Curvas e Projeções de Financiamentos com simulador de amortização extraordinária, Diagnóstico da Regra 50/30/20 com Score de Saúde Financeira e alternador de layout (Modo Focado vs Grade Bento).',
     highlights: [
       {

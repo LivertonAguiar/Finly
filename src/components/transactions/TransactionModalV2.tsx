@@ -69,9 +69,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [installment, setInstallment] = useState(false);
   const [amountMode, setAmountMode] = useState<'total' | 'per_installment'>('total');
   const [installmentCount, setInstallmentCount] = useState(2);
+  const [installmentInputStr, setInstallmentInputStr] = useState('2');
   const [isCustomInstallment, setIsCustomInstallment] = useState(false);
   const [alreadyStarted, setAlreadyStarted] = useState(false);
   const [firstTrackedInstallment, setFirstTrackedInstallment] = useState(1);
+  const [firstTrackedStr, setFirstTrackedStr] = useState('1');
   const [moreDetails, setMoreDetails] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState<string>();
   const [attachmentName, setAttachmentName] = useState<string>();
@@ -128,8 +130,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setAmount('');
     }
     setStatus(tx?.status || 'completed');
-    setDate(tx?.date || getTodayString());
-    setDueDate(tx?.dueDate || '');
+    const initialDate = tx?.dueDate && (tx?.status === 'pending') ? tx.dueDate : (tx?.date || getTodayString());
+    setDate(initialDate);
+    setDueDate(tx?.dueDate || initialDate);
     setDescription(tx?.description?.replace(/\s*\(\d+\/\d+\)\s*$/, '') || '');
     setCategoryId(tx?.categoryId || categories.find(cat => cat.type === (nextType === 'income' ? 'income' : 'expense'))?.id || '');
     setSubcategoryId(tx?.subcategoryId || '');
@@ -140,9 +143,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setInstallment(Boolean(tx?.installments));
     const count = tx?.installments?.total || 2;
     setInstallmentCount(count);
+    setInstallmentInputStr(String(count));
     setIsCustomInstallment(count > 24);
-    setFirstTrackedInstallment(tx?.installments?.current || 1);
-    setAlreadyStarted(Boolean(tx?.installments && (tx.installments.current || 1) > 1));
+    const tracked = tx?.installments?.current || 1;
+    setFirstTrackedInstallment(tracked);
+    setFirstTrackedStr(String(tracked));
+    setAlreadyStarted(Boolean(tx?.installments && tracked > 1));
     setMoreDetails(false);
     setAttachmentUrl(tx?.attachmentUrl);
     setAttachmentName(tx?.attachmentName);
@@ -175,6 +181,20 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   );
   const selectedCategory = filteredCategories.find(category => category.id === categoryId);
   const amountNumber = round2(centsAmount / 100);
+
+  const dateLabel = useMemo(() => {
+    if (isTransfer) return 'DATA DA TRANSFERÊNCIA';
+    if (isCard) return 'DATA DA COMPRA';
+    if (status === 'pending') {
+      return type === 'income' ? 'DATA PREVISTA DE RECEBIMENTO' : 'DATA DE VENCIMENTO';
+    }
+    return type === 'income' ? 'DATA DO RECEBIMENTO' : 'DATA DO PAGAMENTO';
+  }, [isTransfer, isCard, status, type]);
+
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    setDueDate(newDate);
+  };
 
   const formatCentsToDisplay = (cents: number): string => {
     return (cents / 100).toLocaleString('pt-BR', {
@@ -251,6 +271,59 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
   };
 
+  const handleInstallmentInputChange = (rawVal: string) => {
+    const digits = rawVal.replace(/\D/g, '');
+    const clean = digits.replace(/^0+/, '');
+    setInstallmentInputStr(clean);
+    if (clean !== '') {
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num >= 1) {
+        const clamped = Math.min(72, num);
+        setInstallmentCount(clamped);
+        setIsCustomInstallment(clamped > 24);
+      }
+    }
+  };
+
+  const handleInstallmentInputBlur = () => {
+    const num = parseInt(installmentInputStr, 10);
+    if (isNaN(num) || num < 2) {
+      setInstallmentCount(2);
+      setInstallmentInputStr('2');
+      setIsCustomInstallment(false);
+    } else {
+      const clamped = Math.min(72, num);
+      setInstallmentCount(clamped);
+      setInstallmentInputStr(String(clamped));
+      setIsCustomInstallment(clamped > 24);
+    }
+  };
+
+  const handleFirstTrackedChange = (rawVal: string) => {
+    const digits = rawVal.replace(/\D/g, '');
+    const clean = digits.replace(/^0+/, '');
+    setFirstTrackedStr(clean);
+    if (clean !== '') {
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num >= 1) {
+        const clamped = Math.min(installmentCount, num);
+        setFirstTrackedInstallment(clamped);
+      }
+    }
+  };
+
+  const handleFirstTrackedBlur = () => {
+    const num = parseInt(firstTrackedStr, 10);
+    if (isNaN(num) || num < 1) {
+      setFirstTrackedInstallment(1);
+      setFirstTrackedStr('1');
+    } else {
+      const clamped = Math.min(installmentCount, num);
+      setFirstTrackedInstallment(clamped);
+      setFirstTrackedStr(String(clamped));
+    }
+  };
+
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   const addTag = (textToAdd?: string) => {
@@ -288,7 +361,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     amount: amountNumber,
     type,
     date,
-    dueDate: dueDate || undefined,
+    dueDate: type === 'expense' && !isCard && (status === 'pending' || reminderEnabled) ? (dueDate || date) : (dueDate || undefined),
     purchaseDate: isCard ? date : undefined,
     categoryId: isTransfer ? 'cat-transferencia' : categoryId,
     subcategoryId: isTransfer ? undefined : subcategoryId || undefined,
@@ -323,8 +396,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     if (!isCard && !accountId) return setError('Selecione uma conta bancária.');
     if (isCard && !selectedCard) return setError('Selecione um cartão de crédito.');
     if (thirdParty && !thirdPartyName.trim()) return setError('Informe o nome da pessoa da compra de terceiro.');
-    if (type === 'expense' && !isCard && (status === 'pending' || reminderEnabled) && !dueDate) {
-      return setError('Informe o vencimento da despesa pendente ou com lembrete.');
+    if (type === 'expense' && !isCard && (status === 'pending' || reminderEnabled) && !dueDate && !date) {
+      return setError('Informe a data de vencimento da despesa pendente ou com lembrete.');
     }
 
     const txData = baseTransaction();
@@ -483,7 +556,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div><label className={labelClass}>DATA</label><DatePicker value={date} onChange={value => { setDate(value); setStatus(value > getTodayString() ? 'scheduled' : 'completed'); }} variant="modal" /></div>
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} placeholder="Ex: Reserva mensal" /></div>
         </> : <>
-          <div><label className={labelClass}>DATA</label><DatePicker value={date} onChange={setDate} variant="modal" /></div>
+          <div><label className={labelClass}>{dateLabel}</label><DatePicker value={date} onChange={handleDateChange} variant="modal" /></div>
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} required /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label className={labelClass}>CATEGORIA</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
@@ -557,41 +630,101 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Seleção de Quantidade de Parcelas (2 a 24x) */}
+                    {/* Seleção de Quantidade de Parcelas */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className={labelClass}>QUANTIDADE DE PARCELAS (2 A 24X)</label>
-                        <span className="text-xs font-black text-purple-600 dark:text-purple-400">
+                        <label className={labelClass}>QUANTIDADE DE PARCELAS</label>
+                        <span className="text-xs font-black text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-lg border border-purple-200/50 dark:border-purple-800/40">
                           {installmentCount}x
                         </span>
                       </div>
 
-                      <select
-                        className={fieldClass}
-                        value={installmentCount <= 24 && !isCustomInstallment ? installmentCount : 'custom'}
-                        onChange={event => {
-                          const val = event.target.value;
-                          if (val === 'custom') {
-                            setIsCustomInstallment(true);
-                            if (installmentCount <= 24) setInstallmentCount(25);
-                          } else {
-                            setIsCustomInstallment(false);
-                            setInstallmentCount(Number(val));
-                          }
-                        }}
-                      >
-                        {Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
-                          const opt = calculateInstallmentOption(count);
-                          return (
-                            <option key={count} value={count}>
-                              {amountNumber > 0
-                                ? `${count}x de ${formatCurrency(opt.installmentAmount, user.currency)} (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
-                                : `${count}x parcelas`}
-                            </option>
-                          );
-                        })}
-                        <option value="custom">Outra quantidade personalizada (até 72x)...</option>
-                      </select>
+                      {/* Controle Integrado: Entrada Numérica Direta [- / +] e Select Detalhado */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* Entrada Numérica Direta com - e + (sem leading zero) */}
+                        <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.max(2, installmentCount - 1);
+                              setInstallmentCount(next);
+                              setInstallmentInputStr(String(next));
+                              setIsCustomInstallment(next > 24);
+                            }}
+                            disabled={installmentCount <= 2}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-base text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                            title="Diminuir 1 parcela"
+                          >
+                            -
+                          </button>
+
+                          <div className="flex-1 flex items-center justify-center gap-1 px-1">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="w-12 text-center font-black text-sm bg-transparent border-0 outline-none text-slate-900 dark:text-white p-0 focus:ring-0 focus:outline-none"
+                              value={installmentInputStr}
+                              placeholder="2"
+                              onChange={e => handleInstallmentInputChange(e.target.value)}
+                              onBlur={handleInstallmentInputBlur}
+                            />
+                            <span className="text-xs font-black text-purple-600 dark:text-purple-400 select-none">
+                              vezes
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.min(72, installmentCount + 1);
+                              setInstallmentCount(next);
+                              setInstallmentInputStr(String(next));
+                              setIsCustomInstallment(next > 24);
+                            }}
+                            disabled={installmentCount >= 72}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-base text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                            title="Aumentar 1 parcela"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Select com Valores Detalhados por Parcela (2 a 24x) */}
+                        <select
+                          className={fieldClass}
+                          value={installmentCount <= 24 && !isCustomInstallment ? installmentCount : 'custom'}
+                          onChange={event => {
+                            const val = event.target.value;
+                            if (val === 'custom') {
+                              setIsCustomInstallment(true);
+                              if (installmentCount <= 24) {
+                                setInstallmentCount(25);
+                                setInstallmentInputStr('25');
+                              }
+                            } else {
+                              setIsCustomInstallment(false);
+                              const n = Number(val);
+                              setInstallmentCount(n);
+                              setInstallmentInputStr(String(n));
+                            }
+                          }}
+                        >
+                          {Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
+                            const opt = calculateInstallmentOption(count);
+                            return (
+                              <option key={count} value={count}>
+                                {amountNumber > 0
+                                  ? `${count}x de ${formatCurrency(opt.installmentAmount, user.currency)} (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
+                                  : `${count}x parcelas`}
+                              </option>
+                            );
+                          })}
+                          <option value="custom">
+                            {installmentCount > 24 ? `${installmentCount}x personalizado (até 72x)` : 'Outra quantidade personalizada (até 72x)...'}
+                          </option>
+                        </select>
+                      </div>
 
                       {/* Chips de Atalho Rápido para 1 Toque */}
                       <div className="space-y-1 pt-0.5">
@@ -600,7 +733,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {[2, 3, 4, 5, 6, 10, 12, 18, 24].map(quickCount => {
-                            const isSelected = installmentCount === quickCount && !isCustomInstallment;
+                            const isSelected = installmentCount === quickCount;
                             return (
                               <button
                                 key={quickCount}
@@ -608,6 +741,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                                 onClick={() => {
                                   setIsCustomInstallment(false);
                                   setInstallmentCount(quickCount);
+                                  setInstallmentInputStr(String(quickCount));
                                 }}
                                 className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
                                   isSelected
@@ -621,26 +755,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           })}
                         </div>
                       </div>
-
-                      {/* Campo numérico para casos acima de 24x */}
-                      {(isCustomInstallment || installmentCount > 24) && (
-                        <div className="pt-2 animate-in fade-in space-y-1">
-                          <label className={labelClass}>DIGITE A QUANTIDADE PERSONALIZADA (ATÉ 72X)</label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min={2}
-                              max={72}
-                              className={fieldClass}
-                              value={installmentCount}
-                              onChange={event => setInstallmentCount(Math.min(72, Math.max(2, Number(event.target.value) || 2)))}
-                            />
-                            <span className="text-sm font-black text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                              vezes
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Card Resumo do Parcelamento */}
@@ -675,7 +789,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           checked={alreadyStarted}
                           onChange={event => {
                             setAlreadyStarted(event.target.checked);
-                            if (!event.target.checked) setFirstTrackedInstallment(1);
+                            if (!event.target.checked) {
+                              setFirstTrackedInstallment(1);
+                              setFirstTrackedStr('1');
+                            }
                           }}
                           className="w-4 h-4 rounded text-purple-600 cursor-pointer"
                         />
@@ -687,11 +804,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           <div className="flex items-center gap-2">
                             <input
                               className={fieldClass}
-                              type="number"
-                              min={1}
-                              max={installmentCount}
-                              value={firstTrackedInstallment}
-                              onChange={event => setFirstTrackedInstallment(Number(event.target.value))}
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="1"
+                              value={firstTrackedStr}
+                              onChange={e => handleFirstTrackedChange(e.target.value)}
+                              onBlur={handleFirstTrackedBlur}
                             />
                             <span className="whitespace-nowrap text-sm font-black text-purple-600 dark:text-purple-400">
                               de {installmentCount}
@@ -710,8 +829,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <div><label className={labelClass}>FATURA DE DESTINO</label><select className={fieldClass} value={invoiceMonth} onChange={event => setInvoiceMonth(event.target.value)}>{invoiceMonths.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}</select></div>
           </> : <div><label className={labelClass}>CONTA BANCÁRIA</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>}
         </>}
-
-        {(type === 'expense' && !isCard && (status === 'pending' || reminderEnabled)) && <div><label className={labelClass}>VENCIMENTO</label><DatePicker value={dueDate} onChange={setDueDate} variant="modal" /></div>}
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
         {moreDetails && <div className="space-y-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 p-3">
