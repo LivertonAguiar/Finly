@@ -39,7 +39,7 @@ O sistema opera no modelo **Single Page Application (SPA)** com persistência h�
 |  +-----------------------------------------------------------------------+  |
 |  | Storage Engine (JSON File System / Volume Persistente)                |  |
 |  |  • server/data/users.json (Base de Usuários)                          |  |
-|  |  • server/data/stores/{userId}.json (Transações, Contas, Cartões,     |  |
+|  |  • server/data/stores/{userId}.json (Transações, Séries de Transações, Contas, Cartões,     |  |
 |  |    Categorias, Orçamentos, Metas, Configurações de Tema e Família)    |  |
 |  +-----------------------------------------------------------------------+  |
 +-----------------------------------------------------------------------------+
@@ -60,17 +60,24 @@ planner-financeiro/
 │   │   ├── dashboard/         # Dashboard (KPIs, Donut, Cartões, Contas)
 │   │   ├── layout/            # Topbar, Sidebar, Floating Action Button (+)
 │   │   ├── relatorios/        # Gráficos de Evolução, Categorias e Balanço
-│   │   ├── transactions/      # Listagem Timeline/Table, Modal (+) e Ficha Detalhe
+│   │   ├── transactions/      # Listagem Timeline/Table, Modal (+), Ficha Detalhe e Escopos
 │   │   └── ui/                # Componentes Reutilizáveis (Modal, Confetti, Badges)
 │   ├── context/
 │   │   ├── AuthContext.tsx    # Gerenciamento de Sessão e Perfil de Usuário
 │   │   ├── ConfirmContext.tsx # Modais de Confirmação Interativos
-│   │   └── FinancialContext.tsx # Motor Central de Cálculo e Persistência
-│   ├── types/                 # Interfaces TypeScript do Modelo Financeiro
+│   │   └── FinancialContext.tsx # Motor Central de Cálculo, Séries e Persistência
+│   ├── types/                 # Interfaces TypeScript do Modelo Financeiro e Séries
 │   └── utils/
 │       ├── bankLogos.tsx      # Logos SVG de Bancos e Bandeiras de Cartão
+│       ├── cardInstallmentSeries.ts # Motor Puro de Séries Parceladas de Cartão
 │       ├── formatters.ts      # Formatadores de Moeda BRL, Datas e Números
-│       └── invoiceCalculator.ts # Motor de Alocação de Faturas e Regime Contábil
+│       ├── invoiceCalculator.ts # Motor de Alocação de Faturas e Regime Contábil
+│       ├── notificationEngine.ts # Motor de Notificações Desacoplado
+│       ├── pendingMutationJournal.ts # Journal de Mutações Locais e Conciliação
+│       ├── recurringExpenseSeries.ts # Reconciliador de Despesas Fixas (12 Meses)
+│       ├── transactionImpact.ts # Seletores de Impacto Analítico vs. Financeiro
+│       ├── transactionSeriesScope.ts # Escopos Cirúrgicos de Exclusão e Mutação
+│       └── transferRules.ts   # Construtor Puro de Transferências e Agendamento
 ├── server/
 │   ├── apiServer.js           # Servidor REST Express + SMTP + SPA Static Server
 │   └── data/                  # Diretório de Persistência JSON

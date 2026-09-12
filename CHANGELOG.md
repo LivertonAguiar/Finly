@@ -3,6 +3,26 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.61] - 2026-09-12
+
+### 💳 Séries Explícitas de Cartão, Despesas Fixas (12 Meses), Transferências & Impacto Analítico
+- **Compras Parceladas em Andamento (`05/12`)**:
+  - Capacidade de registrar compras já em curso informando a parcela aberta (ex: 05 de 12); cria transações financeiras reais somente a partir da parcela atual.
+  - Parcelas passadas (01 a 04) são sintetizadas como histórico pago exclusivamente na linha do tempo da compra, sem gerar movimentações financeiras passadas nem distorcer saldos, relatórios ou faturas.
+- **Fatura de Destino Autoritativa & Rateio Exato de Centavos**:
+  - A fatura de destino selecionada rege soberanamente a alocação da primeira parcela controlada.
+  - Rateio preciso de centavos: qualquer fração residual é absorvida pela última parcela, garantindo que a soma feche no centavo exato.
+- **Despesas Fixas com Variação Mensal de Valor**:
+  - Nova infraestrutura de séries recorrentes (semanal, mensal e anual) com horizonte materializado de 12 meses.
+  - Edição cirúrgica: "Somente este mês" gera exceção pontual mantendo o padrão; "Este e os próximos" estabelece nova regra de vigência preservando exceções.
+- **Exclusão Cirúrgica por Escopo**:
+  - Novo modal com opções de exclusão: "Somente esta", "Esta e as futuras" ou "Série inteira" (com confirmação reforçada para séries com histórico ou itens liquidados).
+- **Transferência Unificada e Agendamento Futuro**:
+  - Formulário enxuto único, agendamento de transferências para datas futuras (nascem como `scheduled`) e aviso suave quando o saldo em conta for insuficiente.
+- **Desacoplamento de Impacto Analítico vs. Obrigação Real**:
+  - Compras de terceiros e despesas ignoradas compõem integralmente a fatura e o limite real do cartão, mas são segregadas de orçamentos e relatórios analíticos pessoais.
+  - Registro interativo de reembolsos parciais ou integrais com escolha de conta e data.
+
 ## [1.1.60] - 2026-09-11
 
 ### 📊 Diagnóstico Analítico de Financiamentos (Eficiência da Parcela & Alerta Price + TR)

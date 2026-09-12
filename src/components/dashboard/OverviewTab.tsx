@@ -698,8 +698,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // 7. Credit Cards Breakdown Data (Synchronized exactly with CreditTab logic)
   const cardSummaries = useMemo(() => {
     return cards.map(card => {
-      const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense' && !t.ignored);
-      const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
+      const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense');
+      const monthTxs = cardTxs.filter(t => (t.invoiceMonth || t.date.slice(0, 7)) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
       const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
@@ -709,7 +709,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       const currentInvoicePercent = card.limit > 0 ? (currentOpenInvoice / card.limit) * 100 : 0;
 
       // Future unpaid installments in subsequent months
-      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && !t.date.startsWith(currentMonthPrefix));
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && (t.invoiceMonth || t.date.slice(0, 7)) !== currentMonthPrefix);
       const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const futureInstallmentsPercent = card.limit > 0 ? (futureInstallmentsTotal / card.limit) * 100 : 0;
 

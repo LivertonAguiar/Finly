@@ -3,7 +3,7 @@ import { SettingsPage } from './components/settings/SettingsPage';
 import { ReportsPage } from './components/relatorios/ReportsPage';
 import { AccountsPage } from './components/accounts/AccountsPage';
 import { MorePage } from './components/more/MorePage';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UndoToastProvider } from './context/UndoToastContext';
 import { FinancialProvider, useFinancial } from './context/FinancialContext';
@@ -151,19 +151,25 @@ const AppContent: React.FC = () => {
     };
   }, [currentUser]);
 
-  // Background Financial Alerts Checker
+  const financialAlertDataRef = useRef({ transactions, cards, budgets, goals });
+  useEffect(() => {
+    financialAlertDataRef.current = { transactions, cards, budgets, goals };
+  }, [transactions, cards, budgets, goals]);
+
+  // Background Financial Alerts Checker. Mutating financial data only updates
+  // the ref; it never triggers an immediate due-date notification.
   useEffect(() => {
     if (currentUser) {
-      checkAndTriggerScheduledAlerts({ transactions, cards, budgets, goals });
+      checkAndTriggerScheduledAlerts(financialAlertDataRef.current, 'boot');
 
       // Run periodically every 30 minutes
       const interval = setInterval(() => {
-        checkAndTriggerScheduledAlerts({ transactions, cards, budgets, goals });
+        checkAndTriggerScheduledAlerts(financialAlertDataRef.current, 'scheduler');
       }, 30 * 60 * 1000);
 
       return () => clearInterval(interval);
     }
-  }, [currentUser, transactions, cards, budgets, goals]);
+  }, [currentUser]);
 
   // Proactive App Update Checker on Entry, Resume and Periodic Interval (Exclusivo Android Nativo)
   useEffect(() => {

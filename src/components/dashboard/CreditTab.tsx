@@ -30,6 +30,8 @@ import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos'
 import { CardModal } from '../cadastros/CardModal';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
+import { SeriesDeleteModal } from '../transactions/SeriesDeleteModal';
+import { ReimbursementModal } from '../transactions/ReimbursementModal';
 import { Modal } from '../ui/Modal';
 import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
@@ -55,6 +57,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
   const [activeCardDetailId, setActiveCardDetailId] = useState<string | null>(initialCardDetailId || null);
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<Transaction | null>(null);
+  const [reimbursementCandidate, setReimbursementCandidate] = useState<Transaction | null>(null);
 
   useEffect(() => {
     if (initialCardDetailId !== undefined) {
@@ -102,7 +106,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const cardsData = useMemo(() => {
     return cards.map(card => {
       const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense');
-      const monthTxs = cardTxs.filter(t => t.date.startsWith(currentMonthPrefix));
+      const monthTxs = cardTxs.filter(t => (t.invoiceMonth || t.date.slice(0, 7)) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
       const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
@@ -112,7 +116,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       const currentInvoicePercent = card.limit > 0 ? (currentOpenInvoice / card.limit) * 100 : 0;
 
       // Future unpaid installments in subsequent months
-      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && !t.date.startsWith(currentMonthPrefix));
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && (t.invoiceMonth || t.date.slice(0, 7)) !== currentMonthPrefix);
       const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const futureInstallmentsPercent = card.limit > 0 ? (futureInstallmentsTotal / card.limit) * 100 : 0;
 
@@ -266,7 +270,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const payingCardTxs = useMemo(() => {
     if (!payingCard) return [];
     return transactions
-      .filter(t => t.cardId === payingCard.id && t.type === 'expense' && t.date.startsWith(currentMonthPrefix))
+      .filter(t => t.cardId === payingCard.id && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === currentMonthPrefix)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [payingCard, transactions, currentMonthPrefix]);
 
@@ -688,6 +692,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                             type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
+                              setReimbursementCandidate(t);
+                              return;
                               const ok = await confirm({
                                 title: 'Registrar Reembolso',
                                 message: `Confirmar que ${t.thirdPartyName || 'a pessoa'} pagou o reembolso de ${formatCurrency(t.amount, user.currency)}? Será criada uma receita na sua conta bancária.`,
@@ -724,6 +730,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
+                              setDeleteCandidate(t);
+                              return;
                               const ok = await confirm({
                                 title: 'Excluir Lançamento',
                                 message: `Deseja realmente excluir "${t.description}" de ${formatCurrency(t.amount, user.currency)}?`,
@@ -731,7 +739,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                                 type: 'danger',
                               });
                               if (ok) {
-                                deleteTransaction(t.id);
+                                setDeleteCandidate(t);
                               }
                             }}
                             className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
@@ -1724,6 +1732,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           }}
         />
       )}
+      <SeriesDeleteModal transaction={deleteCandidate} onClose={() => setDeleteCandidate(null)} />
+      <ReimbursementModal transaction={reimbursementCandidate} onClose={() => setReimbursementCandidate(null)} />
     </div>
   );
 };

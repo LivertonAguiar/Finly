@@ -63,7 +63,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
   const invoiceTransactions = useMemo(() => {
     if (!selectedCard) return [];
     return transactions.filter(
-      t => t.cardId === selectedCard.id && t.type === 'expense' && t.date.startsWith(targetPrefix)
+      t => t.cardId === selectedCard.id && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === targetPrefix
     );
   }, [transactions, selectedCard, targetPrefix]);
 

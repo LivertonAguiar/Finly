@@ -12,6 +12,7 @@ import {
   UserProfile,
   FamilyMember,
   NotificationItem,
+  TransactionSeries,
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
@@ -31,6 +32,10 @@ import {
   isStructuredFinancing,
 } from '../utils/debtTransactionSync';
 import { getMonthlyInterestRate } from '../utils/financingCalculations';
+import { migrateLegacyTransactionSeries } from '../utils/transactionSeriesMigration';
+import { applyRecurringAmountChange } from '../utils/recurringExpenseSeries';
+import { selectSeriesTargets, SeriesMutationScope, SeriesTargetSelection } from '../utils/transactionSeriesScope';
+import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -75,6 +80,7 @@ interface UserStoreData {
   debts: Debt[];
   investments: InvestmentAsset[];
   transactions: Transaction[];
+  transactionSeries: TransactionSeries[];
   familyMembers: FamilyMember[];
   notifications: NotificationItem[];
   userProfile: UserProfile;
@@ -128,12 +134,26 @@ interface FinancialContextType {
 
   // Transactions
   transactions: Transaction[];
+  transactionSeries: TransactionSeries[];
   addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  addTransactionSeries: (series: TransactionSeries, occurrences: Transaction[]) => void;
   updateTransaction: (id: string, data: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   deleteMultipleTransactions: (ids: string[]) => void;
+  previewTransactionSeriesDeletion: (id: string, scope: SeriesMutationScope) => SeriesTargetSelection;
+  deleteTransactionSeriesScope: (id: string, scope: SeriesMutationScope) => void;
+  updateRecurringExpenseAmount: (
+    id: string,
+    amount: number,
+    scope: 'single' | 'current_and_future',
+    overwriteExceptions?: boolean,
+  ) => void;
   toggleTransactionStatus: (id: string) => void;
-  reimburseThirdPartyTransaction: (transactionId: string, targetAccountId: string) => void;
+  reimburseThirdPartyTransaction: (
+    transactionId: string,
+    targetAccountId: string,
+    options?: { amount?: number; date?: string },
+  ) => void;
   importTransactions: (txs: Omit<Transaction, 'id' | 'createdAt'>[]) => void;
 
   // Budgets
@@ -517,10 +537,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const withDebtTransactionBackfill = (store: UserStoreData): UserStoreData => {
     const reconciled = reconcileDebtTransactions(store.debts, store.transactions, store.accounts);
+    const migrated = migrateLegacyTransactionSeries({
+      transactions: reconciled.transactions,
+      series: store.transactionSeries || [],
+      today: getTodayString(),
+    });
     return {
       ...store,
       debts: reconciled.debts,
-      transactions: reconciled.transactions,
+      transactions: migrated.transactions,
+      transactionSeries: migrated.series,
     };
   };
 
@@ -545,6 +571,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             debts: Array.isArray(parsed.debts) ? parsed.debts : [],
             investments: Array.isArray(parsed.investments) ? parsed.investments : [],
             transactions: Array.isArray(parsed.transactions) ? parsed.transactions.filter((t: any) => !isGhostTransaction(t)) : [],
+            transactionSeries: Array.isArray(parsed.transactionSeries) ? parsed.transactionSeries : [],
             familyMembers: Array.isArray(parsed.familyMembers) ? parsed.familyMembers : [
               { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
             ],
@@ -595,6 +622,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         debts: demo.debts,
         investments: demo.investments,
         transactions: demo.transactions,
+        transactionSeries: [],
         familyMembers: demo.familyMembers,
         notifications: [],
         userProfile: {
@@ -622,6 +650,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       debts: [],
       investments: [],
       transactions: [],
+      transactionSeries: [],
       familyMembers: [
         { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
       ],
@@ -652,6 +681,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [debts, setDebts] = useState<Debt[]>(initialStore.debts);
   const [investments, setInvestments] = useState<InvestmentAsset[]>(initialStore.investments);
   const [transactions, setTransactions] = useState<Transaction[]>(initialStore.transactions);
+  const [transactionSeries, setTransactionSeries] = useState<TransactionSeries[]>(initialStore.transactionSeries);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialStore.familyMembers);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialStore.notifications);
   const [storeOwnerUserId, setStoreOwnerUserId] = useState(userId);
@@ -707,6 +737,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setDebts(store.debts);
     setInvestments(store.investments);
     setTransactions(store.transactions);
+    setTransactionSeries(store.transactionSeries);
     setFamilyMembers(store.familyMembers);
     setNotifications(store.notifications);
     setStoreOwnerUserId(userId);
@@ -755,6 +786,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
             const cleanAccounts = sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT];
             const reconciledDebts = reconcileDebtTransactions(sbStore.debts || [], cleanTxs, cleanAccounts);
+            const migratedSeries = migrateLegacyTransactionSeries({
+              transactions: reconciledDebts.transactions,
+              series: sbStore.transactionSeries || [],
+              today: getTodayString(),
+            });
             setAccounts(cleanAccounts);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
@@ -762,7 +798,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setGoals(sbStore.goals || []);
             setDebts(reconciledDebts.debts);
             setInvestments(sbStore.investments || []);
-            setTransactions(reconciledDebts.transactions);
+            setTransactions(migratedSeries.transactions);
+            setTransactionSeries(migratedSeries.series);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
@@ -780,7 +817,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               accounts: cleanAccounts,
               cards: cleanCards,
               debts: reconciledDebts.debts,
-              transactions: reconciledDebts.transactions,
+              transactions: migratedSeries.transactions,
+              transactionSeries: migratedSeries.series,
               userProfile: mergedUserProfile,
             };
             try {
@@ -812,6 +850,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
         const cleanAccounts = serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT];
         const reconciledDebts = reconcileDebtTransactions(serverStore.debts || [], cleanTxs, cleanAccounts);
+        const migratedSeries = migrateLegacyTransactionSeries({
+          transactions: reconciledDebts.transactions,
+          series: serverStore.transactionSeries || [],
+          today: getTodayString(),
+        });
         setAccounts(cleanAccounts);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
@@ -819,7 +862,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setGoals(serverStore.goals || []);
         setDebts(reconciledDebts.debts);
         setInvestments(serverStore.investments || []);
-        setTransactions(reconciledDebts.transactions);
+        setTransactions(migratedSeries.transactions);
+        setTransactionSeries(migratedSeries.series);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
@@ -896,6 +940,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       debts,
       investments,
       transactions,
+      transactionSeries,
       familyMembers,
       notifications,
       userProfile: user,
@@ -919,7 +964,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // 3. Fallback: Push to backend server
     apiSync.pushStore(currentUser.id, currentStore);
-  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, familyMembers, notifications, user, userStoreKey, storeOwnerUserId, currentUser?.id]);
+  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, transactionSeries, familyMembers, notifications, user, userStoreKey, storeOwnerUserId, currentUser?.id]);
 
   // Pull-to-refresh & In-app manual sync handler
   const refreshData = async (): Promise<void> => {
@@ -937,6 +982,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setDebts(store.debts);
         setInvestments(store.investments);
         setTransactions(store.transactions);
+        setTransactionSeries(store.transactionSeries);
         setFamilyMembers(store.familyMembers);
         setNotifications(store.notifications);
         return;
@@ -963,6 +1009,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
             const cleanAccounts = sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT];
             const reconciledDebts = reconcileDebtTransactions(sbStore.debts || [], cleanTxs, cleanAccounts);
+            const migratedSeries = migrateLegacyTransactionSeries({
+              transactions: reconciledDebts.transactions,
+              series: sbStore.transactionSeries || [],
+              today: getTodayString(),
+            });
             setAccounts(cleanAccounts);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
@@ -970,7 +1021,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setGoals(sbStore.goals || []);
             setDebts(reconciledDebts.debts);
             setInvestments(sbStore.investments || []);
-            setTransactions(reconciledDebts.transactions);
+            setTransactions(migratedSeries.transactions);
+            setTransactionSeries(migratedSeries.series);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
@@ -988,7 +1040,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               accounts: cleanAccounts,
               cards: cleanCards,
               debts: reconciledDebts.debts,
-              transactions: reconciledDebts.transactions,
+              transactions: migratedSeries.transactions,
+              transactionSeries: migratedSeries.series,
               userProfile: mergedUserProfile,
             };
             try {
@@ -1015,6 +1068,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
         const cleanAccounts = serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT];
         const reconciledDebts = reconcileDebtTransactions(serverStore.debts || [], cleanTxs, cleanAccounts);
+        const migratedSeries = migrateLegacyTransactionSeries({
+          transactions: reconciledDebts.transactions,
+          series: serverStore.transactionSeries || [],
+          today: getTodayString(),
+        });
         setAccounts(cleanAccounts);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
@@ -1022,7 +1080,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setGoals(serverStore.goals || []);
         setDebts(reconciledDebts.debts);
         setInvestments(serverStore.investments || []);
-        setTransactions(reconciledDebts.transactions);
+        setTransactions(migratedSeries.transactions);
+        setTransactionSeries(migratedSeries.series);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
@@ -1045,6 +1104,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setDebts(store.debts);
         setInvestments(store.investments);
         setTransactions(store.transactions);
+        setTransactionSeries(store.transactionSeries);
         setFamilyMembers(store.familyMembers);
         setNotifications(store.notifications);
         hasInitialRemoteSyncFinishedRef.current = true;
@@ -1234,6 +1294,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         debts,
         investments,
         transactions,
+        transactionSeries,
         familyMembers,
         notifications,
         userProfile: user,
@@ -1268,6 +1329,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         debts,
         investments,
         transactions,
+        transactionSeries,
         familyMembers,
         notifications,
         userProfile: user,
@@ -1298,6 +1360,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         debts,
         investments,
         transactions,
+        transactionSeries,
         familyMembers,
         notifications,
         userProfile: user,
@@ -1328,6 +1391,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             debts,
             investments,
             transactions,
+            transactionSeries,
             familyMembers,
             notifications,
             userProfile: user,
@@ -1368,13 +1432,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     const roundedAmount = round2(amount);
+    markLocalMutation();
 
     // Balance is auto-recalculated by the derived balance effect via the payment transaction below
 
     // Mark card transactions of that month as completed/paid
     setTransactions(prev =>
       prev.map(t => {
-        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(month.replace('/', '-'))) {
+        if (t.cardId === cardId && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === month.replace('/', '-')) {
           return { ...t, status: 'completed' };
         }
         return t;
@@ -1406,6 +1471,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const unpayCardInvoice = (cardId: string, month: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
+    markLocalMutation();
 
     // Find all payment transactions created for this invoice
     const payTxs = transactions.filter(
@@ -1423,7 +1489,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const normalizedMonth = month.replace('/', '-');
     setTransactions(prev =>
       prev.filter(t => !payTxIds.has(t.id)).map(t => {
-        if (t.cardId === cardId && t.type === 'expense' && t.date.startsWith(normalizedMonth)) {
+        if (t.cardId === cardId && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === normalizedMonth) {
           return { ...t, status: 'pending' };
         }
         return t;
@@ -1498,8 +1564,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       createdAt: new Date().toISOString(),
     };
 
+    markLocalMutation();
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => [newTx, ...prev]);
+  };
+
+  const addTransactionSeries = (series: TransactionSeries, occurrences: Transaction[]) => {
+    if (transactionSeries.some(item => item.id === series.id)) return;
+    markLocalMutation();
+    setTransactionSeries(prev => [series, ...prev]);
+    setTransactions(prev => {
+      const existingIds = new Set(prev.map(transaction => transaction.id));
+      return [...occurrences.filter(transaction => !existingIds.has(transaction.id)), ...prev];
+    });
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      void supabaseDb.upsertTransactionSeries(currentUser.id, [series]);
+      occurrences.forEach(transaction => void supabaseDb.upsertTransaction(currentUser.id, transaction));
+    }
   };
 
 
@@ -1513,6 +1594,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       amount: data.amount !== undefined ? round2(data.amount) : oldTx.amount,
     };
 
+    markLocalMutation();
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.map(t => (t.id === id ? newTx : t)));
   };
@@ -1520,6 +1602,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 
   const deleteTransaction = (id: string) => {
+    markLocalMutation();
     const tx = transactions.find(t => t.id === id);
     if (tx) {
       // If it was an invoice payment, also mark the card's expense transactions of that month back to pending
@@ -1569,6 +1652,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const idSet = new Set(ids);
     const deletedTxs = transactions.filter(t => idSet.has(t.id));
     if (deletedTxs.length === 0) return;
+    markLocalMutation();
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.filter(t => !idSet.has(t.id)));
     if (currentUser && isSupabaseConfigured()) {
@@ -1582,7 +1666,92 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  const previewTransactionSeriesDeletion = (id: string, scope: SeriesMutationScope) => {
+    const transaction = transactions.find(item => item.id === id);
+    const series = transaction?.seriesId
+      ? transactionSeries.find(item => item.id === transaction.seriesId)
+      : undefined;
+    return selectSeriesTargets({ series, transactions, selectedTransactionId: id, scope });
+  };
+
+  const deleteTransactionSeriesScope = (id: string, scope: SeriesMutationScope) => {
+    const selection = previewTransactionSeriesDeletion(id, scope);
+    const selected = transactions.find(item => item.id === id);
+    const series = selected?.seriesId
+      ? transactionSeries.find(item => item.id === selected.seriesId)
+      : undefined;
+    const deletedTransactions = transactions.filter(item => selection.transactionIds.includes(item.id));
+    const previousSeries = series;
+    let updatedSeries: TransactionSeries | undefined;
+
+    markLocalMutation();
+    setTransactions(prev => prev.filter(item => !selection.transactionIds.includes(item.id)));
+    if (series && selection.removeSeries) {
+      setTransactionSeries(prev => prev.filter(item => item.id !== series.id));
+    } else if (series?.kind === 'recurring_expense' && scope === 'current_and_future' && selected) {
+      const previousDay = new Date(`${selected.date}T12:00:00`);
+      previousDay.setDate(previousDay.getDate() - 1);
+      updatedSeries = {
+        ...series,
+        endDate: previousDay.toISOString().slice(0, 10),
+        updatedAt: new Date().toISOString(),
+      };
+      setTransactionSeries(prev => prev.map(item => item.id === series.id ? updatedSeries! : item));
+    }
+
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      void supabaseDb.deleteTransactions(currentUser.id, selection.transactionIds);
+      if (series && selection.removeSeries) void supabaseDb.deleteTransactionSeries(currentUser.id, [series.id]);
+      if (updatedSeries) void supabaseDb.upsertTransactionSeries(currentUser.id, [updatedSeries]);
+    }
+
+    showUndo({
+      message: `${selection.transactionIds.length} lançamento(s) excluído(s)`,
+      onUndo: () => {
+        markLocalMutation();
+        setTransactions(prev => [...deletedTransactions, ...prev]);
+        if (previousSeries) {
+          setTransactionSeries(prev => [previousSeries, ...prev.filter(item => item.id !== previousSeries.id)]);
+        }
+      },
+    });
+  };
+
+  const updateRecurringExpenseAmount = (
+    id: string,
+    amount: number,
+    scope: 'single' | 'current_and_future',
+    overwriteExceptions = false,
+  ) => {
+    const transaction = transactions.find(item => item.id === id);
+    const series = transaction?.seriesId
+      ? transactionSeries.find(item => item.id === transaction.seriesId)
+      : undefined;
+    if (!transaction || series?.kind !== 'recurring_expense') {
+      updateTransaction(id, { amount });
+      return;
+    }
+    const result = applyRecurringAmountChange({
+      series,
+      transactions,
+      selectedTransactionId: id,
+      scope,
+      amount,
+      overwriteExceptions,
+    });
+    markLocalMutation();
+    setTransactionSeries(prev => prev.map(item => item.id === series.id ? result.series : item));
+    setTransactions(result.transactions);
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      void supabaseDb.upsertTransactionSeries(currentUser.id, [result.series]);
+      result.transactions
+        .filter(item => item.seriesId === series.id)
+        .forEach(item => void supabaseDb.upsertTransaction(currentUser.id, item));
+    }
+  };
+
   const toggleTransactionStatus = (id: string) => {
+    markLocalMutation();
     const tx = transactions.find(t => t.id === id);
     if (tx?.debtId) {
       const debt = debts.find(d => d.id === tx.debtId);
@@ -1695,34 +1864,61 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   };
 
-  const reimburseThirdPartyTransaction = (transactionId: string, targetAccountId: string) => {
+  const reimburseThirdPartyTransaction = (
+    transactionId: string,
+    targetAccountId: string,
+    options?: { amount?: number; date?: string },
+  ) => {
     const tx = transactions.find(t => t.id === transactionId);
     if (!tx) return;
 
     const personName = tx.thirdPartyName || 'Terceiro';
-    const acc = accounts.find(a => a.id === targetAccountId) || accounts[0];
+    const acc = accounts.find(a => a.id === targetAccountId);
+    if (!acc) return;
+    const linkedSeries = tx.seriesId
+      ? transactionSeries.find(series => series.id === tx.seriesId && series.kind === 'card_installment')
+      : undefined;
+    const sourceTotal = linkedSeries?.kind === 'card_installment' ? linkedSeries.totalAmount : tx.amount;
+    const alreadyReceived = transactions
+      .filter(item => linkedSeries
+        ? item.reimbursementForSeriesId === linkedSeries.id
+        : item.reimbursementForTransactionId === tx.id)
+      .reduce((sum, item) => sum + item.amount, 0);
+    const remaining = Math.max(0, round2(sourceTotal - alreadyReceived));
+    const amount = round2(options?.amount ?? remaining);
+    if (amount <= 0 || amount > remaining) return;
+    const receivedTotal = round2(alreadyReceived + amount);
+    const reimbursementId = `tx-reimbursement-${linkedSeries?.id || tx.id}-${Math.round(receivedTotal * 100)}`;
+    if (transactions.some(item => item.id === reimbursementId)) return;
 
-    // 1. Mark original transaction as reimbursed
-    setTransactions(prev => prev.map(t => (t.id === transactionId ? { ...t, reimbursed: true } : t)));
-
-    // 2. Add reimbursement Income transaction in account
     const reimbursementTx: Transaction = {
-      id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: reimbursementId,
       description: `Reembolso de ${personName}: ${tx.description}`,
-      amount: tx.amount,
+      amount,
       type: 'income',
-      date: getTodayString(),
-      purchaseDate: getTodayString(),
+      date: options?.date || getTodayString(),
+      purchaseDate: options?.date || getTodayString(),
       categoryId: 'cat-outras-receitas',
       accountId: acc?.id || 'acc-carteira-padrao',
       status: 'completed',
       recurring: false,
       tags: ['Reembolso', 'Terceiros'],
       notes: `Reembolso referente à compra no cartão "${tx.description}" (${personName})`,
+      analyticsExclusionReason: 'reimbursement',
+      reimbursementForTransactionId: linkedSeries ? undefined : tx.id,
+      reimbursementForSeriesId: linkedSeries?.id,
       createdAt: new Date().toISOString(),
     };
 
-    setTransactions(prev => [reimbursementTx, ...prev]);
+    markLocalMutation();
+    setTransactions(prev => [
+      reimbursementTx,
+      ...prev.map(item => (
+        item.id === transactionId || (linkedSeries && item.seriesId === linkedSeries.id)
+          ? { ...item, reimbursed: receivedTotal >= sourceTotal }
+          : item
+      )),
+    ]);
   };
 
   const importTransactions = (txs: Omit<Transaction, 'id' | 'createdAt'>[]) => {
@@ -2288,6 +2484,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       debts: [],
       investments: [],
       transactions: [],
+      transactionSeries: [],
       familyMembers: [
         { id: 'fam-1', name: currentUser?.name || 'Titular', email: currentUser?.email || '', role: 'admin', status: 'active', joinedAt: '2026-01-01' }
       ],
@@ -2299,6 +2496,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setAccounts([DEFAULT_WALLET_ACCOUNT]);
     setCards([]);
     setTransactions([]);
+    setTransactionSeries([]);
     setGoals([]);
     setDebts([]);
     setBudgets([]);
@@ -2367,6 +2565,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     replaceCardsWithPendingSync(demo.cards);
     setCategories(demo.categories);
     setTransactions(demo.transactions);
+    setTransactionSeries([]);
     setBudgets(demo.budgets);
     setGoals(demo.goals);
     setDebts(demo.debts);
@@ -2386,6 +2585,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       debts,
       investments,
       transactions,
+      transactionSeries,
       familyMembers,
       notifications,
       userProfile: user,
@@ -2415,6 +2615,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (Array.isArray(parsed.debts)) setDebts(parsed.debts);
       if (Array.isArray(parsed.investments)) setInvestments(parsed.investments);
       if (Array.isArray(parsed.transactions)) setTransactions(parsed.transactions);
+      if (Array.isArray(parsed.transactionSeries)) setTransactionSeries(parsed.transactionSeries);
       if (Array.isArray(parsed.familyMembers)) setFamilyMembers(parsed.familyMembers);
       if (parsed.userProfile) setUser(prev => ({ ...prev, ...parsed.userProfile }));
 
@@ -2438,11 +2639,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const totalBalance = accounts.reduce((sum, a) => sum + (a.includeInTotal ? a.balance : 0), 0);
 
     const monthlyIncome = filteredTransactions
-      .filter(t => t.type === 'income' && t.status === 'completed')
+      .filter(t => t.type === 'income' && t.status === 'completed' && isIncludedInPersonalAnalytics(t))
       .reduce((sum, t) => sum + t.amount, 0);
 
     const monthlyExpense = filteredTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed')
+      .filter(t => t.type === 'expense' && t.status === 'completed' && isIncludedInPersonalAnalytics(t))
       .reduce((sum, t) => sum + t.amount, 0);
 
     const monthlySavings = monthlyIncome - monthlyExpense;
@@ -2502,10 +2703,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         deleteSubcategory,
         resetCategoriesToDefault,
         transactions,
+        transactionSeries,
         addTransaction,
+        addTransactionSeries,
         updateTransaction,
         deleteTransaction,
         deleteMultipleTransactions,
+        previewTransactionSeriesDeletion,
+        deleteTransactionSeriesScope,
+        updateRecurringExpenseAmount,
         toggleTransactionStatus,
         reimburseThirdPartyTransaction,
         importTransactions,

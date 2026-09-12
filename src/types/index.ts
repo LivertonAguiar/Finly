@@ -43,6 +43,59 @@ export interface CreditCard {
   bankId?: string;
 }
 
+export type TransactionSeriesKind = 'card_installment' | 'recurring_expense';
+export type SupportedRecurrenceFrequency = 'weekly' | 'monthly' | 'yearly';
+export type AnalyticsExclusionReason = 'manual' | 'third_party' | 'reimbursement';
+
+export interface TransactionSeriesBase {
+  id: string;
+  kind: TransactionSeriesKind;
+  description: string;
+  categoryId: string;
+  subcategoryId?: string;
+  startDate: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CardInstallmentSeries extends TransactionSeriesBase {
+  kind: 'card_installment';
+  cardId: string;
+  purchaseDate: string;
+  firstInvoiceMonth: string;
+  totalAmount: number;
+  totalInstallments: number;
+  firstTrackedInstallment: number;
+  amountInputMode: 'total' | 'per_installment';
+}
+
+export interface RecurringExpenseSeries extends TransactionSeriesBase {
+  kind: 'recurring_expense';
+  accountId: string;
+  frequency: SupportedRecurrenceFrequency;
+  firstDueDate?: string;
+  defaultAmount: number;
+  tags: string[];
+  notes?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  ignored: boolean;
+  analyticsExclusionReason?: AnalyticsExclusionReason;
+  reminder?: {
+    enabled: boolean;
+    reminderTime?: string;
+    daysBefore?: number;
+  };
+  amountRules: Array<{
+    effectiveFrom: string;
+    amount: number;
+  }>;
+  needsReview?: boolean;
+}
+
+export type TransactionSeries = CardInstallmentSeries | RecurringExpenseSeries;
+
 export interface Transaction {
   id: string;
   description: string;
@@ -57,6 +110,12 @@ export interface Transaction {
   status: TransactionStatus;
   recurring: boolean;
   recurrenceFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  seriesId?: string;
+  seriesSequence?: number;
+  occurrenceKey?: string;
+  isSeriesException?: boolean;
+  recurringNeedsReview?: boolean;
+  analyticsExclusionReason?: AnalyticsExclusionReason;
   installments?: {
     current: number;
     total: number;
@@ -82,6 +141,8 @@ export interface Transaction {
   isThirdParty?: boolean; // Compra feita para terceiro / cartão emprestado
   thirdPartyName?: string; // Nome da pessoa para quem comprou (ex: "Carlos", "Mãe")
   reimbursed?: boolean; // Se o terceiro já pagou/reembolsou o valor
+  reimbursementForTransactionId?: string;
+  reimbursementForSeriesId?: string;
   debtBreakdown?: DebtInstallmentBreakdown;
   createdAt: string;
 }

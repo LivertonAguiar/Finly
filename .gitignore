@@ -44,3 +44,6 @@ server/data/stores/*
 !server/data/stores/usr-demo-financeiro.json
 server/data/users.json
 server/data/verification_codes.json
+
+# Supabase CLI temp
+supabase/.temp/

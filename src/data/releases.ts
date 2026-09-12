@@ -36,11 +36,48 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-11';
+export const CURRENT_BUILD_DATE = '2026-09-12';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-12',
+    summary: 'Séries explícitas de cartão de crédito e despesas fixas recorrentes: suporte a compras em andamento (05/12), Fatura de Destino autoritativa, rateio exato de centavos, horizonte de 12 meses, transferências unificadas e desacoplamento de impacto analítico vs financeiro.',
+    highlights: [
+      {
+        title: 'Compras Parceladas em Andamento (05 de 12)',
+        description: 'Permite cadastrar compras já iniciadas gerando lançamentos exclusivamente da parcela aberta em diante, mantendo as parcelas passadas como histórico pago sintetizado na timeline sem distorcer meses anteriores.',
+        type: 'feature',
+      },
+      {
+        title: 'Fatura de Destino e Rateio Exato de Centavos',
+        description: 'A fatura de destino selecionada governa com autoridade absoluta a competência da primeira parcela controlada. O total da compra fecha com precisão matemática, alocando centavos residuais na última parcela.',
+        type: 'improvement',
+      },
+      {
+        title: 'Despesas Fixas com Variação Mensal de Valor',
+        description: 'Modelo de séries com horizonte materializado de 12 meses (semanal, mensal e anual). Permite editar "Somente este mês" criando exceção ou "Este e os próximos" gerando regra futura.',
+        type: 'feature',
+      },
+      {
+        title: 'Exclusão Cirúrgica por Escopo',
+        description: 'Modal inteligente para excluir "Somente esta", "Esta e as futuras" ou "Série inteira" (com dupla confirmação ao remover séries com histórico ou parcelas pagas).',
+        type: 'feature',
+      },
+      {
+        title: 'Transferência Unificada e Agendamento Futuro',
+        description: 'Formulário limpo e direto com validações, agendamento de transferências para datas futuras sem debitar saldo imediatamente e alerta suave de saldo insuficiente.',
+        type: 'improvement',
+      },
+      {
+        title: 'Reembolso Parcial de Terceiros',
+        description: 'Registro de recebimentos parciais ou integrais com escolha de conta e data, mantendo a obrigação real da fatura e isolando o valor dos relatórios pessoais.',
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    version: '1.1.60',
     releaseDate: '2026-09-11',
     summary: 'Diagnóstico analítico de financiamentos imobiliários: Eficiência da Parcela (% amortização), indicador de variação do saldo (TR vs Amortização) e auditoria matemática centavo a centavo.',
     highlights: [

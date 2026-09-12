@@ -28,6 +28,7 @@ import { Transaction, TransactionType, TransactionStatus } from '../../types';
 import { formatCurrency, formatLocalDateISO, getTodayString, round2 } from '../../utils/formatters';
 import { CardBrandLogo } from '../../utils/bankLogos';
 import { allocateCardTransaction } from '../../utils/invoiceCalculator';
+export { TransactionModal } from './TransactionModalV2';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ interface TransactionModalProps {
   onOpenNewCard?: () => void;
 }
 
-export const TransactionModal: React.FC<TransactionModalProps> = ({
+const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
   isOpen,
   onClose,
   initialType = 'expense',

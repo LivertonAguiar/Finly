@@ -39,6 +39,8 @@ import { BankLogo } from '../../utils/bankLogos';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from './TransactionModal';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { SeriesDeleteModal } from './SeriesDeleteModal';
+import { ReimbursementModal } from './ReimbursementModal';
 import { downloadCSV } from '../../utils/reportExportService';
 import { exportTransactionsToExcel } from '../../utils/excelExportService';
 
@@ -80,6 +82,8 @@ export const TransactionsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<Transaction | null>(null);
+  const [reimbursementCandidate, setReimbursementCandidate] = useState<Transaction | null>(null);
   const [modalInitialType, setModalInitialType] = useState<TransactionType>('expense');
   const [initialPaymentMethod, setInitialPaymentMethod] = useState<'account' | 'card'>('account');
   const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
@@ -265,7 +269,9 @@ export const TransactionsPage: React.FC = () => {
 
         // Account filter
         if (filters.selectedAccountIds && filters.selectedAccountIds.length > 0) {
-          if (!t.accountId || !filters.selectedAccountIds.includes(t.accountId)) return false;
+          const matchesSource = Boolean(t.accountId && filters.selectedAccountIds.includes(t.accountId));
+          const matchesTarget = Boolean(t.targetAccountId && filters.selectedAccountIds.includes(t.targetAccountId));
+          if (!matchesSource && !matchesTarget) return false;
         }
 
         // Card filter
@@ -389,6 +395,8 @@ export const TransactionsPage: React.FC = () => {
 
   
   const handleDeleteTransaction = async (tx: Transaction) => {
+    setDeleteCandidate(tx);
+    return;
     const ok = await confirm({
       title: 'Excluir Lançamento',
       message: `Deseja realmente excluir "${tx.description}" no valor de ${formatCurrency(tx.amount, user.currency)}?`,
@@ -852,6 +860,8 @@ export const TransactionsPage: React.FC = () => {
                             type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
+                              setReimbursementCandidate(t);
+                              return;
                               const ok = await confirm({
                                 title: 'Registrar Reembolso',
                                 message: `Confirmar que ${t.thirdPartyName || 'a pessoa'} reembolsou o valor de ${formatCurrency(t.amount, user.currency)}? Será criada uma receita na sua conta bancária.`,
@@ -1049,6 +1059,8 @@ export const TransactionsPage: React.FC = () => {
           }}
         />
       )}
+      <SeriesDeleteModal transaction={deleteCandidate} onClose={() => setDeleteCandidate(null)} />
+      <ReimbursementModal transaction={reimbursementCandidate} onClose={() => setReimbursementCandidate(null)} />
     </div>
   );
 };

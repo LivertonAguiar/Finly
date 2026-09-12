@@ -692,6 +692,15 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
 
       {/* Transfer Modal */}
       {isTransferOpen && (
+        <TransactionModal
+          isOpen={isTransferOpen}
+          onClose={() => setIsTransferOpen(false)}
+          initialType="transfer"
+          initialAccountId={fromAccountId}
+          initialPaymentMethod="account"
+        />
+      )}
+      {false && isTransferOpen && (
         <Modal isOpen={isTransferOpen} onClose={() => setIsTransferOpen(false)} title="Nova Transferência entre Contas">
           <form onSubmit={handleTransferSubmit} className="space-y-4">
             <div>

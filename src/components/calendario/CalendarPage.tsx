@@ -26,6 +26,7 @@ import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
+import { SeriesDeleteModal } from '../transactions/SeriesDeleteModal';
 
 export const CalendarPage: React.FC = () => {
   const { confirm } = useConfirm();
@@ -57,6 +58,7 @@ export const CalendarPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<Transaction | null>(null);
 
   // Month navigation
   const viewDate = useMemo(() => {
@@ -486,6 +488,8 @@ export const CalendarPage: React.FC = () => {
                               </button>
                               <button
                                 onClick={async () => {
+                                  setDeleteCandidate(t);
+                                  return;
                                   const ok = await confirm({
                                     title: 'Excluir Lançamento',
                                     message: `Deseja excluir "${t.description}"?`,
@@ -493,7 +497,7 @@ export const CalendarPage: React.FC = () => {
                                     type: 'danger'
                                   });
                                   if (ok) {
-                                    deleteTransaction(t.id);
+                                    setDeleteCandidate(t);
                                   }
                                 }}
                                 className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
@@ -559,6 +563,7 @@ export const CalendarPage: React.FC = () => {
           }}
         />
       )}
+      <SeriesDeleteModal transaction={deleteCandidate} onClose={() => setDeleteCandidate(null)} />
     </div>
   );
 };

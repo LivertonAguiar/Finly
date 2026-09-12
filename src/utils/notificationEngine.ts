@@ -3,6 +3,121 @@
  * Supports Capacitor Local Notifications, browser notifications, in-app alerts, audio chimes, and scheduled check triggers.
  */
 import { LocalNotifications } from '@capacitor/local-notifications';
+import type { CreditCard, Transaction } from '../types';
+
+export interface FinancialNotificationCandidate {
+  key: string;
+  kind: 'pending_bill' | 'card_invoice';
+  title: string;
+  body: string;
+  amount: number;
+  entityId: string;
+  dueDate: string;
+}
+
+type NotificationSelectionPreferences = Pick<
+  NotificationPreferences,
+  'pendingBills' | 'cardInvoices' | 'dueDaysAhead' | 'notifyTime'
+>;
+
+const localDateParts = (value: string) => {
+  const [datePart, timePart = '00:00:00'] = value.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  return { year, month, day, hour: hour || 0, minute: minute || 0 };
+};
+
+const localDayNumber = (value: string) => {
+  const { year, month, day } = localDateParts(value);
+  return Date.UTC(year, month - 1, day) / 86400000;
+};
+
+const reachedTime = (now: string, targetTime: string) => {
+  const current = localDateParts(now);
+  const [targetHour, targetMinute] = targetTime.split(':').map(Number);
+  return current.hour * 60 + current.minute >= targetHour * 60 + targetMinute;
+};
+
+export const selectFinancialNotificationCandidates = ({
+  transactions,
+  cards,
+  now,
+  source,
+  preferences,
+}: {
+  transactions: Transaction[];
+  cards: CreditCard[];
+  now: string;
+  source: 'boot' | 'resume' | 'scheduler' | 'mutation';
+  preferences: NotificationSelectionPreferences;
+}): FinancialNotificationCandidate[] => {
+  if (source === 'mutation') return [];
+  const today = now.slice(0, 10);
+  const candidates: FinancialNotificationCandidate[] = [];
+
+  if (preferences.pendingBills) {
+    transactions.forEach(transaction => {
+      if (
+        transaction.type !== 'expense' || transaction.cardId || transaction.status !== 'pending' ||
+        transaction.ignored || !transaction.reminder?.enabled || !transaction.dueDate
+      ) return;
+      const daysBefore = transaction.reminder.daysBefore ?? preferences.dueDaysAhead;
+      const daysUntilDue = localDayNumber(transaction.dueDate) - localDayNumber(today);
+      const notificationTime = transaction.reminder.reminderTime ?? preferences.notifyTime;
+      if (daysUntilDue < 0 || daysUntilDue > daysBefore || !reachedTime(now, notificationTime)) return;
+      candidates.push({
+        key: `pending_bill:${transaction.id}:${transaction.dueDate}:${daysBefore}`,
+        kind: 'pending_bill',
+        title: 'Lembrete de conta a pagar',
+        body: daysUntilDue === 0
+          ? `A conta "${transaction.description}" vence hoje.`
+          : `A conta "${transaction.description}" vence em ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'}.`,
+        amount: transaction.amount,
+        entityId: transaction.id,
+        dueDate: transaction.dueDate,
+      });
+    });
+  }
+
+  if (preferences.cardInvoices) {
+    const groups = new Map<string, { cardId: string; invoiceMonth: string; dueDate: string; amount: number }>();
+    transactions.forEach(transaction => {
+      if (
+        transaction.type !== 'expense' || !transaction.cardId || !transaction.invoiceMonth ||
+        !transaction.dueDate || transaction.status === 'completed'
+      ) return;
+      const key = `${transaction.cardId}:${transaction.invoiceMonth}`;
+      const existing = groups.get(key);
+      groups.set(key, {
+        cardId: transaction.cardId,
+        invoiceMonth: transaction.invoiceMonth,
+        dueDate: transaction.dueDate,
+        amount: (existing?.amount ?? 0) + transaction.amount,
+      });
+    });
+    groups.forEach(group => {
+      const daysUntilDue = localDayNumber(group.dueDate) - localDayNumber(today);
+      if (
+        daysUntilDue < 0 || daysUntilDue > preferences.dueDaysAhead ||
+        !reachedTime(now, preferences.notifyTime)
+      ) return;
+      const cardName = cards.find(card => card.id === group.cardId)?.name ?? 'cartão';
+      candidates.push({
+        key: `card_invoice:${group.cardId}:${group.invoiceMonth}:${group.dueDate}:${preferences.dueDaysAhead}`,
+        kind: 'card_invoice',
+        title: 'Vencimento de fatura',
+        body: daysUntilDue === 0
+          ? `A fatura do cartão ${cardName} vence hoje.`
+          : `A fatura do cartão ${cardName} vence em ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'}.`,
+        amount: Math.round(group.amount * 100) / 100,
+        entityId: `${group.cardId}:${group.invoiceMonth}`,
+        dueDate: group.dueDate,
+      });
+    });
+  }
+
+  return candidates;
+};
 
 export interface NotificationPreferences {
   enabled: boolean;
@@ -349,11 +464,11 @@ export async function sendTestNotification(): Promise<boolean> {
  * Checks financial data and triggers automated alerts based on user selections
  */
 export function checkAndTriggerScheduledAlerts(data: {
-  transactions: any[];
-  cards: any[];
+  transactions: Transaction[];
+  cards: CreditCard[];
   budgets: any[];
   goals: any[];
-}) {
+}, source: 'boot' | 'resume' | 'scheduler' | 'mutation' = 'scheduler') {
   if (typeof window === 'undefined') return;
 
   const prefs = getStoredNotificationPrefs();
@@ -377,8 +492,27 @@ export function checkAndTriggerScheduledAlerts(data: {
     } catch (e) {}
   };
 
+  const runtimeNow = new Date();
+  const localToday = `${runtimeNow.getFullYear()}-${String(runtimeNow.getMonth() + 1).padStart(2, '0')}-${String(runtimeNow.getDate()).padStart(2, '0')}`;
+  const localNow = `${localToday}T${String(runtimeNow.getHours()).padStart(2, '0')}:${String(runtimeNow.getMinutes()).padStart(2, '0')}:00`;
+  const candidates = selectFinancialNotificationCandidates({
+    transactions: data.transactions || [],
+    cards: data.cards || [],
+    now: localNow,
+    source,
+    preferences: prefs,
+  });
+  candidates.forEach(candidate => {
+    if (sentAlertsLog[candidate.key]) return;
+    void sendLocalNotification(candidate.title, { body: candidate.body, tag: candidate.key });
+    sentAlertsLog[candidate.key] = localToday;
+    try {
+      localStorage.setItem(SENT_ALERTS_KEY, JSON.stringify(sentAlertsLog));
+    } catch (e) {}
+  });
+
   // 1. Faturas de Cartão de Crédito
-  if (prefs.cardInvoices && data.cards && Array.isArray(data.cards)) {
+  if (false && prefs.cardInvoices && data.cards && Array.isArray(data.cards)) {
     const today = new Date();
     const currentDay = today.getDate();
     const currentMonthPrefix = todayStr.substring(0, 7);
@@ -416,7 +550,7 @@ export function checkAndTriggerScheduledAlerts(data: {
   }
 
   // 2. Despesas Pendentes / Contas a Pagar
-  if (prefs.pendingBills && data.transactions) {
+  if (false && prefs.pendingBills && data.transactions) {
     const pendingExpenses = data.transactions.filter(
       t => t.type === 'expense' && t.status === 'pending' && !t.ignored
     );

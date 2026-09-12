@@ -884,6 +884,7 @@ app.delete('/api/user/store', authenticateToken, async (req, res) => {
       debts: [],
       investments: [],
       transactions: [],
+      transactionSeries: [],
       familyMembers: [],
       notifications: [],
       _serverTimestamp: new Date().toISOString(),

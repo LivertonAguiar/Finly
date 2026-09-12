@@ -35,6 +35,9 @@ import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { Modal } from '../ui/Modal';
 import { exportInvoiceCSV } from '../../utils/reportExportService';
 import { saveOrShareFile } from '../../utils/fileDownloadHelper';
+import { SeriesDeleteModal } from './SeriesDeleteModal';
+import { ReimbursementModal } from './ReimbursementModal';
+import { buildCardInstallmentTimeline } from '../../utils/cardInstallmentSeries';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -57,12 +60,15 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     cards,
     debts,
     transactions,
+    transactionSeries,
     deleteTransaction,
     toggleTransactionStatus,
     reimburseThirdPartyTransaction,
     user,
   } = useFinancial();
   const { confirm } = useConfirm();
+  const [deleteCandidate, setDeleteCandidate] = React.useState<Transaction | null>(null);
+  const [reimbursementCandidate, setReimbursementCandidate] = React.useState<Transaction | null>(null);
 
   // Intercept Android back button & swipe gestures
   useBackButton(isOpen && !!transaction, onClose);
@@ -74,6 +80,15 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const isTransfer = transaction.type === 'transfer';
   const isCompleted = transaction.status === 'completed';
   const isCard = !!transaction.cardId;
+  const reimbursementSeries = transaction.seriesId
+    ? transactionSeries.find(series => series.id === transaction.seriesId && series.kind === 'card_installment')
+    : undefined;
+  const reimbursementReceived = transactions
+    .filter(item => reimbursementSeries
+      ? item.reimbursementForSeriesId === reimbursementSeries.id
+      : item.reimbursementForTransactionId === transaction.id)
+    .reduce((sum, item) => sum + item.amount, 0);
+  const isPartiallyReimbursed = reimbursementReceived > 0 && !transaction.reimbursed;
 
   // Category lookup
   const resolved = resolveCategory(categories, transaction.categoryId, transaction.subcategoryId, transaction.type);
@@ -175,6 +190,36 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     // Extract base description (without "(1/12)")
     const baseDesc = transaction.description.replace(/\s*\(\d+\/\d+\)/, '').trim();
 
+    const explicitSeries = transaction.seriesId
+      ? transactionSeries.find(series => series.id === transaction.seriesId && series.kind === 'card_installment')
+      : undefined;
+    const explicitCard = cards.find(item => item.id === transaction.cardId);
+    if (explicitSeries?.kind === 'card_installment' && explicitCard) {
+      const related = transactions
+        .filter(item => item.seriesId === explicitSeries.id)
+        .sort((a, b) => (a.seriesSequence || 0) - (b.seriesSequence || 0));
+      const timeline = buildCardInstallmentTimeline({
+        series: explicitSeries,
+        transactions: related,
+        cardClosingDay: explicitCard.closingDay,
+        cardDueDay: explicitCard.dueDay,
+      });
+      const paidAmount = timeline
+        .filter(item => item.status === 'historical_paid' || item.status === 'completed')
+        .reduce((sum, item) => sum + item.amount, 0);
+      return {
+        baseDescription: explicitSeries.description,
+        related,
+        timeline,
+        totalAmount: explicitSeries.totalAmount,
+        paidAmount,
+        historicalPaidCount: explicitSeries.firstTrackedInstallment - 1,
+        currentInstallment: transaction.seriesSequence || explicitSeries.firstTrackedInstallment,
+        totalInstallments: explicitSeries.totalInstallments,
+        progressPercent: explicitSeries.totalAmount > 0 ? (paidAmount / explicitSeries.totalAmount) * 100 : 0,
+      };
+    }
+
     const related = transactions
       .filter(
         t =>
@@ -206,10 +251,23 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       currentInstallment,
       totalInstallments,
       progressPercent: totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0,
+      historicalPaidCount: 0,
+      timeline: related.map((item, index) => ({
+        sequence: item.installments?.current || index + 1,
+        total: totalInstallments,
+        amount: item.amount,
+        date: item.date,
+        invoiceMonth: item.invoiceMonth || item.date.slice(0, 7),
+        dueDate: item.dueDate || item.date,
+        status: item.status,
+        isCurrent: item.id === transaction.id,
+        transactionId: item.id,
+      })),
     };
-  }, [transaction, transactions]);
+  }, [transaction, transactions, transactionSeries, cards]);
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Lançamento" maxWidth="lg">
       <div className="space-y-5 animate-in fade-in">
         {/* ========================================================================= */}
@@ -319,30 +377,17 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   <CheckCircle2 className="w-3.5 h-3.5" /> Reembolsado
                 </span>
               ) : (
+                <div className="flex items-center gap-2">
+                {isPartiallyReimbursed && <span className="text-[10px] font-black text-amber-600">Parcial: {formatCurrency(reimbursementReceived, user.currency)}</span>}
                 <button
                   type="button"
-                  onClick={async () => {
-                    const ok = await confirm({
-                      title: 'Registrar Reembolso',
-                      message: `Confirmar recebimento do reembolso de ${formatCurrency(
-                        transaction.amount,
-                        user.currency
-                      )} de ${transaction.thirdPartyName || 'a pessoa'}? Será criada uma receita na sua conta.`,
-                      confirmText: 'Registrar Recebimento',
-                      type: 'info',
-                    });
-                    if (ok) {
-                      reimburseThirdPartyTransaction(
-                        transaction.id,
-                        accounts[0]?.id || 'acc-carteira-padrao'
-                      );
-                    }
-                  }}
+                  onClick={() => setReimbursementCandidate(transaction)}
                   className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />
                   <span>Registrar Reembolso</span>
                 </button>
+                </div>
               )}
             </div>
           </div>
@@ -605,24 +650,29 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   Restante: <strong className="text-amber-500">{formatCurrency(installmentSeriesData.totalAmount - installmentSeriesData.paidAmount, user.currency, !user.showValues)}</strong>
                 </span>
               </div>
+              {installmentSeriesData.historicalPaidCount > 0 && (
+                <p className="text-[10px] font-bold text-amber-600">
+                  {installmentSeriesData.historicalPaidCount} paga(s) antes do Finly — apenas no progresso, sem impacto financeiro.
+                </p>
+              )}
             </div>
 
             {/* Installments timeline chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1">
-              {installmentSeriesData.related.map((inst, idx) => (
+              {installmentSeriesData.timeline.map((inst) => (
                 <span
-                  key={inst.id}
+                  key={`${inst.sequence}-${inst.invoiceMonth}`}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 border ${
-                    inst.status === 'completed'
+                    inst.status === 'completed' || inst.status === 'historical_paid'
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                      : inst.id === transaction.id
+                      : inst.transactionId === transaction.id
                       ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-transparent'
                   }`}
-                  title={`${inst.description} - ${formatCurrency(inst.amount, user.currency)} (${formatDate(inst.date)})`}
+                  title={`${inst.status === 'historical_paid' ? 'Paga antes do Finly' : inst.status === 'completed' ? 'Paga' : inst.isCurrent ? 'Aberta' : 'Futura'} — ${formatCurrency(inst.amount, user.currency)} — fatura ${inst.invoiceMonth}`}
                 >
-                  {inst.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
-                  <span>{idx + 1}ª ({inst.date.substring(5, 7)}/{inst.date.substring(2, 4)})</span>
+                  {(inst.status === 'completed' || inst.status === 'historical_paid') && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                  <span>{inst.sequence}/{inst.total} • {inst.status === 'historical_paid' ? 'Antes do Finly' : inst.isCurrent ? 'Aberta' : inst.status === 'completed' ? 'Paga' : 'Futura'}</span>
                 </span>
               ))}
             </div>
@@ -753,21 +803,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
           <button
             type="button"
-            onClick={async () => {
-              const ok = await confirm({
-                title: 'Excluir Lançamento',
-                message: `Deseja realmente excluir "${transaction.description}" de ${formatCurrency(
-                  transaction.amount,
-                  user.currency
-                )}? Você poderá desfazer nos primeiros segundos.`,
-                confirmText: 'Excluir',
-                type: 'danger',
-              });
-              if (ok) {
-                deleteTransaction(transaction.id);
-                onClose();
-              }
-            }}
+            onClick={() => setDeleteCandidate(transaction)}
             className="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
@@ -804,5 +840,12 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         </div>
       </div>
     </Modal>
+    <SeriesDeleteModal
+      transaction={deleteCandidate}
+      onClose={() => setDeleteCandidate(null)}
+      afterDelete={onClose}
+    />
+    <ReimbursementModal transaction={reimbursementCandidate} onClose={() => setReimbursementCandidate(null)} />
+    </>
   );
 };

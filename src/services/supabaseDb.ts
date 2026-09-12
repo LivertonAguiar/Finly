@@ -11,6 +11,7 @@ import {
   UserProfile,
   FamilyMember,
   NotificationItem,
+  TransactionSeries,
 } from '../types';
 
 export interface UserStoreData {
@@ -22,6 +23,7 @@ export interface UserStoreData {
   debts: Debt[];
   investments: InvestmentAsset[];
   transactions: Transaction[];
+  transactionSeries: TransactionSeries[];
   familyMembers: FamilyMember[];
   notifications: NotificationItem[];
   userProfile: UserProfile;
@@ -51,6 +53,7 @@ export class SupabaseDbService {
   private isStoreSaveRunning = false;
   private storeSaveDrainWaiters: Array<() => void> = [];
   private cardMutationTail: Promise<void> = Promise.resolve();
+  private transactionSeriesSupported = true;
 
   /**
    * Helper to validate or resolve UUID string for Postgres user_id columns
@@ -81,6 +84,7 @@ export class SupabaseDbService {
         cardsRes,
         categoriesRes,
         transactionsRes,
+        transactionSeriesRes,
         budgetsRes,
         goalsRes,
         debtsRes,
@@ -93,6 +97,7 @@ export class SupabaseDbService {
         supabase.from('credit_cards').select('*').eq('user_id', targetUserId),
         supabase.from('categories').select('*').eq('user_id', targetUserId),
         supabase.from('transactions').select('*').eq('user_id', targetUserId).order('date', { ascending: false }),
+        supabase.from('transaction_series').select('*').eq('user_id', targetUserId),
         supabase.from('budgets').select('*').eq('user_id', targetUserId),
         supabase.from('goals').select('*').eq('user_id', targetUserId),
         supabase.from('debts').select('*').eq('user_id', targetUserId),
@@ -104,12 +109,18 @@ export class SupabaseDbService {
       // A snapshot is safe only when every table was read successfully.
       // Treating a failed query as [] would overwrite valid local data and
       // could propagate that empty collection back to the database.
+      const isMissingSeriesTable = Boolean(
+        transactionSeriesRes.error &&
+        (transactionSeriesRes.error.code === 'PGRST205' || transactionSeriesRes.error.code === '42P01')
+      );
+      this.transactionSeriesSupported = !isMissingSeriesTable;
       const failedReads = [
         { table: 'profiles', response: profileRes },
         { table: 'accounts', response: accountsRes },
         { table: 'credit_cards', response: cardsRes },
         { table: 'categories', response: categoriesRes },
         { table: 'transactions', response: transactionsRes },
+        ...(isMissingSeriesTable ? [] : [{ table: 'transaction_series', response: transactionSeriesRes }]),
         { table: 'budgets', response: budgetsRes },
         { table: 'goals', response: goalsRes },
         { table: 'debts', response: debtsRes },
@@ -229,8 +240,28 @@ export class SupabaseDbService {
         isThirdParty: Boolean(r.is_third_party),
         thirdPartyName: r.third_party_name,
         reimbursed: Boolean(r.reimbursed),
+        seriesId: r.series_id,
+        seriesSequence: r.series_sequence,
+        occurrenceKey: r.occurrence_key,
+        isSeriesException: Boolean(r.is_series_exception),
+        analyticsExclusionReason: r.analytics_exclusion_reason,
+        reimbursementForTransactionId: r.reimbursement_for_transaction_id,
+        reimbursementForSeriesId: r.reimbursement_for_series_id,
         createdAt: r.created_at,
       }));
+
+      const transactionSeries: TransactionSeries[] = (transactionSeriesRes.data || []).map(r => ({
+        ...(r.payload || {}),
+        id: r.id,
+        kind: r.kind,
+        description: r.description,
+        categoryId: r.category_id,
+        subcategoryId: r.subcategory_id,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      })) as TransactionSeries[];
 
       const budgets: Budget[] = (budgetsRes.data || []).map(r => ({
         id: r.id,
@@ -324,6 +355,7 @@ export class SupabaseDbService {
         cards,
         categories,
         transactions,
+        transactionSeries,
         budgets,
         goals,
         debts,
@@ -515,17 +547,57 @@ export class SupabaseDbService {
           is_third_party: Boolean(t.isThirdParty),
           third_party_name: t.thirdPartyName,
           reimbursed: Boolean(t.reimbursed),
+          ...(this.transactionSeriesSupported ? {
+            series_id: t.seriesId,
+            series_sequence: t.seriesSequence,
+            occurrence_key: t.occurrenceKey,
+            is_series_exception: Boolean(t.isSeriesException),
+            analytics_exclusion_reason: t.analyticsExclusionReason,
+            reimbursement_for_transaction_id: t.reimbursementForTransactionId,
+            reimbursement_for_series_id: t.reimbursementForSeriesId,
+          } : {}),
           created_at: t.createdAt || new Date().toISOString(),
           debt_id: t.debtId || null,
           debt_installment_number: t.debtInstallmentNumber ?? null,
         }));
-        await supabase.from('transactions').upsert(rows);
+        const { error } = await supabase.from('transactions').upsert(rows);
+        if (error) throw error;
       } else {
         // User cleaned transactions: ensure Supabase transactions are fully deleted
         await supabase.from('transactions').delete().eq('user_id', targetUserId);
       }
 
-      // 6. Budgets Upsert
+      // 6. Transaction series templates. Reconcile removed rows explicitly so
+      // deleted series cannot reappear after a delayed pull.
+      if (this.transactionSeriesSupported && store.transactionSeries.length > 0) {
+        const rows = store.transactionSeries.map(series => ({
+          id: series.id,
+          user_id: targetUserId,
+          kind: series.kind,
+          description: series.description,
+          category_id: series.categoryId,
+          subcategory_id: series.subcategoryId,
+          start_date: series.startDate,
+          end_date: series.endDate,
+          payload: series,
+          created_at: series.createdAt,
+          updated_at: series.updatedAt,
+        }));
+        const { error: seriesUpsertError } = await supabase.from('transaction_series').upsert(rows);
+        if (seriesUpsertError) throw seriesUpsertError;
+        const ids = store.transactionSeries.map(series => series.id);
+        const { error: seriesDeleteError } = await supabase
+          .from('transaction_series')
+          .delete()
+          .eq('user_id', targetUserId)
+          .not('id', 'in', `(${ids.map(id => `"${id}"`).join(',')})`);
+        if (seriesDeleteError) throw seriesDeleteError;
+      } else if (this.transactionSeriesSupported) {
+        const { error } = await supabase.from('transaction_series').delete().eq('user_id', targetUserId);
+        if (error) throw error;
+      }
+
+      // 7. Budgets Upsert
       if (store.budgets && store.budgets.length > 0) {
         const rows = store.budgets.map(b => ({
           id: b.id,
@@ -651,6 +723,15 @@ export class SupabaseDbService {
         is_third_party: Boolean(t.isThirdParty),
         third_party_name: t.thirdPartyName,
         reimbursed: Boolean(t.reimbursed),
+        ...(this.transactionSeriesSupported ? {
+          series_id: t.seriesId,
+          series_sequence: t.seriesSequence,
+          occurrence_key: t.occurrenceKey,
+          is_series_exception: Boolean(t.isSeriesException),
+          analytics_exclusion_reason: t.analyticsExclusionReason,
+          reimbursement_for_transaction_id: t.reimbursementForTransactionId,
+          reimbursement_for_series_id: t.reimbursementForSeriesId,
+        } : {}),
         created_at: t.createdAt || new Date().toISOString(),
       });
       return !error;
@@ -669,6 +750,47 @@ export class SupabaseDbService {
         .from('transactions')
         .delete()
         .eq('user_id', userId)
+        .in('id', ids);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  public async upsertTransactionSeries(userId: string, series: TransactionSeries[]): Promise<boolean> {
+    if (!this.transactionSeriesSupported || !isSupabaseConfigured() || !userId || series.length === 0) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+    try {
+      const rows = series.map(item => ({
+        id: item.id,
+        user_id: targetUserId,
+        kind: item.kind,
+        description: item.description,
+        category_id: item.categoryId,
+        subcategory_id: item.subcategoryId,
+        start_date: item.startDate,
+        end_date: item.endDate,
+        payload: item,
+        created_at: item.createdAt,
+        updated_at: item.updatedAt,
+      }));
+      const { error } = await supabase.from('transaction_series').upsert(rows);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  public async deleteTransactionSeries(userId: string, ids: string[]): Promise<boolean> {
+    if (!this.transactionSeriesSupported || !isSupabaseConfigured() || !userId || ids.length === 0) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+    try {
+      const { error } = await supabase
+        .from('transaction_series')
+        .delete()
+        .eq('user_id', targetUserId)
         .in('id', ids);
       return !error;
     } catch {
@@ -815,6 +937,7 @@ export class SupabaseDbService {
       await this.waitForCardMutationDrain();
       const tables = [
         'transactions',
+        ...(this.transactionSeriesSupported ? ['transaction_series'] : []),
         'credit_cards',
         'budgets',
         'goals',
