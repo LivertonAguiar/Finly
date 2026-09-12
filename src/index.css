@@ -389,6 +389,89 @@ html.dark .dark\:bg-slate-900 {
 }
 
 /* ========================================================================= */
+/* DARK MODE TYPOGRAPHY CONTRAST ELEVATION (WCAG AAA ENHANCED READABILITY)   */
+/* Elevates muted/secondary text for crisp, sharp contrast across all dark  */
+/* themes, preserving pure white (#FFFFFF) for titles and primary metrics.  */
+/* ========================================================================= */
+
+/* Secondary & Muted text classes boosted across all 9 dark themes */
+html.dark .text-slate-400,
+html.dark .dark\:text-slate-400,
+html.dark .text-gray-400,
+html.dark .dark\:text-gray-400,
+html.dark .text-zinc-400,
+html.dark .dark\:text-zinc-400 {
+  color: #CBD5E1 !important; /* Elevado de #94A3B8 para #CBD5E1 (slate-300 claro e luminoso) */
+}
+
+html.dark .text-slate-500,
+html.dark .dark\:text-slate-500,
+html.dark .text-gray-500,
+html.dark .dark\:text-gray-500,
+html.dark .text-zinc-500,
+html.dark .dark\:text-zinc-500 {
+  color: #94A3B8 !important; /* Elevado de #64748B para #94A3B8 (slate-400 nítido) */
+}
+
+html.dark .text-slate-600,
+html.dark .dark\:text-slate-600,
+html.dark .text-gray-600,
+html.dark .dark\:text-gray-600,
+html.dark .text-zinc-600,
+html.dark .dark\:text-zinc-600 {
+  color: #94A3B8 !important; /* Elevado para nunca ficar invisível/apagado */
+}
+
+/* Semitransparent white text utilities */
+html.dark .text-white\/40,
+html.dark .text-white\/50,
+html.dark .dark\:text-white\/40,
+html.dark .dark\:text-white\/50 {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html.dark .text-white\/60,
+html.dark .dark\:text-white\/60 {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+html.dark .text-white\/70,
+html.dark .dark\:text-white\/70 {
+  color: rgba(255, 255, 255, 0.90) !important;
+}
+
+/* Muted icons in dark mode */
+html.dark svg.text-slate-400,
+html.dark svg.dark\:text-slate-400,
+html.dark svg.text-gray-400,
+html.dark svg.dark\:text-gray-400 {
+  color: #CBD5E1 !important;
+}
+
+html.dark svg.text-slate-500,
+html.dark svg.dark\:text-slate-500,
+html.dark svg.text-gray-500,
+html.dark svg.dark\:text-gray-500 {
+  color: #94A3B8 !important;
+}
+
+/* Form input labels and placeholder visibility in dark mode */
+html.dark label {
+  color: #E2E8F0 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94A3B8 !important;
+  opacity: 0.85 !important;
+}
+
+/* Sub-labels, badges, table headers and category indicators in dark mode */
+html.dark th {
+  color: #CBD5E1 !important;
+}
+
+/* ========================================================================= */
 /* DYNAMIC CARD RADIUS (Works seamlessly in BOTH Light and Dark modes)       */
 /* ========================================================================= */
 .rounded-\[25px\],

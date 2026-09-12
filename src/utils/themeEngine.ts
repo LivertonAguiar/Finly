@@ -199,11 +199,17 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   if (isDark) {
     root.style.setProperty('--app-bg', darkBg);
     root.style.setProperty('--app-card-bg', darkCardBg);
+    root.style.setProperty('--text-primary', '#FFFFFF');
+    root.style.setProperty('--text-secondary', '#CBD5E1');
+    root.style.setProperty('--text-muted', '#94A3B8');
     document.body.style.backgroundColor = darkBg;
     document.body.style.color = '#FFFFFF';
   } else {
     root.style.setProperty('--app-bg', lightBg);
     root.style.setProperty('--app-card-bg', lightCardBg);
+    root.style.setProperty('--text-primary', '#0F172A');
+    root.style.setProperty('--text-secondary', '#475569');
+    root.style.setProperty('--text-muted', '#64748B');
     document.body.style.backgroundColor = lightBg;
     document.body.style.color = '#0F172A';
   }
@@ -225,10 +231,16 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     html.dark, :root.dark {
       --app-bg: ${darkBg} !important;
       --app-card-bg: ${darkCardBg} !important;
+      --text-primary: #FFFFFF !important;
+      --text-secondary: #CBD5E1 !important;
+      --text-muted: #94A3B8 !important;
     }
     html:not(.dark), :root:not(.dark) {
       --app-bg: ${lightBg} !important;
       --app-card-bg: ${lightCardBg} !important;
+      --text-primary: #0F172A !important;
+      --text-secondary: #475569 !important;
+      --text-muted: #64748B !important;
     }
     ${isDark ? `
       html.dark body {

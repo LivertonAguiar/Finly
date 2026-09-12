@@ -212,3 +212,20 @@ export function calculateCardInvoiceStatus(
     isClosed: false,
   };
 }
+
+/**
+ * Sorts credit cards in ascending order of invoice due date (dueDay).
+ * Tie-breaker: closingDay ascending, then card name alphabetically.
+ */
+export function sortCardsByDueDay<T extends { dueDay?: number | string; closingDay?: number | string; name?: string }>(cards: T[]): T[] {
+  if (!Array.isArray(cards)) return [];
+  return [...cards].sort((a, b) => {
+    const dueA = Number(a.dueDay) || 0;
+    const dueB = Number(b.dueDay) || 0;
+    if (dueA !== dueB) return dueA - dueB;
+    const closeA = Number(a.closingDay) || 0;
+    const closeB = Number(b.closingDay) || 0;
+    if (closeA !== closeB) return closeA - closeB;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+}

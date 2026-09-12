@@ -268,7 +268,7 @@ export const HELP_GUIDES: HelpGuide[] = [
         description: 'O Finly calcula em tempo real o limite utilizado, o limite disponível, o dia de fechamento e o melhor dia de compra.',
         webInstruction: 'Cada cartão exibe o logotipo oficial do banco emissor, o badge da bandeira, o tema visual dinâmico com a cor da instituição, a barra de progresso do limite e o status da fatura ("Aberta", "Fechada" ou "Paga").',
         androidInstruction: 'Deslize horizontalmente entre os cartões para ver o logotipo do banco, limite disponível, data de vencimento e valor da fatura atual.',
-        tip: 'O "Melhor dia de compra" é o dia seguinte ao fechamento da fatura, garantindo até 40 dias de prazo para pagar.',
+        tip: 'Os cartões adicionados são organizados automaticamente em ordem crescente pela data de vencimento. O "Melhor dia de compra" é o dia seguinte ao fechamento da fatura, garantindo até 40 dias de prazo para pagar.',
         callout: {
           area: 'cards_tab',
           targetLabel: 'Visual do Cartão & Limite',

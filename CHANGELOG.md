@@ -3,6 +3,21 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.65] - 2026-09-12
+
+### 💳 Ordenação Cronológica de Cartões por Vencimento e Nitidez Tipográfica em Temas Escuros
+- **Ordenação Automática de Cartões por Vencimento Crescente**:
+  - Implementação da função utilitária `sortCardsByDueDay` integrada ao estado central do `FinancialContext`.
+  - Todos os cartões de crédito adicionados são organizados automaticamente em ordem crescente pela data de vencimento da fatura (`dueDay`).
+  - Critério de desempate financeiramente intuitivo: primeiro por dia de fechamento (`closingDay`) e, persistindo o empate, por ordem alfabética do nome do cartão.
+  - Consistência e paridade em todas as telas: carrossel e grade da aba Cartões (`CreditTab`), listagem de Cadastros (`CadastrosPage`), seleção de cartão em Nova Transação (`TransactionModal`) e Pagamento de Fatura (`PayInvoiceModal`).
+- **Elevação de Contraste e Nitidez Tipográfica em Temas Escuros (WCAG AAA)**:
+  - Resolução universal para textos que aparentavam aspecto apagado em fundos escuros (`#080B14`, `#121826`, `#000000`).
+  - Textos secundários, legendas e metadados (`text-slate-400`, `text-gray-400`, `text-zinc-400`) elevados de `#94A3B8` para `#CBD5E1` (slate-300 luminoso).
+  - Textos complementares e rótulos (`text-slate-500`, `text-slate-600`) elevados para `#94A3B8` (slate-400 nítido).
+  - Opacidades de texto branco (`text-white/40..70`), rótulos de campos (`label`), placeholders e cabeçalhos de tabela (`th`) com visibilidade calibrada.
+  - Títulos principais e valores monetários preservados em branco puro (`#FFFFFF`), garantindo hierarquia visual refinada e leitura sem esforço visual em todos os 9 temas escuros do Finly.
+
 ## [1.1.64] - 2026-09-12
 
 ### 🌳 Árvore Consolidada de Categorias & Subcategorias e Refinamento Visual

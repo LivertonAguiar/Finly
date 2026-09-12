@@ -15,7 +15,7 @@ import {
   TransactionSeries,
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
-import { getCurrentMonth, getTodayString, round2 } from '../utils/formatters';
+import { getCurrentMonth, getTodayString, round2, sortCardsByDueDay } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
 import { generateRealisticDemoStore } from '../utils/demoDataGenerator';
@@ -57,9 +57,9 @@ const SEED_ACCOUNTS: Account[] = [
 
 const SEED_CARDS: CreditCard[] = [
   { id: 'card-1', name: 'Nubank Ultravioleta', limit: 12000.00, closingDay: 28, dueDay: 5, color: '#820ad1', brand: 'Mastercard', defaultAccountId: 'acc-1' },
-  { id: 'card-2', name: 'Inter Black', limit: 8000.00, closingDay: 20, dueDay: 27, color: '#ff7a00', brand: 'Mastercard', defaultAccountId: 'acc-2' },
-  { id: 'card-3', name: 'PicPay Card', limit: 5000.00, closingDay: 15, dueDay: 22, color: '#11c76f', brand: 'Mastercard', defaultAccountId: 'acc-1' },
   { id: 'card-4', name: 'Mercado Pago', limit: 3500.00, closingDay: 10, dueDay: 17, color: '#009ee3', brand: 'Visa', defaultAccountId: 'acc-1' },
+  { id: 'card-3', name: 'PicPay Card', limit: 5000.00, closingDay: 15, dueDay: 22, color: '#11c76f', brand: 'Mastercard', defaultAccountId: 'acc-1' },
+  { id: 'card-2', name: 'Inter Black', limit: 8000.00, closingDay: 20, dueDay: 27, color: '#ff7a00', brand: 'Mastercard', defaultAccountId: 'acc-2' },
 ];
 
 const SEED_TRANSACTIONS: Transaction[] = [
@@ -400,13 +400,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const applyLocalCards = (nextCards: CreditCard[]) => {
-    cardsRef.current = nextCards;
-    setCards(nextCards);
+    const sortedCards = sortCardsByDueDay(nextCards);
+    cardsRef.current = sortedCards;
+    setCards(sortedCards);
     try {
       const raw = localStorage.getItem(userStoreKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        parsed.cards = nextCards;
+        parsed.cards = sortedCards;
         localStorage.setItem(userStoreKey, JSON.stringify(parsed));
       }
     } catch (_) {}
@@ -498,7 +499,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     if (pendingChanged) persistPendingCardMutations();
-    return Array.from(byId.values());
+    return sortCardsByDueDay(Array.from(byId.values()));
   };
 
   const mergeRemoteProfile = (remoteProfile: UserProfile, localProfile: UserProfile): UserProfile => {
@@ -564,7 +565,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } else {
           return withDebtTransactionBackfill(sanitizeStoredData({
             accounts: Array.isArray(parsed.accounts) && parsed.accounts.length > 0 ? parsed.accounts : [DEFAULT_WALLET_ACCOUNT],
-            cards: Array.isArray(parsed.cards) ? parsed.cards.filter((c: any) => c && !GHOST_CARD_IDS.has(c.id)) : [],
+            cards: sortCardsByDueDay(Array.isArray(parsed.cards) ? parsed.cards.filter((c: any) => c && !GHOST_CARD_IDS.has(c.id)) : []),
             categories: mergeCategories(parsed.categories),
             budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
             goals: Array.isArray(parsed.goals) ? parsed.goals : [],
@@ -615,7 +616,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } catch (e) {}
       return withDebtTransactionBackfill(sanitizeStoredData({
         accounts: demo.accounts,
-        cards: demo.cards,
+        cards: sortCardsByDueDay(demo.cards),
         categories: demo.categories,
         budgets: demo.budgets,
         goals: demo.goals,

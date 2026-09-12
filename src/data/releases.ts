@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Ordenação automática de cartões de crédito em ordem crescente de data de vencimento da fatura com critério de desempate refinado, e elevação universal de contraste e luminosidade tipográfica (padrão WCAG AAA) em todos os 9 temas escuros do aplicativo.',
+    highlights: [
+      {
+        title: 'Ordenação Cronológica de Cartões por Vencimento',
+        description: 'Todos os cartões de crédito adicionados passam a ser listados na ordem crescente do dia de vencimento, com desempate automático por dia de fechamento e nome alfabético, refletindo na aba Cartões, Cadastros, seletores e pagamento de faturas.',
+        type: 'improvement',
+      },
+      {
+        title: 'Luminosidade e Contraste em Temas Escuros (WCAG AAA)',
+        description: 'Textos secundários, legendas, metadados informativos, rótulos e ícones foram elevados para tons claros e nítidos (#CBD5E1 e #E2E8F0), eliminando textos opacos e garantindo legibilidade nítida e refinada em telas OLED e LCD.',
+        type: 'visual',
+      },
+      {
+        title: 'Preservação da Hierarquia Visual do Design System',
+        description: 'Títulos, indicadores e valores principais permanecem em destaque em branco puro (#FFFFFF), preservando a sofisticação, profundidade e elegância das superfícies escuras.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.64',
+    releaseDate: '2026-09-12',
     summary: 'Consolidação e refinamento completo da árvore de Categorias e Subcategorias do Finly (20 categorias principais e 123 subcategorias especializadas), inclusão de novos segmentos para Criptomoedas e Software/Apps, padronização de Empréstimos e correção de refinamento visual no seletor de parcelas.',
     highlights: [
       {
