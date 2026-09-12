@@ -642,7 +642,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       {/* Controle Integrado: Entrada Numérica Direta [- / +] e Select Detalhado */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {/* Entrada Numérica Direta com - e + (sem leading zero) */}
-                        <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-2xs">
+                        <div className="flex items-center justify-between h-[42px] px-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs">
                           <button
                             type="button"
                             onClick={() => {
@@ -652,24 +652,30 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                               setIsCustomInstallment(next > 24);
                             }}
                             disabled={installmentCount <= 2}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-base text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 select-none"
                             title="Diminuir 1 parcela"
                           >
                             -
                           </button>
 
-                          <div className="flex-1 flex items-center justify-center gap-1 px-1">
+                          <div className="flex-1 flex items-center justify-center gap-1">
                             <input
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
-                              className="w-12 text-center font-black text-sm bg-transparent border-0 outline-none text-slate-900 dark:text-white p-0 focus:ring-0 focus:outline-none"
+                              className="borderless-money-input borderless-stepper-input w-8 text-center font-black text-base bg-transparent border-0 outline-none text-slate-900 dark:text-white p-0 m-0 focus:ring-0 focus:outline-none shadow-none"
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                boxShadow: 'none',
+                                outline: 'none',
+                              }}
                               value={installmentInputStr}
                               placeholder="2"
                               onChange={e => handleInstallmentInputChange(e.target.value)}
                               onBlur={handleInstallmentInputBlur}
                             />
-                            <span className="text-xs font-black text-purple-600 dark:text-purple-400 select-none">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 select-none">
                               vezes
                             </span>
                           </div>
@@ -683,7 +689,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                               setIsCustomInstallment(next > 24);
                             }}
                             disabled={installmentCount >= 72}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-base text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 select-none"
                             title="Aumentar 1 parcela"
                           >
                             +

@@ -25,6 +25,15 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'salario': { categoryId: 'cat-rec-trabalho', subcategoryId: 'sub-sal-mensal', name: 'Salário & Trabalho', icon: '💼' },
   'cat-rec-outras': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
   'outras-receitas': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
+  'sub-mor-telefone': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-plano-cel', name: 'Compras & Pessoal', icon: '🛍️' },
+  'sub-saude-higiene': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-higiene', name: 'Compras & Pessoal', icon: '🛍️' },
+  'sub-comp-perifericos': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-informatica', name: 'Compras & Pessoal', icon: '🛍️' },
+  'sub-educ-livros-tecnicos': { categoryId: 'cat-desp-educacao', subcategoryId: 'sub-educ-livros', name: 'Educação', icon: '🎓' },
+  'sub-fin-financiamento-imob': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-financiamento-apto', name: 'Moradia', icon: '🏠' },
+  'sub-mov-transf-poupanca': { categoryId: 'cat-mov-transferencias', subcategoryId: 'sub-mov-transf-contas', name: 'Transferências', icon: '🔄' },
+  'sub-mov-emprestimo-recebido': { categoryId: 'cat-mov-emprestimos', subcategoryId: 'sub-mov-emprestimo-tomado', name: 'Empréstimos', icon: '🤝' },
+  'sub-mov-pagamento-emp': { categoryId: 'cat-mov-emprestimos', subcategoryId: 'sub-mov-pagamento-emp-tomado', name: 'Empréstimos', icon: '🤝' },
+  'sub-mov-recebimento-emp': { categoryId: 'cat-mov-emprestimos', subcategoryId: 'sub-mov-recebimento-emp-concedido', name: 'Empréstimos', icon: '🤝' },
 };
 
 /**

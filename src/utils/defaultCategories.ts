@@ -164,12 +164,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-desp-moradia"
       },
       {
-        "id": "sub-mor-telefone",
-        "name": "Telefone",
-        "icon": "📱",
-        "categoryId": "cat-desp-moradia"
-      },
-      {
         "id": "sub-mor-diarista",
         "name": "Diarista",
         "icon": "🧹",
@@ -240,7 +234,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       },
       {
         "id": "sub-trans-seguro",
-        "name": "Seguro",
+        "name": "Seguro do Veículo",
         "icon": "🛡️",
         "categoryId": "cat-desp-transporte"
       },
@@ -287,12 +281,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "id": "sub-saude-odonto",
         "name": "Odontologia",
         "icon": "🦷",
-        "categoryId": "cat-desp-saude"
-      },
-      {
-        "id": "sub-saude-higiene",
-        "name": "Higiene / Cuidados Pessoais",
-        "icon": "🧴",
         "categoryId": "cat-desp-saude"
       }
     ]
@@ -407,12 +395,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-desp-compras-pessoal"
       },
       {
-        "id": "sub-comp-perifericos",
-        "name": "Periféricos",
-        "icon": "🔌",
-        "categoryId": "cat-desp-compras-pessoal"
-      },
-      {
         "id": "sub-comp-celular",
         "name": "Celular / Smartphones",
         "icon": "📱",
@@ -432,7 +414,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       },
       {
         "id": "sub-comp-higiene",
-        "name": "Higiene / Cosméticos",
+        "name": "Higiene & Cuidados Pessoais",
         "icon": "🧴",
         "categoryId": "cat-desp-compras-pessoal"
       },
@@ -440,6 +422,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "id": "sub-comp-salao",
         "name": "Salão / Barbearia",
         "icon": "💈",
+        "categoryId": "cat-desp-compras-pessoal"
+      },
+      {
+        "id": "sub-comp-software",
+        "name": "Software / Aplicativos",
+        "icon": "💻",
         "categoryId": "cat-desp-compras-pessoal"
       }
     ]
@@ -470,12 +458,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-desp-educacao"
       },
       {
-        "id": "sub-educ-livros-tecnicos",
-        "name": "Livros Técnicos / Teologia",
-        "icon": "📖",
-        "categoryId": "cat-desp-educacao"
-      },
-      {
         "id": "sub-educ-material",
         "name": "Material Escolar / Papelaria",
         "icon": "✏️",
@@ -492,7 +474,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     "subcategories": [
       {
         "id": "sub-lazer-streaming",
-        "name": "Streaming / Assinaturas",
+        "name": "Streaming de Entretenimento",
         "icon": "📺",
         "categoryId": "cat-desp-lazer"
       },
@@ -605,12 +587,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "id": "sub-fin-amortizacao-extra",
         "name": "Amortização Extraordinária",
         "icon": "💸",
-        "categoryId": "cat-desp-financeiro"
-      },
-      {
-        "id": "sub-fin-financiamento-imob",
-        "name": "Financiamento Imobiliário",
-        "icon": "🏢",
         "categoryId": "cat-desp-financeiro"
       },
       {
@@ -819,7 +795,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       },
       {
         "id": "sub-rec-cripto",
-        "name": "Criptomoedas & Staking",
+        "name": "Rendimentos de Cripto / Staking",
         "icon": "🪙",
         "categoryId": "cat-rec-investimentos"
       },
@@ -870,7 +846,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
       },
       {
         "id": "sub-rec-presentes",
-        "name": "Presentes & Doações",
+        "name": "Presentes & Doações Recebidas",
         "icon": "🎁",
         "categoryId": "cat-rec-beneficios-outras"
       },
@@ -912,12 +888,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "name": "Pagamento de Cartão",
         "icon": "💳",
         "categoryId": "cat-mov-transferencias"
-      },
-      {
-        "id": "sub-mov-transf-poupanca",
-        "name": "Transferência para Poupança",
-        "icon": "🏦",
-        "categoryId": "cat-mov-transferencias"
       }
     ]
   },
@@ -941,9 +911,21 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-mov-investimentos"
       },
       {
+        "id": "sub-mov-aporte-cripto",
+        "name": "Aporte em Criptomoedas",
+        "icon": "🪙",
+        "categoryId": "cat-mov-investimentos"
+      },
+      {
         "id": "sub-mov-resgate-invest",
         "name": "Resgate de Investimento",
         "icon": "💵",
+        "categoryId": "cat-mov-investimentos"
+      },
+      {
+        "id": "sub-mov-resgate-cripto",
+        "name": "Resgate / Venda de Criptomoedas",
+        "icon": "🪙",
         "categoryId": "cat-mov-investimentos"
       }
     ]
@@ -956,27 +938,27 @@ export const DEFAULT_CATEGORIES: Category[] = [
     "type": "transfer",
     "subcategories": [
       {
-        "id": "sub-mov-emprestimo-recebido",
-        "name": "Empréstimo Recebido",
-        "icon": "💵",
+        "id": "sub-mov-emprestimo-tomado",
+        "name": "Empréstimo Tomado",
+        "icon": "🏦",
+        "categoryId": "cat-mov-emprestimos"
+      },
+      {
+        "id": "sub-mov-pagamento-emp-tomado",
+        "name": "Pagamento de Empréstimo Tomado",
+        "icon": "💳",
         "categoryId": "cat-mov-emprestimos"
       },
       {
         "id": "sub-mov-emprestimo-concedido",
         "name": "Empréstimo Concedido",
-        "icon": "💸",
+        "icon": "🤝",
         "categoryId": "cat-mov-emprestimos"
       },
       {
-        "id": "sub-mov-recebimento-emp",
-        "name": "Recebimento de Empréstimo",
+        "id": "sub-mov-recebimento-emp-concedido",
+        "name": "Recebimento de Empréstimo Concedido",
         "icon": "↩️",
-        "categoryId": "cat-mov-emprestimos"
-      },
-      {
-        "id": "sub-mov-pagamento-emp",
-        "name": "Pagamento de Empréstimo",
-        "icon": "💳",
         "categoryId": "cat-mov-emprestimos"
       }
     ]

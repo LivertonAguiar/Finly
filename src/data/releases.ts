@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Consolidação e refinamento completo da árvore de Categorias e Subcategorias do Finly (20 categorias principais e 123 subcategorias especializadas), inclusão de novos segmentos para Criptomoedas e Software/Apps, padronização de Empréstimos e correção de refinamento visual no seletor de parcelas.',
+    highlights: [
+      {
+        title: 'Árvore Consolidada de Categorias & Subcategorias',
+        description: 'Estruturação definitiva com 20 categorias e 123 subcategorias limpas, eliminando redundâncias (Telefone, Periféricos, Livros Técnicos e Financiamento Imobiliário duplicado).',
+        type: 'feature',
+      },
+      {
+        title: 'Novas Subcategorias de Criptomoedas & Software',
+        description: 'Adicionados suportes dedicados a Aporte em Criptomoedas, Resgate/Venda de Cripto, Rendimentos de Staking e Software/Aplicativos.',
+        type: 'feature',
+      },
+      {
+        title: 'Nomenclatura Operacional Precisa de Empréstimos',
+        description: 'Padronização clara entre Empréstimo Tomado (e seu respectivo pagamento) e Empréstimo Concedido (e seu respectivo recebimento), com aliases automáticos de retrocompatibilidade.',
+        type: 'improvement',
+      },
+      {
+        title: 'Refinamento Visual no Seletor de Parcelas',
+        description: 'Eliminação definitiva de contornos retangulares residuais no campo numérico de parcelas com a introdução da classe utilitária borderless-stepper-input e alinhamento de altura padronizada.',
+        type: 'visual',
+      },
+    ],
+  },
+  {
+    version: '1.1.63',
+    releaseDate: '2026-09-12',
     summary: 'Aprimoramento do fluxo de cadastro e parcelamento: campo único inteligente de data (Data do Pagamento x Vencimento x Data da Compra) eliminando duplicidades, novo controle integrado de parcelas com ajuste rápido [-] e [+] e sanitização completa anti-zero à esquerda no teclado.',
     highlights: [
       {

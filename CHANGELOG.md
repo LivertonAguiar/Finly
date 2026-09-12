@@ -3,6 +3,19 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.64] - 2026-09-12
+
+### 🌳 Árvore Consolidada de Categorias & Subcategorias e Refinamento Visual
+- **Consolidação Completa da Taxonomia Financeira**:
+  - Oficialização da árvore de categorias do Finly contendo exatamente **20 categorias principais** e **123 subcategorias especializadas**.
+  - Remoção de subcategorias redundantes ou obsoletas: `Telefone` (Moradia), `Higiene / Cuidados Pessoais` (Saúde), `Periféricos` (Compras), `Livros Técnicos / Teologia` (Educação), `Financiamento Imobiliário` (Financeiro, mantido exclusivamente em Moradia) e `Transferência para Poupança` (Transferências).
+  - Novas subcategorias dedicadas: `Aporte em Criptomoedas`, `Resgate / Venda de Criptomoedas`, `Rendimentos de Cripto / Staking` e `Software / Aplicativos`.
+  - Nomenclatura aprimorada e intuitiva para operações financeiras: `Empréstimo Tomado` e `Pagamento de Empréstimo Tomado`, `Empréstimo Concedido` e `Recebimento de Empréstimo Concedido`.
+  - Inserção de aliases no mecanismo de resolução para retrocompatibilidade com transações e históricos anteriores.
+- **Refinamento Visual do Seletor de Parcelas**:
+  - Solução definitiva para remoção do contorno retangular branco indesejado ao redor do número de parcelas através da nova classe utilitária `.borderless-stepper-input`.
+  - Altura e espaçamentos padronizados em 42px para harmonização total com os campos de seleção do Finly.
+
 ## [1.1.63] - 2026-09-12
 
 ### 🎯 Campo Único Inteligente de Data, Controle Integrado de Parcelas e Sanitização Anti-Zero
