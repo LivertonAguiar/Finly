@@ -19,6 +19,8 @@ import {
   suggestDynamicTags,
   normalizeTag,
 } from '../../utils/smartCategorizer';
+import { resolveCategory } from '../../utils/categoryResolver';
+import { emitExpenseAddedConfirmation } from '../../utils/expenseToastEmitter';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -516,6 +518,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           attachmentUrl, attachmentName, createdAt: new Date().toISOString(),
         });
         addTransactionSeries(built.series, built.transactions);
+        const resolved = resolveCategory(categories, categoryId, subcategoryId, 'expense');
+        emitExpenseAddedConfirmation({
+          description: txData.description,
+          amount: amountNumber,
+          categoryIcon: resolved.icon,
+          categoryName: resolved.name,
+          subcategoryName: resolved.subName,
+          paymentMethod: 'card',
+          accountOrCardName: selectedCard.name,
+          installmentCount,
+          installmentAmount: round2(amountNumber / installmentCount),
+        });
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Não foi possível criar as parcelas.');
         return;
@@ -559,6 +573,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         initialStatus: 'pending',
       });
       addTransactionSeries(series, reconciled.transactions);
+      const resolved = resolveCategory(categories, categoryId, subcategoryId, 'expense');
+      emitExpenseAddedConfirmation({
+        description: txData.description,
+        amount: amountNumber,
+        categoryIcon: resolved.icon,
+        categoryName: resolved.name,
+        subcategoryName: resolved.subName,
+        paymentMethod: 'card',
+        accountOrCardName: selectedCard.name,
+        isRecurring: true,
+      });
       onClose();
       return;
     }
@@ -579,6 +604,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         initialStatus: status,
       });
       addTransactionSeries(series, reconciled.transactions);
+      const resolved = resolveCategory(categories, categoryId, subcategoryId, 'expense');
+      const targetAcc = accounts.find(a => a.id === accountId);
+      emitExpenseAddedConfirmation({
+        description: txData.description,
+        amount: amountNumber,
+        categoryIcon: resolved.icon,
+        categoryName: resolved.name,
+        subcategoryName: resolved.subName,
+        paymentMethod: 'account',
+        accountOrCardName: targetAcc?.name,
+        isRecurring: true,
+      });
       onClose();
       return;
     }
@@ -587,6 +624,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       txData.dueDate = getInvoiceDueDate(invoiceMonth, selectedCard.closingDay, selectedCard.dueDay);
     }
     addTransaction(txData);
+
+    if (type === 'expense') {
+      const resolved = resolveCategory(categories, categoryId, subcategoryId, 'expense');
+      const targetAcc = accounts.find(a => a.id === accountId);
+      emitExpenseAddedConfirmation({
+        description: txData.description,
+        amount: amountNumber,
+        categoryIcon: resolved.icon,
+        categoryName: resolved.name,
+        subcategoryName: resolved.subName,
+        paymentMethod: isCard ? 'card' : 'account',
+        accountOrCardName: isCard ? selectedCard?.name : targetAcc?.name,
+      });
+    }
+
     onClose();
   };
 

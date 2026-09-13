@@ -38,6 +38,7 @@ import { Sparkles, X } from 'lucide-react';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
+import { ExpenseAddedToast } from './components/common/ExpenseAddedToast';
 import { AppUpdateModal } from './components/common/AppUpdateModal';
 import { WebWhatsNewModal } from './components/common/WebWhatsNewModal';
 import { HelpCenterPage } from './components/help/HelpCenterPage';
@@ -313,6 +314,19 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Listen to tab navigation from internal toasts and actions
+  useEffect(() => {
+    const handleNavigateTab = (e: Event) => {
+      const customEvent = e as CustomEvent<{ tab?: string }>;
+      const tab = customEvent.detail?.tab;
+      if (tab) {
+        handleSelectTab(tab);
+      }
+    };
+    window.addEventListener('finly_navigate_tab', handleNavigateTab);
+    return () => window.removeEventListener('finly_navigate_tab', handleNavigateTab);
+  }, [handleSelectTab]);
+
   // Handle Android back button navigation when no modal/drawer is open
   useEffect(() => {
     setRootBackHandler(() => {
@@ -515,6 +529,10 @@ const AppContent: React.FC = () => {
       {isLocked && (
         <PinLockScreen onUnlock={() => setIsLocked(false)} />
       )}
+
+      {/* Pop-up interno de confirmação de despesa adicionada */}
+      <ExpenseAddedToast />
+      <InAppNotificationToast />
 
       {/* Floating Web Update Ready Notification */}
       {pendingWebUpdate && (
