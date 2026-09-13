@@ -170,6 +170,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-desp-moradia"
       },
       {
+        "id": "sub-mor-limpeza-utilidades",
+        "name": "Limpeza & Utilidades",
+        "icon": "🧹",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
         "id": "sub-mor-manutencao",
         "name": "Manutenção da Casa",
         "icon": "🔧",

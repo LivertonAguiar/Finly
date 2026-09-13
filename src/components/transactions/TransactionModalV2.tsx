@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, ChevronDown, FileText, Layers, Paperclip, Repeat, Tag, Trash2, Upload } from 'lucide-react';
+import { Bell, ChevronDown, FileText, Layers, Paperclip, Repeat, Sparkles, Tag, Trash2, Upload } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
@@ -14,6 +14,11 @@ import { formatCurrency, getTodayString, round2 } from '../../utils/formatters';
 import { buildCardInstallmentSeries, getInvoiceDueDate } from '../../utils/cardInstallmentSeries';
 import { reconcileRecurringExpenseSeries } from '../../utils/recurringExpenseSeries';
 import { buildTransferTransaction } from '../../utils/transferRules';
+import {
+  predictCategoryAndSubcategory,
+  suggestDynamicTags,
+  normalizeTag,
+} from '../../utils/smartCategorizer';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -45,6 +50,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     categories,
     accounts,
     cards,
+    transactions,
     transactionSeries,
     addTransaction,
     addTransactionSeries,
@@ -52,6 +58,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     updateRecurringExpenseAmount,
     user,
   } = useFinancial();
+  const [predictedInfo, setPredictedInfo] = useState<{
+    categoryName: string;
+    subcategoryName?: string;
+    prevCatId: string;
+    prevSubId: string;
+  } | null>(null);
+  const [manuallyChangedCategory, setManuallyChangedCategory] = useState(false);
   const [type, setType] = useState<TransactionType>(initialType);
   const [paymentMethod, setPaymentMethod] = useState<'account' | 'card'>('account');
   const [centsAmount, setCentsAmount] = useState<number>(0);
@@ -179,6 +192,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setFixedEditScope('single');
     setOverwriteExceptions(false);
     setError('');
+    setPredictedInfo(null);
+    setManuallyChangedCategory(Boolean(tx));
   }, [isOpen, editingTransaction?.id, initialType, initialAccountId, initialCardId, initialPaymentMethod]);
 
   useEffect(() => {
@@ -205,6 +220,51 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setDate(newDate);
     setDueDate(newDate);
   };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDescription(val);
+
+    if (!editingTransaction && type !== 'transfer' && !manuallyChangedCategory && val.trim().length >= 3) {
+      const pred = predictCategoryAndSubcategory(val, type, categories, transactions);
+      if (pred) {
+        setPredictedInfo({
+          categoryName: pred.categoryName,
+          subcategoryName: pred.subcategoryName,
+          prevCatId: categoryId,
+          prevSubId: subcategoryId,
+        });
+        setCategoryId(pred.categoryId);
+        if (pred.subcategoryId) {
+          setSubcategoryId(pred.subcategoryId);
+        }
+      }
+    } else if (val.trim().length < 3 && predictedInfo) {
+      setPredictedInfo(null);
+    }
+  };
+
+  const handleUndoPrediction = () => {
+    if (!predictedInfo) return;
+    setCategoryId(predictedInfo.prevCatId || '');
+    setSubcategoryId(predictedInfo.prevSubId || '');
+    setPredictedInfo(null);
+    setManuallyChangedCategory(true);
+  };
+
+  const suggestedTags = useMemo(() => {
+    return suggestDynamicTags({
+      description,
+      categoryId,
+      subcategoryId,
+      type,
+      isCard,
+      isThirdParty: thirdParty,
+      historicalTransactions: transactions,
+      currentTags: tags,
+      limit: 8,
+    });
+  }, [description, categoryId, subcategoryId, type, isCard, thirdParty, transactions, tags]);
 
   const formatCentsToDisplay = (cents: number): string => {
     return (cents / 100).toLocaleString('pt-BR', {
@@ -342,7 +402,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       tagInputRef.current?.focus();
       return;
     }
-    const parts = candidate.split(/[,;]+/).map(p => p.trim().replace(/^#+/, '')).filter(Boolean);
+    const parts = candidate.split(/[,;]+/).map(p => normalizeTag(p)).filter(Boolean);
     if (parts.length > 0) {
       setTags(prev => {
         const next = [...prev];
@@ -608,10 +668,25 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} placeholder="Ex: Reserva mensal" /></div>
         </> : <>
           <div><label className={labelClass}>{dateLabel}</label><DatePicker value={date} onChange={handleDateChange} variant="modal" /></div>
-          <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} required /></div>
+          <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={handleDescriptionChange} required /></div>
+          {predictedInfo && (
+            <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/50 text-purple-700 dark:text-purple-300 text-xs font-semibold animate-in fade-in">
+              <span className="flex items-center gap-1.5 truncate">
+                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span className="truncate">Sugerido: <strong>{predictedInfo.categoryName}</strong>{predictedInfo.subcategoryName ? ` › ${predictedInfo.subcategoryName}` : ''}</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleUndoPrediction}
+                className="ml-2 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 underline cursor-pointer shrink-0"
+              >
+                Desfazer
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label className={labelClass}>CATEGORIA</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
-            <div><label className={labelClass}>SUBCATEGORIA</label><select className={fieldClass} value={subcategoryId} onChange={event => setSubcategoryId(event.target.value)}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}</option>)}</select></div>
+            <div><label className={labelClass}>CATEGORIA</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); setManuallyChangedCategory(true); setPredictedInfo(null); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
+            <div><label className={labelClass}>SUBCATEGORIA</label><select className={fieldClass} value={subcategoryId} onChange={event => { setSubcategoryId(event.target.value); setManuallyChangedCategory(true); setPredictedInfo(null); }}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}</option>)}</select></div>
           </div>
           {isCard ? <>
             <div><label className={labelClass}>CARTÃO DE CRÉDITO</label><select className={fieldClass} value={cardId} onChange={event => setCardId(event.target.value)}>{cards.map(card => <option key={card.id} value={card.id}>{card.name} — {card.brand}</option>)}</select></div>
@@ -1037,21 +1112,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </button>
             </div>
 
-            {/* Sugestões rápidas de Tags */}
-            <div className="flex flex-wrap gap-1 items-center pt-2">
-              <span className="text-[10px] font-bold text-slate-400">Sugestões:</span>
-              {['Aluguel', 'Mercado', 'Trabalho', 'Viagem', 'Lazer', 'Assinatura', 'Saúde', 'Educação'].map(sugg => (
-                <button
-                  key={sugg}
-                  type="button"
-                  onMouseDown={event => event.preventDefault()}
-                  onClick={() => addTag(sugg)}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-950/40 dark:hover:text-purple-300 transition-colors cursor-pointer"
-                >
-                  +{sugg}
-                </button>
-              ))}
-            </div>
+            {/* Sugestões dinâmicas de Tags */}
+            {suggestedTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 items-center pt-2 animate-in fade-in">
+                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 text-purple-500 shrink-0" />
+                  Sugestões:
+                </span>
+                {suggestedTags.map(sugg => (
+                  <button
+                    key={sugg}
+                    type="button"
+                    onMouseDown={event => event.preventDefault()}
+                    onClick={() => addTag(sugg)}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-950/40 dark:hover:text-purple-300 transition-colors cursor-pointer"
+                  >
+                    +{sugg}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">

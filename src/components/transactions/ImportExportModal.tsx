@@ -5,7 +5,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { parseOFX } from '../../utils/ofxParser';
 import { parseCSV } from '../../utils/csvParser';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { predictCategory } from '../../utils/smartCategorizer';
+import { predictCategoryAndSubcategory, suggestDynamicTags } from '../../utils/smartCategorizer';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -39,8 +39,17 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
         setParsedList(
           ofxItems.map((item) => {
             const itemType = item.type === 'CREDIT' ? 'income' : 'expense';
-            const pred = predictCategory(item.memo, itemType, categories, transactions);
+            const pred = predictCategoryAndSubcategory(item.memo, itemType, categories, transactions);
             const fallbackCat = categories.find(c => c.type === itemType)?.id || '';
+            const suggested = suggestDynamicTags({
+              description: item.memo,
+              categoryId: pred?.categoryId || fallbackCat,
+              subcategoryId: pred?.subcategoryId,
+              type: itemType,
+              historicalTransactions: transactions,
+              currentTags: ['importado', 'ofx'],
+              limit: 2,
+            });
             return {
               description: item.memo,
               amount: item.amount,
@@ -48,6 +57,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
               date: item.date,
               categoryId: pred?.categoryId || fallbackCat,
               categoryName: pred?.categoryName || categories.find(c => c.id === fallbackCat)?.name,
+              subcategoryId: pred?.subcategoryId,
+              subcategoryName: pred?.subcategoryName,
+              tags: ['importado', 'ofx', ...suggested],
               isPredicted: !!pred,
               selected: true,
             };
@@ -64,8 +76,17 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
             const cleanVal = parseFloat(valStr.replace('R$', '').replace('.', '').replace(',', '.').trim()) || 0;
             const isInc = cleanVal >= 0;
             const rowType = isInc ? 'income' : 'expense';
-            const pred = predictCategory(desc, rowType, categories, transactions);
+            const pred = predictCategoryAndSubcategory(desc, rowType, categories, transactions);
             const fallbackCat = categories.find(c => c.type === rowType)?.id || '';
+            const suggested = suggestDynamicTags({
+              description: desc,
+              categoryId: pred?.categoryId || fallbackCat,
+              subcategoryId: pred?.subcategoryId,
+              type: rowType,
+              historicalTransactions: transactions,
+              currentTags: ['importado', 'csv'],
+              limit: 2,
+            });
 
             return {
               description: desc,
@@ -74,6 +95,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
               date: new Date().toISOString().split('T')[0],
               categoryId: pred?.categoryId || fallbackCat,
               categoryName: pred?.categoryName || categories.find(c => c.id === fallbackCat)?.name,
+              subcategoryId: pred?.subcategoryId,
+              subcategoryName: pred?.subcategoryName,
+              tags: ['importado', 'csv', ...suggested],
               isPredicted: !!pred,
               selected: true,
             };
@@ -96,10 +120,11 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
         type: item.type,
         date: item.date,
         categoryId: item.categoryId || categories[0]?.id || '',
+        subcategoryId: item.subcategoryId,
         accountId: selectedAccountId,
         status: 'completed' as const,
         recurring: false,
-        tags: ['importado', fileType],
+        tags: Array.isArray(item.tags) ? item.tags : ['importado', fileType],
       }));
 
     importTransactions(itemsToImport);

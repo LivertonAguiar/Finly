@@ -3,6 +3,7 @@ import {
   Account,
   CreditCard,
   Category,
+  Subcategory,
   Transaction,
   Budget,
   Goal,
@@ -684,7 +685,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     });
 
-    return [...DEFAULT_CATEGORIES, ...userCustomCats];
+    const mergedStandardCats = DEFAULT_CATEGORIES.map(defCat => {
+      const savedCat = savedCats.find(c => c && c.id === defCat.id);
+      if (!savedCat || !Array.isArray(savedCat.subcategories)) {
+        return defCat;
+      }
+      const existingSubIds = new Set(defCat.subcategories.map(s => s.id));
+      const extraSubs: Subcategory[] = [];
+      savedCat.subcategories.forEach((s: any) => {
+        if (s && s.id && !existingSubIds.has(s.id)) {
+          const parsed = splitEmojiFromName(s.name || '');
+          extraSubs.push({
+            ...s,
+            name: parsed.name,
+            icon: s.icon || parsed.icon || undefined,
+          });
+          existingSubIds.add(s.id);
+        }
+      });
+      return extraSubs.length > 0
+        ? { ...defCat, subcategories: [...defCat.subcategories, ...extraSubs] }
+        : defCat;
+    });
+
+    return [...mergedStandardCats, ...userCustomCats];
   };
 
   const normalizeStoredTransaction = (t: Transaction): Transaction => {
