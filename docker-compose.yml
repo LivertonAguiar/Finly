@@ -10,6 +10,8 @@ services:
       - PORT=3000
     volumes:
       - ./server/data:/app/server/data
+      - ./server/public/bundles:/app/server/public/bundles
+      - ./server/manifest.json:/app/server/manifest.json
     networks:
       - proxy
     ports:

@@ -5,10 +5,10 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.70/finly-v1.1.70.apk"
   },
   "web": {
-    "version": "1.1.70.1",
+    "version": "1.1.70.2",
     "minNativeVersion": "1.1.70",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.1.zip",
-    "sha256": "d4930b011039c1c327c50e061bb76a982f7144439a13881dd7dd8681366b7330",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.2.zip",
+    "sha256": "27cf416b81f13bb5d21a8b2c34ee1d49ae494e068e5e672d7a8c7829a2e84cc3",
     "mandatory": false,
     "releaseDate": "2026-09-13",
     "notes": "Bundle web v1.1.70 com suporte a Live Update OTA e Capacitor 8."
