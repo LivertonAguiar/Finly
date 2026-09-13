@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-12',
+    summary: 'Unificação contábil por competência de faturas em todo o sistema (Dashboard, Transações, Orçamentos e Relatórios), seletor de 3 regimes de apuração, e blindagem universal anti-perda de dados com migrações automáticas no deploy.',
+    highlights: [
+      {
+        title: 'Unificação Contábil por Competência de Fatura',
+        description: 'Dashboard, Orçamentos, Relatórios Executivos, Comparativo e Saúde 50/30/20 compartilham o mesmo motor: compras de cartão pertencem à competência da fatura e o pagamento da fatura nunca é duplicado como despesa.',
+        type: 'feature',
+      },
+      {
+        title: 'Seletor de 3 Regimes de Visualização',
+        description: 'Transações e Relatórios contam com alternador rápido entre Por Competência/Fatura (padrão contábil), Por Data da Compra e Por Vencimento (Caixa).',
+        type: 'improvement',
+      },
+      {
+        title: 'Blindagem Universal Anti-Perda de Dados',
+        description: 'Deploy na VPS executa migrações do Supabase automaticamente antes do app subir, e o FinancialContext impede que qualquer entidade local seja sobrescrita por snapshots vazios.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.67',
+    releaseDate: '2026-09-12',
     summary: 'Suporte a Compra Recorrente no Cartão de Crédito com acionamento na seção Mais detalhes acima do anexo, identificador visual na aba Transações e opção dedicada para Encerrar Recorrência preservando o histórico.',
     highlights: [
       {

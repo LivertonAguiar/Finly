@@ -865,6 +865,131 @@ export class SupabaseDbService {
   }
 
   /**
+   * Upsert single budget
+   */
+  public async upsertBudget(userId: string, b: Budget): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
+    try {
+      const { error } = await supabase.from('budgets').upsert({
+        id: b.id,
+        user_id: targetUserId,
+        category_id: b.categoryId,
+        subcategory_id: b.subcategoryId,
+        month: b.month,
+        limit: b.limit,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Upsert single goal
+   */
+  public async upsertGoal(userId: string, g: Goal): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
+    try {
+      const { error } = await supabase.from('goals').upsert({
+        id: g.id,
+        user_id: targetUserId,
+        title: g.title,
+        description: g.description,
+        target_amount: g.targetAmount,
+        current_amount: g.currentAmount,
+        deadline: g.deadline || null,
+        icon: g.icon || '🎯',
+        color: g.color || '#10b981',
+        category: g.category,
+        deposits: g.deposits || [],
+        image_url: g.imageUrl,
+        status: g.status || 'active',
+        completed: Boolean(g.completed),
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Upsert single debt
+   */
+  public async upsertDebt(userId: string, d: Debt): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
+    try {
+      const { error } = await supabase.from('debts').upsert({
+        id: d.id,
+        user_id: targetUserId,
+        title: d.title,
+        creditor: d.creditor,
+        total_amount: d.totalAmount,
+        remaining_amount: d.remainingAmount,
+        interest_rate: d.interestRate,
+        installment_amount: d.installmentAmount,
+        total_installments: d.totalInstallments,
+        paid_installments: d.paidInstallments,
+        due_day: d.dueDay,
+        next_due_date: d.nextDueDate || null,
+        notes: d.notes,
+        payments: d.payments || [],
+        contract_type: d.contractType || 'loan',
+        amortization_system: d.amortizationSystem || 'PRICE',
+        indexer: d.indexer || 'TR',
+        indexer_rate: d.indexerRate ?? null,
+        insurance_monthly: d.insuranceMonthly ?? null,
+        admin_fee_monthly: d.adminFeeMonthly ?? null,
+        contract_number: d.contractNumber || null,
+        default_account_id: d.defaultAccountId || null,
+        sync_to_transactions: d.syncToTransactions !== false,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Upsert single investment
+   */
+  public async upsertInvestment(userId: string, i: InvestmentAsset): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId) return false;
+    const targetUserId = this.getValidUserId(userId);
+    if (!targetUserId) return false;
+
+    try {
+      const { error } = await supabase.from('investments').upsert({
+        id: i.id,
+        user_id: targetUserId,
+        name: i.name,
+        ticker: i.ticker,
+        type: i.type,
+        institution: i.institution,
+        invested_amount: i.investedAmount,
+        current_balance: i.currentBalance,
+        quantity: i.quantity,
+        average_price: i.averagePrice,
+        current_price: i.currentPrice,
+        monthly_yield: i.monthlyYield,
+        yield_percentage: i.yieldPercentage,
+        updated_at: i.updatedAt || new Date().toISOString(),
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Delete credit card
    */
   public async deleteCard(userId: string, id: string): Promise<boolean> {

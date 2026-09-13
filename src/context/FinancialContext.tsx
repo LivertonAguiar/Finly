@@ -292,6 +292,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userId = currentUser ? currentUser.id : 'guest';
   const userStoreKey = `finly_user_${userId}_store`;
   const pendingCardMutationsKey = `finly_user_${userId}_pending_card_mutations`;
+  const pendingTxDeletesKey = `finly_user_${userId}_pending_tx_deletes`;
+  const pendingTxDeletesRef = useRef<string[]>([]);
   const appearancePreferenceKey = `finly_user_${userId}_appearance`;
   const cardMutationMigrationKey = `finly_user_${userId}_card_mutation_migration_v1`;
 
@@ -501,6 +503,144 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     if (pendingChanged) persistPendingCardMutations();
     return sortCardsByDueDay(Array.from(byId.values()));
+  };
+
+  const reconcileRemoteTransactions = (remoteTxs: Transaction[]): Transaction[] => {
+    const byId = new Map<string, Transaction>();
+    for (const rTx of remoteTxs) {
+      if (rTx && rTx.id && !isGhostTransaction(rTx)) {
+        byId.set(rTx.id, normalizeStoredTransaction(rTx));
+      }
+    }
+
+    const pendingDeletes = new Set(pendingTxDeletesRef.current);
+    // Anti-data-loss: nunca descartar transações locais que existem em memória/cache
+    // a menos que o usuário as tenha deletado expressamente
+    for (const localTx of transactionsRef.current) {
+      if (localTx && localTx.id && !isGhostTransaction(localTx) && !pendingDeletes.has(localTx.id)) {
+        if (!byId.has(localTx.id)) {
+          byId.set(localTx.id, localTx);
+          if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+            void supabaseDb.upsertTransaction(currentUser.id, localTx).catch(() => {});
+          }
+        }
+      }
+    }
+
+    for (const delId of pendingDeletes) {
+      if (byId.has(delId)) {
+        byId.delete(delId);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.deleteTransactions(currentUser.id, [delId]).catch(() => {});
+        }
+      }
+    }
+
+    return Array.from(byId.values()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  };
+
+  const reconcileRemoteSeries = (remoteSeries: TransactionSeries[]): TransactionSeries[] => {
+    const byId = new Map<string, TransactionSeries>();
+    for (const s of remoteSeries) {
+      if (s && s.id) byId.set(s.id, s);
+    }
+    for (const localS of transactionSeriesRef.current) {
+      if (localS && localS.id && !byId.has(localS.id)) {
+        byId.set(localS.id, localS);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertTransactionSeries(currentUser.id, [localS]).catch(() => {});
+        }
+      }
+    }
+    return Array.from(byId.values());
+  };
+
+  const reconcileRemoteAccounts = (remoteAccounts: Account[]): Account[] => {
+    const byId = new Map<string, Account>();
+    for (const a of remoteAccounts) {
+      if (a && a.id) byId.set(a.id, a);
+    }
+    // Anti-data-loss: nunca descartar contas bancárias locais existentes se o remote vier incompleto
+    for (const localA of accountsRef.current) {
+      if (localA && localA.id && !byId.has(localA.id)) {
+        byId.set(localA.id, localA);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertAccount(currentUser.id, localA).catch(() => {});
+        }
+      }
+    }
+    const res = Array.from(byId.values());
+    return res.length > 0 ? res : [DEFAULT_WALLET_ACCOUNT];
+  };
+
+  const reconcileRemoteDebts = (remoteDebts: Debt[]): Debt[] => {
+    const byId = new Map<string, Debt>();
+    for (const d of remoteDebts) {
+      if (d && d.id) byId.set(d.id, d);
+    }
+    // Anti-data-loss: preservar dívidas locais existentes
+    for (const localD of debtsRef.current) {
+      if (localD && localD.id && !byId.has(localD.id)) {
+        byId.set(localD.id, localD);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertDebt(currentUser.id, localD).catch(() => {});
+        }
+      }
+    }
+    return Array.from(byId.values());
+  };
+
+  const reconcileRemoteGoals = (remoteGoals: Goal[]): Goal[] => {
+    const byId = new Map<string, Goal>();
+    for (const g of remoteGoals) {
+      if (g && g.id) byId.set(g.id, g);
+    }
+    // Anti-data-loss: preservar metas financeiras locais existentes
+    for (const localG of goalsRef.current) {
+      if (localG && localG.id && !byId.has(localG.id)) {
+        byId.set(localG.id, localG);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertGoal(currentUser.id, localG).catch(() => {});
+        }
+      }
+    }
+    return Array.from(byId.values());
+  };
+
+  const reconcileRemoteBudgets = (remoteBudgets: Budget[]): Budget[] => {
+    const byKey = new Map<string, Budget>();
+    for (const b of remoteBudgets) {
+      if (b && b.id) byKey.set(b.id, b);
+      else if (b && b.categoryId) byKey.set(`${b.categoryId}_${b.month || ''}`, b);
+    }
+    // Anti-data-loss: preservar orçamentos locais definidos
+    for (const localB of budgetsRef.current) {
+      const key = localB.id || `${localB.categoryId}_${localB.month || ''}`;
+      if (!byKey.has(key)) {
+        byKey.set(key, localB);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertBudget(currentUser.id, localB).catch(() => {});
+        }
+      }
+    }
+    return Array.from(byKey.values());
+  };
+
+  const reconcileRemoteInvestments = (remoteInvestments: InvestmentAsset[]): InvestmentAsset[] => {
+    const byId = new Map<string, InvestmentAsset>();
+    for (const inv of remoteInvestments) {
+      if (inv && inv.id) byId.set(inv.id, inv);
+    }
+    // Anti-data-loss: preservar investimentos locais cadastrados
+    for (const localInv of investmentsRef.current) {
+      if (localInv && localInv.id && !byId.has(localInv.id)) {
+        byId.set(localInv.id, localInv);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertInvestment(currentUser.id, localInv).catch(() => {});
+        }
+      }
+    }
+    return Array.from(byId.values());
   };
 
   const mergeRemoteProfile = (remoteProfile: UserProfile, localProfile: UserProfile): UserProfile => {
@@ -725,6 +865,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userRef = useRef(user);
   userRef.current = user;
   cardsRef.current = cards;
+  const accountsRef = useRef<Account[]>(accounts);
+  accountsRef.current = accounts;
+  const debtsRef = useRef<Debt[]>(debts);
+  debtsRef.current = debts;
+  const goalsRef = useRef<Goal[]>(goals);
+  goalsRef.current = goals;
+  const budgetsRef = useRef<Budget[]>(budgets);
+  budgetsRef.current = budgets;
+  const investmentsRef = useRef<InvestmentAsset[]>(investments);
+  investmentsRef.current = investments;
+  const transactionsRef = useRef<Transaction[]>(transactions);
+  transactionsRef.current = transactions;
+  const transactionSeriesRef = useRef<TransactionSeries[]>(transactionSeries);
+  transactionSeriesRef.current = transactionSeries;
 
   // Sync state whenever the active user changes (e.g. switching to demo mode)
   useEffect(() => {
@@ -733,6 +887,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isStoreLoadedForUserIdRef.current = null;
     hasInitialRemoteSyncFinishedRef.current = false;
     canWriteFullStoreToSupabaseRef.current = false;
+
+    try {
+      const rawDeletes = localStorage.getItem(pendingTxDeletesKey);
+      pendingTxDeletesRef.current = rawDeletes ? JSON.parse(rawDeletes) : [];
+    } catch (_) {
+      pendingTxDeletesRef.current = [];
+    }
 
     const hadCachedStore = Boolean(localStorage.getItem(userStoreKey));
     const store = loadUserStore();
@@ -820,21 +981,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const cleanCards = reconcileRemoteCards(
               (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
             );
-            const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-            const cleanAccounts = sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT];
-            const reconciledDebts = reconcileDebtTransactions(sbStore.debts || [], cleanTxs, cleanAccounts);
+            const cleanTxs = reconcileRemoteTransactions(
+              (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t))
+            );
+            const cleanSeries = reconcileRemoteSeries(sbStore.transactionSeries || []);
+            const cleanAccounts = reconcileRemoteAccounts(
+              (sbStore.accounts || []).length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]
+            );
+            const cleanDebts = reconcileRemoteDebts(sbStore.debts || []);
+            const cleanGoals = reconcileRemoteGoals(sbStore.goals || []);
+            const cleanBudgets = reconcileRemoteBudgets(sbStore.budgets || []);
+            const cleanInvestments = reconcileRemoteInvestments(sbStore.investments || []);
+            const reconciledDebts = reconcileDebtTransactions(cleanDebts, cleanTxs, cleanAccounts);
             const migratedSeries = migrateLegacyTransactionSeries({
               transactions: reconciledDebts.transactions,
-              series: sbStore.transactionSeries || [],
+              series: cleanSeries,
               today: getTodayString(),
             });
             setAccounts(cleanAccounts);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
-            setBudgets(sbStore.budgets || []);
-            setGoals(sbStore.goals || []);
+            setBudgets(cleanBudgets);
+            setGoals(cleanGoals);
             setDebts(reconciledDebts.debts);
-            setInvestments(sbStore.investments || []);
+            setInvestments(cleanInvestments);
             setTransactions(migratedSeries.transactions);
             setTransactionSeries(migratedSeries.series);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
@@ -854,6 +1024,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               accounts: cleanAccounts,
               cards: cleanCards,
               debts: reconciledDebts.debts,
+              goals: cleanGoals,
+              budgets: cleanBudgets,
+              investments: cleanInvestments,
               transactions: migratedSeries.transactions,
               transactionSeries: migratedSeries.series,
               userProfile: mergedUserProfile,
@@ -884,21 +1057,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const cleanCards = reconcileRemoteCards(
           (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
         );
-        const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-        const cleanAccounts = serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT];
-        const reconciledDebts = reconcileDebtTransactions(serverStore.debts || [], cleanTxs, cleanAccounts);
+        const cleanTxs = reconcileRemoteTransactions(
+          (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t))
+        );
+        const cleanSeries = reconcileRemoteSeries(serverStore.transactionSeries || []);
+        const cleanAccounts = reconcileRemoteAccounts(
+          (serverStore.accounts || []).length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]
+        );
+        const cleanDebts = reconcileRemoteDebts(serverStore.debts || []);
+        const cleanGoals = reconcileRemoteGoals(serverStore.goals || []);
+        const cleanBudgets = reconcileRemoteBudgets(serverStore.budgets || []);
+        const cleanInvestments = reconcileRemoteInvestments(serverStore.investments || []);
+        const reconciledDebts = reconcileDebtTransactions(cleanDebts, cleanTxs, cleanAccounts);
         const migratedSeries = migrateLegacyTransactionSeries({
           transactions: reconciledDebts.transactions,
-          series: serverStore.transactionSeries || [],
+          series: cleanSeries,
           today: getTodayString(),
         });
         setAccounts(cleanAccounts);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
-        setBudgets(serverStore.budgets || []);
-        setGoals(serverStore.goals || []);
+        setBudgets(cleanBudgets);
+        setGoals(cleanGoals);
         setDebts(reconciledDebts.debts);
-        setInvestments(serverStore.investments || []);
+        setInvestments(cleanInvestments);
         setTransactions(migratedSeries.transactions);
         setTransactionSeries(migratedSeries.series);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
@@ -1043,21 +1225,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const cleanCards = reconcileRemoteCards(
               (sbStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
             );
-            const cleanTxs = (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-            const cleanAccounts = sbStore.accounts.length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT];
-            const reconciledDebts = reconcileDebtTransactions(sbStore.debts || [], cleanTxs, cleanAccounts);
+            const cleanTxs = reconcileRemoteTransactions(
+              (sbStore.transactions || []).filter((t: any) => !isGhostTransaction(t))
+            );
+            const cleanSeries = reconcileRemoteSeries(sbStore.transactionSeries || []);
+            const cleanAccounts = reconcileRemoteAccounts(
+              (sbStore.accounts || []).length > 0 ? sbStore.accounts : [DEFAULT_WALLET_ACCOUNT]
+            );
+            const cleanDebts = reconcileRemoteDebts(sbStore.debts || []);
+            const cleanGoals = reconcileRemoteGoals(sbStore.goals || []);
+            const cleanBudgets = reconcileRemoteBudgets(sbStore.budgets || []);
+            const cleanInvestments = reconcileRemoteInvestments(sbStore.investments || []);
+            const reconciledDebts = reconcileDebtTransactions(cleanDebts, cleanTxs, cleanAccounts);
             const migratedSeries = migrateLegacyTransactionSeries({
               transactions: reconciledDebts.transactions,
-              series: sbStore.transactionSeries || [],
+              series: cleanSeries,
               today: getTodayString(),
             });
             setAccounts(cleanAccounts);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
-            setBudgets(sbStore.budgets || []);
-            setGoals(sbStore.goals || []);
+            setBudgets(cleanBudgets);
+            setGoals(cleanGoals);
             setDebts(reconciledDebts.debts);
-            setInvestments(sbStore.investments || []);
+            setInvestments(cleanInvestments);
             setTransactions(migratedSeries.transactions);
             setTransactionSeries(migratedSeries.series);
             if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
@@ -1077,6 +1268,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               accounts: cleanAccounts,
               cards: cleanCards,
               debts: reconciledDebts.debts,
+              goals: cleanGoals,
+              budgets: cleanBudgets,
+              investments: cleanInvestments,
               transactions: migratedSeries.transactions,
               transactionSeries: migratedSeries.series,
               userProfile: mergedUserProfile,
@@ -1102,21 +1296,30 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const cleanCards = reconcileRemoteCards(
           (serverStore.cards || []).filter((c: any) => c && !GHOST_CARD_IDS.has(c.id))
         );
-        const cleanTxs = (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t));
-        const cleanAccounts = serverStore.accounts.length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT];
-        const reconciledDebts = reconcileDebtTransactions(serverStore.debts || [], cleanTxs, cleanAccounts);
+        const cleanTxs = reconcileRemoteTransactions(
+          (serverStore.transactions || []).filter((t: any) => !isGhostTransaction(t))
+        );
+        const cleanSeries = reconcileRemoteSeries(serverStore.transactionSeries || []);
+        const cleanAccounts = reconcileRemoteAccounts(
+          (serverStore.accounts || []).length > 0 ? serverStore.accounts : [DEFAULT_WALLET_ACCOUNT]
+        );
+        const cleanDebts = reconcileRemoteDebts(serverStore.debts || []);
+        const cleanGoals = reconcileRemoteGoals(serverStore.goals || []);
+        const cleanBudgets = reconcileRemoteBudgets(serverStore.budgets || []);
+        const cleanInvestments = reconcileRemoteInvestments(serverStore.investments || []);
+        const reconciledDebts = reconcileDebtTransactions(cleanDebts, cleanTxs, cleanAccounts);
         const migratedSeries = migrateLegacyTransactionSeries({
           transactions: reconciledDebts.transactions,
-          series: serverStore.transactionSeries || [],
+          series: cleanSeries,
           today: getTodayString(),
         });
         setAccounts(cleanAccounts);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
-        setBudgets(serverStore.budgets || []);
-        setGoals(serverStore.goals || []);
+        setBudgets(cleanBudgets);
+        setGoals(cleanGoals);
         setDebts(reconciledDebts.debts);
-        setInvestments(serverStore.investments || []);
+        setInvestments(cleanInvestments);
         setTransactions(migratedSeries.transactions);
         setTransactionSeries(migratedSeries.series);
         if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
@@ -1605,8 +1808,18 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     markLocalMutation();
+    // Remove from pending deletes if recreating
+    pendingTxDeletesRef.current = pendingTxDeletesRef.current.filter(id => id !== newTx.id);
+    try {
+      localStorage.setItem(pendingTxDeletesKey, JSON.stringify(pendingTxDeletesRef.current));
+    } catch (_) {}
+
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => [newTx, ...prev]);
+
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      void supabaseDb.upsertTransaction(currentUser.id, newTx).catch(() => {});
+    }
   };
 
   const addTransactionSeries = (series: TransactionSeries, occurrences: Transaction[]) => {
@@ -1623,7 +1836,6 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-
   const updateTransaction = (id: string, data: Partial<Transaction>) => {
     const oldTx = transactions.find(t => t.id === id);
     if (!oldTx) return;
@@ -1637,12 +1849,21 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     markLocalMutation();
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.map(t => (t.id === id ? newTx : t)));
+
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      void supabaseDb.upsertTransaction(currentUser.id, newTx).catch(() => {});
+    }
   };
-
-
 
   const deleteTransaction = (id: string) => {
     markLocalMutation();
+    if (!pendingTxDeletesRef.current.includes(id)) {
+      pendingTxDeletesRef.current.push(id);
+      try {
+        localStorage.setItem(pendingTxDeletesKey, JSON.stringify(pendingTxDeletesRef.current));
+      } catch (_) {}
+    }
+
     const tx = transactions.find(t => t.id === id);
     if (tx) {
       // If it was an invoice payment, also mark the card's expense transactions of that month back to pending
@@ -1664,6 +1885,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           showUndo({
             message: `Transação "${tx.description}" excluída`,
             onUndo: () => {
+              pendingTxDeletesRef.current = pendingTxDeletesRef.current.filter(item => item !== id);
               setTransactions(previousTransactions);
             },
           });
@@ -1681,18 +1903,26 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       showUndo({
         message: `Transação "${txToDelete.description}" excluída`,
         onUndo: () => {
+          pendingTxDeletesRef.current = pendingTxDeletesRef.current.filter(item => item !== id);
           setTransactions(prev => [txToDelete, ...prev]);
         },
       });
     }
   };
 
-
   const deleteMultipleTransactions = (ids: string[]) => {
     const idSet = new Set(ids);
     const deletedTxs = transactions.filter(t => idSet.has(t.id));
     if (deletedTxs.length === 0) return;
     markLocalMutation();
+
+    ids.forEach(id => {
+      if (!pendingTxDeletesRef.current.includes(id)) pendingTxDeletesRef.current.push(id);
+    });
+    try {
+      localStorage.setItem(pendingTxDeletesKey, JSON.stringify(pendingTxDeletesRef.current));
+    } catch (_) {}
+
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => prev.filter(t => !idSet.has(t.id)));
     if (currentUser && isSupabaseConfigured()) {
@@ -1701,6 +1931,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     showUndo({
       message: `${deletedTxs.length} transações excluídas`,
       onUndo: () => {
+        pendingTxDeletesRef.current = pendingTxDeletesRef.current.filter(item => !idSet.has(item));
         setTransactions(prev => [...deletedTxs, ...prev]);
       },
     });

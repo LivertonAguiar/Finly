@@ -601,6 +601,20 @@ export const HELP_FAQS: HelpFaqItem[] = [
     tags: ['dashboard', 'cards', 'responsivo', 'personalizar', 'colunas', 'layout'],
   },
   {
+    id: 'faq-regimes-visualizacao',
+    question: 'Como funcionam os modos "Por Competência/Fatura", "Por Data da Compra" e "Por Vencimento"?',
+    answer: 'Na tela Transações, você pode alternar entre 3 visões: 1) Por Competência/Fatura (Padrão Contábil): exibe todas as despesas comuns do mês e as compras de cartão pertencentes à fatura daquele mês, mesmo que ainda estejam abertas ou pendentes; 2) Por Data da Compra: exibe os lançamentos exatamente no dia em que foram efetuados; 3) Por Vencimento: exibe no dia do vencimento da conta ou da fatura do cartão (ideal para acompanhar fluxo de caixa de saídas bancárias).',
+    category: 'transacoes',
+    tags: ['competencia', 'fatura', 'vencimento', 'regime', 'transacoes', 'extrato', 'data da compra'],
+  },
+  {
+    id: 'faq-despesa-duplicacao-fatura',
+    question: 'Por que o pagamento da fatura não é somado novamente como despesa no Dashboard?',
+    answer: 'Porque todas as compras individuais do cartão já foram contabilizadas como despesas econômicas dentro das suas respectivas categorias originais (Supermercado, Farmácia, Combustível, etc.). O pagamento da fatura é uma transferência e liquidação financeira entre a sua conta bancária e o cartão. Se fosse somado de novo, suas despesas seriam duplicadas artificialmente.',
+    category: 'transacoes',
+    tags: ['fatura', 'pagamento', 'duplicacao', 'cartao', 'liquidacao', 'dashboard', 'categorias'],
+  },
+  {
     id: 'faq-cartao-vs-conta',
     question: 'Qual a diferença entre lançar uma despesa em "Conta Bancária" e em "Cartão de Crédito"?',
     answer: 'Quando você seleciona "Conta Bancária", o valor é subtraído imediatamente do saldo real da sua conta (ex: Pix ou débito). Quando escolhe "Cartão de Crédito", o valor entra na fatura atual do cartão e só abaterá do seu dinheiro em conta quando você efetivamente registrar o pagamento da fatura.',

@@ -72,22 +72,74 @@ export function allocateCardTransaction(
   };
 }
 
+export type ViewRegime = 'invoice_month' | 'purchase_date' | 'due_date';
+
+/**
+ * Identifica se uma transação representa a liquidação/pagamento da fatura de cartão,
+ * evitando contagem dupla com as compras individuais do cartão no cálculo de despesas.
+ */
+export function isInvoicePaymentTransaction(tx: Transaction): boolean {
+  if (!tx) return false;
+  if (tx.categoryId === 'cat-fatura-cartao') return true;
+  if (tx.tags && tx.tags.includes('fatura') && (tx.tags.includes('cartao') || (tx.description && tx.description.toLowerCase().includes('pagamento fatura')))) return true;
+  if (String(tx.id || '').startsWith('tx-pay-')) return true;
+  return false;
+}
+
 /**
  * Retorna a data efetiva de uma transacao com base no regime de visualizacao:
- * - 'due_date' (Caixa): Se for despesa de cartao, projeta no dia do vencimento da fatura; senao usa tx.date.
- * - 'purchase_date' (Competencia): Usa tx.purchaseDate ou tx.date.
+ * - 'invoice_month' (Competência / Fatura - Padrão): Para cartão, alinha ao mês da fatura; usa dia da compra.
+ * - 'due_date' (Caixa): Se for despesa de cartao, projeta no dia do vencimento da fatura; senao usa tx.dueDate ou tx.date.
+ * - 'purchase_date' (Data da Compra): Usa tx.purchaseDate ou tx.date.
  */
 export function getEffectiveTransactionDate(
   tx: Transaction,
   card: CreditCard | undefined,
-  viewRegime: 'due_date' | 'purchase_date' = 'due_date'
+  viewRegime: ViewRegime = 'invoice_month'
 ): string {
   if (viewRegime === 'due_date' && tx.cardId && card && tx.type === 'expense') {
     if (tx.dueDate) return tx.dueDate;
     const allocation = allocateCardTransaction(tx.date, card.closingDay, card.dueDay);
     return allocation.dueDate;
   }
+  if (viewRegime === 'invoice_month' && tx.cardId && tx.type === 'expense') {
+    const invMonth = tx.invoiceMonth || (card ? allocateCardTransaction(tx.date, card.closingDay, card.dueDay).invoiceMonth : tx.date.slice(0, 7));
+    const rawDay = parseInt((tx.purchaseDate || tx.date).slice(8, 10), 10) || 1;
+    const parts = invMonth.split('-');
+    const invYear = parseInt(parts[0], 10) || new Date().getFullYear();
+    const invM = parseInt(parts[1], 10) || (new Date().getMonth() + 1);
+    const maxDays = new Date(invYear, invM, 0).getDate();
+    const safeDay = Math.min(Math.max(1, rawDay), maxDays);
+    return `${invMonth}-${String(safeDay).padStart(2, '0')}`;
+  }
   return tx.purchaseDate || tx.date;
+}
+
+/**
+ * Determina com precisão se a transação pertence ao mês selecionado ('YYYY-MM') conforme o regime:
+ * - 'invoice_month': compras de cartão pertencentes à fatura daquele mês (competência) + transações comuns do mês.
+ * - 'purchase_date': transações cuja compra ocorreu no mês.
+ * - 'due_date': transações cujo vencimento financeiro (caixa) ocorre no mês.
+ */
+export function doesTransactionBelongToMonth(
+  tx: Transaction,
+  card: CreditCard | undefined,
+  monthPrefix: string,
+  viewRegime: ViewRegime = 'invoice_month'
+): boolean {
+  if (viewRegime === 'invoice_month') {
+    if (tx.cardId && tx.type === 'expense') {
+      const invMonth = tx.invoiceMonth || (card ? allocateCardTransaction(tx.date, card.closingDay, card.dueDay).invoiceMonth : tx.date.slice(0, 7));
+      return invMonth === monthPrefix;
+    }
+    return tx.date.startsWith(monthPrefix);
+  }
+  if (viewRegime === 'due_date') {
+    const effective = getEffectiveTransactionDate(tx, card, 'due_date');
+    return effective.startsWith(monthPrefix);
+  }
+  const purchase = tx.purchaseDate || tx.date;
+  return purchase.startsWith(monthPrefix);
 }
 
 /**

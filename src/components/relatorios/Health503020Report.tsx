@@ -20,13 +20,20 @@ import {
   CheckCircle2,
   ArrowUpRight,
 } from 'lucide-react';
-import { Transaction, Category } from '../../types';
+import { Transaction, Category, CreditCard } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
+import {
+  doesTransactionBelongToMonth,
+  isInvoicePaymentTransaction,
+  ViewRegime,
+} from '../../utils/invoiceCalculator';
 
 interface Health503020ReportProps {
   transactions: Transaction[];
   categories: Category[];
   currentMonth: string; // YYYY-MM
+  cards?: CreditCard[];
+  viewRegime?: ViewRegime;
   currency?: string;
   isBento?: boolean;
 }
@@ -98,13 +105,18 @@ export const Health503020Report: React.FC<Health503020ReportProps> = ({
   transactions,
   categories,
   currentMonth,
+  cards = [],
+  viewRegime = 'invoice_month',
   currency = 'BRL',
   isBento = false,
 }) => {
   // Transações do mês selecionado
   const monthTransactions = useMemo(() => {
-    return transactions.filter(t => t.date.startsWith(currentMonth));
-  }, [transactions, currentMonth]);
+    return transactions.filter(t => {
+      const card = cards.find(c => c.id === t.cardId);
+      return doesTransactionBelongToMonth(t, card, currentMonth, viewRegime);
+    });
+  }, [transactions, currentMonth, cards, viewRegime]);
 
   // Mapa de categorias
   const categoryMap = useMemo(() => {
@@ -125,9 +137,14 @@ export const Health503020Report: React.FC<Health503020ReportProps> = ({
     const savingsBreakdown: Record<string, number> = {};
 
     monthTransactions.forEach(t => {
+      if (t.ignored) return;
+
       if (t.type === 'income') {
         totalIncome += t.amount;
       } else if (t.type === 'expense') {
+        // Ignorar pagamento de fatura como despesa para não duplicar com as compras do cartão
+        if (isInvoicePaymentTransaction(t)) return;
+
         const cat = categoryMap.get(t.categoryId);
         const catName = cat ? cat.name : 'Outros';
         const slice = classifyCategory(catName);

@@ -3,6 +3,25 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.68] - 2026-09-12
+
+### 📊 Unificação Contábil por Competência de Fatura & Blindagem Universal Anti-Perda
+- **Unificação Contábil por Competência em 100% dos Módulos**:
+  - **Dashboard (`OverviewTab.tsx`)**: Despesas mensais somam compras da competência da fatura (`invoiceMonth`) + despesas comuns (pagas e pendentes). Pagamentos de fatura são tratados exclusivamente como liquidação/transferência e nunca duplicados como despesa. Gráfico de categorias preserva a categoria original de cada compra.
+  - **Transações (`TransactionsPage.tsx`)**: Regime padrão estabelecido como **Por Competência / Fatura**, com cards discriminados de realizado vs previsto e seletor rápido entre os 3 regimes contábeis.
+  - **Orçamentos (`BudgetPage.tsx`)**: Matriz histórica de 12 meses e comparativo do mês em curso utilizam a competência da fatura e ignoram pagamentos de fatura.
+  - **Relatórios Executivos (`ReportsPage.tsx`)**: Seletor de 3 regimes integrado na interface; gráficos Donut, Linhas diárias/semanais e Barras de balanço e fluxo de caixa anual utilizam a apuração contábil exata. Exportações em PDF, Excel e CSV refletem o regime adotado.
+  - **Relatório Comparativo (`ComparativeReport.tsx`)**: Comparativo MoM e Orçado vs Realizado agrupam compras de cartão por competência nas categorias corretas e excluem pagamentos de fatura.
+  - **Diagnóstico 50/30/20 (`Health503020Report.tsx`)**: Classificação inteligente aplicada às compras individuais de cartão por competência da fatura.
+- **Seletor de 3 Regimes de Apuração**:
+  - **Por Competência / Fatura**: Compra pertence ao mês da fatura aberta/fechada do cartão.
+  - **Por Data da Compra**: Compra apurada no dia exato da transação física.
+  - **Por Vencimento**: Compra apurada na data de vencimento/liquidação da fatura (Fluxo de Caixa).
+- **Blindagem Universal Anti-Perda de Dados (Infraestrutura & Client)**:
+  - **Deploy VPS Automatizado (`scripts/deploy-vps.ps1`)**: Execução obrigatória e automática de todas as migrações SQL pendentes (`supabase/migrations/*.sql`) dentro do container Postgres do Supabase (`supabase-db`) no início de cada deploy.
+  - **Reconciliação Bidirecional no Client (`FinancialContext.tsx`)**: Reconciliadores dedicados para todas as entidades (`accounts`, `cards`, `transactions`, `transactionSeries`, `debts`, `goals`, `budgets`, `investments`), impedindo que snapshots remotos parciais ou vazios sobrescrevam dados locais do usuário.
+  - **Snapshots Fail-Safe (`supabaseDb.ts`)**: Se qualquer tabela falhar na leitura, a sincronização é abortada com segurança sem entregar coleções vazias ao cliente.
+
 ## [1.1.67] - 2026-09-12
 
 ### 💳 Compra Recorrente no Cartão de Crédito & Ação "Encerrar Recorrência"

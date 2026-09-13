@@ -29,10 +29,11 @@ import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { downloadCSV } from '../../utils/reportExportService';
+import { doesTransactionBelongToMonth, isInvoicePaymentTransaction } from '../../utils/invoiceCalculator';
 import { Modal } from '../ui/Modal';
 
 export const BudgetPage: React.FC = () => {
-  const { categories, budgets, setCategoryBudget, transactions, user } = useFinancial();
+  const { categories, budgets, setCategoryBudget, transactions, cards, user } = useFinancial();
 
   const [viewMode, setViewMode] = useState<'cards' | 'matrix'>('cards');
   const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
@@ -229,7 +230,8 @@ export const BudgetPage: React.FC = () => {
     const expenses = expenseCategories.map(cat => {
       const monthlyValues = matrixMonths.map(m => {
         const spent = transactions
-          .filter(t => t.type === 'expense' && t.date.startsWith(m.prefix) && !t.ignored)
+          .filter(t => t.type === 'expense' && !t.ignored && !isInvoicePaymentTransaction(t))
+          .filter(t => doesTransactionBelongToMonth(t, cards.find(c => c.id === t.cardId), m.prefix, 'invoice_month'))
           .filter(t => {
             const found = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
             return found ? found.id === cat.id : t.categoryId === cat.id;
@@ -245,7 +247,8 @@ export const BudgetPage: React.FC = () => {
       const subcategories = (cat.subcategories || []).map(sub => {
         const subMonthlyValues = matrixMonths.map(m => {
           const spent = transactions
-            .filter(t => t.type === 'expense' && t.date.startsWith(m.prefix) && !t.ignored)
+            .filter(t => t.type === 'expense' && !t.ignored && !isInvoicePaymentTransaction(t))
+            .filter(t => doesTransactionBelongToMonth(t, cards.find(c => c.id === t.cardId), m.prefix, 'invoice_month'))
             .filter(t => t.subcategoryId === sub.id)
             .reduce((sum, t) => sum + t.amount, 0);
           const plan = getSubcategoryPlanned(cat.id, sub.id, m.prefix, 'expense');
@@ -357,20 +360,23 @@ export const BudgetPage: React.FC = () => {
     await downloadCSV(`matriz_orcamento_${selectedMatrixYear}.csv`, csvContent, 'Matriz Orçamentária (CSV)');
   };
 
-  // Month transactions
+  // Month transactions (contempla despesas comuns e compras de cartão por competência de fatura)
   const monthTransactions = useMemo(() => {
-    return transactions.filter(t => t.date.startsWith(currentMonthPrefix));
-  }, [transactions, currentMonthPrefix]);
+    return transactions.filter(t => {
+      const card = cards.find(c => c.id === t.cardId);
+      return doesTransactionBelongToMonth(t, card, currentMonthPrefix, 'invoice_month');
+    });
+  }, [transactions, cards, currentMonthPrefix]);
 
   const monthlyIncomesTotal = useMemo(() => {
-    return monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) || parseFloat(monthlyIncomeInput) || 5000;
+    return monthTransactions.filter(t => t.type === 'income' && !t.ignored).reduce((sum, t) => sum + t.amount, 0) || parseFloat(monthlyIncomeInput) || 5000;
   }, [monthTransactions, monthlyIncomeInput]);
 
   // Spending and budget per category
   const categoryBudgetData = useMemo(() => {
     return expenseCategories.map(cat => {
       const spent = monthTransactions
-        .filter(t => t.type === 'expense')
+        .filter(t => t.type === 'expense' && !t.ignored && !isInvoicePaymentTransaction(t))
         .filter(t => {
           const found = findCategory(t.categoryId, t.subcategoryId);
           return found ? found.id === cat.id : t.categoryId === cat.id;
@@ -379,7 +385,8 @@ export const BudgetPage: React.FC = () => {
 
       // Previous month benchmark
       const prevSpent = transactions
-        .filter(t => t.type === 'expense' && t.date.startsWith(prevMonthPrefix))
+        .filter(t => t.type === 'expense' && !t.ignored && !isInvoicePaymentTransaction(t))
+        .filter(t => doesTransactionBelongToMonth(t, cards.find(c => c.id === t.cardId), prevMonthPrefix, 'invoice_month'))
         .filter(t => {
           const found = findCategory(t.categoryId, t.subcategoryId);
           return found ? found.id === cat.id : t.categoryId === cat.id;
@@ -1278,7 +1285,8 @@ export const BudgetPage: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 max-h-64 overflow-y-auto divide-y divide-slate-200/60 dark:divide-slate-700/60 pr-1">
                   {expenseCategories.map(cat => {
                     const prevSpent = transactions
-                      .filter(t => t.type === 'expense' && t.date.startsWith(prevMonthPrefix))
+                      .filter(t => t.type === 'expense' && !t.ignored && !isInvoicePaymentTransaction(t))
+                      .filter(t => doesTransactionBelongToMonth(t, cards.find(c => c.id === t.cardId), prevMonthPrefix, 'invoice_month'))
                       .filter(t => {
                         const found = findCategory(t.categoryId, t.subcategoryId);
                         return found ? found.id === cat.id : t.categoryId === cat.id;

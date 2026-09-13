@@ -22,7 +22,12 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { formatCurrency } from '../../utils/formatters';
-import type { Category, Transaction, Budget } from '../../types';
+import type { Category, Transaction, Budget, CreditCard } from '../../types';
+import {
+  doesTransactionBelongToMonth,
+  isInvoicePaymentTransaction,
+  ViewRegime,
+} from '../../utils/invoiceCalculator';
 
 interface ComparativeReportProps {
   currentMonthTransactions?: Transaction[];
@@ -33,6 +38,8 @@ interface ComparativeReportProps {
   currentMonth?: string;
   categories: Category[];
   budgets?: Budget[] | Record<string, number>;
+  cards?: CreditCard[];
+  viewRegime?: ViewRegime;
   currency?: string;
   showValues?: boolean;
   layoutMode?: 'focused' | 'bento';
@@ -48,6 +55,8 @@ export const ComparativeReport: React.FC<ComparativeReportProps> = ({
   currentMonth,
   categories,
   budgets = [],
+  cards = [],
+  viewRegime = 'invoice_month',
   currency = 'BRL',
   showValues = true,
   layoutMode = 'focused',
@@ -71,18 +80,24 @@ export const ComparativeReport: React.FC<ComparativeReportProps> = ({
   const currentMonthTransactions = useMemo(() => {
     if (propCurrentTx) return propCurrentTx;
     if (transactions) {
-      return transactions.filter(t => t.date.startsWith(currentMonthPrefix));
+      return transactions.filter(t => {
+        const card = cards.find(c => c.id === t.cardId);
+        return doesTransactionBelongToMonth(t, card, currentMonthPrefix, viewRegime);
+      });
     }
     return [];
-  }, [propCurrentTx, transactions, currentMonthPrefix]);
+  }, [propCurrentTx, transactions, currentMonthPrefix, cards, viewRegime]);
 
   const previousMonthTransactions = useMemo(() => {
     if (propPrevTx) return propPrevTx;
     if (transactions) {
-      return transactions.filter(t => t.date.startsWith(previousMonthPrefix));
+      return transactions.filter(t => {
+        const card = cards.find(c => c.id === t.cardId);
+        return doesTransactionBelongToMonth(t, card, previousMonthPrefix, viewRegime);
+      });
     }
     return [];
-  }, [propPrevTx, transactions, previousMonthPrefix]);
+  }, [propPrevTx, transactions, previousMonthPrefix, cards, viewRegime]);
 
   // Normalizar budgets em Record<string, number>
   const budgetMap = useMemo(() => {
@@ -117,14 +132,14 @@ export const ComparativeReport: React.FC<ComparativeReportProps> = ({
     const previousCategoryTotals: Record<string, number> = {};
 
     currentMonthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
+      .filter(t => t.type === 'expense' && (t.status === 'completed' || !!t.cardId || (t as any).isCreditPurchase) && !t.ignored && !isInvoicePaymentTransaction(t))
       .forEach(t => {
         const catId = t.categoryId || 'outros';
         currentCategoryTotals[catId] = (currentCategoryTotals[catId] || 0) + t.amount;
       });
 
     previousMonthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
+      .filter(t => t.type === 'expense' && (t.status === 'completed' || !!t.cardId || (t as any).isCreditPurchase) && !t.ignored && !isInvoicePaymentTransaction(t))
       .forEach(t => {
         const catId = t.categoryId || 'outros';
         previousCategoryTotals[catId] = (previousCategoryTotals[catId] || 0) + t.amount;
@@ -188,7 +203,7 @@ export const ComparativeReport: React.FC<ComparativeReportProps> = ({
     const currentCategoryTotals: Record<string, number> = {};
 
     currentMonthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
+      .filter(t => t.type === 'expense' && (t.status === 'completed' || !!t.cardId || (t as any).isCreditPurchase) && !t.ignored && !isInvoicePaymentTransaction(t))
       .forEach(t => {
         const catId = t.categoryId || 'outros';
         currentCategoryTotals[catId] = (currentCategoryTotals[catId] || 0) + t.amount;

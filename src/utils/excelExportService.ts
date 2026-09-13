@@ -34,7 +34,7 @@ export async function exportReportExcel(data: ReportExportData): Promise<void> {
   // -------------------------------------------------------------
   // 1. ABA RESUMO EXECUTIVO
   // -------------------------------------------------------------
-  const regimeLabel = data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra (Competência)';
+  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
   const savingsRate = data.totalIncome > 0
     ? Number(((data.netBalance / data.totalIncome) * 100).toFixed(1))
     : 0;

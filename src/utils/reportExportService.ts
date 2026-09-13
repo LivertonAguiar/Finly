@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Transaction, Category, Account, CreditCard } from '../types';
+import { ViewRegime } from './invoiceCalculator';
 import { formatCurrency, formatDate } from './formatters';
 import { resolveCategory } from './categoryResolver';
 import { saveOrShareFile } from './fileDownloadHelper';
@@ -8,7 +9,7 @@ import { saveOrShareFile } from './fileDownloadHelper';
 export interface ReportExportData {
   periodLabel: string;
   periodSlug: string;
-  viewRegime: 'due_date' | 'purchase_date';
+  viewRegime: ViewRegime;
   totalIncome: number;
   totalExpense: number;
   netBalance: number;
@@ -315,7 +316,7 @@ export async function exportReportPDF(data: ReportExportData): Promise<void> {
   const currency = data.currency || 'BRL';
   const now = new Date();
   const generationDateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const regimeLabel = data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra (Competência)';
+  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
 
   // Calculate savings rate
   const savingsRate = data.totalIncome > 0
@@ -659,7 +660,7 @@ export async function exportReportCSV(data: ReportExportData): Promise<void> {
   const currency = data.currency || 'BRL';
   const now = new Date();
   const generationDateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-  const regimeLabel = data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra (Competência)';
+  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
 
   const lines: string[] = [];
 

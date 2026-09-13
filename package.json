@@ -1,7 +1,7 @@
 {
   "name": "finly",
   "private": true,
-  "version": "1.1.67",
+  "version": "1.1.68",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,7 +20,8 @@
     "test:notifications": "node scripts/run-ts-test.mjs tests/notificationRules.test.ts",
     "test:transfers": "node scripts/run-ts-test.mjs tests/transferRules.test.ts",
     "test:mutation-journal": "node scripts/run-ts-test.mjs tests/pendingMutationJournal.test.ts",
-    "test:transactions": "npm run test:card-series && npm run test:recurring-series && npm run test:transaction-impact && npm run test:series-scope && npm run test:series-migration && npm run test:notifications && npm run test:transfers && npm run test:mutation-journal",
+    "test:view-regimes": "node scripts/run-ts-test.mjs tests/viewRegimesAndInvoices.test.ts",
+    "test:transactions": "npm run test:card-series && npm run test:recurring-series && npm run test:transaction-impact && npm run test:series-scope && npm run test:series-migration && npm run test:notifications && npm run test:transfers && npm run test:mutation-journal && npm run test:view-regimes",
     "check:version": "node scripts/check-version-sync.mjs",
     "verify:build-version": "node scripts/verify-built-version.mjs",
     "build": "tsc && vite build && npm run verify:build-version",

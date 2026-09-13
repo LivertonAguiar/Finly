@@ -83,6 +83,10 @@ $cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/d
 ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server $cmd
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou durante a reconstrucao do container." }
 
+Write-Host "Aplicando migrações SQL no banco de dados Supabase..." -ForegroundColor Yellow
+$migrationCmd = 'for f in /opt/docker/finly/supabase/migrations/*.sql; do if [ -f "$f" ]; then cat "$f" | sudo docker exec -i supabase-db psql -U postgres -d postgres >/dev/null 2>&1 || true; fi; done'
+ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server $migrationCmd
+
 Write-Host "Validando API e bundle implantados..." -ForegroundColor Yellow
 $apiRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {

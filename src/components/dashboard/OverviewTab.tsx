@@ -56,9 +56,10 @@ import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
+import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
-import { MonthPickerPopover } from '../ui/MonthPickerPopover';
+import { isInvoicePaymentTransaction, allocateCardTransaction } from '../../utils/invoiceCalculator';
 import { useTranslation } from '../../utils/i18n';
 import { isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
 
@@ -429,30 +430,84 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const yearNum = viewDate.getFullYear();
   const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
 
-  // Month filtered transactions
-  const monthTransactions = useMemo(() => {
-    return transactions.filter(t => t.date.startsWith(currentMonthPrefix));
+  // Transações de despesas econômicas do mês:
+  // - Despesas comuns pagas ou pendentes daquele mês (por data)
+  // - Compras de cartão de crédito pertencentes à fatura/competência do mês
+  // - Exclui estritamente pagamentos de fatura (liquidação financeira de saldo)
+  const monthEconomicExpenseTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (t.type !== 'expense' || t.ignored || isInvoicePaymentTransaction(t)) return false;
+      if (t.cardId) {
+        const card = cards.find(c => c.id === t.cardId);
+        const invMonth = t.invoiceMonth || (card ? allocateCardTransaction(t.date, card.closingDay, card.dueDay).invoiceMonth : t.date.slice(0, 7));
+        return invMonth === currentMonthPrefix;
+      }
+      return t.date.startsWith(currentMonthPrefix);
+    });
+  }, [transactions, cards, currentMonthPrefix]);
+
+  // Transações de receitas pertencentes ao mês (recebidas e a receber)
+  const monthIncomeTransactions = useMemo(() => {
+    return transactions.filter(t => t.type === 'income' && !t.ignored && t.date.startsWith(currentMonthPrefix));
   }, [transactions, currentMonthPrefix]);
 
-  const monthlyIncome = useMemo(() => {
-    return monthTransactions
-      .filter(t => t.type === 'income' && t.status === 'completed' && !t.ignored)
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [monthTransactions]);
+  // Month filtered transactions (todas as transações com efeito no mês)
+  const monthTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (t.cardId && t.type === 'expense') {
+        const card = cards.find(c => c.id === t.cardId);
+        const invMonth = t.invoiceMonth || (card ? allocateCardTransaction(t.date, card.closingDay, card.dueDay).invoiceMonth : t.date.slice(0, 7));
+        return invMonth === currentMonthPrefix;
+      }
+      return t.date.startsWith(currentMonthPrefix);
+    });
+  }, [transactions, cards, currentMonthPrefix]);
 
-  const monthlyExpense = useMemo(() => {
-    return monthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [monthTransactions]);
+  // Despesas discriminadas: Realizadas, Pendentes e Cartão
+  const expenseBreakdown = useMemo(() => {
+    let realized = 0; // Despesas comuns pagas
+    let pending = 0;  // Despesas comuns pendentes
+    let card = 0;     // Compras no cartão de crédito
 
-  const monthlyBalance = monthlyIncome - monthlyExpense;
+    monthEconomicExpenseTransactions.forEach(t => {
+      if (t.cardId) {
+        card += t.amount;
+      } else if (t.status === 'completed') {
+        realized += t.amount;
+      } else {
+        pending += t.amount;
+      }
+    });
 
-  // 1. Expense by Category Donut Data
+    const total = Math.round((realized + pending + card) * 100) / 100;
+    return { realized, pending, card, total };
+  }, [monthEconomicExpenseTransactions]);
+
+  // Receitas discriminadas: Recebidas e A receber
+  const incomeBreakdown = useMemo(() => {
+    let received = 0; // Receitas concluídas
+    let pending = 0;  // Receitas a receber
+
+    monthIncomeTransactions.forEach(t => {
+      if (t.status === 'completed') {
+        received += t.amount;
+      } else {
+        pending += t.amount;
+      }
+    });
+
+    const total = Math.round((received + pending) * 100) / 100;
+    return { received, pending, total };
+  }, [monthIncomeTransactions]);
+
+  const monthlyIncome = incomeBreakdown.total;
+  const monthlyExpense = expenseBreakdown.total;
+  const monthlyBalance = Math.round((monthlyIncome - monthlyExpense) * 100) / 100;
+
+  // 1. Expense by Category Donut Data (utiliza todas as compras individuais do cartão mantendo suas categorias)
   const categoryChartData = useMemo(() => {
     const expensesByCategory: Record<string, { amount: number; categoryId: string }> = {};
-    monthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
+    monthEconomicExpenseTransactions
       .forEach(t => {
         const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
         const key = resolved.id;
@@ -475,7 +530,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         return { name, value: item.amount, color, icon, percentage, id: catId };
       })
       .sort((a, b) => b.value - a.value);
-  }, [monthTransactions, categories, translateCategory]);
+  }, [monthEconomicExpenseTransactions, categories, translateCategory]);
 
   const totalExpenseCategorySum = useMemo(() => {
     return categoryChartData.reduce((acc, curr) => acc + curr.value, 0);
@@ -673,11 +728,19 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
       const mName = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
 
       const inc = transactions
-        .filter(t => t.date.startsWith(prefix) && t.type === 'income' && t.status === 'completed' && !t.ignored)
+        .filter(t => t.date.startsWith(prefix) && t.type === 'income' && !t.ignored)
         .reduce((s, t) => s + t.amount, 0);
 
       const exp = transactions
-        .filter(t => t.date.startsWith(prefix) && t.type === 'expense' && t.status === 'completed' && !t.ignored)
+        .filter(t => {
+          if (t.type !== 'expense' || t.ignored || isInvoicePaymentTransaction(t)) return false;
+          if (t.cardId) {
+            const card = cards.find(c => c.id === t.cardId);
+            const invMonth = t.invoiceMonth || (card ? allocateCardTransaction(t.date, card.closingDay, card.dueDay).invoiceMonth : t.date.slice(0, 7));
+            return invMonth === prefix;
+          }
+          return t.date.startsWith(prefix);
+        })
         .reduce((s, t) => s + t.amount, 0);
 
       list.push({
@@ -814,7 +877,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   // Left 1: Despesas por Categoria (Modern, Responsive & Interactive Donut)
   const renderDespesasCategoria = (isFullWidth: boolean = true) => {
     const filteredTxsForCategory = selectedCategoryFilter
-      ? monthTransactions.filter(t => t.categoryId === selectedCategoryFilter && t.type === 'expense' && t.status === 'completed')
+      ? monthEconomicExpenseTransactions.filter(t => t.categoryId === selectedCategoryFilter)
       : [];
 
     const activeCat = hoveredCategory || (selectedCategoryFilter ? categoryChartData.find(c => c.id === selectedCategoryFilter) : null);
@@ -1390,8 +1453,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
   const renderPlanejamento = () => {
     const budgetedCategories = budgets.map(b => {
       const cat = categories.find(c => c.id === b.categoryId);
-      const spent = monthTransactions
-        .filter(t => t.categoryId === b.categoryId && t.type === 'expense' && t.status === 'completed' && !t.ignored)
+      const spent = monthEconomicExpenseTransactions
+        .filter(t => t.categoryId === b.categoryId)
         .reduce((sum, t) => sum + t.amount, 0);
       const pct = b.limit > 0 ? Math.min(100, (spent / b.limit) * 100) : 0;
       return {
@@ -2399,6 +2462,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-[#5eead4] block truncate mono-metric">
                 {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
               </span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+                <span>Recebidas: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(incomeBreakdown.received, user.currency, !user.showValues)}</strong></span>
+                <span>•</span>
+                <span>A receber: <strong className="text-amber-600 dark:text-amber-400 font-bold">{formatCurrency(incomeBreakdown.pending, user.currency, !user.showValues)}</strong></span>
+              </div>
             </div>
             <div className="w-full h-1 bg-emerald-500/10 dark:bg-emerald-950/50 rounded-full overflow-hidden">
               <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: '100%' }} />
@@ -2427,6 +2495,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
               <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-[#fb7185] block truncate mono-metric">
                 {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
               </span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+                <span>Realizadas: <strong className="text-rose-600 dark:text-rose-400 font-bold">{formatCurrency(expenseBreakdown.realized, user.currency, !user.showValues)}</strong></span>
+                <span>•</span>
+                <span>Pendentes: <strong className="text-amber-600 dark:text-amber-400 font-bold">{formatCurrency(expenseBreakdown.pending, user.currency, !user.showValues)}</strong></span>
+                <span>•</span>
+                <span>Cartão: <strong className="text-purple-600 dark:text-purple-400 font-bold">{formatCurrency(expenseBreakdown.card, user.currency, !user.showValues)}</strong></span>
+              </div>
             </div>
             <div className="w-full h-1 bg-rose-500/10 dark:bg-rose-950/50 rounded-full overflow-hidden">
               <div

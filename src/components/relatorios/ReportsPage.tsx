@@ -39,7 +39,12 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
-import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
+import {
+  getEffectiveTransactionDate,
+  doesTransactionBelongToMonth,
+  isInvoicePaymentTransaction,
+  ViewRegime,
+} from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { Modal } from '../ui/Modal';
 import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
@@ -166,7 +171,7 @@ export const ReportsPage: React.FC = () => {
   const yearNum = viewDate.getFullYear();
   const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
 
-  const [viewRegime, setViewRegime] = useState<'due_date' | 'purchase_date'>('due_date');
+  const [viewRegime, setViewRegime] = useState<ViewRegime>('invoice_month');
 
   // Filtered Transactions
   const filteredTransactions = useMemo(() => {
@@ -183,10 +188,15 @@ export const ReportsPage: React.FC = () => {
         // Exclude ignored / third-party transactions from personal spending reports
         if (t.ignored) return false;
 
+        // Excluir pagamento/liquidação de fatura de cartão em despesas para não duplicar com as compras individuais
+        if (t.type === 'expense' && isInvoicePaymentTransaction(t)) return false;
+
+        const card = cards.find(c => c.id === t.cardId);
+
         // Period Matching
         const period = filters.period || 'current_month';
         if (period === 'current_month') {
-          if (!t.date.startsWith(currentMonthPrefix)) return false;
+          if (!doesTransactionBelongToMonth(t, card, currentMonthPrefix, viewRegime)) return false;
         } else if (period === 'today') {
           if (t.date !== todayStr) return false;
         } else if (period === 'week') {
@@ -204,11 +214,11 @@ export const ReportsPage: React.FC = () => {
         } else if (period === 'prev_month') {
           const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
           const prevPrefix = prev.toISOString().substring(0, 7);
-          if (!t.date.startsWith(prevPrefix)) return false;
+          if (!doesTransactionBelongToMonth(t, card, prevPrefix, viewRegime)) return false;
         } else if (period === 'next_month') {
           const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
           const nextPrefix = next.toISOString().substring(0, 7);
-          if (!t.date.startsWith(nextPrefix)) return false;
+          if (!doesTransactionBelongToMonth(t, card, nextPrefix, viewRegime)) return false;
         } else if (period === 'current_year') {
           if (!t.date.startsWith(String(now.getFullYear()))) return false;
         } else if (period === 'custom') {
@@ -252,7 +262,7 @@ export const ReportsPage: React.FC = () => {
     let expense = 0;
     filteredTransactions.forEach(t => {
       if (t.type === 'income') income += t.amount;
-      else if (t.type === 'expense') expense += t.amount;
+      else if (t.type === 'expense' && !isInvoicePaymentTransaction(t)) expense += t.amount;
     });
     return {
       income,
@@ -940,15 +950,15 @@ export const ReportsPage: React.FC = () => {
         <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-[11px] font-bold shadow-xs">
           <button
             type="button"
-            onClick={() => setViewRegime('due_date')}
+            onClick={() => setViewRegime('invoice_month')}
             className={`px-3 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
-              viewRegime === 'due_date'
+              viewRegime === 'invoice_month'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Relatórios por data de vencimento da fatura (Fluxo de Caixa)"
+            title="Relatórios por competência da fatura do cartão (Padrão contábil)"
           >
-            <span>Por Vencimento (Caixa)</span>
+            <span>Por Competência / Fatura</span>
           </button>
           <button
             type="button"
@@ -958,9 +968,21 @@ export const ReportsPage: React.FC = () => {
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Relatórios por data em que a compra ocorreu (Competência)"
+            title="Relatórios por data em que a compra ocorreu"
           >
             <span>Por Data da Compra</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewRegime('due_date')}
+            className={`px-3 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+              viewRegime === 'due_date'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Relatórios por data de vencimento da fatura (Fluxo de Caixa)"
+          >
+            <span>Por Vencimento</span>
           </button>
         </div>
 
@@ -1411,6 +1433,8 @@ export const ReportsPage: React.FC = () => {
         transactions={filteredTransactions}
         categories={categories}
         budgets={budgets}
+        cards={cards}
+        viewRegime={viewRegime}
         currentMonth={currentMonthPrefix}
         currency={user.currency}
         isBento={layoutMode === 'bento'}
@@ -1465,6 +1489,8 @@ export const ReportsPage: React.FC = () => {
       <Health503020Report
         transactions={filteredTransactions}
         categories={categories}
+        cards={cards}
+        viewRegime={viewRegime}
         currentMonth={currentMonthPrefix}
         currency={user.currency}
         isBento={layoutMode === 'bento'}

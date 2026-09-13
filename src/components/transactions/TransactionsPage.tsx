@@ -35,7 +35,7 @@ import { useConfirm } from '../../context/ConfirmContext';
 import { Transaction, TransactionType } from '../../types';
 import { formatCurrency, formatDate, formatDateShort, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
-import { getEffectiveTransactionDate } from '../../utils/invoiceCalculator';
+import { getEffectiveTransactionDate, doesTransactionBelongToMonth, isInvoicePaymentTransaction, ViewRegime } from '../../utils/invoiceCalculator';
 import { BankLogo } from '../../utils/bankLogos';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { TransactionModal } from './TransactionModal';
@@ -88,7 +88,7 @@ export const TransactionsPage: React.FC = () => {
   const [modalInitialType, setModalInitialType] = useState<TransactionType>('expense');
   const [initialPaymentMethod, setInitialPaymentMethod] = useState<'account' | 'card'>('account');
   const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
-  const [viewRegime, setViewRegime] = useState<'due_date' | 'purchase_date'>('due_date');
+  const [viewRegime, setViewRegime] = useState<ViewRegime>('invoice_month');
 
   // Month navigation
   const viewDate = useMemo(() => {
@@ -114,7 +114,7 @@ export const TransactionsPage: React.FC = () => {
       // Period Matching
       const period = filters.period || 'current_month';
       if (period === 'current_month') {
-        if (!effectiveDate.startsWith(currentMonthPrefix)) return false;
+        return doesTransactionBelongToMonth(t, card, currentMonthPrefix, viewRegime);
       } else if (period === 'today') {
         if (effectiveDate !== todayStr) return false;
       } else if (period === 'week') {
@@ -132,11 +132,11 @@ export const TransactionsPage: React.FC = () => {
       } else if (period === 'prev_month') {
         const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const prevPrefix = prev.toISOString().substring(0, 7);
-        if (!effectiveDate.startsWith(prevPrefix)) return false;
+        return doesTransactionBelongToMonth(t, card, prevPrefix, viewRegime);
       } else if (period === 'next_month') {
         const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const nextPrefix = next.toISOString().substring(0, 7);
-        if (!effectiveDate.startsWith(nextPrefix)) return false;
+        return doesTransactionBelongToMonth(t, card, nextPrefix, viewRegime);
       } else if (period === 'current_year') {
         if (!effectiveDate.startsWith(String(now.getFullYear()))) return false;
       } else if (period === 'custom') {
@@ -148,19 +148,49 @@ export const TransactionsPage: React.FC = () => {
     });
   }, [transactions, currentMonthPrefix, viewRegime, cards, filters.period, filters.customStartDate, filters.customEndDate]);
 
-  const monthlyIncome = useMemo(() => {
-    return monthTransactions
-      .filter(t => t.type === 'income' && t.status === 'completed' && !t.ignored)
-      .reduce((sum, t) => sum + t.amount, 0);
+  // Despesas discriminadas: Realizadas, Pendentes e Cartão (sem duplicar pagamento de fatura)
+  const expenseSummary = useMemo(() => {
+    let realizedCommon = 0; // Despesas comuns pagas
+    let pendingCommon = 0;  // Despesas comuns pendentes
+    let cardExpenses = 0;   // Compras no cartão
+
+    monthTransactions.forEach(t => {
+      if (t.type !== 'expense' || t.ignored || isInvoicePaymentTransaction(t)) return;
+      if (t.cardId) {
+        cardExpenses += t.amount;
+      } else if (t.status === 'completed') {
+        realizedCommon += t.amount;
+      } else {
+        pendingCommon += t.amount;
+      }
+    });
+
+    const total = Math.round((realizedCommon + pendingCommon + cardExpenses) * 100) / 100;
+    return { realizedCommon, pendingCommon, cardExpenses, total };
   }, [monthTransactions]);
 
-  const monthlyExpense = useMemo(() => {
-    return monthTransactions
-      .filter(t => t.type === 'expense' && t.status === 'completed' && !t.ignored)
-      .reduce((sum, t) => sum + t.amount, 0);
+  // Receitas discriminadas: Recebidas e A receber
+  const incomeSummary = useMemo(() => {
+    let received = 0; // Receitas concluídas
+    let pending = 0;  // Receitas pendentes
+
+    monthTransactions.forEach(t => {
+      if (t.type !== 'income' || t.ignored) return;
+      if (t.status === 'completed') {
+        received += t.amount;
+      } else {
+        pending += t.amount;
+      }
+    });
+
+    const total = Math.round((received + pending) * 100) / 100;
+    return { received, pending, total };
   }, [monthTransactions]);
 
-  const monthlyBalance = monthlyIncome - monthlyExpense;
+  const monthlyExpense = expenseSummary.total;
+  const monthlyIncome = incomeSummary.total;
+  const monthlyBalance = Math.round((monthlyIncome - monthlyExpense) * 100) / 100;
+  const realizedBalance = Math.round((incomeSummary.received - expenseSummary.realizedCommon) * 100) / 100;
 
   const totalCurrentBalance = useMemo(() => {
     return accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -622,16 +652,16 @@ export const TransactionsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setFilterType(filterType === 'expense' ? 'all' : 'expense')}
-          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
             filterType === 'expense'
               ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/40'
               : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-[#343437]'
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-[#ef5350]/15 text-[#ef5350] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-full bg-[#ef5350]/15 text-[#ef5350] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
             <ArrowUpRight className="w-5 h-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
               <span>Despesas</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -639,30 +669,42 @@ export const TransactionsPage: React.FC = () => {
             <p className="text-sm sm:text-base font-black text-[#ef5350] tracking-tight mt-0.5 truncate">
               {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
             </p>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+              <span>Realizadas: <strong className="text-rose-600 dark:text-rose-400 font-bold">{formatCurrency(expenseSummary.realizedCommon, user.currency, !user.showValues)}</strong></span>
+              <span>•</span>
+              <span>Pendentes: <strong className="text-amber-500 font-bold">{formatCurrency(expenseSummary.pendingCommon, user.currency, !user.showValues)}</strong></span>
+              <span>•</span>
+              <span>Cartão: <strong className="text-purple-500 font-bold">{formatCurrency(expenseSummary.cardExpenses, user.currency, !user.showValues)}</strong></span>
+            </div>
           </div>
         </button>
 
-        {/* KPI 3: Receitas recebidas (Click to filter Receitas) */}
+        {/* KPI 3: Receitas (Click to filter Receitas) */}
         <button
           type="button"
           onClick={() => setFilterType(filterType === 'income' ? 'all' : 'income')}
-          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
             filterType === 'income'
               ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/40'
               : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-[#343437]'
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
             <ArrowDownLeft className="w-5 h-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
-              <span>Receitas recebidas</span>
+              <span>Receitas</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
             <p className="text-sm sm:text-base font-black text-[#66bb6a] tracking-tight mt-0.5 truncate">
               {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
             </p>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+              <span>Recebidas: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(incomeSummary.received, user.currency, !user.showValues)}</strong></span>
+              <span>•</span>
+              <span>A receber: <strong className="text-amber-500 font-bold">{formatCurrency(incomeSummary.pending, user.currency, !user.showValues)}</strong></span>
+            </div>
           </div>
         </button>
 
@@ -670,42 +712,41 @@ export const TransactionsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setFilterType('all')}
-          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
-            filterType === 'all'
-              ? 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80'
-              : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80'
-          }`}
+          className="p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80"
         >
-          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
             <Scale className="w-5 h-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-bold truncate">
-              <span>Total</span>
+              <span>Total / Balanço</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
             <p className={`text-sm sm:text-base font-black tracking-tight mt-0.5 truncate ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
               {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
             </p>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+              <span>Realizado: <strong className={realizedBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-600 dark:text-rose-400 font-bold'}>{formatCurrency(realizedBalance, user.currency, !user.showValues)}</strong></span>
+            </div>
           </div>
         </button>
       </div>
 
-      {/* 2.5 VIEW REGIME TOGGLE (CAIXA VS COMPETÊNCIA) */}
+      {/* 2.5 VIEW REGIME TOGGLE (COMPETÊNCIA VS DATA DA COMPRA VS VENCIMENTO) */}
       <div className="flex items-center justify-center">
         <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-xs font-bold shadow-xs">
           <button
             type="button"
-            onClick={() => setViewRegime('due_date')}
+            onClick={() => setViewRegime('invoice_month')}
             className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewRegime === 'due_date'
+              viewRegime === 'invoice_month'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Exibe compras de cartão no dia do vencimento da fatura (Fluxo de Caixa Real)"
+            title="Exibe compras de cartão pertencentes à fatura/competência do mês (Padrão contábil)"
           >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Por Vencimento (Caixa)</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span>Por Competência/Fatura</span>
           </button>
 
           <button
@@ -716,10 +757,24 @@ export const TransactionsPage: React.FC = () => {
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Exibe compras de cartão no dia exato em que a compra ocorreu (Competência)"
+            title="Exibe transações na data exata em que foram efetuadas"
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>Por Data da Compra</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewRegime('due_date')}
+            className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewRegime === 'due_date'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Exibe transações no dia do vencimento da conta ou da fatura do cartão (Fluxo de caixa)"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Por Vencimento</span>
           </button>
         </div>
       </div>
