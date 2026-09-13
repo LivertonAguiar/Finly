@@ -55,6 +55,7 @@ import {
   getPlatformLabel,
   UpdateCheckResult,
 } from '../../utils/appUpdateService';
+import { getCurrentWebVersion } from '../../services/webUpdateService';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
@@ -71,6 +72,13 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   // Update check states
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [webVersion, setWebVersion] = useState<string>(APP_VERSION);
+
+  useEffect(() => {
+    if (isNativeCapacitor()) {
+      getCurrentWebVersion().then(v => setWebVersion(v)).catch(() => {});
+    }
+  }, []);
 
   const [showChangelogHistory, setShowChangelogHistory] = useState(false);
   const [showWebWhatsNewModal, setShowWebWhatsNewModal] = useState(false);
@@ -304,8 +312,13 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-base font-black text-slate-900 dark:text-white">Finly</h4>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                      v{APP_VERSION}
+                      {isNativeCapacitor() ? `APK v${APP_VERSION}` : `v${APP_VERSION}`}
                     </span>
+                    {isNativeCapacitor() && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                        Web v{webVersion}
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-400 font-medium">
                       ({APP_BUILD_DATE})
                     </span>

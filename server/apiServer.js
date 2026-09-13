@@ -204,7 +204,15 @@ const authenticateToken = async (req, res, next) => {
 
 // App Version & Update Endpoint (package.json is the authoritative version source)
 const VERSION_FILE = path.join(__dirname, 'version.json');
+const MANIFEST_FILE = path.join(__dirname, 'manifest.json');
 const PKG_FILE = path.join(__dirname, '../package.json');
+const BUNDLES_DIR = path.join(__dirname, 'public/bundles');
+
+try {
+  if (!fs.existsSync(BUNDLES_DIR)) {
+    fs.mkdirSync(BUNDLES_DIR, { recursive: true });
+  }
+} catch (_) {}
 
 const getAppVersionInfo = () => {
   let appVersion = '0.0.0';
@@ -233,9 +241,62 @@ const getAppVersionInfo = () => {
   };
 };
 
+const getAppManifestInfo = () => {
+  const versionInfo = getAppVersionInfo();
+  let manifest = {
+    native: {
+      version: versionInfo.version,
+      minimumVersion: '1.1.0',
+      downloadUrl: versionInfo.downloadUrl,
+    },
+    web: {
+      version: versionInfo.version,
+      minNativeVersion: '1.1.0',
+      bundleUrl: `https://finly.lpaguiar.com.br/bundles/finly-bundle-v${versionInfo.version}.zip`,
+      sha256: '',
+      mandatory: false,
+      releaseDate: versionInfo.releaseDate,
+      notes: versionInfo.notes,
+    },
+  };
+
+  try {
+    if (fs.existsSync(MANIFEST_FILE)) {
+      const fileData = JSON.parse(fs.readFileSync(MANIFEST_FILE, 'utf8'));
+      manifest = {
+        ...manifest,
+        ...fileData,
+        native: { ...manifest.native, ...(fileData.native || {}) },
+        web: { ...manifest.web, ...(fileData.web || {}) },
+      };
+    }
+  } catch (err) {
+    console.warn('⚠️ Falha ao ler manifest.json:', err.message);
+  }
+
+  if (!manifest.native.version) {
+    manifest.native.version = versionInfo.version;
+  }
+  if (!manifest.native.downloadUrl) {
+    manifest.native.downloadUrl = versionInfo.downloadUrl;
+  }
+
+  return manifest;
+};
+
 app.get('/api/app/version', (req, res) => {
   res.json(getAppVersionInfo());
 });
+
+app.get('/api/app/manifest', (req, res) => {
+  res.json(getAppManifestInfo());
+});
+
+// Serve OTA web bundles directly
+app.use('/bundles', express.static(BUNDLES_DIR, {
+  maxAge: '1y',
+  immutable: true,
+}));
 
 // Market Indicators (BACEN SGS: TR Série 226, IPCA Série 433)
 let cachedMarketIndicators = {

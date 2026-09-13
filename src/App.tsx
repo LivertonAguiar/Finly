@@ -28,6 +28,13 @@ import { TransactionModal } from './components/transactions/TransactionModal';
 import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 import { checkForAppUpdates, isNativeCapacitor } from './utils/appUpdateService';
+import {
+  confirmWebBundleReadyWhenStable,
+  checkForWebUpdate,
+  downloadAndApplyWebBundle,
+  reloadToApplyWebUpdate,
+} from './services/webUpdateService';
+import { Sparkles, X } from 'lucide-react';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
@@ -171,6 +178,11 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser]);
 
+  // Confirm Web Bundle loaded successfully only after stable bootstrap to avoid premature confirmation
+  useEffect(() => {
+    confirmWebBundleReadyWhenStable().catch(e => console.warn('[OTA] confirmWebBundleReadyWhenStable failed:', e));
+  }, []);
+
   // Proactive App Update Checker on Entry, Resume and Periodic Interval (Exclusivo Android Nativo)
   useEffect(() => {
     if (!currentUser) return;
@@ -183,6 +195,18 @@ const AppContent: React.FC = () => {
         await new Promise(r => setTimeout(r, 2500));
         if (isCancelled) return;
 
+        // 1. Live Update Web Bundle Check
+        try {
+          const webCheck = await checkForWebUpdate();
+          if (webCheck.hasUpdate && webCheck.bundleUrl && !isCancelled) {
+            console.log(`[OTA] Novo bundle web v${webCheck.latestVersion} detectado. Iniciando download...`);
+            await downloadAndApplyWebBundle(webCheck);
+          }
+        } catch (wErr) {
+          console.warn('[OTA] Erro na verificação de bundle web:', wErr);
+        }
+
+        // 2. Native APK Version Check
         const result = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: false });
         if (result && result.hasUpdate && !isCancelled) {
           const sessionPrompted = sessionStorage.getItem(`finly_update_prompted_${result.latestVersion}`);
@@ -326,6 +350,18 @@ const AppContent: React.FC = () => {
   const [newTxPaymentMethod, setNewTxPaymentMethod] = useState<'account' | 'card'>('account');
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isNewCardOpen, setIsNewCardOpen] = useState(false);
+  const [pendingWebUpdate, setPendingWebUpdate] = useState<{ version: string; notes?: string } | null>(null);
+
+  // Global listener to trigger web update notification when a new bundle is ready
+  useEffect(() => {
+    const handleWebUpdateReady = (e: any) => {
+      if (e.detail?.version) {
+        setPendingWebUpdate(e.detail);
+      }
+    };
+    window.addEventListener('finly_web_update_ready', handleWebUpdateReady);
+    return () => window.removeEventListener('finly_web_update_ready', handleWebUpdateReady);
+  }, []);
 
 
   // Global listener to trigger AppUpdateModal (apenas em ambiente Android nativo)
@@ -478,6 +514,35 @@ const AppContent: React.FC = () => {
       {/* Security Vault PIN / Biometric Lock Screen */}
       {isLocked && (
         <PinLockScreen onUnlock={() => setIsLocked(false)} />
+      )}
+
+      {/* Floating Web Update Ready Notification */}
+      {pendingWebUpdate && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] p-3.5 bg-gradient-to-r from-purple-950/95 to-indigo-950/95 backdrop-blur-md border border-purple-500/40 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4 text-purple-300" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">Atualização pronta (v{pendingWebUpdate.version})</p>
+              <p className="text-[10px] text-purple-200 truncate">Reinicie para carregar os novos recursos</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => reloadToApplyWebUpdate()}
+              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Reiniciar
+            </button>
+            <button
+              onClick={() => setPendingWebUpdate(null)}
+              className="p-1.5 text-purple-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

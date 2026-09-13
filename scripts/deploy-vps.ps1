@@ -68,7 +68,7 @@ if ($LASTEXITCODE -ne 0) {
 
 try {
 Write-Host "Empacotando arquivos do projeto..." -ForegroundColor Yellow
-tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data/stores" --exclude="server/data/stores/*" --exclude="server/data/*.json" -czf $archivePath -C $repoRoot .
+tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data/stores" --exclude="server/data/stores/*" --exclude="server/data/*.json" --exclude="server/public/bundles/*" -czf $archivePath -C $repoRoot .
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao criar o pacote de atualizacao." }
 if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf) -or (Get-Item -LiteralPath $archivePath).Length -le 0) {
     throw "Deploy falhou: o pacote de atualizacao esta ausente ou vazio."
@@ -79,7 +79,7 @@ scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $archivePath "$($server)
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao enviar o pacote para a VPS." }
 
 Write-Host "Reconstruindo container Docker no servidor..." -ForegroundColor Yellow
-$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" && rm -f finly-update.tar.gz && docker compose up -d --build --remove-orphans'
+$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" --exclude="server/public/bundles/*" && rm -f finly-update.tar.gz && docker compose up -d --build --remove-orphans'
 ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server $cmd
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou durante a reconstrucao do container." }
 
@@ -96,6 +96,11 @@ for ($attempt = 1; $attempt -le 5; $attempt++) {
 }
 
 if (-not $apiRaw) { throw "Deploy concluido, mas a API nao respondeu ao health check." }
+
+$manifestRaw = ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/manifest' 2>$null
+if (-not $manifestRaw) {
+    Write-Warning "Manifesto /api/app/manifest nao respondeu na primeira tentativa. Revalidando..."
+}
 
 $bundleRaw = ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/app-version.json'
 if ($LASTEXITCODE -ne 0 -or -not $bundleRaw) {

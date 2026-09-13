@@ -9,6 +9,12 @@ const config: CapacitorConfig = {
     cleartext: true,
   },
   plugins: {
+    LiveUpdate: {
+      autoUpdateStrategy: 'none',
+      readyTimeout: 10000,
+      autoBlockRolledBackBundles: true,
+      autoDeleteBundles: false,
+    },
     SplashScreen: {
       launchShowDuration: 1500,
       launchAutoHide: true,

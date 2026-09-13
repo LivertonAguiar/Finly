@@ -45,5 +45,8 @@ server/data/stores/*
 server/data/users.json
 server/data/verification_codes.json
 
+# OTA Bundle Artifacts
+server/public/bundles/*.zip
+
 # Supabase CLI temp
 supabase/.temp/

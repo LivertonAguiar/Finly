@@ -3,6 +3,24 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.70] - 2026-09-13
+
+### ⚡ Atualizações OTA / Live Update do Bundle Web com Capacitor 8
+- **Live Update Nativo com Fallback Offline-First**:
+  - Integração do `@capawesome/capacitor-live-update@8.4.2` nativo para Capacitor 8.
+  - O bundle Vite/React compilado no APK permanece intacto como base e fallback seguro de inicialização 100% offline.
+  - Atualizações web podem ser aplicadas instantaneamente sem necessidade de recompilar ou reinstalar o APK.
+- **Segurança Criptográfica & Bloqueio por minNativeVersion**:
+  - Validação estrita de checksum SHA-256 do arquivo ZIP antes da extração no diretório privado do aplicativo.
+  - Verificação de compatibilidade `minNativeVersion`: impede que versões web recentes sejam aplicadas caso demandem recursos nativos ausentes no APK instalado.
+- **Guarda de Estabilidade & Rollback Automático**:
+  - Confirmação de integridade (`confirmWebBundleReadyWhenStable`) aguarda estabilização de 3,5s após montagem do DOM (`#root`) e verificação de ausência de crashes no `ErrorBoundary`.
+  - Mecanismo de reversão automática e manual para retorno instantâneo ao bundle estável anterior ou bundle de fábrica do APK.
+- **Manifesto e Distribuição OTA na VPS**:
+  - Endpoint `/api/app/manifest` disponibiliza metadados sincronizados para APK e Live Update.
+  - Rota estática `/bundles` para entrega de pacotes zip com cache estrito.
+  - Scripts `package:web-bundle` e `deploy:web-ota` para automação do ciclo de release web.
+
 ## [1.1.69] - 2026-09-13
 
 ### 🔐 Centralização da Autenticação no Supabase Auth

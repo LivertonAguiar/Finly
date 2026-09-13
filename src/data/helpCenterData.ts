@@ -768,4 +768,11 @@ export const HELP_FAQS: HelpFaqItem[] = [
     category: 'planejamento',
     tags: ['regra 50 30 20', 'saude financeira', 'score', 'poupanca', 'investimentos', 'desejos', 'necessidades'],
   },
+  {
+    id: 'faq-atualizacoes-ota',
+    question: 'Como funcionam as atualizações do Finly (Nativa vs Web OTA)?',
+    answer: 'O Finly possui uma arquitetura de atualização dupla: 1) Atualização Nativa (APK): necessária apenas quando há novos plugins de sistema ou recursos nativos do Android; 2) Live Update (Web OTA): entrega melhorias visuais, novidades e correções instantaneamente em segundo plano sem precisar reinstalar o APK. O app funciona 100% offline com os arquivos locais e valida a integridade (SHA-256) antes de qualquer ativação.',
+    category: 'mobile_web',
+    tags: ['atualizacao', 'ota', 'live update', 'versao', 'apk', 'offline'],
+  },
 ];

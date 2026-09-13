@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-13',
+    summary: 'Implementação de Atualizações OTA / Live Update do bundle web com Capacitor 8, suporte offline-first, verificação de integridade SHA-256, controle de minNativeVersion, rollback automático e distribuição na VPS.',
+    highlights: [
+      {
+        title: 'Atualizações OTA / Live Update no Android',
+        description: 'Integração do pacote @capawesome/capacitor-live-update nativo para Capacitor 8, permitindo que novidades, telas e correções cheguem ao celular instantaneamente sem necessidade de gerar outro APK.',
+        type: 'feature',
+      },
+      {
+        title: 'Segurança Criptográfica & minNativeVersion',
+        description: 'Validação de integridade SHA-256 antes da extração do bundle no armazenamento privado e bloqueio automático de bundles que exigirem versão nativa mais recente que a instalada.',
+        type: 'improvement',
+      },
+      {
+        title: 'Guarda de Estabilidade & Rollback Automático',
+        description: 'Confirmação de saúde do bundle aguarda estabilização do bootstrap do React e validação de renderização no DOM, revertendo automaticamente em caso de falha.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.69',
+    releaseDate: '2026-09-13',
     summary: 'Centralização da autenticação no Supabase Auth como fonte única de verdade. Remoção de senhas locais do servidor Express e migração completa de login, cadastro e alteração de senha para o SDK do Supabase.',
     highlights: [
       {

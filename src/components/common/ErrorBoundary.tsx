@@ -1,5 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Home, ShieldAlert } from 'lucide-react';
+import { isNativeCapacitor } from '../../utils/appUpdateService';
+import { triggerEmergencyRollback, markBootstrapError } from '../../services/webUpdateService';
 
 interface Props {
   children: ReactNode;
@@ -24,11 +26,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Finly Uncaught Exception caught by ErrorBoundary:', error, errorInfo);
+    markBootstrapError();
     this.setState({ error, errorInfo });
   }
 
   private handleReload = () => {
     window.location.reload();
+  };
+
+  private handleRollback = async () => {
+    await triggerEmergencyRollback();
   };
 
   private handleGoHome = () => {
@@ -61,24 +68,37 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={this.handleReload}
-                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 cursor-pointer active:scale-98"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Recarregar Tela</span>
-              </button>
+            <div className="flex flex-col gap-2.5 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  type="button"
+                  onClick={this.handleReload}
+                  className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 cursor-pointer active:scale-98"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Recarregar Tela</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={this.handleGoHome}
-                className="w-full py-3 px-4 rounded-2xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-              >
-                <Home className="w-4 h-4" />
-                <span>Ir ao Início</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={this.handleGoHome}
+                  className="w-full py-3 px-4 rounded-2xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Ir ao Início</span>
+                </button>
+              </div>
+
+              {isNativeCapacitor() && (
+                <button
+                  type="button"
+                  onClick={this.handleRollback}
+                  className="w-full py-2.5 px-4 rounded-2xl border border-rose-500/30 bg-rose-950/20 hover:bg-rose-900/30 text-rose-300 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
+                  <span>Restaurar Versão Estável Anterior</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
