@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.70/finly-v1.1.70.apk"
   },
   "web": {
-    "version": "1.1.70.5",
+    "version": "1.1.70.6",
     "minNativeVersion": "1.1.70",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.5.zip",
-    "sha256": "59372ef2f8d271182db5cff8d69f4f6c6468591539c84d27494f6238e852facf",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.6.zip",
+    "sha256": "9aea5f43301f11d026dac08e8cb15607ab576a53ccb03a3674ecc161656ecc48",
     "mandatory": false,
     "releaseDate": "2026-09-13",
-    "notes": "Propagacao de categoria em parcelas e despesas fixas, e emoji de subcategoria"
+    "notes": "Popup interno de confirmacao de despesa adicionada"
   }
 }
