@@ -688,6 +688,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <div><label className={labelClass}>CATEGORIA</label><select className={fieldClass} value={categoryId} onChange={event => { setCategoryId(event.target.value); setSubcategoryId(''); setManuallyChangedCategory(true); setPredictedInfo(null); }} required><option value="">Selecione...</option>{filteredCategories.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></div>
             <div><label className={labelClass}>SUBCATEGORIA</label><select className={fieldClass} value={subcategoryId} onChange={event => { setSubcategoryId(event.target.value); setManuallyChangedCategory(true); setPredictedInfo(null); }}><option value="">Nenhuma</option>{selectedCategory?.subcategories.map(subcategory => <option key={subcategory.id} value={subcategory.id}>{subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}</option>)}</select></div>
           </div>
+          {editingTransaction && Boolean(editingSeries || editingTransaction.installments || editingTransaction.debtId || editingTransaction.recurring) && (
+            <div className="rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/40 p-2.5 flex items-center gap-2">
+              <span className="text-sm shrink-0">🔄</span>
+              <p className="text-[11px] text-purple-700 dark:text-purple-300 font-medium">
+                Ao alterar a categoria ou subcategoria, a mudança será aplicada automaticamente a todas as demais parcelas ou despesas fixas desta série.
+              </p>
+            </div>
+          )}
           {isCard ? <>
             <div><label className={labelClass}>CARTÃO DE CRÉDITO</label><select className={fieldClass} value={cardId} onChange={event => setCardId(event.target.value)}>{cards.map(card => <option key={card.id} value={card.id}>{card.name} — {card.brand}</option>)}</select></div>
             {!editingTransaction && (

@@ -36,6 +36,7 @@ import {
 import { getMonthlyInterestRate } from '../utils/financingCalculations';
 import { migrateLegacyTransactionSeries } from '../utils/transactionSeriesMigration';
 import { applyRecurringAmountChange } from '../utils/recurringExpenseSeries';
+import { propagateCategoryChange } from '../utils/seriesCategorySync';
 import { selectSeriesTargets, SeriesMutationScope, SeriesTargetSelection } from '../utils/transactionSeriesScope';
 import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
 
@@ -1870,12 +1871,48 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       amount: data.amount !== undefined ? round2(data.amount) : oldTx.amount,
     };
 
-    markLocalMutation();
-    // Balance is auto-recalculated by the derived balance effect
-    setTransactions(prev => prev.map(t => (t.id === id ? newTx : t)));
+    const isCategoryChanged =
+      (data.categoryId !== undefined && data.categoryId !== oldTx.categoryId) ||
+      (data.subcategoryId !== undefined && data.subcategoryId !== oldTx.subcategoryId);
 
-    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-      void supabaseDb.upsertTransaction(currentUser.id, newTx).catch(() => {});
+    markLocalMutation();
+
+    if (isCategoryChanged) {
+      const propagation = propagateCategoryChange({
+        transactions,
+        transactionSeries,
+        targetTransactionId: id,
+        newCategoryId: newTx.categoryId,
+        newSubcategoryId: newTx.subcategoryId,
+      });
+
+      const updatedTransactions = propagation.transactions.map(t => (t.id === id ? newTx : t));
+
+      setTransactions(updatedTransactions);
+      setTransactionSeries(propagation.transactionSeries);
+
+      if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+        void supabaseDb.upsertTransaction(currentUser.id, newTx).catch(() => {});
+        for (const affId of propagation.affectedTransactionIds) {
+          const affTx = updatedTransactions.find(t => t.id === affId);
+          if (affTx) {
+            void supabaseDb.upsertTransaction(currentUser.id, affTx).catch(() => {});
+          }
+        }
+        for (const affSeriesId of propagation.affectedSeriesIds) {
+          const affSeries = propagation.transactionSeries.find(s => s.id === affSeriesId);
+          if (affSeries) {
+            void supabaseDb.upsertTransactionSeries(currentUser.id, [affSeries]).catch(() => {});
+          }
+        }
+      }
+    } else {
+      // Balance is auto-recalculated by the derived balance effect
+      setTransactions(prev => prev.map(t => (t.id === id ? newTx : t)));
+
+      if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+        void supabaseDb.upsertTransaction(currentUser.id, newTx).catch(() => {});
+      }
     }
   };
 
@@ -2018,31 +2055,32 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     scope: 'single' | 'current_and_future',
     overwriteExceptions = false,
   ) => {
-    const transaction = transactions.find(item => item.id === id);
-    const series = transaction?.seriesId
-      ? transactionSeries.find(item => item.id === transaction.seriesId)
-      : undefined;
-    if (!transaction || series?.kind !== 'recurring_expense') {
-      updateTransaction(id, { amount });
-      return;
-    }
-    const result = applyRecurringAmountChange({
-      series,
-      transactions,
-      selectedTransactionId: id,
-      scope,
-      amount,
-      overwriteExceptions,
+    setTransactions(prev => {
+      const transaction = prev.find(item => item.id === id);
+      const series = transaction?.seriesId
+        ? transactionSeries.find(item => item.id === transaction.seriesId)
+        : undefined;
+      if (!transaction || series?.kind !== 'recurring_expense') {
+        return prev.map(t => (t.id === id ? { ...t, amount } : t));
+      }
+      const result = applyRecurringAmountChange({
+        series,
+        transactions: prev,
+        selectedTransactionId: id,
+        scope,
+        amount,
+        overwriteExceptions,
+      });
+      markLocalMutation();
+      setTransactionSeries(prevSeries => prevSeries.map(item => (item.id === series.id ? result.series : item)));
+      if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+        void supabaseDb.upsertTransactionSeries(currentUser.id, [result.series]);
+        result.transactions
+          .filter(item => item.seriesId === series.id)
+          .forEach(item => void supabaseDb.upsertTransaction(currentUser.id, item));
+      }
+      return result.transactions;
     });
-    markLocalMutation();
-    setTransactionSeries(prev => prev.map(item => item.id === series.id ? result.series : item));
-    setTransactions(result.transactions);
-    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-      void supabaseDb.upsertTransactionSeries(currentUser.id, [result.series]);
-      result.transactions
-        .filter(item => item.seriesId === series.id)
-        .forEach(item => void supabaseDb.upsertTransaction(currentUser.id, item));
-    }
   };
 
   const toggleTransactionStatus = (id: string) => {

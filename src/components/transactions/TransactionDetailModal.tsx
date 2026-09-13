@@ -170,7 +170,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     // Group items by category for composition chart
     const catMap: Record<string, { name: string; icon: string; amount: number; color?: string }> = {};
     items.forEach(i => {
-      const cat = categories.find(c => c.id === i.categoryId);
+      const cat = resolveCategory(categories, i.categoryId, i.subcategoryId, i.type || 'expense');
       const name = cat?.name || 'Outros';
       if (!catMap[name]) {
         catMap[name] = { name, icon: cat?.icon || '📁', amount: 0, color: cat?.color };
@@ -611,7 +611,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               </span>
               <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-56 overflow-y-auto pr-1">
                 {invoiceComposingData.items.map(item => {
-                  const cat = categories.find(c => c.id === item.categoryId);
+                  const cat = resolveCategory(categories, item.categoryId, item.subcategoryId, item.type || 'expense');
                   return (
                     <div
                       key={item.id}
@@ -624,7 +624,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                             {item.description}
                           </p>
                           <span className="text-[10px] text-slate-400 block truncate">
-                            {formatDate(item.date)} • {cat?.name || 'Geral'}
+                            {formatDate(item.date)} • {cat?.name || 'Geral'}{cat?.subName ? ` • ${cat.subName}` : ''}
                             {item.isThirdParty ? ` • 👤 ${item.thirdPartyName || 'Terceiro'}` : ''}
                           </span>
                         </div>

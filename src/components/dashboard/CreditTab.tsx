@@ -36,6 +36,7 @@ import { Modal } from '../ui/Modal';
 import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 import { exportInvoiceCSV, exportInvoicePDF, downloadCSV } from '../../utils/reportExportService';
+import { resolveCategory } from '../../utils/categoryResolver';
 
 interface CreditTabProps {
   onOpenNewCard: () => void;
@@ -630,7 +631,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {activeCardDetail.monthTxs.map(t => {
-                  const cat = categories.find(c => c.id === t.categoryId);
+                  const cat = resolveCategory(categories, t.categoryId, t.subcategoryId, t.type || 'expense');
                   return (
                     <div
                       key={t.id}
@@ -1635,8 +1636,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   </div>
                 ) : (
                   payingCardTxs.map(t => {
-                    const cat = categories.find(c => c.id === t.categoryId);
-                    const sub = cat?.subcategories?.find(s => s.id === t.subcategoryId);
+                    const cat = resolveCategory(categories, t.categoryId, t.subcategoryId, t.type || 'expense');
                     return (
                       <div
                         key={t.id}
@@ -1666,7 +1666,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
                               <span className="font-mono">{formatDate(t.date)}</span>
                               {cat?.name && <span>• {cat.name}</span>}
-                              {sub?.name && <span>/ {sub.name}</span>}
+                              {cat?.subName && <span>/ {cat.subName}</span>}
                             </div>
                           </div>
                         </div>

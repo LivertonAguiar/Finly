@@ -150,15 +150,17 @@ export function resolveCategory(
   if (directCat) {
     const parsedSub = subItem ? splitEmojiFromName(subItem.name, subItem.icon) : undefined;
     const parsedCat = splitEmojiFromName(directCat.name, directCat.icon);
+    const subIcon = parsedSub?.icon || subItem?.icon || (rawSubId ? KNOWN_ALIASES[rawSubId.toLowerCase()]?.icon : undefined);
+    const catIcon = parsedCat.icon || directCat.icon || (txType === 'income' ? '💰' : '🛍️');
 
     return {
       id: directCat.id,
       name: parsedCat.cleanName,
-      icon: parsedCat.icon || directCat.icon || (txType === 'income' ? '💰' : '🛍️'),
+      icon: subIcon || catIcon,
       color: directCat.color || '#8b5cf6',
       subId: subItem?.id || (rawSubId ? KNOWN_ALIASES[rawSubId.toLowerCase()]?.subcategoryId || rawSubId : undefined),
       subName: parsedSub?.cleanName,
-      subIcon: parsedSub?.icon,
+      subIcon: subIcon,
     };
   }
 
