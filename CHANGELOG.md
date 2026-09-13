@@ -3,6 +3,22 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.69] - 2026-09-13
+
+### 🔐 Centralização da Autenticação no Supabase Auth
+- **Supabase Auth como Fonte Única de Verdade**:
+  - Login, cadastro, recuperação e alteração de senha são agora responsabilidade exclusiva do Supabase Auth SDK.
+  - O servidor Express valida requisições protegidas via JWT (`Authorization: Bearer <token>`) ao invés de credenciais locais.
+  - O `user.id` do Supabase é o identificador canônico do usuário em toda a API.
+- **Remoção de Senhas Locais**:
+  - O arquivo `server/data/users.json` não armazena mais hashes de senha (`password` removido de todos os registros).
+  - O script `seedDemoAccount.js` foi atualizado para não gerar credenciais locais.
+- **Segurança Reforçada**:
+  - Eliminada a duplicidade de credenciais entre Supabase e Express, prevenindo divergências de senha e falhas de login.
+  - Rota `/api/send-recovery-code` permite recuperação mesmo para usuários sem registro no `users.json` local.
+- **Frontend Refatorado (`AuthContext.tsx`)**:
+  - Todas as operações de autenticação (`login`, `register`, `changePassword`) utilizam exclusivamente o SDK do Supabase Auth.
+
 ## [1.1.68] - 2026-09-12
 
 ### 📊 Unificação Contábil por Competência de Fatura & Blindagem Universal Anti-Perda

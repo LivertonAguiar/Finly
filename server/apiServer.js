@@ -158,7 +158,7 @@ const recoveryLimiter = createRateLimiter({
   message: 'Limite de solicitações de recuperação atingido. Tente novamente em 15 minutos.',
 });
 
-// 4. Token Authentication Middleware (Closes BOLA / IDOR + Dual Finly & Supabase Support)
+// 4. Token Authentication Middleware (Supabase JWT Canonical + Fallback)
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = (authHeader && authHeader.startsWith('Bearer '))
@@ -173,13 +173,7 @@ const authenticateToken = async (req, res, next) => {
     });
   }
 
-  const verification = verifySessionToken(token, APP_SECRET);
-  if (verification.valid && verification.payload) {
-    req.user = verification.payload;
-    return next();
-  }
-
-  // Dual compatibility: verify Supabase JWT if Finly HMAC failed
+  // 1. Primary & Canonical: Verify Supabase JWT token
   if (supabaseAdmin) {
     try {
       const { data: sbData, error: sbErr } = await supabaseAdmin.auth.getUser(token);
@@ -194,10 +188,17 @@ const authenticateToken = async (req, res, next) => {
     } catch (_) {}
   }
 
+  // 2. Legacy / Internal HMAC session verification (demo or system tokens)
+  const verification = verifySessionToken(token, APP_SECRET);
+  if (verification.valid && verification.payload) {
+    req.user = verification.payload;
+    return next();
+  }
+
   return res.status(401).json({
     success: false,
     code: 'TOKEN_INVALID_OR_EXPIRED',
-    message: `Sessão inválida ou expirada (${verification.error || 'Token não autorizado'}). Faça login novamente.`,
+    message: 'Sessão inválida ou expirada. Faça login novamente através do Supabase.',
   });
 };
 
@@ -346,20 +347,21 @@ const saveUsers = (users) => {
 
 const getUsers = () => {
   try {
+    if (!fs.existsSync(USERS_FILE)) return [];
     const raw = fs.readFileSync(USERS_FILE, 'utf8');
     const users = JSON.parse(raw);
-    let upgraded = false;
+    let stripped = false;
 
-    // Automatic Cryptographic Migration: ensure all stored passwords are salted and hashed
+    // Architectural Guarantee: Strip all passwords from users.json. Supabase Auth is canonical.
     const sanitized = users.map(u => {
-      if (u.password && !isHashed(u.password)) {
-        u.password = hashPassword(u.password);
-        upgraded = true;
+      if ('password' in u) {
+        delete u.password;
+        stripped = true;
       }
       return u;
     });
 
-    if (upgraded) {
+    if (stripped) {
       saveUsers(sanitized);
     }
     return sanitized;
@@ -435,14 +437,13 @@ const saveVerificationCodes = (codesObj) => {
   }
 };
 
-// Initial Users Database Setup
+// Initial Users Database Setup (No passwords stored - Supabase Auth is canonical)
 if (!fs.existsSync(USERS_FILE)) {
   const initialUsers = [
     {
       id: 'usr-demo-financeiro',
       name: 'Conta Demonstração',
       email: 'demo@finly.com',
-      password: hashPassword('demo'),
       phone: '11999998888',
       role: 'admin',
       createdAt: '2026-01-01',
@@ -450,7 +451,6 @@ if (!fs.existsSync(USERS_FILE)) {
   ];
   saveUsers(initialUsers);
 } else {
-  // Ensure migration runs on startup
   getUsers();
 }
 
@@ -482,186 +482,31 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', serverTime: new Date().toISOString() });
 });
 
-// 1. AUTH: LOGIN (Cryptographic Verification + Token Issuance)
+// 1. AUTH: LOGIN (Deprecated - Supabase Auth is the single source of truth)
 app.post('/api/auth/login', loginLimiter, (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ success: false, message: 'E-mail e senha são obrigatórios.' });
-  }
-
-  const cleanEmail = email.trim().toLowerCase();
-  const user = findUserByEmail(cleanEmail);
-
-  if (!user) {
-    return res.status(404).json({ success: false, message: 'Usuário não encontrado. Verifique seu e-mail ou cadastre-se.' });
-  }
-
-  // Cryptographic timing-safe password verification
-  const isValid = verifyPassword(password, user.password);
-  if (!isValid) {
-    return res.status(401).json({ success: false, message: 'Senha incorreta.' });
-  }
-
-  // Generate cryptographic session token (valid for 30 days)
-  const token = generateSessionToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role || 'member',
-  }, APP_SECRET);
-
-  // Check if store exists
-  const storePath = getUserStorePath(user.id);
-  let store = null;
-  if (fs.existsSync(storePath)) {
-    try {
-      store = JSON.parse(fs.readFileSync(storePath, 'utf8'));
-    } catch (e) {}
-  }
-
-  // Asynchronously ensure Supabase Auth has the same password if user logged in successfully
-  if (supabaseAdmin) {
-    (async () => {
-      try {
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
-        if (sbUser) {
-          await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password });
-        } else {
-          await supabaseAdmin.auth.admin.createUser({
-            email: cleanEmail,
-            password,
-            email_confirm: true,
-            user_metadata: { name: user.name, role: user.role, phone: user.phone },
-          });
-        }
-      } catch (_) {}
-    })();
-  }
-
-  // Sanitize user object (never expose password hash)
-  return res.json({
-    success: true,
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      createdAt: user.createdAt,
-    },
-    store,
+  return res.status(400).json({
+    success: false,
+    code: 'USE_SUPABASE_AUTH',
+    message: 'A autenticação é gerenciada exclusivamente pelo Supabase Auth. Realize o login através do cliente Supabase.',
   });
 });
 
-// 2. AUTH: REGISTER (Hashed Salted Storage + Token Issuance)
+// 2. AUTH: REGISTER (Deprecated - Supabase Auth is the single source of truth)
 app.post('/api/auth/register', loginLimiter, (req, res) => {
-  const { name, email, password, phone } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ success: false, message: 'Nome, e-mail e senha são obrigatórios.' });
-  }
-
-  const cleanEmail = email.trim().toLowerCase();
-  const users = getUsers();
-  const existing = users.find(u => u.email.toLowerCase() === cleanEmail);
-
-  if (existing) {
-    return res.status(400).json({ success: false, message: 'Já existe um cadastro com este e-mail.' });
-  }
-
-  const newUser = {
-    id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    name: name.trim(),
-    email: cleanEmail,
-    password: hashPassword(password),
-    phone: phone ? phone.trim() : undefined,
-    role: 'admin',
-    createdAt: new Date().toISOString().split('T')[0],
-  };
-
-  users.push(newUser);
-  saveUsers(users);
-
-  // Generate cryptographic session token
-  const token = generateSessionToken({
-    userId: newUser.id,
-    email: newUser.email,
-    role: newUser.role,
-  }, APP_SECRET);
-
-  // Asynchronously synchronize with Supabase Auth
-  if (supabaseAdmin) {
-    (async () => {
-      try {
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
-        if (!sbUser) {
-          await supabaseAdmin.auth.admin.createUser({
-            email: cleanEmail,
-            password,
-            email_confirm: true,
-            user_metadata: { name: newUser.name, role: newUser.role, phone: newUser.phone },
-          });
-          console.log(`[AUTH] Novo usuário sincronizado no Supabase Auth: ${cleanEmail}`);
-        }
-      } catch (err) {
-        console.warn('⚠️ Falha ao sincronizar novo usuário no Supabase:', err.message);
-      }
-    })();
-  }
-
-  return res.json({
-    success: true,
-    token,
-    user: {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      role: newUser.role,
-      createdAt: newUser.createdAt,
-    },
+  return res.status(400).json({
+    success: false,
+    code: 'USE_SUPABASE_AUTH',
+    message: 'O cadastro de contas é gerenciado exclusivamente pelo Supabase Auth.',
   });
 });
 
-// 2.1 AUTH: CHANGE PASSWORD (Protected by Token)
+// 2.1 AUTH: CHANGE PASSWORD (Deprecated - Supabase Auth is the single source of truth)
 app.post('/api/auth/change-password', authenticateToken, (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-  if (!newPassword) {
-    return res.status(400).json({ success: false, message: 'Nova senha é obrigatória.' });
-  }
-
-  const users = getUsers();
-  const user = users.find(u => u.id === req.user.userId);
-
-  if (!user) {
-    return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
-  }
-
-  if (oldPassword && !verifyPassword(oldPassword, user.password)) {
-    return res.status(401).json({ success: false, message: 'A senha atual informada está incorreta.' });
-  }
-
-  user.password = hashPassword(newPassword);
-  saveUsers(users);
-
-  // Asynchronously synchronize with Supabase Auth
-  if (supabaseAdmin) {
-    (async () => {
-      try {
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === user.email.toLowerCase());
-        if (sbUser) {
-          await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password: newPassword });
-          console.log(`[AUTH] Senha alterada sincronizada no Supabase Auth para: ${user.email}`);
-        }
-      } catch (err) {
-        console.warn('⚠️ Falha ao sincronizar alteração de senha no Supabase:', err.message);
-      }
-    })();
-  }
-
-  return res.json({ success: true, message: 'Senha alterada com sucesso no servidor!' });
+  return res.status(400).json({
+    success: false,
+    code: 'USE_SUPABASE_AUTH',
+    message: 'A alteração de senha é realizada diretamente via Supabase Auth.',
+  });
 });
 
 // Ghost Data Shields (Prevents resurrected stale August transactions and cards)
@@ -946,8 +791,22 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
     return res.status(400).json({ success: false, message: 'E-mail é obrigatório.' });
   }
 
-  const cleanEmail = email.toLowerCase().trim();
-  const user = findUserByEmail(cleanEmail);
+  let user = findUserByEmail(cleanEmail);
+  if (!user && supabaseAdmin) {
+    try {
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+      if (sbUser) {
+        user = {
+          id: sbUser.id,
+          name: sbUser.user_metadata?.name || sbUser.email.split('@')[0],
+          email: sbUser.email,
+          role: sbUser.user_metadata?.role || 'admin',
+        };
+      }
+    } catch (_) {}
+  }
+
   if (!user) {
     console.warn(`[AUTH] Tentativa de recuperação rejeitada (e-mail não cadastrado): ${cleanEmail}`);
     return res.status(404).json({
@@ -1168,17 +1027,23 @@ app.post('/api/reset-password', async (req, res) => {
     });
   }
 
-  if (!user) {
-    return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+  if (!user && supabaseAdmin) {
+    try {
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+      if (sbUser) {
+        user = {
+          id: sbUser.id,
+          name: sbUser.user_metadata?.name || sbUser.email.split('@')[0],
+          email: sbUser.email,
+          role: sbUser.user_metadata?.role || 'admin',
+        };
+      }
+    } catch (_) {}
   }
 
-  // 1. Update in Finly users.json
-  const users = getUsers();
-  const targetUser = users.find(u => u.id === user.id);
-  if (targetUser) {
-    targetUser.password = hashPassword(newPassword);
-    saveUsers(users);
-    console.log(`[AUTH] Senha redefinida no users.json com sucesso para ${targetUser.email} (${targetUser.id})`);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
   }
 
   // Purge codes
@@ -1189,36 +1054,34 @@ app.post('/api/reset-password', async (req, res) => {
   }
   saveVerificationCodes(allCodes);
 
-  // 2. Synchronize with Supabase Auth if Supabase Admin is configured
+  // Update password EXCLUSIVELY in Supabase Auth (Single Source of Truth - No passwords in users.json)
   if (supabaseAdmin) {
     const syncEmails = [user.email];
     if (Array.isArray(user.aliases)) {
       user.aliases.forEach(a => { if (a && !syncEmails.includes(a)) syncEmails.push(a); });
     }
 
+    let updatedCount = 0;
     for (const em of syncEmails) {
       try {
         const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
         const sbUser = listData?.users?.find(u => u.email?.toLowerCase() === em.toLowerCase());
         if (sbUser) {
           await supabaseAdmin.auth.admin.updateUserById(sbUser.id, { password: newPassword });
-          console.log(`[AUTH] Senha sincronizada no Supabase Auth para ${em}`);
-        } else {
-          await supabaseAdmin.auth.admin.createUser({
-            email: em,
-            password: newPassword,
-            email_confirm: true,
-            user_metadata: { name: user.name, role: user.role, phone: user.phone },
-          });
-          console.log(`[AUTH] Usuário criado e sincronizado no Supabase Auth para ${em}`);
+          console.log(`[AUTH] Senha redefinida exclusivamente no Supabase Auth para ${em} (${sbUser.id})`);
+          updatedCount++;
         }
       } catch (sbErr) {
-        console.warn(`⚠️ Aviso ao sincronizar com Supabase para ${em}:`, sbErr.message);
+        console.warn(`⚠️ Aviso ao atualizar senha no Supabase Auth para ${em}:`, sbErr.message);
       }
+    }
+
+    if (updatedCount === 0) {
+      return res.status(500).json({ success: false, message: 'Não foi possível atualizar a senha no Supabase Auth.' });
     }
   }
 
-  return res.json({ success: true, message: 'Senha redefinida com sucesso!' });
+  return res.json({ success: true, message: 'Sua senha foi redefinida com sucesso no Supabase Auth!' });
 });
 
 // Serve static frontend in production if dist exists

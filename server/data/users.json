@@ -3,8 +3,10 @@
     "id": "e2208d7b-f536-4ff8-a0a6-5ed82ebae52b",
     "name": "Liverton",
     "email": "liverton.aguiar@hotmail.com",
-    "aliases": ["usr-default-liverton", "liverton.aguiar.sup@gmail.com"],
-    "password": "scrypt$8a9e0b945ae9dd1483f8a6e37222f5ab$b3480555c0219f02a269d56dcbc30f1c06e3def046df0dda349ced60e37045aa192dbdd91666bea0c7843c9bbdf26d90980e8f5a481e53add12212b7bf8db9fa",
+    "aliases": [
+      "usr-default-liverton",
+      "liverton.aguiar.sup@gmail.com"
+    ],
     "phone": "85985949115",
     "role": "admin",
     "createdAt": "2026-01-01"
@@ -13,7 +15,6 @@
     "id": "usr-demo-financeiro",
     "name": "Conta Demonstração",
     "email": "demo@finly.com",
-    "password": "scrypt$48e42f6110eb265babce504f98dc8bfc$2c5ff5c5de208c3f33a538c4ac52f75f24e1521e3f4d184b35aaf84bd25eba748c5ff670ca7f3f44e04816483be60c5e7faac083bc1f94443ecfbd184d92db75",
     "phone": "11999998888",
     "role": "admin",
     "createdAt": "2026-01-01"

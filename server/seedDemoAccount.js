@@ -39,7 +39,7 @@ const demoUserData = {
 if (demoUserIndex >= 0) {
   users[demoUserIndex] = { ...users[demoUserIndex], ...demoUserData };
 } else {
-  users.push({ ...demoUserData, password: 'demo' });
+  users.push(demoUserData);
 }
 
 fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');

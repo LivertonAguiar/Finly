@@ -195,59 +195,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: 'Por favor, digite sua senha para entrar.' };
     }
 
-    // 2. Primary: Supabase Authentication
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
-        });
-
-        if (error) {
-          console.warn('Supabase login warning, falling back to API server:', error.message);
-        } else if (data.user) {
-          if (data.session?.access_token) {
-            localStorage.setItem('finly_auth_token', data.session.access_token);
-          }
-          const u = data.user;
-          const loggedUser: AuthUser = {
-            id: u.id,
-            name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-            email: u.email || '',
-            phone: u.user_metadata?.phone,
-            role: u.user_metadata?.role || 'admin',
-            avatarUrl: u.user_metadata?.avatar_url,
-            createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-          };
-          setAllUsers(prev => [loggedUser, ...prev.filter(usr => usr.id !== loggedUser.id)]);
-          setCurrentUser(loggedUser);
-          if (remember) {
-            localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
-          } else {
-            sessionStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
-          }
-          return { success: true };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase auth network error, trying fallback:', sbErr);
-      }
+    // 2. Primary & Exclusive: Supabase Authentication (Single Source of Truth)
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Serviço de autenticação Supabase não está configurado.' };
     }
 
-    // 3. Fallback: Node/Express API Authentication
     try {
-      const res = await fetch(getApiUrl('/api/auth/login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
       });
 
-      const data = await res.json();
-      if (data.success && data.user) {
-        if (data.token) {
-          localStorage.setItem('finly_auth_token', data.token);
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+          return { success: false, message: 'E-mail ou senha incorretos. Verifique seus dados.' };
         }
-        const loggedUser: AuthUser = data.user;
-        setAllUsers(prev => [loggedUser, ...prev.filter(u => u.id !== loggedUser.id)]);
+        if (msg.includes('email not confirmed')) {
+          return { success: false, message: 'E-mail ainda não confirmado. Verifique sua caixa de entrada.' };
+        }
+        return { success: false, message: error.message || 'Falha ao autenticar usuário.' };
+      }
+
+      if (data.user) {
+        if (data.session?.access_token) {
+          localStorage.setItem('finly_auth_token', data.session.access_token);
+        }
+        const u = data.user;
+        const loggedUser: AuthUser = {
+          id: u.id,
+          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+          email: u.email || '',
+          phone: u.user_metadata?.phone,
+          role: u.user_metadata?.role || 'admin',
+          avatarUrl: u.user_metadata?.avatar_url,
+          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+        setAllUsers(prev => [loggedUser, ...prev.filter(usr => usr.id !== loggedUser.id)]);
         setCurrentUser(loggedUser);
         if (remember) {
           localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
@@ -255,27 +239,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           sessionStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
         }
         return { success: true };
-      } else {
-        return { success: false, message: data.message || 'Falha ao autenticar usuário.' };
-      }
-    } catch (err) {
-      // Offline fallback
-      let user = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
-      if (!user && (cleanEmail === 'liverton.aguiar@hotmail.com' || cleanEmail === 'liverton.aguiar.sup@gmail.com')) {
-        user = DEFAULT_LIVERTON_USER;
       }
 
-      if (!user) {
-        return { success: false, message: 'E-mail não encontrado ou servidor offline.' };
-      }
-
-      setCurrentUser(user);
-      if (remember) {
-        localStorage.setItem(ACTIVE_SESSION_KEY, user.id);
-      } else {
-        sessionStorage.setItem(ACTIVE_SESSION_KEY, user.id);
-      }
-      return { success: true };
+      return { success: false, message: 'Nenhum usuário retornado pelo serviço de autenticação.' };
+    } catch (sbErr: any) {
+      return {
+        success: false,
+        message: 'Serviço de autenticação temporariamente indisponível. Verifique sua conexão com a internet.',
+      };
     }
   };
 
@@ -316,80 +287,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!password) {
       return { success: false, message: 'Senha é obrigatória para cadastro.' };
     }
-
-    // 1. Primary: Supabase Auth
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: {
-              name: name.trim(),
-              phone: phone ? phone.trim() : undefined,
-              role: 'admin',
-            },
-          },
-        });
-
-        if (error) {
-          return { success: false, message: error.message };
-        }
-
-        if (data.user) {
-          const newUser: AuthUser = {
-            id: data.user.id,
-            name: name.trim(),
-            email: cleanEmail,
-            phone: phone ? phone.trim() : undefined,
-            role: 'admin',
-            createdAt: new Date().toISOString().split('T')[0],
-          };
-          setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
-          setCurrentUser(newUser);
-          localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
-          return { success: true };
-        }
-      } catch (sbErr: any) {
-        console.warn('Supabase register error, trying fallback:', sbErr);
-      }
+    if (password.length < 6) {
+      return { success: false, message: 'A senha deve ter no mínimo 6 caracteres.' };
     }
 
-    // 2. Fallback: Node/Express API
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Serviço de autenticação Supabase não está configurado.' };
+    }
+
+    // Supabase Auth: Single Source of Truth
     try {
-      const res = await fetch(getApiUrl('/api/auth/register'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: cleanEmail, password, phone }),
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+            phone: phone ? phone.trim() : undefined,
+            role: 'admin',
+          },
+        },
       });
 
-      const data = await res.json();
-      if (data.success && data.user) {
-        if (data.token) {
-          localStorage.setItem('finly_auth_token', data.token);
+      if (error) {
+        return { success: false, message: error.message || 'Erro ao realizar cadastro.' };
+      }
+
+      if (data.user) {
+        if (data.session?.access_token) {
+          localStorage.setItem('finly_auth_token', data.session.access_token);
         }
-        const newUser: AuthUser = data.user;
+        const newUser: AuthUser = {
+          id: data.user.id,
+          name: name.trim(),
+          email: cleanEmail,
+          phone: phone ? phone.trim() : undefined,
+          role: 'admin',
+          createdAt: new Date().toISOString().split('T')[0],
+        };
         setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
         setCurrentUser(newUser);
         localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
         return { success: true };
-      } else {
-        return { success: false, message: data.message || 'Falha ao cadastrar.' };
       }
-    } catch (err) {
-      const newUser: AuthUser = {
-        id: 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-        name: name.trim(),
-        email: cleanEmail,
-        phone: phone || '',
-        role: 'member',
-        createdAt: new Date().toISOString().split('T')[0],
-      };
 
-      setAllUsers(prev => [...prev, newUser]);
-      setCurrentUser(newUser);
-      localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
-      return { success: true };
+      return { success: false, message: 'Nenhum usuário retornado pelo serviço de cadastro.' };
+    } catch (sbErr: any) {
+      return {
+        success: false,
+        message: sbErr.message || 'Erro ao conectar ao serviço de autenticação.',
+      };
     }
   };
 
@@ -495,44 +442,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true, message: 'Senha redefinida com sucesso!' };
   };
 
-  // 4. Change Password in Profile (Cryptographic Hash)
+  // 4. Change Password in Profile (100% Supabase Auth Single Source of Truth)
   const changePassword = async (oldPassword: string, newPassword: string) => {
     if (!currentUser) return { success: false, message: 'Usuário não autenticado.' };
-    if (newPassword.length < 3) {
-      return { success: false, message: 'A nova senha deve ter no mínimo 3 caracteres.' };
+    if (newPassword.length < 6) {
+      return { success: false, message: 'A nova senha deve ter no mínimo 6 caracteres.' };
     }
 
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) {
-          return { success: false, message: error.message };
-        }
-      } catch (e) {
-        console.warn('Supabase change password fallback');
-      }
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Serviço de autenticação Supabase não está configurado.' };
     }
 
-    try {
-      const token = localStorage.getItem('finly_auth_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(getApiUrl('/api/auth/change-password'), {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ email: currentUser.email, oldPassword, newPassword }),
+    // 1. Verify current password against Supabase Auth
+    if (oldPassword && currentUser.email) {
+      const { error: verifyErr } = await supabase.auth.signInWithPassword({
+        email: currentUser.email.trim().toLowerCase(),
+        password: oldPassword,
       });
-
-      const data = await res.json();
-      if (data.success) {
-        return { success: true, message: 'Sua senha foi alterada com sucesso!' };
-      } else {
-        return { success: false, message: data.message || 'Senha atual incorreta.' };
+      if (verifyErr) {
+        return { success: false, message: 'A senha atual informada está incorreta.' };
       }
-    } catch (err) {
-      return { success: true, message: 'Sua senha foi alterada localmente!' };
     }
+
+    // 2. Update to new password exclusively in Supabase Auth
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateErr) {
+      return { success: false, message: updateErr.message || 'Erro ao atualizar senha no Supabase.' };
+    }
+
+    return { success: true, message: 'Sua senha foi alterada com sucesso!' };
   };
 
   return (

@@ -36,11 +36,33 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-12';
+export const CURRENT_BUILD_DATE = '2026-09-13';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-13',
+    summary: 'Centralização da autenticação no Supabase Auth como fonte única de verdade. Remoção de senhas locais do servidor Express e migração completa de login, cadastro e alteração de senha para o SDK do Supabase.',
+    highlights: [
+      {
+        title: 'Supabase Auth como Fonte Única de Verdade',
+        description: 'Login, cadastro, recuperação e alteração de senha agora são gerenciados exclusivamente pelo Supabase Auth. O servidor Express valida requisições por JWT em vez de credenciais locais.',
+        type: 'improvement',
+      },
+      {
+        title: 'Remoção de Senhas Locais',
+        description: 'O arquivo users.json do servidor não armazena mais hashes de senha. A autenticação é feita via token Bearer validado contra o Supabase.',
+        type: 'fix',
+      },
+      {
+        title: 'Segurança Reforçada',
+        description: 'Eliminada a duplicidade de credenciais entre Supabase e Express, prevenindo divergências de senha e falhas de login.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.68',
     releaseDate: '2026-09-12',
     summary: 'Unificação contábil por competência de faturas em todo o sistema (Dashboard, Transações, Orçamentos e Relatórios), seletor de 3 regimes de apuração, e blindagem universal anti-perda de dados com migrações automáticas no deploy.',
     highlights: [
