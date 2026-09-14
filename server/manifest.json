@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.74/finly-v1.1.74.apk"
   },
   "web": {
-    "version": "1.1.74.1",
+    "version": "1.1.74.2",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.74.1.zip",
-    "sha256": "30d7d602fbc6b2849b0c4adaba62380e532c217d05e333e31a3d2b46c509c71b",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.74.2.zip",
+    "sha256": "9d7b94a13e3f7c0436472752b0ac6d26d799192e91acc8b4ee788f95e38bfefa",
     "mandatory": true,
     "releaseDate": "2026-09-14",
-    "notes": "Correcao definitiva de exibicao e tipografia de transacoes no mobile"
+    "notes": "Exibicao enriquecida de novidades e destaques de atualizacao"
   }
 }

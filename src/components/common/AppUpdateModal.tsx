@@ -127,17 +127,42 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
           >
             <div className="flex items-center gap-2 font-bold mb-1">
               {result.hasUpdate ? (
-                <Sparkles className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
               ) : (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               )}
-              <span>
+              <span className="text-xs font-black">
                 {result.hasUpdate ? `Nova versão disponível: v${result.latestVersion}` : 'Você está na versão mais recente!'}
               </span>
+              {result.releaseDate && (
+                <span className="text-[10px] text-slate-400 font-normal ml-auto">
+                  {result.releaseDate}
+                </span>
+              )}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-              {result.notes || CURRENT_RELEASE.summary}
+            <p className="text-[11.5px] text-slate-300 mt-1 leading-relaxed">
+              {result.notes || result.summary || CURRENT_RELEASE.summary}
             </p>
+
+            {/* Highlights da Nova Versão */}
+            {result.hasUpdate && result.highlights && result.highlights.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-purple-500/20 space-y-2 max-h-48 overflow-y-auto pr-1">
+                <p className="text-[10px] font-black uppercase tracking-wider text-purple-300">
+                  Destaques desta atualização:
+                </p>
+                {result.highlights.map((h, i) => (
+                  <div key={i} className="text-left bg-purple-950/30 p-2 rounded-xl border border-purple-500/15">
+                    <p className="text-[11px] font-bold text-slate-100 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                      {h.title}
+                    </p>
+                    <p className="text-[10.5px] text-slate-400 leading-snug pl-3 mt-0.5">
+                      {h.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

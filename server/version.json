@@ -1,18 +1,42 @@
 {
   "minSupportedVersion": "1.0.0",
-  "releaseDate": "2026-09-11",
-  "notes": "Progressão monetária contínua para financiamentos habitacionais Price + TR (Caixa) e indexação de seguros.",
+  "releaseDate": "2026-09-14",
+  "notes": "Exibição definitiva de transações no mobile com tipografia ampliada, sem corte, badges desacopladas e compatibilidade universal com Live Updates.",
   "isLatest": true,
   "sections": {
     "features": [
-      "Parcelas de dívidas e financiamentos existentes passam a aparecer automaticamente no Extrato e no Calendário"
+      "Tipografia ampliada e quebra de linhas para transações no mobile (15px mobile, 16px desktop)",
+      "Badge de status adaptativa no celular liberando mais de 75px de espaço horizontal no card"
     ],
     "fixes": [
-      "Despesas simples voltam a ser adicionadas imediatamente ao extrato",
-      "Lançamentos repetidos ou parcelados não criam mais uma cópia extra"
+      "Eliminação definitiva de cortes prematuros em descrições de transações e subcategorias",
+      "Compatibilidade universal do Live Update OTA (minNativeVersion 1.1.0) para atualização automática em segundo plano"
     ],
     "improvements": [
-      "Reconciliação idempotente preserva o vínculo das parcelas durante a sincronização com o Supabase"
+      "Desacoplamento de tags de dívida e recorrência para linha própria, liberando 100% da largura para o título",
+      "Recálculo e projeção da parcela do financiamento Caixa com TR atualizada em R$ 750,88 a partir de outubro de 2026"
     ]
-  }
+  },
+  "highlights": [
+    {
+      "title": "Tipografia Ampliada e Sem Corte",
+      "description": "Descrições de transações agora quebram em até 2 linhas completas com fonte maior (15px mobile), sem cortes prematuros.",
+      "type": "visual"
+    },
+    {
+      "title": "Badge de Status Adaptativa no Mobile",
+      "description": "Botões de situação compactos no celular liberando mais de 75px de largura para os dados da transação.",
+      "type": "visual"
+    },
+    {
+      "title": "Atualização Automática em Segundo Plano",
+      "description": "Compatibilidade universal do Live Update (OTA) permitindo aplicação imediata das melhorias em qualquer versão nativa.",
+      "type": "improvement"
+    },
+    {
+      "title": "Parcelas Caixa com TR Atualizada",
+      "description": "Parcela do financiamento imobiliário recalculada em R$ 750,88 a partir de outubro de 2026.",
+      "type": "improvement"
+    }
+  ]
 }

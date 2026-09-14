@@ -14,6 +14,7 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
 
   const [isVisible, setIsVisible] = useState(false);
   const [latestVersion, setLatestVersion] = useState<string>('');
+  const [updateNotes, setUpdateNotes] = useState<string>('');
 
   useEffect(() => {
     // Listen for real-time app update detection event
@@ -21,6 +22,10 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
       const detail = e.detail;
       if (detail && detail.hasUpdate && detail.latestVersion) {
         setLatestVersion(detail.latestVersion);
+        const notesText = detail.notes || detail.summary;
+        if (notesText) {
+          setUpdateNotes(notesText);
+        }
         setIsVisible(true);
       }
     };
@@ -33,6 +38,10 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
         const res = await checkForAppUpdates({ notifyIfFound: true });
         if (res && res.hasUpdate && res.latestVersion) {
           setLatestVersion(res.latestVersion);
+          const notesText = res.notes || res.summary;
+          if (notesText) {
+            setUpdateNotes(notesText);
+          }
           const dismissed = sessionStorage.getItem(DISMISS_KEY);
           if (!dismissed) {
             setIsVisible(true);
@@ -96,8 +105,8 @@ export const UpdateNoticeCard: React.FC<UpdateNoticeCardProps> = ({ onGoToUpdate
               Atualização Disponível para o Finly!
             </h4>
 
-            <p className="text-[11px] text-purple-200/80 mt-0.5 leading-snug">
-              Melhorias de desempenho, novo Puxe para Atualizar e tela cheia.
+            <p className="text-[11px] text-purple-200/80 mt-0.5 leading-snug line-clamp-2">
+              {updateNotes || 'Exibição aprimorada de transações, novas correções e melhorias de estabilidade.'}
             </p>
 
             <div className="mt-2.5 flex items-center gap-1.5 text-xs font-black text-amber-300 group-hover:text-amber-200 transition-colors">

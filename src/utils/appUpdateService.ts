@@ -4,7 +4,7 @@
  */
 import { getApiUrl, PRODUCTION_API_URL } from '../services/apiConfig';
 import { sendLocalNotification } from './notificationEngine';
-import { CURRENT_VERSION, CURRENT_BUILD_DATE, CURRENT_RELEASE } from '../data/releases';
+import { CURRENT_VERSION, CURRENT_BUILD_DATE, CURRENT_RELEASE, RELEASES } from '../data/releases';
 
 export const APP_VERSION = CURRENT_VERSION;
 export const APP_BUILD_DATE = CURRENT_BUILD_DATE;
@@ -35,6 +35,10 @@ export interface UpdateCheckResult {
   hasUpdate: boolean;
   latestVersion: string;
   notes?: string;
+  summary?: string;
+  releaseDate?: string;
+  highlights?: { title: string; description: string; type?: string }[];
+  sections?: { features?: string[]; fixes?: string[]; improvements?: string[] };
   downloadUrl?: string;
   source?: 'api' | 'sw' | 'github' | 'local';
   apkReady?: boolean;
@@ -192,13 +196,21 @@ const performCheck = async (options?: {
 
       const isCompiling = hasNewVersion && isNativeCapacitor() && !apkReady;
       const effectiveHasUpdate = hasNewVersion && (!isNativeCapacitor() || apkReady);
+      const matchingRelease = RELEASES.find(r => r.version === serverVer) || CURRENT_RELEASE;
+      const latestNotes = serverInfo.notes || matchingRelease?.summary || CURRENT_RELEASE.summary;
 
       const result: UpdateCheckResult = {
         hasUpdate: effectiveHasUpdate,
         latestVersion: serverVer || APP_VERSION,
         notes: isCompiling
           ? `A nova versão v${serverVer} está sendo compilada no GitHub Actions (~1 a 2 min). O download e a notificação serão liberados automaticamente assim que o APK estiver pronto.`
-          : (serverInfo.notes || CURRENT_RELEASE.summary),
+          : latestNotes,
+        summary: latestNotes,
+        releaseDate: serverInfo.releaseDate || matchingRelease?.releaseDate || CURRENT_RELEASE.releaseDate,
+        highlights: (Array.isArray(serverInfo.highlights) && serverInfo.highlights.length > 0)
+          ? serverInfo.highlights
+          : (matchingRelease?.highlights || CURRENT_RELEASE.highlights || []),
+        sections: serverInfo.sections,
         downloadUrl,
         source: 'api',
         apkReady,
