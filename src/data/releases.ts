@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-14',
+    summary: 'Expurgo definitivo de duplicidade no financiamento Caixa, blindagem do banco PostgreSQL contra ressurreição fantasma e validação integral de integridade contábil e de parcelas.',
+    highlights: [
+      {
+        title: 'Expurgo de Financiamento Caixa Duplicado',
+        description: 'Eliminação completa de contratos e transações fantasmas legadas, consolidando os lançamentos exclusivamente no contrato habitacional oficial auditado.',
+        type: 'fix',
+      },
+      {
+        title: 'Triggers Anti-Ressurreição no Banco de Dados',
+        description: 'Implementação de triggers nativos PostgreSQL e travas nos clientes web e mobile impedindo silenciosamente que cadastros legados em cache sejam re-enviados ao banco.',
+        type: 'improvement',
+      },
+      {
+        title: 'Integridade de Parcelas Pré e Pós Outubro/2026',
+        description: 'Manutenção rigorosa das 20 parcelas anteriores registradas como pagas antes do Finly sem poluir extratos retroativos e cobrança ativa das 12 parcelas a partir de outubro.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.72',
+    releaseDate: '2026-09-14',
     summary: 'Tela cheia Edge-to-Edge nativa no Android com barras transparentes, restauração total dos gestos de sistema (voltar, minimizar e alternar apps) e novo relatório donut por subcategoria.',
     highlights: [
       {

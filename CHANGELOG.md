@@ -3,6 +3,16 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.73] - 2026-09-14
+
+### 🏠 Financiamento Habitacional: Expurgo de Duplicidade & Integridade
+- **Eliminação Definitiva de Registros Fantasmas**:
+  - Expurgo do ID de contrato legado e transações duplicadas no Supabase.
+  - Triggers PostgreSQL automáticos (`trg_drop_ghost_debts` e `trg_drop_ghost_debt_transactions`) que descartam silenciosamente qualquer inserção de contratos fantasmas por clientes com cache antigo.
+  - Deduplicação em nível de memória e camada de dados no frontend e no backend.
+- **Validação Contábil**:
+  - Auditoria das 20 parcelas pagas anteriormente ao Finly preservadas nos relatórios contratuais sem impactar meses anteriores a outubro/2026.
+
 ## [1.1.72] - 2026-09-14
 
 ### 📱 Android Nativo: Tela Cheia Edge-to-Edge & Gestos de Sistema
