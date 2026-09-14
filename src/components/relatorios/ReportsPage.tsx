@@ -55,8 +55,10 @@ type TabType = 'donut' | 'line' | 'bar';
 
 type DonutSubtype =
   | 'despesas_categoria'
+  | 'despesas_subcategoria'
   | 'despesas_contas'
   | 'receitas_categoria'
+  | 'receitas_subcategoria'
   | 'receitas_contas'
   | 'saldos_contas';
 
@@ -119,6 +121,7 @@ export const ReportsPage: React.FC = () => {
 
   // Subtypes for each tab
   const [donutSubtype, setDonutSubtype] = useState<DonutSubtype>('despesas_categoria');
+  const [selectedParentCategoryFilter, setSelectedParentCategoryFilter] = useState<string | null>(null);
   const [lineSubtype, setLineSubtype] = useState<LineSubtype>('despesas_mes');
   const [barSubtype, setBarSubtype] = useState<BarSubtype>('balanco_mensal');
   const [hoveredDonutItem, setHoveredDonutItem] = useState<any>(null);
@@ -277,7 +280,19 @@ export const ReportsPage: React.FC = () => {
       let activeChartImage: string | undefined = undefined;
       const activeChartTitle =
         activeTab === 'donut'
-          ? (donutSubtype === 'despesas_categoria' ? 'Despesas por categorias' : donutSubtype === 'despesas_contas' ? 'Despesas por contas' : donutSubtype === 'receitas_categoria' ? 'Receitas por categorias' : donutSubtype === 'receitas_contas' ? 'Receitas por contas' : 'Saldos por conta')
+          ? (donutSubtype === 'despesas_categoria'
+              ? 'Despesas por categorias'
+              : donutSubtype === 'despesas_subcategoria'
+              ? (selectedParentCategoryFilter ? `Despesas por subcategorias (${categories.find(c => c.id === selectedParentCategoryFilter)?.name || ''})` : 'Despesas por subcategorias')
+              : donutSubtype === 'despesas_contas'
+              ? 'Despesas por contas'
+              : donutSubtype === 'receitas_categoria'
+              ? 'Receitas por categorias'
+              : donutSubtype === 'receitas_subcategoria'
+              ? (selectedParentCategoryFilter ? `Receitas por subcategorias (${categories.find(c => c.id === selectedParentCategoryFilter)?.name || ''})` : 'Receitas por subcategorias')
+              : donutSubtype === 'receitas_contas'
+              ? 'Receitas por contas'
+              : 'Saldos por conta')
           : activeTab === 'line'
           ? (lineSubtype === 'despesas_mes' ? 'Despesas do mês (diário)' : lineSubtype === 'despesas_semana' ? 'Despesas da semana' : 'Despesas por ano (mensal)')
           : (barSubtype === 'balanco_mensal' ? 'Balanço mensal (6 meses)' : barSubtype === 'fluxo_caixa_anual' ? 'Fluxo de caixa anual' : 'Despesas x dia da semana');
@@ -411,6 +426,72 @@ export const ReportsPage: React.FC = () => {
       return { items, total, isExpense };
     }
 
+    if (donutSubtype === 'despesas_subcategoria' || donutSubtype === 'receitas_subcategoria') {
+      const isExpense = donutSubtype === 'despesas_subcategoria';
+      const targetType = isExpense ? 'expense' : 'income';
+      const map: Record<
+        string,
+        {
+          id: string;
+          name: string;
+          icon: string;
+          amount: number;
+          color?: string;
+          parentCategoryId: string;
+          parentCategoryName: string;
+          parentCategoryIcon: string;
+        }
+      > = {};
+
+      monthTxs.filter(t => t.type === targetType).forEach(t => {
+        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, targetType);
+        const parentId = resolved.id;
+        const parentName = resolved.name;
+        const parentIcon = resolved.icon;
+
+        // Filtro opcional por categoria pai específica
+        if (selectedParentCategoryFilter && parentId !== selectedParentCategoryFilter) {
+          return;
+        }
+
+        let subId = resolved.subId || t.subcategoryId;
+        let subName = resolved.subName;
+        let subIcon = resolved.subIcon || resolved.icon || '🏷️';
+
+        if (!subId || !subName) {
+          subId = `geral_${parentId}`;
+          subName = `${parentName} (Geral)`;
+          subIcon = parentIcon;
+        }
+
+        const uniqueKey = `${parentId}__${subId}`;
+
+        if (!map[uniqueKey]) {
+          map[uniqueKey] = {
+            id: uniqueKey,
+            name: subName.toUpperCase(),
+            icon: subIcon,
+            amount: 0,
+            parentCategoryId: parentId,
+            parentCategoryName: parentName,
+            parentCategoryIcon: parentIcon,
+          };
+        }
+        map[uniqueKey].amount += t.amount;
+      });
+
+      const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
+      const items = Object.values(map)
+        .map((i, idx) => ({
+          ...i,
+          percentage: total > 0 ? (i.amount / total) * 100 : 0,
+          color: palette[idx % palette.length],
+        }))
+        .sort((a, b) => b.amount - a.amount);
+
+      return { items, total, isExpense };
+    }
+
     if (donutSubtype === 'despesas_contas' || donutSubtype === 'receitas_contas') {
       const isExpense = donutSubtype === 'despesas_contas';
       const targetType = isExpense ? 'expense' : 'income';
@@ -461,7 +542,32 @@ export const ReportsPage: React.FC = () => {
     })).sort((a, b) => b.amount - a.amount);
 
     return { items, total, isExpense: false };
-  }, [donutSubtype, filteredTransactions, currentMonthPrefix, categories, accounts, cards]);
+  }, [donutSubtype, selectedParentCategoryFilter, filteredTransactions, currentMonthPrefix, categories, accounts, cards]);
+
+  // Lista de categorias-mãe disponíveis com despesas ou receitas no período para filtragem rápida
+  const availableParentCategoriesForSubtype = useMemo(() => {
+    if (donutSubtype !== 'despesas_subcategoria' && donutSubtype !== 'receitas_subcategoria') return [];
+    const isExpense = donutSubtype === 'despesas_subcategoria';
+    const targetType = isExpense ? 'expense' : 'income';
+    const monthTxs = filteredTransactions.filter(t => t.date.startsWith(currentMonthPrefix) && t.type === targetType);
+
+    const catMap = new Map<string, { id: string; name: string; icon: string; total: number; count: number }>();
+    monthTxs.forEach(t => {
+      const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, targetType);
+      const existing = catMap.get(resolved.id) || {
+        id: resolved.id,
+        name: resolved.name,
+        icon: resolved.icon,
+        total: 0,
+        count: 0,
+      };
+      existing.total += t.amount;
+      existing.count += 1;
+      catMap.set(resolved.id, existing);
+    });
+
+    return Array.from(catMap.values()).sort((a, b) => b.total - a.total);
+  }, [donutSubtype, filteredTransactions, currentMonthPrefix, categories]);
 
   // -----------------------------------------------------------------------------------
   // 2. DATA FOR LINE TAB
@@ -624,8 +730,10 @@ export const ReportsPage: React.FC = () => {
   // Labels mappings
   const donutSubtypeLabels: Record<DonutSubtype, string> = {
     despesas_categoria: 'Despesas por Categorias',
+    despesas_subcategoria: 'Despesas por Subcategorias',
     despesas_contas: 'Despesas por Contas',
     receitas_categoria: 'Receitas por Categorias',
+    receitas_subcategoria: 'Receitas por Subcategorias',
     receitas_contas: 'Receitas por Contas',
     saldos_contas: 'Saldos por Conta',
   };
@@ -1066,137 +1174,274 @@ export const ReportsPage: React.FC = () => {
         {/* TAB 1: DONUT / PIE VIEW */}
         {/* ========================================================================= */}
         {activeTab === 'donut' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Donut Chart with Centered Total */}
-            <div className="lg:col-span-5 flex flex-col items-center justify-center">
-              {donutData.items.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-xs">
-                  Nenhuma transação encontrada no período.
-                </div>
-              ) : (
-                <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={donutData.items}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={68}
-                        outerRadius={94}
-                        paddingAngle={donutData.items.length > 1 ? 4 : 0}
-                        cornerRadius={6}
-                        dataKey="amount"
-                        stroke="transparent"
-                        activeIndex={hoveredDonutItem ? donutData.items.findIndex(item => item.id === hoveredDonutItem.id) : undefined}
-                        activeShape={renderActiveDonutShape}
-                        onMouseEnter={(_, index) => setHoveredDonutItem(donutData.items[index])}
-                        onMouseLeave={() => setHoveredDonutItem(null)}
+          <div className="space-y-4">
+            {/* Banner e Barra de Chips de Categorias para Subcategorias */}
+            {donutSubtype.includes('subcategoria') && (
+              <div className="space-y-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/60">
+                {selectedParentCategoryFilter && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/80 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">
+                        {availableParentCategoriesForSubtype.find(c => c.id === selectedParentCategoryFilter)?.icon || '📁'}
+                      </span>
+                      <span className="text-xs font-black text-purple-900 dark:text-purple-200">
+                        Filtrando subcategorias de: {availableParentCategoriesForSubtype.find(c => c.id === selectedParentCategoryFilter)?.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedParentCategoryFilter(null)}
+                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors cursor-pointer"
                       >
-                        {donutData.items.map((entry, index) => (
-                          <Cell
-                            key={`cell-donut-${entry.id || index}`}
-                            fill={entry.color || '#7c4dff'}
-                            className="cursor-pointer transition-opacity hover:opacity-90"
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-
-                  {/* Interactive Center (No Overlapping Tooltip & Multi-line Wrap) */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-                    {hoveredDonutItem ? (
-                      <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[135px] text-center px-1 select-none">
-                        <div
-                          className="w-8 h-8 rounded-xl flex items-center justify-center text-base mb-1 shadow-2xs"
-                          style={{ backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}25` }}
-                        >
-                          {hoveredDonutItem.icon || '🏷️'}
-                        </div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
-                          {hoveredDonutItem.name}
-                        </span>
-                        <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 tracking-tight mt-0.5 whitespace-nowrap">
-                          {formatCurrency(hoveredDonutItem.amount, user.currency, !user.showValues)}
-                        </span>
-                        <span
-                          className="text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-1 border shadow-2xs"
-                          style={{
-                            backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}15`,
-                            borderColor: `${hoveredDonutItem.color || '#7c4dff'}35`,
-                            color: hoveredDonutItem.color || '#7c4dff',
-                          }}
-                        >
-                          {hoveredDonutItem.percentage.toFixed(1)}% do total
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center max-w-[140px] text-center px-1 select-none">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">
-                          Total do Período
-                        </span>
-                        <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                          {formatCurrency(donutData.total, user.currency, !user.showValues)}
-                        </strong>
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full mt-1.5 border border-slate-200/60 dark:border-slate-700/60">
-                          {donutData.items.length} categorias
-                        </span>
-                      </div>
-                    )}
+                        Ver todas as subcategorias
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedParentCategoryFilter(null);
+                          setDonutSubtype(donutSubtype === 'despesas_subcategoria' ? 'despesas_categoria' : 'receitas_categoria');
+                        }}
+                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                      >
+                        ← Voltar a Categorias
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* Right Column: Ranked Breakdown List (ALL CAPS, ICON, PERCENT, VALUE) */}
-            <div className="lg:col-span-7 space-y-3">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
-                {donutSubtypeLabels[donutSubtype]}
-              </h3>
-
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[380px] overflow-y-auto scrollbar-thin pr-1">
-                {donutData.items.length === 0 ? (
-                  <p className="p-6 text-center text-xs text-slate-400">Nenhum dado para exibir.</p>
-                ) : (
-                  donutData.items.map((item, idx) => (
-                    <div
-                      key={item.id || idx}
-                      className="py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 px-2 rounded-xl transition-colors cursor-pointer"
+                {/* Chips de Categorias disponíveis */}
+                {availableParentCategoriesForSubtype.length > 0 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <button
+                      onClick={() => setSelectedParentCategoryFilter(null)}
+                      className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                        !selectedParentCategoryFilter
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
                     >
-                      {/* Left: Round Colored Icon + ALL CAPS Title + "Porcentagem" */}
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white shadow-xs"
-                          style={{ backgroundColor: item.color }}
+                      Todas as Categorias ({availableParentCategoriesForSubtype.length})
+                    </button>
+                    {availableParentCategoriesForSubtype.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedParentCategoryFilter(cat.id === selectedParentCategoryFilter ? null : cat.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                          selectedParentCategoryFilter === cat.id
+                            ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-400/50'
+                            : 'bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.name}</span>
+                        <span className="text-[10px] opacity-75 font-semibold">({formatCurrency(cat.total, user.currency)})</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Left Column: Donut Chart with Centered Total */}
+              <div className="lg:col-span-5 flex flex-col items-center justify-center">
+                {donutData.items.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    Nenhuma transação encontrada no período.
+                  </div>
+                ) : (
+                  <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={donutData.items}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={68}
+                          outerRadius={94}
+                          paddingAngle={donutData.items.length > 1 ? 4 : 0}
+                          cornerRadius={6}
+                          dataKey="amount"
+                          stroke="transparent"
+                          activeIndex={hoveredDonutItem ? donutData.items.findIndex(item => item.id === hoveredDonutItem.id) : undefined}
+                          activeShape={renderActiveDonutShape}
+                          onMouseEnter={(_, index) => setHoveredDonutItem(donutData.items[index])}
+                          onMouseLeave={() => setHoveredDonutItem(null)}
                         >
-                          {item.icon}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight truncate">
-                            {item.name}
-                          </p>
-                          <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
-                            Porcentagem
+                          {donutData.items.map((entry, index) => (
+                            <Cell
+                              key={`cell-donut-${entry.id || index}`}
+                              fill={entry.color || '#7c4dff'}
+                              className="cursor-pointer transition-opacity hover:opacity-90"
+                            />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+
+                    {/* Interactive Center */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+                      {hoveredDonutItem ? (
+                        <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[135px] text-center px-1 select-none">
+                          <div
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-base mb-1 shadow-2xs"
+                            style={{ backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}25` }}
+                          >
+                            {hoveredDonutItem.icon || '🏷️'}
+                          </div>
+                          {hoveredDonutItem.parentCategoryName && (
+                            <span className="text-[9px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider line-clamp-1 mb-0.5">
+                              {hoveredDonutItem.parentCategoryIcon} {hoveredDonutItem.parentCategoryName}
+                            </span>
+                          )}
+                          <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
+                            {hoveredDonutItem.name}
+                          </span>
+                          <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 tracking-tight mt-0.5 whitespace-nowrap">
+                            {formatCurrency(hoveredDonutItem.amount, user.currency, !user.showValues)}
+                          </span>
+                          <span
+                            className="text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-1 border shadow-2xs"
+                            style={{
+                              backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}15`,
+                              borderColor: `${hoveredDonutItem.color || '#7c4dff'}35`,
+                              color: hoveredDonutItem.color || '#7c4dff',
+                            }}
+                          >
+                            {hoveredDonutItem.percentage.toFixed(1)}% do total
                           </span>
                         </div>
-                      </div>
-
-                      {/* Right: Amount + Formatted % */}
-                      <div className="text-right shrink-0">
-                        <p
-                          className={`text-xs font-black ${
-                            donutData.isExpense ? 'text-rose-600 dark:text-[#FF5252]' : 'text-emerald-600 dark:text-[#00E676]'
-                          }`}
-                        >
-                          {formatCurrency(item.amount, user.currency, !user.showValues)}
-                        </p>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold block">
-                          {item.percentage.toFixed(2).replace('.', ',')}%
-                        </span>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center max-w-[140px] text-center px-1 select-none">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">
+                            Total do Período
+                          </span>
+                          <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                            {formatCurrency(donutData.total, user.currency, !user.showValues)}
+                          </strong>
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full mt-1.5 border border-slate-200/60 dark:border-slate-700/60">
+                            {donutData.items.length}{' '}
+                            {donutSubtype.includes('subcategoria')
+                              ? 'subcategorias'
+                              : donutSubtype.includes('categoria')
+                              ? 'categorias'
+                              : 'contas'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  ))
+                  </div>
                 )}
+              </div>
+
+              {/* Right Column: Ranked Breakdown List (ALL CAPS, ICON, PERCENT, VALUE) */}
+              <div className="lg:col-span-7 space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    {donutSubtypeLabels[donutSubtype]}
+                    {selectedParentCategoryFilter && (
+                      <span className="text-purple-600 dark:text-purple-400 font-extrabold ml-1">
+                        • {availableParentCategoriesForSubtype.find(c => c.id === selectedParentCategoryFilter)?.name}
+                      </span>
+                    )}
+                  </h3>
+
+                  {donutSubtype.includes('subcategoria') ? (
+                    <button
+                      onClick={() => {
+                        setSelectedParentCategoryFilter(null);
+                        setDonutSubtype(donutSubtype === 'despesas_subcategoria' ? 'despesas_categoria' : 'receitas_categoria');
+                      }}
+                      className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Ver por categorias</span>
+                    </button>
+                  ) : (
+                    (donutSubtype === 'despesas_categoria' || donutSubtype === 'receitas_categoria') && (
+                      <button
+                        onClick={() => {
+                          setSelectedParentCategoryFilter(null);
+                          setDonutSubtype(donutSubtype === 'despesas_categoria' ? 'despesas_subcategoria' : 'receitas_subcategoria');
+                        }}
+                        className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Ver todas subcategorias</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[380px] overflow-y-auto scrollbar-thin pr-1">
+                  {donutData.items.length === 0 ? (
+                    <p className="p-6 text-center text-xs text-slate-400">Nenhum dado para exibir.</p>
+                  ) : (
+                    donutData.items.map((item: any, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 px-2 rounded-xl transition-colors cursor-pointer group"
+                        onMouseEnter={() => setHoveredDonutItem(item)}
+                        onMouseLeave={() => setHoveredDonutItem(null)}
+                      >
+                        {/* Left: Round Colored Icon + ALL CAPS Title + Parent Category / Porcentagem */}
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white shadow-xs transition-transform group-hover:scale-105"
+                            style={{ backgroundColor: item.color }}
+                          >
+                            {item.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                              {item.name}
+                            </p>
+                            {item.parentCategoryName ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded-md mt-0.5">
+                                <span>{item.parentCategoryIcon}</span>
+                                <span>{item.parentCategoryName}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
+                                Porcentagem
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right: Drilldown button (if in category view) + Amount + Formatted % */}
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          {(donutSubtype === 'despesas_categoria' || donutSubtype === 'receitas_categoria') && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedParentCategoryFilter(item.id);
+                                setDonutSubtype(donutSubtype === 'despesas_categoria' ? 'despesas_subcategoria' : 'receitas_subcategoria');
+                              }}
+                              className="opacity-80 group-hover:opacity-100 px-2 py-1 rounded-lg text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all flex items-center gap-0.5 cursor-pointer shadow-2xs"
+                              title={`Ver gráfico Donut das subcategorias de ${item.name}`}
+                            >
+                              <span>Subcategorias</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          )}
+
+                          <div className="text-right shrink-0">
+                            <p
+                              className={`text-xs font-black ${
+                                donutData.isExpense ? 'text-rose-600 dark:text-[#FF5252]' : 'text-emerald-600 dark:text-[#00E676]'
+                              }`}
+                            >
+                              {formatCurrency(item.amount, user.currency, !user.showValues)}
+                            </p>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold block">
+                              {item.percentage.toFixed(2).replace('.', ',')}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
