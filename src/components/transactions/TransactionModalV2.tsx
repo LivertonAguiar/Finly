@@ -552,6 +552,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         paymentMethod: 'card',
         startDate: date,
         firstDueDate: getInvoiceDueDate(invoiceMonth, selectedCard.closingDay, selectedCard.dueDay),
+        firstInvoiceMonth: invoiceMonth,
         endDate: cardRecurrenceEndDate || undefined,
         frequency: cardRecurrenceFrequency,
         defaultAmount: amountNumber,

@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-14',
+    summary: 'Correção de início de compras recorrentes no cartão de crédito respeitando a fatura de destino selecionada e preservando datas informadas no passado recente.',
+    highlights: [
+      {
+        title: 'Fatura de Destino em Compras Recorrentes no Cartão',
+        description: 'Ao cadastrar assinaturas e compras recorrentes escolhendo a fatura de destino (ex: outubro), o Finly agora inicia rigorosamente a série na fatura indicada.',
+        type: 'fix',
+      },
+      {
+        title: 'Preservação da Data Inicial no Ciclo Atual',
+        description: 'Cadastros de compras recorrentes com data anterior ao dia de hoje não têm mais sua primeira ocorrência descartada silenciosamente.',
+        type: 'fix',
+      },
+      {
+        title: 'Sequenciamento Cronológico de Faturas',
+        description: 'Cálculo de competência de faturas sincronizado mês a mês a partir da fatura inicial governada pelo usuário.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.74',
+    releaseDate: '2026-09-14',
     summary: 'Exibição definitiva e enriquecida de transações no app móvel sem truncamento e com tipografia ampliada, desacoplamento de badges, liberação de espaço horizontal com status adaptativo e compatibilidade irrestrita com Live Updates.',
     highlights: [
       {

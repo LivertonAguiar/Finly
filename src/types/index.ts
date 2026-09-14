@@ -79,6 +79,7 @@ export interface RecurringExpenseSeries extends TransactionSeriesBase {
   paymentMethod?: 'account' | 'card';
   frequency: SupportedRecurrenceFrequency;
   firstDueDate?: string;
+  firstInvoiceMonth?: string;
   defaultAmount: number;
   tags: string[];
   notes?: string;

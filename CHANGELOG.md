@@ -3,6 +3,16 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.75] - 2026-09-14
+
+### 💳 Cartões de Crédito: Correção de Início em Compras Recorrentes
+- **Governança da Fatura de Destino em Assinaturas e Recorrências**:
+  - Séries recorrentes no cartão de crédito agora persistem e respeitam rigorosamente a `firstInvoiceMonth` (ex: Outubro/2026) selecionada no modal de transações.
+  - O cálculo da fatura para a ocorrência inicial utiliza diretamente a fatura escolhida pelo usuário, progredindo mês a mês (`+ 1 mês`) nas ocorrências subsequentes.
+  - O vencimento (`dueDate`) de cada ocorrência é harmonizado de forma precisa com base no dia de vencimento e fechamento do cartão.
+- **Preservação da Primeira Parcela em Datas Anteriores ao Dia Atual**:
+  - Corrigido o filtro de reconciliação para nunca descartar a primeira ocorrência (`sequence = 1`) quando a data da compra informada for anterior à data do dia de hoje (ex: compra em 08/09/2026 cadastrada em 14/09/2026).
+
 ## [1.1.74] - 2026-09-14
 
 ### 📱 Interface Móvel: Correção Definitiva de Transações & Live Updates

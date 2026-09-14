@@ -78,4 +78,51 @@ const ended = reconcileRecurringExpenseSeries({
 });
 assert.deepEqual(ended.transactions.map(tx => tx.date), ['2026-01-31', '2026-02-28', '2026-03-31']);
 
-console.log('OK: despesas fixas reconciliam horizonte, datas, exceções e regras futuras.');
+// Teste do caso do usuário: compra recorrente em cartão no passado recente com fatura de destino governando início
+const cardSeries: RecurringExpenseSeries = {
+  id: 'series-card-meli',
+  kind: 'recurring_expense',
+  description: 'Assinatura Meli+',
+  categoryId: 'cat-assinaturas',
+  cardId: 'card-inter',
+  cardClosingDay: 26,
+  cardDueDay: 5,
+  paymentMethod: 'card',
+  startDate: '2026-09-08',
+  firstDueDate: '2026-10-05',
+  firstInvoiceMonth: '2026-10',
+  frequency: 'monthly',
+  defaultAmount: 27.9,
+  amountRules: [],
+  tags: ['Assinaturas'],
+  ignored: false,
+  createdAt: '2026-09-14T12:00:00.000Z',
+  updatedAt: '2026-09-14T12:00:00.000Z',
+};
+
+const cardReconciled = reconcileRecurringExpenseSeries({
+  series: cardSeries,
+  transactions: [],
+  today: '2026-09-14',
+  horizonMonths: 12,
+  initialStatus: 'pending',
+});
+
+// A primeira ocorrência NÃO deve ser descartada mesmo startDate sendo anterior a today (08/09 < 14/09)
+assert.equal(cardReconciled.transactions[0].date, '2026-09-08');
+assert.equal(cardReconciled.transactions[0].invoiceMonth, '2026-10');
+assert.equal(cardReconciled.transactions[0].seriesSequence, 1);
+assert.equal(cardReconciled.transactions[0].status, 'pending');
+
+// A segunda ocorrência deve ir para a fatura seguinte (Novembro/2026)
+assert.equal(cardReconciled.transactions[1].date, '2026-10-08');
+assert.equal(cardReconciled.transactions[1].invoiceMonth, '2026-11');
+assert.equal(cardReconciled.transactions[1].seriesSequence, 2);
+
+// A terceira ocorrência deve ir para a fatura de Dezembro/2026
+assert.equal(cardReconciled.transactions[2].date, '2026-11-08');
+assert.equal(cardReconciled.transactions[2].invoiceMonth, '2026-12');
+assert.equal(cardReconciled.transactions[2].seriesSequence, 3);
+
+console.log('OK: despesas fixas e compras recorrentes em cartão reconciliam horizonte, faturas de destino e datas passadas.');
+

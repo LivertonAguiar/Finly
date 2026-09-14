@@ -5,6 +5,7 @@ import type {
   TransactionStatus,
 } from '../types';
 import { allocateCardTransaction } from './invoiceCalculator';
+import { addMonthsToPeriod, getInvoiceDueDate } from './cardInstallmentSeries';
 
 type ReconcileInput = {
   series: RecurringExpenseSeries;
@@ -81,6 +82,15 @@ const dueDateForOccurrence = (
   return occurrenceDate(series.firstDueDate, series.frequency, index);
 };
 
+const getInvoiceMonthForOccurrence = (
+  firstInvoiceMonth: string,
+  frequency: SupportedRecurrenceFrequency,
+  index: number,
+): string => {
+  const stepMonths = frequency === 'yearly' ? 12 : 1;
+  return addMonthsToPeriod(firstInvoiceMonth, index * stepMonths);
+};
+
 const amountForDate = (series: RecurringExpenseSeries, date: string) => {
   const rule = [...series.amountRules]
     .filter(candidate => candidate.effectiveFrom <= date)
@@ -99,9 +109,14 @@ const buildOccurrence = (
   let dueDate: string | undefined;
 
   if (isCard && series.cardClosingDay && series.cardDueDay) {
-    const allocation = allocateCardTransaction(date, series.cardClosingDay, series.cardDueDay);
-    invoiceMonth = allocation.invoiceMonth;
-    dueDate = allocation.dueDate;
+    if (series.firstInvoiceMonth) {
+      invoiceMonth = getInvoiceMonthForOccurrence(series.firstInvoiceMonth, series.frequency, sequence - 1);
+      dueDate = getInvoiceDueDate(invoiceMonth, series.cardClosingDay, series.cardDueDay);
+    } else {
+      const allocation = allocateCardTransaction(date, series.cardClosingDay, series.cardDueDay);
+      invoiceMonth = allocation.invoiceMonth;
+      dueDate = allocation.dueDate;
+    }
   } else {
     dueDate = dueDateForOccurrence(series, sequence - 1);
   }
@@ -165,7 +180,7 @@ export const reconcileRecurringExpenseSeries = ({
         byOccurrence.set(key, updated);
         toUpdate.push(updated);
       }
-    } else if (date >= today) {
+    } else if (date >= today || (index === 0 && date === series.startDate)) {
       const status =
         index === 0 && date === series.startDate && date <= today && initialStatus
           ? initialStatus
