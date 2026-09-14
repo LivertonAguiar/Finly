@@ -1,11 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import assert from 'node:assert/strict';
 import { resolveCategory } from '../src/utils/categoryResolver';
 import { DEFAULT_CATEGORIES } from '../src/utils/defaultCategories';
 
-describe('Relatórios Donut com Subcategorias', () => {
-  const categories = DEFAULT_CATEGORIES;
+const categories = DEFAULT_CATEGORIES;
 
-  const mockTransactions = [
+const mockTransactions = [
     {
       id: 'tx-1',
       type: 'expense',
@@ -48,109 +47,113 @@ describe('Relatórios Donut com Subcategorias', () => {
     },
   ];
 
-  it('deve agrupar despesas por subcategoria e associar à categoria-mãe', () => {
-    const map: Record<string, any> = {};
+// Teste 1: deve agrupar despesas por subcategoria e associar à categoria-mãe
+{
+  const map: Record<string, any> = {};
 
-    mockTransactions.forEach(t => {
-      const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
-      const parentId = resolved.id;
-      const parentName = resolved.name;
-      const parentIcon = resolved.icon;
+  mockTransactions.forEach(t => {
+    const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
+    const parentId = resolved.id;
+    const parentName = resolved.name;
+    const parentIcon = resolved.icon;
 
-      let subId = resolved.subId || t.subcategoryId;
-      let subName = resolved.subName;
-      let subIcon = resolved.subIcon || resolved.icon || '🏷️';
+    let subId = resolved.subId || t.subcategoryId;
+    let subName = resolved.subName;
+    let subIcon = resolved.subIcon || resolved.icon || '🏷️';
 
-      if (!subId || !subName) {
-        subId = `geral_${parentId}`;
-        subName = `${parentName} (Geral)`;
-        subIcon = parentIcon;
-      }
+    if (!subId || !subName) {
+      subId = `geral_${parentId}`;
+      subName = `${parentName} (Geral)`;
+      subIcon = parentIcon;
+    }
 
-      const uniqueKey = `${parentId}__${subId}`;
+    const uniqueKey = `${parentId}__${subId}`;
 
-      if (!map[uniqueKey]) {
-        map[uniqueKey] = {
-          id: uniqueKey,
-          name: subName.toUpperCase(),
-          icon: subIcon,
-          amount: 0,
-          parentCategoryId: parentId,
-          parentCategoryName: parentName,
-          parentCategoryIcon: parentIcon,
-        };
-      }
-      map[uniqueKey].amount += t.amount;
-    });
-
-    const items = Object.values(map);
-    const total = items.reduce((sum, i) => sum + i.amount, 0);
-
-    expect(total).toBe(680.0);
-    expect(items.length).toBe(5);
-
-    // Encontrar Óculos & Lentes
-    const oculos = items.find(i => i.id.includes('sub-saude-oculos-lentes'));
-    expect(oculos).toBeDefined();
-    expect(oculos.amount).toBe(150.0);
-    expect(oculos.parentCategoryName).toBe('Saúde');
-    expect((oculos.amount / total) * 100).toBeCloseTo(22.058, 2);
-
-    // Encontrar item Geral de Alimentação
-    const geralAlim = items.find(i => i.id.includes('geral_cat-desp-alimentacao'));
-    expect(geralAlim).toBeDefined();
-    expect(geralAlim.amount).toBe(100.0);
-    expect(geralAlim.name).toContain('ALIMENTAÇÃO (GERAL)');
+    if (!map[uniqueKey]) {
+      map[uniqueKey] = {
+        id: uniqueKey,
+        name: subName.toUpperCase(),
+        icon: subIcon,
+        amount: 0,
+        parentCategoryId: parentId,
+        parentCategoryName: parentName,
+        parentCategoryIcon: parentIcon,
+      };
+    }
+    map[uniqueKey].amount += t.amount;
   });
 
-  it('deve filtrar corretamente quando uma categoria-mãe estiver selecionada', () => {
-    const selectedParent = 'cat-desp-saude';
-    const map: Record<string, any> = {};
+  const items = Object.values(map);
+  const total = items.reduce((sum, i) => sum + i.amount, 0);
 
-    mockTransactions.forEach(t => {
-      const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
-      const parentId = resolved.id;
+  assert.equal(total, 680.0);
+  assert.equal(items.length, 5);
 
-      if (parentId !== selectedParent) return;
+  // Encontrar Óculos & Lentes
+  const oculos = items.find(i => i.id.includes('sub-saude-oculos-lentes'));
+  assert.ok(oculos, 'Deveria encontrar a subcategoria Óculos & Lentes');
+  assert.equal(oculos.amount, 150.0);
+  assert.equal(oculos.parentCategoryName, 'Saúde');
+  assert.ok(Math.abs((oculos.amount / total) * 100 - 22.058) < 0.1);
 
-      const parentName = resolved.name;
-      const parentIcon = resolved.icon;
+  // Encontrar item Geral de Alimentação
+  const geralAlim = items.find(i => i.id.includes('geral_cat-desp-alimentacao'));
+  assert.ok(geralAlim, 'Deveria encontrar alimentação geral');
+  assert.equal(geralAlim.amount, 100.0);
+  assert.ok(geralAlim.name.includes('ALIMENTAÇÃO (GERAL)'));
+}
 
-      let subId = resolved.subId || t.subcategoryId;
-      let subName = resolved.subName;
-      let subIcon = resolved.subIcon || resolved.icon || '🏷️';
+// Teste 2: deve filtrar corretamente quando uma categoria-mãe estiver selecionada
+{
+  const selectedParent = 'cat-desp-saude';
+  const map: Record<string, any> = {};
 
-      if (!subId || !subName) {
-        subId = `geral_${parentId}`;
-        subName = `${parentName} (Geral)`;
-        subIcon = parentIcon;
-      }
+  mockTransactions.forEach(t => {
+    const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
+    const parentId = resolved.id;
 
-      const uniqueKey = `${parentId}__${subId}`;
+    if (parentId !== selectedParent) return;
 
-      if (!map[uniqueKey]) {
-        map[uniqueKey] = {
-          id: uniqueKey,
-          name: subName.toUpperCase(),
-          icon: subIcon,
-          amount: 0,
-          parentCategoryId: parentId,
-          parentCategoryName: parentName,
-          parentCategoryIcon: parentIcon,
-        };
-      }
-      map[uniqueKey].amount += t.amount;
-    });
+    const parentName = resolved.name;
+    const parentIcon = resolved.icon;
 
-    const items = Object.values(map);
-    const total = items.reduce((sum, i) => sum + i.amount, 0);
+    let subId = resolved.subId || t.subcategoryId;
+    let subName = resolved.subName;
+    let subIcon = resolved.subIcon || resolved.icon || '🏷️';
 
-    // Total de Saúde: 150 + 50 = 200
-    expect(total).toBe(200.0);
-    expect(items.length).toBe(2);
+    if (!subId || !subName) {
+      subId = `geral_${parentId}`;
+      subName = `${parentName} (Geral)`;
+      subIcon = parentIcon;
+    }
 
-    const oculos = items.find(i => i.id.includes('sub-saude-oculos-lentes'));
-    expect(oculos.amount).toBe(150.0);
-    expect((oculos.amount / total) * 100).toBe(75.0); // 75% do total de Saúde
+    const uniqueKey = `${parentId}__${subId}`;
+
+    if (!map[uniqueKey]) {
+      map[uniqueKey] = {
+        id: uniqueKey,
+        name: subName.toUpperCase(),
+        icon: subIcon,
+        amount: 0,
+        parentCategoryId: parentId,
+        parentCategoryName: parentName,
+        parentCategoryIcon: parentIcon,
+      };
+    }
+    map[uniqueKey].amount += t.amount;
   });
-});
+
+  const items = Object.values(map);
+  const total = items.reduce((sum, i) => sum + i.amount, 0);
+
+  // Total de Saúde: 150 + 50 = 200
+  assert.equal(total, 200.0);
+  assert.equal(items.length, 2);
+
+  const oculos = items.find(i => i.id.includes('sub-saude-oculos-lentes'));
+  assert.ok(oculos);
+  assert.equal(oculos.amount, 150.0);
+  assert.equal((oculos.amount / total) * 100, 75.0); // 75% do total de Saúde
+}
+
+console.log('OK: reportsSubcategoryDonut.test.ts passou com sucesso.');

@@ -42,6 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-14',
+    summary: 'Tela cheia Edge-to-Edge nativa no Android com barras transparentes, restauração total dos gestos de sistema (voltar, minimizar e alternar apps) e novo relatório donut por subcategoria.',
+    highlights: [
+      {
+        title: 'Tela Cheia Edge-to-Edge & Gestos Nativos no Android',
+        description: 'Transição do modo imersivo restritivo para a arquitetura Edge-to-Edge oficial com barras transparentes, restaurando a resposta instantânea dos gestos de voltar pelas bordas, deslizar para tela inicial/minimizar e deslizar/segurar para alternar aplicativos no primeiro toque.',
+        type: 'feature',
+      },
+      {
+        title: 'Relatórios Donut com Subcategorias',
+        description: 'Visualização interativa em gráfico de rosca permitindo analisar despesas e receitas agrupadas por subcategorias com filtros ágeis e detalhamento por item.',
+        type: 'feature',
+      },
+      {
+        title: 'Posicionamento Dinâmico de Navegação',
+        description: 'Ajuste fino nos espaçamentos de safe-area inferior para barras e menus flutuantes no Android.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.71',
+    releaseDate: '2026-09-14',
     summary: 'Financiamento imobiliário Caixa com histórico de parcelas anteriores ao Finly e dados contratuais no relatório, nova subcategoria Óculos & Lentes em Saúde, normalização de tags e resiliência no pipeline de APK.',
     highlights: [
       {

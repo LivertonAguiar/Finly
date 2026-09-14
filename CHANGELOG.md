@@ -3,6 +3,22 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.72] - 2026-09-14
+
+### 📱 Android Nativo: Tela Cheia Edge-to-Edge & Gestos de Sistema
+- **Restauração Completa dos Gestos Nacionais do Android**:
+  - Eliminação do modo imersivo restrito (`controller.hide(systemBars())`) que interceptava e bloqueava o primeiro deslize para voltar, minimizar (Home) e alternar aplicativos (Recents).
+  - Adoção da arquitetura oficial Edge-to-Edge (`setDecorFitsSystemWindows(false)` com barras 100% transparentes e `controller.show(systemBars())`).
+  - Conteúdo visual do app desenha em 100% do display (sob o notch/câmera e sob a barra de navegação), mantendo a resposta instantânea dos gestos nativos de borda no primeiro toque.
+- **Ajuste Fino de Insets e Safe-Areas**:
+  - Repasse automático de `--safe-area-inset-bottom` (`--sab`) via JavaScript bridge para posicionamento fluído da barra de navegação inferior (`BottomNav`) e menus flutuantes.
+  - Remoção de `StatusBar.hide()` em tempo de execução web para evitar conflito com os flags nativos do sistema.
+
+### 📊 Relatórios Donut com Subcategorias
+- **Gráficos de Rosca Analíticos**:
+  - Nova aba e visualização em Donut Chart com detalhamento hierárquico por subcategorias de despesas e receitas.
+  - Filtros rápidos por chips de categorias e tabela expansível de consumo por subcategoria.
+
 ## [1.1.71] - 2026-09-14
 
 ### 🏠 Financiamento Habitacional Caixa & Histórico Auditado

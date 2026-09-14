@@ -67,7 +67,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       {/* Backdrop & Speed Dial Menu Overlay */}
       {isSpeedDialOpen && (
         <div
-          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 flex flex-col justify-end items-center pb-20 sm:pb-24 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 flex flex-col justify-end items-center animate-in fade-in duration-200"
+          style={{
+            paddingBottom: 'max(calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 76px), 84px)',
+          }}
           onClick={() => setIsSpeedDialOpen(false)}
         >
           {/* Radial / Arc Action Buttons Container */}
@@ -185,7 +188,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       <nav
         className="fixed left-0 right-0 z-50 flex justify-center items-center px-4 pointer-events-none md:hidden select-none transition-all duration-300"
         style={{
-          bottom: 'max(env(safe-area-inset-bottom, 0px) + 8px, 12px)',
+          bottom: 'max(calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 8px), 12px)',
         }}
         aria-label="Navegação Mobile"
       >

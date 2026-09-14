@@ -241,12 +241,12 @@ const AppContent: React.FC = () => {
     };
   }, [currentUser]);
 
-  // Fullscreen configuration for Native Android with Notch / Cutout compensation
+  // Fullscreen Edge-to-Edge configuration for Native Android with Notch / Cutout compensation
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
-      import('@capacitor/status-bar').then(({ StatusBar }) => {
+      import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
         StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-        StatusBar.hide().catch(() => {});
+        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
       }).catch(() => {});
 
       // Fallback safe-area notch compensation if native listener hasn't set it yet
