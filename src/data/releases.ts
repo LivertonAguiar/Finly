@@ -42,6 +42,38 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-14',
+    summary: 'Exibição definitiva e enriquecida de transações no app móvel sem truncamento e com tipografia ampliada, desacoplamento de badges, liberação de espaço horizontal com status adaptativo e compatibilidade irrestrita com Live Updates.',
+    highlights: [
+      {
+        title: 'Tipografia Ampliada e Sem Corte em Transações',
+        description: 'Títulos de transações no mobile com tamanho expandido (15px/16px), quebra natural em 2 linhas (line-clamp-2) e remoção definitiva de qualquer truncamento agressivo.',
+        type: 'visual',
+      },
+      {
+        title: 'Desacoplamento de Badges e Subcategorias em Destaque',
+        description: 'Badges de dívida e recorrência movidas para linha própria, liberando 100% da largura útil para o título, com subcategorias destacadas com prioridade visual.',
+        type: 'improvement',
+      },
+      {
+        title: 'Badge de Status Adaptativa no Mobile',
+        description: 'Design refinado e compacto para a situação da transação no celular, economizando mais de 70px de largura lateral e mantendo a riqueza informativa.',
+        type: 'visual',
+      },
+      {
+        title: 'Compatibilidade Universal de Live Updates (OTA)',
+        description: 'Ajuste na política de minNativeVersion para 1.1.0, garantindo que qualquer versão do APK instalada receba imediatamente as correções web em segundo plano.',
+        type: 'fix',
+      },
+      {
+        title: 'Recálculo e Projeção das Parcelas Caixa (TR)',
+        description: 'Ajuste contábil da parcela do financiamento imobiliário a partir de outubro de 2026 para R$ 750,88 com a progressão da Taxa Referencial.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.73',
+    releaseDate: '2026-09-14',
     summary: 'Expurgo definitivo de duplicidade no financiamento Caixa, blindagem do banco PostgreSQL contra ressurreição fantasma e validação integral de integridade contábil e de parcelas.',
     highlights: [
       {

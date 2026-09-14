@@ -44,10 +44,10 @@ let manifest = {
   },
   web: {
     version: nativeVersion,
-    minNativeVersion: nativeVersion,
+    minNativeVersion: '1.1.0',
     bundleUrl: '',
     sha256: '',
-    mandatory: false,
+    mandatory: true,
     releaseDate: new Date().toISOString().split('T')[0],
     notes: 'Atualização OTA do bundle web do Finly.',
   },
@@ -62,8 +62,8 @@ if (existsSync(manifestPath)) {
 // Parse command line arguments
 const args = process.argv.slice(2);
 let targetWebVersion = null;
-let minNativeVersion = nativeVersion;
-let mandatory = false;
+let minNativeVersion = '1.1.0';
+let mandatory = true;
 let notes = manifest.web?.notes || 'Atualização de estabilidade e melhorias no bundle web do Finly.';
 
 for (let i = 0; i < args.length; i++) {

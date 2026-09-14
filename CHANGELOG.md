@@ -3,6 +3,21 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.74] - 2026-09-14
+
+### 📱 Interface Móvel: Correção Definitiva de Transações & Live Updates
+- **Exibição Integral e Tipografia Enriquecida**:
+  - Títulos de transações expandidos para 15px (mobile) e 16px (desktop) com line-height confortável e legibilidade cristalina.
+  - Quebra natural de texto em até 2 linhas completas (`break-words line-clamp-2`), eliminando reticências prematuras no mobile.
+  - Badges secundárias (Dívida / financiamento, Recorrente, Fixa) desacopladas da linha do título, liberando 100% da largura útil.
+  - Hierarquia aprimorada nos metadados: subcategoria destacada em roxo e sem corte agressivo.
+  - Badge de situação adaptativa no mobile, reduzindo largura de ~140px para ~65px e liberando espaço horizontal precioso no card.
+- **Compatibilidade Universal com Atualizações OTA (Live Update)**:
+  - Ajuste de `minNativeVersion` para `1.1.0` por padrão no manifesto de bundles web, garantindo que qualquer versão nativa instalada receba imediatamente as correções web em segundo plano.
+  - Marcação de atualizações como obrigatórias (`mandatory: true`) para aplicação imediata.
+- **Financiamento Habitacional Caixa**:
+  - Recálculo das parcelas futuras da Caixa com progressão da TR a partir de outubro de 2026 em R$ 750,88.
+
 ## [1.1.73] - 2026-09-14
 
 ### 🏠 Financiamento Habitacional: Expurgo de Duplicidade & Integridade

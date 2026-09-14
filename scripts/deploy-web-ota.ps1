@@ -4,7 +4,8 @@
 
 param (
     [string]$WebVersion = "",
-    [switch]$Mandatory = $false,
+    [switch]$Mandatory = $true,
+    [string]$MinNative = "1.1.0",
     [string]$Notes = ""
 )
 
@@ -38,6 +39,9 @@ Write-Host "Empacotando bundle web e gerando SHA-256..." -ForegroundColor Yellow
 $pkgArgs = @("scripts/package-web-bundle.mjs")
 if ($WebVersion) {
     $pkgArgs += @("--version", $WebVersion)
+}
+if ($MinNative) {
+    $pkgArgs += @("--min-native", $MinNative)
 }
 if ($Mandatory) {
     $pkgArgs += @("--mandatory")

@@ -456,10 +456,10 @@ export const CalendarPage: React.FC = () => {
                             </div>
 
                             <div className="min-w-0 flex-1 pr-2">
-                              <p className="tx-description text-sm font-bold text-slate-900 dark:text-white leading-snug break-words">
+                              <p className="tx-description text-[14.5px] sm:text-[15.5px] font-bold text-slate-900 dark:text-white leading-snug break-words">
                                 {t.description}
                               </p>
-                              <span className="text-xs text-slate-500 dark:text-slate-400 truncate block mt-0.5">
+                              <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5 line-clamp-1">
                                 {formatDateShort(t.date)} • {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}{cat?.subName ? ` • ${cat.subName}` : ''}
                               </span>
                             </div>

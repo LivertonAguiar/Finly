@@ -197,47 +197,56 @@ export const TransactionsPage: React.FC = () => {
   }, [accounts]);
 
   // Detailed Status Badge Renderer (Icon + Text)
+  // Detailed Status Badge Renderer (Icon + Text: compact on mobile, full on desktop)
   const getStatusBadge = (t: Transaction) => {
     const isIncome = t.type === 'income';
     const isTransfer = t.type === 'transfer';
     const isCard = !!t.cardId;
     const isCompleted = t.status === 'completed';
 
-    let label = '';
+    let desktopLabel = '';
+    let mobileLabel = '';
     let styleClass = '';
     let icon = null;
 
     if (t.isThirdParty) {
       if (t.reimbursed) {
-        label = `${t.thirdPartyName || 'Terceiro'} (Reembolsado)`;
+        desktopLabel = `${t.thirdPartyName || 'Terceiro'} (Reembolsado)`;
+        mobileLabel = 'Reembolsado';
         styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
         icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
       } else {
-        label = `${t.thirdPartyName || 'Terceiro'} (A Reembolsar)`;
+        desktopLabel = `${t.thirdPartyName || 'Terceiro'} (A Reembolsar)`;
+        mobileLabel = 'Reembolsar';
         styleClass = 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/25';
         icon = <Clock className="w-3.5 h-3.5 text-purple-500 shrink-0" />;
       }
     } else if (t.ignored) {
-      label = 'Ignorada';
+      desktopLabel = 'Ignorada';
+      mobileLabel = 'Ignorada';
       styleClass = 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30 hover:bg-slate-500/25';
       icon = <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
     } else if (isIncome) {
       if (isCompleted) {
-        label = 'Recebida';
+        desktopLabel = 'Recebida';
+        mobileLabel = 'Recebida';
         styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
         icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
       } else {
-        label = 'A receber';
+        desktopLabel = 'A receber';
+        mobileLabel = 'A receber';
         styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
         icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
       }
     } else if (isTransfer) {
       if (isCompleted) {
-        label = 'Efetivada';
+        desktopLabel = 'Efetivada';
+        mobileLabel = 'Efetivada';
         styleClass = 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/25';
         icon = <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
       } else {
-        label = 'Pendente';
+        desktopLabel = 'Pendente';
+        mobileLabel = 'Pendente';
         styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
         icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
       }
@@ -245,21 +254,25 @@ export const TransactionsPage: React.FC = () => {
       // Expense
       if (isCard) {
         if (isCompleted) {
-          label = 'Pago (Cartão)';
+          desktopLabel = 'Pago (Cartão)';
+          mobileLabel = 'Paga';
           styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
           icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
         } else {
-          label = 'Pendente (Cartão)';
+          desktopLabel = 'Pendente (Cartão)';
+          mobileLabel = 'Pendente';
           styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
           icon = <CreditCard className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
         }
       } else {
         if (isCompleted) {
-          label = 'Paga';
+          desktopLabel = 'Paga';
+          mobileLabel = 'Paga';
           styleClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25';
           icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
         } else {
-          label = 'A pagar';
+          desktopLabel = 'A pagar';
+          mobileLabel = 'A pagar';
           styleClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25';
           icon = <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
         }
@@ -273,11 +286,12 @@ export const TransactionsPage: React.FC = () => {
           e.stopPropagation();
           toggleTransactionStatus(t.id);
         }}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs shrink-0 ${styleClass}`}
-        title={`Situação: ${label} (Clique para alternar)`}
+        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs shrink-0 ${styleClass}`}
+        title={`Situação: ${desktopLabel} (Clique para alternar)`}
       >
         {icon}
-        <span>{label}</span>
+        <span className="hidden sm:inline">{desktopLabel}</span>
+        <span className="sm:hidden">{mobileLabel}</span>
       </button>
     );
   };
@@ -888,38 +902,57 @@ export const TransactionsPage: React.FC = () => {
 
                         {/* Description & Metadata with full space */}
                         <div className="min-w-0 flex-1 pr-1">
-                          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                            <p className="tx-description text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words">
-                              {t.description}
-                            </p>
-                            {t.debtId && (
-                              <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono font-bold">
-                                Dívida / financiamento
-                              </span>
+                          {/* Main Description: Full width, 2-line wrap, prominent font */}
+                          <p className="tx-description text-[14.5px] sm:text-[15.5px] font-bold text-slate-900 dark:text-white leading-snug break-words">
+                            {t.description}
+                          </p>
+
+                          {/* Secondary Badges: Dedicated line to NEVER squeeze description width */}
+                          {(t.debtId || t.recurring) && (
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              {t.debtId && (
+                                <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono font-bold">
+                                  Dívida / financiamento
+                                </span>
+                              )}
+                              {t.cardId && t.recurring && (
+                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[10px] font-bold">
+                                  <Repeat className="w-2.5 h-2.5" />
+                                  Recorrente (Cartão)
+                                </span>
+                              )}
+                              {!t.cardId && t.recurring && (
+                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
+                                  <Repeat className="w-2.5 h-2.5" />
+                                  Fixa
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Metadata: Clear hierarchy, prioritizing subcategory without truncation cuts */}
+                          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                            {cat?.subName ? (
+                              <>
+                                <span className="font-semibold text-purple-600 dark:text-purple-400 shrink-0">{cat.subName}</span>
+                                <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                                <span className="uppercase text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">{cat.name}</span>
+                              </>
+                            ) : (
+                              <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
                             )}
-                            {t.cardId && t.recurring && (
-                              <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[10px] font-bold">
-                                <Repeat className="w-3 h-3" />
-                                Recorrente (Cartão)
-                              </span>
-                            )}
-                            {!t.cardId && t.recurring && (
-                              <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
-                                <Repeat className="w-3 h-3" />
-                                Fixa
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
-                            <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
-                            {cat?.subName && (
-                              <span className="font-semibold text-purple-600 dark:text-purple-400 shrink-0">• {cat.subName}</span>
-                            )}
-                            <span className="shrink-0 font-medium text-slate-500 dark:text-slate-400">• {formatDateShort(t.date)}</span>
+                            <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                            <span className="shrink-0 text-slate-500 dark:text-slate-400">{formatDateShort(t.date)}</span>
                             {card ? (
-                              <span className="truncate">• Cartão {card.name}</span>
+                              <>
+                                <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                                <span className="shrink-0 text-slate-500 dark:text-slate-400">Cartão {card.name}</span>
+                              </>
                             ) : acc ? (
-                              <span className="truncate">• {acc.name}</span>
+                              <>
+                                <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                                <span className="shrink-0 text-slate-500 dark:text-slate-400">{acc.name}</span>
+                              </>
                             ) : null}
                           </div>
                         </div>

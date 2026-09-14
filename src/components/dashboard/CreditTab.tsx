@@ -653,10 +653,10 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                           {cat?.icon || '💳'}
                         </div>
                         <div className="min-w-0 flex-1 pr-1">
-                          <p className="tx-description text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words">
+                          <p className="tx-description text-[14.5px] sm:text-[15.5px] font-bold text-slate-900 dark:text-white leading-snug break-words">
                             {t.description}
                           </p>
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                             <span className="shrink-0">{formatDate(t.date)}</span>
                             <span>•</span>
                             <span className="shrink-0 text-slate-600 dark:text-slate-300 font-bold">{cat?.name || 'Geral'}</span>
