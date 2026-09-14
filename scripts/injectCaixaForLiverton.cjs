@@ -52,7 +52,7 @@ const DEFAULT_CAIXA_DEBT = {
   remainingAmount: 154070.70,
   interestRate: 4.25,
   effectiveInterestRate: 4.3338,
-  installmentAmount: 749.60,
+  installmentAmount: 750.88,
   totalInstallments: 420,
   paidInstallments: 20,
   historicalPaidCount: 20,
