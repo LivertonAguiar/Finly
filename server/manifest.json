@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.73/finly-v1.1.73.apk"
   },
   "web": {
-    "version": "1.1.70.9",
+    "version": "1.1.70.10",
     "minNativeVersion": "1.1.73",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.9.zip",
-    "sha256": "7f56d4270b3ab0505f31f47b2036e354dc7ebeff9a5a0cb9678ef54481dbe11c",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.10.zip",
+    "sha256": "4319340150c0737ae2c61acd77f56a6df562a5610da8d664cb479ba1e71c7dd6",
     "mandatory": false,
     "releaseDate": "2026-09-14",
-    "notes": "Release 1.1.73: Expurgo de duplicidade Caixa e protecoes"
+    "notes": "Sincronizacao final v1.1.73"
   }
 }
