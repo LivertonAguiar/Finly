@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.75",
+    "version": "1.1.76",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.75/finly-v1.1.75.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.76/finly-v1.1.76.apk"
   },
   "web": {
-    "version": "1.1.74.3",
+    "version": "1.1.76.1",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.74.3.zip",
-    "sha256": "7f8a87f4b9cbcf810e557e6f2e49865853df79bd1371b1fc9676f0a8ee4d58ad",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.76.1.zip",
+    "sha256": "411363d31c7e43842248e2850a43d71e31e6091c29529bd539c9027621856267",
     "mandatory": true,
     "releaseDate": "2026-09-14",
-    "notes": "Exibicao enriquecida de novidades e destaques de atualizacao"
+    "notes": "Detalhamento de transações e divisão analítica por categorias (Transaction Splits), orçamentos e relatórios sem dupla contabilização."
   }
 }

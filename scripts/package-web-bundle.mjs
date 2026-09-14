@@ -59,12 +59,21 @@ if (existsSync(manifestPath)) {
   } catch (_) {}
 }
 
+const versionJsonPath = path.join(rootDir, 'server', 'version.json');
+let versionJsonNotes = '';
+if (existsSync(versionJsonPath)) {
+  try {
+    const vj = JSON.parse(readFileSync(versionJsonPath, 'utf8'));
+    versionJsonNotes = vj.notes || '';
+  } catch (_) {}
+}
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 let targetWebVersion = null;
 let minNativeVersion = '1.1.0';
 let mandatory = true;
-let notes = manifest.web?.notes || 'Atualização de estabilidade e melhorias no bundle web do Finly.';
+let notes = versionJsonNotes || manifest.web?.notes || 'Atualização de estabilidade e melhorias no bundle web do Finly.';
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--version' && args[i + 1]) {
@@ -81,19 +90,21 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-// If no version specified, increment patch or sub-patch of webVersion
+// If no version specified, increment patch or sub-patch of webVersion based on nativeVersion
 if (!targetWebVersion) {
   const currentWeb = manifest.web?.version || nativeVersion;
-  const parts = currentWeb.split('.').map(p => parseInt(p, 10) || 0);
-  if (parts.length === 3) {
-    // e.g. 1.1.69 -> 1.1.69.1
-    targetWebVersion = `${parts[0]}.${parts[1]}.${parts[2]}.1`;
-  } else if (parts.length >= 4) {
-    // e.g. 1.1.69.1 -> 1.1.69.2
-    parts[parts.length - 1] += 1;
-    targetWebVersion = parts.join('.');
-  } else {
+  if (!currentWeb.startsWith(nativeVersion)) {
     targetWebVersion = `${nativeVersion}.1`;
+  } else {
+    const parts = currentWeb.split('.').map(p => parseInt(p, 10) || 0);
+    if (parts.length === 3) {
+      targetWebVersion = `${parts[0]}.${parts[1]}.${parts[2]}.1`;
+    } else if (parts.length >= 4) {
+      parts[parts.length - 1] += 1;
+      targetWebVersion = parts.join('.');
+    } else {
+      targetWebVersion = `${nativeVersion}.1`;
+    }
   }
 }
 
