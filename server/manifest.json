@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.70",
+    "version": "1.1.71",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.70/finly-v1.1.70.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.71/finly-v1.1.71.apk"
   },
   "web": {
-    "version": "1.1.70.6",
-    "minNativeVersion": "1.1.70",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.6.zip",
-    "sha256": "9aea5f43301f11d026dac08e8cb15607ab576a53ccb03a3674ecc161656ecc48",
+    "version": "1.1.70.7",
+    "minNativeVersion": "1.1.71",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.7.zip",
+    "sha256": "464f54a1436b67ec97806b954a87c35473baefdd90ce6ba2dc018d9a3bbd5357",
     "mandatory": false,
-    "releaseDate": "2026-09-13",
+    "releaseDate": "2026-09-14",
     "notes": "Popup interno de confirmacao de despesa adicionada"
   }
 }
