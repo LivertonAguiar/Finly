@@ -455,11 +455,11 @@ export const CalendarPage: React.FC = () => {
                               {cat?.subIcon || cat?.icon || (isIncome ? '💰' : '📁')}
                             </div>
 
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            <div className="min-w-0 flex-1 pr-2">
+                              <p className="tx-description text-sm font-bold text-slate-900 dark:text-white leading-snug break-words">
                                 {t.description}
                               </p>
-                              <span className="text-[10px] text-slate-400 truncate block">
+                              <span className="text-xs text-slate-500 dark:text-slate-400 truncate block mt-0.5">
                                 {formatDateShort(t.date)} • {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}{cat?.subName ? ` • ${cat.subName}` : ''}
                               </span>
                             </div>
@@ -468,7 +468,7 @@ export const CalendarPage: React.FC = () => {
                           {/* Right: Amount & Actions */}
                           <div className="text-right shrink-0">
                             <span
-                              className={`text-xs font-black block ${
+                              className={`tx-amount text-sm font-black block ${
                                 isIncome ? 'text-[#66bb6a]' : isExpense ? 'text-[#ef5350]' : 'text-slate-700 dark:text-slate-300'
                               }`}
                             >

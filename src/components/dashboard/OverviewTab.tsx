@@ -1248,9 +1248,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
                   <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-36 overflow-y-auto pr-1">
                     {filteredTxsForCategory.slice(0, 10).map(tx => (
                       <div key={tx.id} className="py-2 flex items-center justify-between text-xs gap-2">
-                        <div className="min-w-0">
-                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{tx.description}</p>
-                          <span className="text-[10px] text-slate-400 font-medium">{formatDate(tx.date)}</span>
+                        <div className="min-w-0 flex-1 pr-1">
+                          <p className="tx-description font-bold text-sm text-slate-800 dark:text-slate-200 leading-snug break-words">{tx.description}</p>
+                          <span className="text-xs text-slate-400 font-medium">{formatDate(tx.date)}</span>
                         </div>
                         <span className="font-black text-rose-600 dark:text-rose-400 shrink-0">
                           -{formatCurrency(tx.amount, user.currency, !user.showValues)}
@@ -1342,8 +1342,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-28 overflow-y-auto pr-1">
                 {selectedDayExpenses.map(tx => (
-                  <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
-                    <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
+                  <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs gap-2">
+                    <span className="tx-description text-sm text-slate-700 dark:text-slate-300 font-medium leading-snug break-words flex-1 pr-1">{tx.description}</span>
                     <span className="font-black text-[#ef5350] shrink-0">{formatCurrency(tx.amount, user.currency)}</span>
                   </div>
                 ))}
@@ -1425,9 +1425,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-48 overflow-y-auto pr-1">
           {pendingTransactions.map(tx => (
             <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
-              <div className="min-w-0">
-                <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{tx.description}</p>
-                <span className="text-[10px] text-slate-400">{formatDate(tx.date)}</span>
+              <div className="min-w-0 flex-1 pr-1">
+                <p className="tx-description font-bold text-sm text-slate-800 dark:text-slate-200 leading-snug break-words">{tx.description}</p>
+                <span className="text-xs text-slate-400 font-medium">{formatDate(tx.date)}</span>
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
@@ -1668,8 +1668,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-32 overflow-y-auto pr-1">
                 {selectedDayTransactions.map(tx => (
-                  <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs">
-                    <span className="truncate text-slate-700 dark:text-slate-300 font-medium">{tx.description}</span>
+                  <div key={tx.id} className="py-1.5 flex items-center justify-between text-xs gap-2">
+                    <span className="tx-description text-sm text-slate-700 dark:text-slate-300 font-medium leading-snug break-words flex-1 pr-1">{tx.description}</span>
                     <span className={`font-black shrink-0 ${tx.type === 'income' ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
                       {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, user.currency)}
                     </span>

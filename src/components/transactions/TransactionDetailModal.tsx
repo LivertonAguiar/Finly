@@ -617,19 +617,19 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       key={item.id}
                       className="py-2 flex items-center justify-between gap-2 text-xs"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-1 pr-1">
                         <span className="text-sm shrink-0 w-6 text-center select-none">{cat?.icon || '💳'}</span>
-                        <div className="min-w-0">
-                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                        <div className="min-w-0 flex-1">
+                          <p className="tx-description font-bold text-sm text-slate-800 dark:text-slate-200 leading-snug break-words">
                             {item.description}
                           </p>
-                          <span className="text-[10px] text-slate-400 block truncate">
+                          <span className="text-xs text-slate-400 block truncate mt-0.5">
                             {formatDate(item.date)} • {cat?.name || 'Geral'}{cat?.subName ? ` • ${cat.subName}` : ''}
                             {item.isThirdParty ? ` • 👤 ${item.thirdPartyName || 'Terceiro'}` : ''}
                           </span>
                         </div>
                       </div>
-                      <span className="font-black text-rose-600 dark:text-rose-400 shrink-0">
+                      <span className="tx-amount font-black text-sm text-rose-600 dark:text-rose-400 shrink-0">
                         -{formatCurrency(item.amount, user.currency, !user.showValues)}
                       </span>
                     </div>

@@ -653,10 +653,10 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                           {cat?.icon || '💳'}
                         </div>
                         <div className="min-w-0 flex-1 pr-1">
-                          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                          <p className="tx-description text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words">
                             {t.description}
                           </p>
-                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
                             <span className="shrink-0">{formatDate(t.date)}</span>
                             <span>•</span>
                             <span className="shrink-0 text-slate-600 dark:text-slate-300 font-bold">{cat?.name || 'Geral'}</span>
@@ -1654,7 +1654,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                              <span className="tx-description font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug break-words">
                                 {t.description}
                               </span>
                               {t.installments && t.installments.total > 1 && (

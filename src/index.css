@@ -774,3 +774,46 @@ html.dark .pill-tag-amber {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+/* ==========================================================================
+   Definitive Transaction Item Typography & Display (Mobile & Desktop)
+   Prevents description truncation, ensures multi-line clarity and readability
+   ========================================================================== */
+.tx-description {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.25rem !important;
+  font-weight: 700 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+}
+
+@media (min-width: 640px) {
+  .tx-description {
+    font-size: 0.9375rem !important; /* 15px */
+    line-height: 1.35rem !important;
+  }
+}
+
+.tx-metadata {
+  font-size: 0.75rem !important; /* 12px */
+  line-height: 1rem !important;
+}
+
+.tx-amount {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.25rem !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+@media (min-width: 640px) {
+  .tx-amount {
+    font-size: 0.9375rem !important; /* 15px */
+  }
+}
+
+

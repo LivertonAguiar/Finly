@@ -316,9 +316,9 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
                       >
                         {sub?.icon || cat?.icon || '💳'}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 pr-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                          <span className="tx-description font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug break-words">
                             {t.description}
                           </span>
                           {t.installments && t.installments.total > 1 && (
@@ -327,7 +327,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
                           <span className="font-mono">{formatDate(t.date)}</span>
                           {cat?.name && <span>• {cat.name}</span>}
                           {sub?.name && <span>/ {sub.name}</span>}
@@ -336,7 +336,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
                     </div>
 
                   <div className="text-right shrink-0">
-                    <span className="font-black text-xs text-rose-600 dark:text-rose-400 block">
+                    <span className="tx-amount font-black text-sm text-rose-600 dark:text-rose-400 block">
                       {formatCurrency(t.amount, user.currency, !user.showValues)}
                     </span>
                     <span

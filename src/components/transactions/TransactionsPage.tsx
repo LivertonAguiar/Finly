@@ -888,8 +888,8 @@ export const TransactionsPage: React.FC = () => {
 
                         {/* Description & Metadata with full space */}
                         <div className="min-w-0 flex-1 pr-1">
-                          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                            <p className="tx-description text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words">
                               {t.description}
                             </p>
                             {t.debtId && (
@@ -910,7 +910,7 @@ export const TransactionsPage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate mt-0.5">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                             <span className="uppercase font-bold text-slate-500 dark:text-slate-400 shrink-0">{cat?.name || 'Geral'}</span>
                             {cat?.subName && (
                               <span className="font-semibold text-purple-600 dark:text-purple-400 shrink-0">• {cat.subName}</span>
@@ -958,7 +958,7 @@ export const TransactionsPage: React.FC = () => {
 
                         {/* Amount */}
                         <span
-                          className={`order-1 sm:order-2 text-xs sm:text-sm font-black whitespace-nowrap sm:min-w-[95px] text-right ${
+                          className={`order-1 sm:order-2 tx-amount text-sm sm:text-base font-black whitespace-nowrap sm:min-w-[95px] text-right ${
                             isIncome ? 'text-[#66bb6a]' : isExpense ? 'text-[#ef5350]' : 'text-slate-700 dark:text-slate-300'
                           }`}
                         >
