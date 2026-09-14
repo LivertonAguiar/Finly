@@ -21,6 +21,8 @@ import {
 } from '../../utils/smartCategorizer';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { emitExpenseAddedConfirmation } from '../../utils/expenseToastEmitter';
+import { TransactionSplitEditor, SplitFormItem } from './TransactionSplitEditor';
+import { validateTransactionComponents } from '../../utils/transactionAnalytics';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -109,6 +111,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [reminderTime, setReminderTime] = useState('09:00');
   const [fixedEditScope, setFixedEditScope] = useState<'single' | 'current_and_future'>('single');
   const [overwriteExceptions, setOverwriteExceptions] = useState(false);
+  const [hasSplit, setHasSplit] = useState(false);
+  const [splitItems, setSplitItems] = useState<SplitFormItem[]>([]);
   const [error, setError] = useState('');
 
   const isCard = type === 'expense' && paymentMethod === 'card';
@@ -193,6 +197,25 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setReminderTime(tx?.reminder?.reminderTime || '09:00');
     setFixedEditScope('single');
     setOverwriteExceptions(false);
+    if (tx?.hasComponents && Array.isArray(tx.components) && tx.components.length > 0) {
+      setHasSplit(true);
+      setSplitItems(
+        tx.components.map(c => ({
+          id: c.id,
+          description: c.description,
+          amount: c.amount,
+          categoryId: c.categoryId,
+          subcategoryId: c.subcategoryId,
+          type: c.type,
+          currentInstallment: c.recurrenceConfig?.currentInstallment,
+          totalInstallments: c.recurrenceConfig?.totalInstallments,
+          notes: c.notes,
+        })),
+      );
+    } else {
+      setHasSplit(false);
+      setSplitItems([]);
+    }
     setError('');
     setPredictedInfo(null);
     setManuallyChangedCategory(Boolean(tx));
@@ -458,6 +481,23 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       ? { enabled: true, daysBefore: reminderDaysBefore, reminderTime }
       : undefined,
     invoiceMonth: isCard ? invoiceMonth : undefined,
+    hasComponents: Boolean(hasSplit && splitItems.length > 0),
+    components: hasSplit && splitItems.length > 0
+      ? splitItems.map((item, index) => ({
+          id: item.id?.startsWith('comp-draft-') ? makeId('comp') : item.id || makeId('comp'),
+          transactionId: editingTransaction?.id || '',
+          description: item.description.trim() || 'Item sem descrição',
+          amount: item.amount,
+          categoryId: item.categoryId || categoryId,
+          subcategoryId: item.subcategoryId || undefined,
+          type: item.type,
+          recurrenceConfig: item.type === 'temporary' ? {
+            currentInstallment: item.currentInstallment,
+            totalInstallments: item.totalInstallments,
+          } : undefined,
+          notes: item.notes,
+        }))
+      : undefined,
   });
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -472,6 +512,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     if (thirdParty && !thirdPartyName.trim()) return setError('Informe o nome da pessoa da compra de terceiro.');
     if (type === 'expense' && !isCard && (status === 'pending' || reminderEnabled) && !dueDate && !date) {
       return setError('Informe a data de vencimento da despesa pendente ou com lembrete.');
+    }
+
+    if (hasSplit && splitItems.length > 0) {
+      const splitValidation = validateTransactionComponents(amountNumber, splitItems);
+      if (!splitValidation.isValid) {
+        if (splitValidation.difference > 0) {
+          return setError(`Faltam ${formatCurrency(splitValidation.difference, user.currency)} para distribuir entre os itens do detalhamento.`);
+        }
+        return setError(`O valor dos itens do detalhamento excede o total em ${formatCurrency(Math.abs(splitValidation.difference), user.currency)}.`);
+      }
     }
 
     const txData = baseTransaction();
@@ -563,6 +613,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         attachmentName,
         ignored: Boolean(txData.ignored),
         analyticsExclusionReason: txData.analyticsExclusionReason,
+        componentTemplates: hasSplit && splitItems.length > 0 ? splitItems.map(item => ({
+          description: item.description.trim() || 'Item sem descrição',
+          amount: item.amount,
+          categoryId: item.categoryId || categoryId,
+          subcategoryId: item.subcategoryId || undefined,
+          type: item.type,
+          recurrenceConfig: item.type === 'temporary' ? {
+            currentInstallment: item.currentInstallment,
+            totalInstallments: item.totalInstallments,
+          } : undefined,
+          notes: item.notes,
+        })) : undefined,
         createdAt: now,
         updatedAt: now,
       };
@@ -598,6 +660,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         frequency, defaultAmount: amountNumber, amountRules: [], tags: [...txData.tags],
         notes: txData.notes, attachmentUrl, attachmentName, ignored: Boolean(txData.ignored),
         analyticsExclusionReason: txData.analyticsExclusionReason, reminder: txData.reminder,
+        componentTemplates: hasSplit && splitItems.length > 0 ? splitItems.map(item => ({
+          description: item.description.trim() || 'Item sem descrição',
+          amount: item.amount,
+          categoryId: item.categoryId || categoryId,
+          subcategoryId: item.subcategoryId || undefined,
+          type: item.type,
+          recurrenceConfig: item.type === 'temporary' ? {
+            currentInstallment: item.currentInstallment,
+            totalInstallments: item.totalInstallments,
+          } : undefined,
+          notes: item.notes,
+        })) : undefined,
         createdAt: now, updatedAt: now,
       };
       const reconciled = reconcileRecurringExpenseSeries({
@@ -747,6 +821,63 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <p className="text-[11px] text-purple-700 dark:text-purple-300 font-medium">
                 Ao alterar a categoria ou subcategoria, a mudança será aplicada automaticamente a todas as demais parcelas ou despesas fixas desta série.
               </p>
+            </div>
+          )}
+
+          {type === 'expense' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-200/60 dark:border-purple-800/40">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                      Dividir em categorias / Detalhar valor
+                    </span>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                      Distribua o valor entre várias categorias sem criar débitos extras na conta.
+                    </p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={hasSplit}
+                    onChange={e => {
+                      const enabled = e.target.checked;
+                      setHasSplit(enabled);
+                      if (enabled && splitItems.length === 0) {
+                        setSplitItems([
+                          {
+                            id: `comp-draft-${Date.now()}-1`,
+                            description: description.trim() || 'Item principal',
+                            amount: amountNumber,
+                            categoryId: categoryId || filteredCategories[0]?.id || '',
+                            subcategoryId,
+                            type: fixedExpense ? 'fixed' : 'one_time',
+                          },
+                        ]);
+                      }
+                    }}
+                  />
+                  <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {hasSplit && (
+                <TransactionSplitEditor
+                  totalAmount={amountNumber}
+                  components={splitItems}
+                  onChange={setSplitItems}
+                  categories={categories}
+                  isRecurring={fixedExpense || isCardRecurring}
+                  currency={user.currency}
+                  defaultCategoryId={categoryId}
+                  defaultSubcategoryId={subcategoryId}
+                />
+              )}
             </div>
           )}
           {isCard ? <>

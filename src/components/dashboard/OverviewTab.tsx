@@ -55,6 +55,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
+import { getAnalyticalEntries } from '../../utils/transactionAnalytics';
 import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
@@ -509,12 +510,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     const expensesByCategory: Record<string, { amount: number; categoryId: string }> = {};
     monthEconomicExpenseTransactions
       .forEach(t => {
-        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'expense');
-        const key = resolved.id;
-        if (!expensesByCategory[key]) {
-          expensesByCategory[key] = { amount: 0, categoryId: resolved.id };
-        }
-        expensesByCategory[key].amount += t.amount;
+        const entries = getAnalyticalEntries(t);
+        entries.forEach(entry => {
+          if (entry.includeInReports === false) return;
+          const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, 'expense');
+          const key = resolved.id;
+          if (!expensesByCategory[key]) {
+            expensesByCategory[key] = { amount: 0, categoryId: resolved.id };
+          }
+          expensesByCategory[key].amount += entry.amount;
+        });
       });
 
     const total = Object.values(expensesByCategory).reduce((a, b) => a + b.amount, 0);
@@ -649,12 +654,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
     monthTransactions
       .filter(t => t.type === 'income' && t.status === 'completed' && !t.ignored)
       .forEach(t => {
-        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, 'income');
-        const key = resolved.id;
-        if (!incomeByCategory[key]) {
-          incomeByCategory[key] = { amount: 0, categoryId: resolved.id };
-        }
-        incomeByCategory[key].amount += t.amount;
+        const entries = getAnalyticalEntries(t);
+        entries.forEach(entry => {
+          if (entry.includeInReports === false) return;
+          const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, 'income');
+          const key = resolved.id;
+          if (!incomeByCategory[key]) {
+            incomeByCategory[key] = { amount: 0, categoryId: resolved.id };
+          }
+          incomeByCategory[key].amount += entry.amount;
+        });
       });
 
     const total = Object.values(incomeByCategory).reduce((a, b) => a + b.amount, 0);

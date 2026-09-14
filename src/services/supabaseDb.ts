@@ -13,6 +13,7 @@ import {
   FamilyMember,
   NotificationItem,
   TransactionSeries,
+  TransactionComponent,
 } from '../types';
 
 export const GHOST_DEBT_IDS = new Set([
@@ -59,6 +60,7 @@ export class SupabaseDbService {
   private storeSaveDrainWaiters: Array<() => void> = [];
   private cardMutationTail: Promise<void> = Promise.resolve();
   private transactionSeriesSupported = true;
+  private transactionComponentsSupported = true;
 
   /**
    * Helper to validate or resolve UUID string for Postgres user_id columns
@@ -90,6 +92,7 @@ export class SupabaseDbService {
         categoriesRes,
         transactionsRes,
         transactionSeriesRes,
+        transactionComponentsRes,
         budgetsRes,
         goalsRes,
         debtsRes,
@@ -103,6 +106,7 @@ export class SupabaseDbService {
         supabase.from('categories').select('*').eq('user_id', targetUserId),
         supabase.from('transactions').select('*').eq('user_id', targetUserId).order('date', { ascending: false }),
         supabase.from('transaction_series').select('*').eq('user_id', targetUserId),
+        supabase.from('transaction_components').select('*').eq('user_id', targetUserId),
         supabase.from('budgets').select('*').eq('user_id', targetUserId),
         supabase.from('goals').select('*').eq('user_id', targetUserId),
         supabase.from('debts').select('*').eq('user_id', targetUserId),
@@ -119,6 +123,13 @@ export class SupabaseDbService {
         (transactionSeriesRes.error.code === 'PGRST205' || transactionSeriesRes.error.code === '42P01')
       );
       this.transactionSeriesSupported = !isMissingSeriesTable;
+
+      const isMissingComponentsTable = Boolean(
+        transactionComponentsRes.error &&
+        (transactionComponentsRes.error.code === 'PGRST205' || transactionComponentsRes.error.code === '42P01')
+      );
+      this.transactionComponentsSupported = !isMissingComponentsTable;
+
       const failedReads = [
         { table: 'profiles', response: profileRes },
         { table: 'accounts', response: accountsRes },
@@ -126,6 +137,7 @@ export class SupabaseDbService {
         { table: 'categories', response: categoriesRes },
         { table: 'transactions', response: transactionsRes },
         ...(isMissingSeriesTable ? [] : [{ table: 'transaction_series', response: transactionSeriesRes }]),
+        ...(isMissingComponentsTable ? [] : [{ table: 'transaction_components', response: transactionComponentsRes }]),
         { table: 'budgets', response: budgetsRes },
         { table: 'goals', response: goalsRes },
         { table: 'debts', response: debtsRes },
@@ -207,6 +219,29 @@ export class SupabaseDbService {
         subcategories: Array.isArray(r.subcategories) ? r.subcategories : [],
       }));
 
+      const componentsByTx = new Map<string, TransactionComponent[]>();
+      if (this.transactionComponentsSupported && Array.isArray(transactionComponentsRes.data)) {
+        for (const r of transactionComponentsRes.data) {
+          if (!r || !r.transaction_id) continue;
+          const list = componentsByTx.get(r.transaction_id) || [];
+          list.push({
+            id: r.id,
+            transactionId: r.transaction_id,
+            description: r.description,
+            amount: Number(r.amount) || 0,
+            categoryId: r.category_id,
+            subcategoryId: r.subcategory_id || undefined,
+            type: r.type,
+            recurrenceConfig: r.recurrence_config || undefined,
+            notes: r.notes || undefined,
+            isRemainder: Boolean(r.is_remainder),
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          });
+          componentsByTx.set(r.transaction_id, list);
+        }
+      }
+
       const transactions: Transaction[] = (transactionsRes.data || [])
         .filter(r => {
           if (!r || !r.id) return false;
@@ -218,45 +253,51 @@ export class SupabaseDbService {
           if (r.date && (r.date.startsWith('2026-08-30') || r.date.startsWith('2026-08-31'))) return false;
           return true;
         })
-        .map(r => ({
-        id: r.id,
-        description: r.description,
-        amount: Number(r.amount) || 0,
-        type: r.type,
-        date: r.date,
-        categoryId: r.category_id,
-        subcategoryId: r.subcategory_id,
-        accountId: r.account_id,
-        targetAccountId: r.target_account_id,
-        cardId: r.card_id,
-        status: r.status || 'completed',
-        recurring: Boolean(r.recurring),
-        recurrenceFrequency: r.recurrence_frequency,
-        installments: r.installments,
-        debtBreakdown: r.installments?.debtBreakdown || undefined,
-        debtId: r.debt_id || r.installments?.debtId,
-        debtInstallmentNumber: r.debt_installment_number ?? r.installments?.debtInstallmentNumber,
-        tags: Array.isArray(r.tags) ? r.tags : [],
-        notes: r.notes,
-        attachmentUrl: r.attachment_url,
-        attachmentName: r.attachment_name,
-        reminder: r.reminder,
-        invoiceMonth: r.invoice_month,
-        dueDate: r.due_date,
-        purchaseDate: r.purchase_date,
-        ignored: Boolean(r.ignored),
-        isThirdParty: Boolean(r.is_third_party),
-        thirdPartyName: r.third_party_name,
-        reimbursed: Boolean(r.reimbursed),
-        seriesId: r.series_id,
-        seriesSequence: r.series_sequence,
-        occurrenceKey: r.occurrence_key,
-        isSeriesException: Boolean(r.is_series_exception),
-        analyticsExclusionReason: r.analytics_exclusion_reason,
-        reimbursementForTransactionId: r.reimbursement_for_transaction_id,
-        reimbursementForSeriesId: r.reimbursement_for_series_id,
-        createdAt: r.created_at,
-      }));
+        .map(r => {
+          const comps = componentsByTx.get(r.id);
+          const hasComps = Boolean(r.has_components || (comps && comps.length > 0));
+          return {
+            id: r.id,
+            description: r.description,
+            amount: Number(r.amount) || 0,
+            type: r.type,
+            date: r.date,
+            categoryId: r.category_id,
+            subcategoryId: r.subcategory_id,
+            accountId: r.account_id,
+            targetAccountId: r.target_account_id,
+            cardId: r.card_id,
+            status: r.status || 'completed',
+            recurring: Boolean(r.recurring),
+            recurrenceFrequency: r.recurrence_frequency,
+            installments: r.installments,
+            debtBreakdown: r.installments?.debtBreakdown || undefined,
+            debtId: r.debt_id || r.installments?.debtId,
+            debtInstallmentNumber: r.debt_installment_number ?? r.installments?.debtInstallmentNumber,
+            tags: Array.isArray(r.tags) ? r.tags : [],
+            notes: r.notes,
+            attachmentUrl: r.attachment_url,
+            attachmentName: r.attachment_name,
+            reminder: r.reminder,
+            invoiceMonth: r.invoice_month,
+            dueDate: r.due_date,
+            purchaseDate: r.purchase_date,
+            ignored: Boolean(r.ignored),
+            isThirdParty: Boolean(r.is_third_party),
+            thirdPartyName: r.third_party_name,
+            reimbursed: Boolean(r.reimbursed),
+            seriesId: r.series_id,
+            seriesSequence: r.series_sequence,
+            occurrenceKey: r.occurrence_key,
+            isSeriesException: Boolean(r.is_series_exception),
+            analyticsExclusionReason: r.analytics_exclusion_reason,
+            hasComponents: hasComps,
+            components: hasComps ? comps : undefined,
+            reimbursementForTransactionId: r.reimbursement_for_transaction_id,
+            reimbursementForSeriesId: r.reimbursement_for_series_id,
+            createdAt: r.created_at,
+          };
+        });
 
       const transactionSeries: TransactionSeries[] = (transactionSeriesRes.data || []).map(r => ({
         ...(r.payload || {}),
@@ -751,9 +792,47 @@ export class SupabaseDbService {
           reimbursement_for_transaction_id: t.reimbursementForTransactionId,
           reimbursement_for_series_id: t.reimbursementForSeriesId,
         } : {}),
+        has_components: Boolean(t.hasComponents),
         created_at: t.createdAt || new Date().toISOString(),
       });
-      return !error;
+
+      if (error) return false;
+
+      // Sincronização relacional dos componentes se suportado
+      if (this.transactionComponentsSupported) {
+        if (t.hasComponents && Array.isArray(t.components) && t.components.length > 0) {
+          const now = new Date().toISOString();
+          const rows = t.components.map(c => ({
+            id: c.id,
+            transaction_id: t.id,
+            user_id: userId,
+            description: c.description,
+            amount: c.amount,
+            category_id: c.categoryId,
+            subcategory_id: c.subcategoryId || null,
+            type: c.type || 'one_time',
+            recurrence_config: c.recurrenceConfig || null,
+            notes: c.notes || null,
+            is_remainder: Boolean(c.isRemainder),
+            created_at: c.createdAt || now,
+            updated_at: now,
+          }));
+          await supabase.from('transaction_components').upsert(rows);
+          const activeIds = t.components.map(c => c.id);
+          await supabase
+            .from('transaction_components')
+            .delete()
+            .eq('transaction_id', t.id)
+            .not('id', 'in', `(${activeIds.map(id => `'${id}'`).join(',')})`);
+        } else {
+          await supabase
+            .from('transaction_components')
+            .delete()
+            .eq('transaction_id', t.id);
+        }
+      }
+
+      return true;
     } catch {
       return false;
     }

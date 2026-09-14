@@ -344,7 +344,21 @@ export const TransactionsPage: React.FC = () => {
           const cat = findCategory(t.categoryId, t.subcategoryId, t.type);
           const catMatch = cat ? cat.name.toLowerCase().includes(term) : false;
           const subMatch = cat && cat.subName ? cat.subName.toLowerCase().includes(term) : false;
-          return descMatch || catMatch || subMatch;
+          const compMatch = Boolean(
+            t.hasComponents &&
+            t.components?.some(c =>
+              c.description.toLowerCase().includes(term) ||
+              (c.notes && c.notes.toLowerCase().includes(term)) ||
+              (() => {
+                const compCat = findCategory(c.categoryId, c.subcategoryId, t.type);
+                return (
+                  (compCat && compCat.name.toLowerCase().includes(term)) ||
+                  (compCat && compCat.subName && compCat.subName.toLowerCase().includes(term))
+                );
+              })()
+            )
+          );
+          return descMatch || catMatch || subMatch || compMatch;
         }
         return true;
       })
@@ -908,8 +922,14 @@ export const TransactionsPage: React.FC = () => {
                           </p>
 
                           {/* Secondary Badges: Dedicated line to NEVER squeeze description width */}
-                          {(t.debtId || t.recurring) && (
+                          {(t.debtId || t.recurring || (t.hasComponents && t.components && t.components.length > 0)) && (
                             <div className="flex flex-wrap items-center gap-1 mt-1">
+                              {t.hasComponents && t.components && t.components.length > 0 && (
+                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                                  <Layers className="w-2.5 h-2.5" />
+                                  {t.components.length} itens
+                                </span>
+                              )}
                               {t.debtId && (
                                 <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono font-bold">
                                   Dívida / financiamento
@@ -1081,6 +1101,12 @@ export const TransactionsPage: React.FC = () => {
                     <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span>{t.description}</span>
+                        {t.hasComponents && t.components && t.components.length > 0 && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-bold">
+                            <Layers className="w-2.5 h-2.5" />
+                            {t.components.length} itens
+                          </span>
+                        )}
                         {t.debtId && (
                           <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-mono font-bold">
                             Dívida / financiamento

@@ -39,6 +39,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
+import { getAnalyticalEntries } from '../../utils/transactionAnalytics';
 import {
   getEffectiveTransactionDate,
   doesTransactionBelongToMonth,
@@ -404,14 +405,18 @@ export const ReportsPage: React.FC = () => {
       const map: Record<string, { id: string; name: string; icon: string; amount: number; color?: string }> = {};
 
       monthTxs.filter(t => t.type === targetType).forEach(t => {
-        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, targetType);
-        const id = resolved.id;
-        const name = resolved.name.toUpperCase();
-        const icon = resolved.icon;
-        const color = resolved.color;
+        const entries = getAnalyticalEntries(t);
+        entries.forEach(entry => {
+          if (entry.includeInReports === false) return;
+          const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, targetType);
+          const id = resolved.id;
+          const name = resolved.name.toUpperCase();
+          const icon = resolved.icon;
+          const color = resolved.color;
 
-        if (!map[id]) map[id] = { id, name, icon, amount: 0, color };
-        map[id].amount += t.amount;
+          if (!map[id]) map[id] = { id, name, icon, amount: 0, color };
+          map[id].amount += entry.amount;
+        });
       });
 
       const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
@@ -444,40 +449,44 @@ export const ReportsPage: React.FC = () => {
       > = {};
 
       monthTxs.filter(t => t.type === targetType).forEach(t => {
-        const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, targetType);
-        const parentId = resolved.id;
-        const parentName = resolved.name;
-        const parentIcon = resolved.icon;
+        const entries = getAnalyticalEntries(t);
+        entries.forEach(entry => {
+          if (entry.includeInReports === false) return;
+          const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, targetType);
+          const parentId = resolved.id;
+          const parentName = resolved.name;
+          const parentIcon = resolved.icon;
 
-        // Filtro opcional por categoria pai específica
-        if (selectedParentCategoryFilter && parentId !== selectedParentCategoryFilter) {
-          return;
-        }
+          // Filtro opcional por categoria pai específica
+          if (selectedParentCategoryFilter && parentId !== selectedParentCategoryFilter) {
+            return;
+          }
 
-        let subId = resolved.subId || t.subcategoryId;
-        let subName = resolved.subName;
-        let subIcon = resolved.subIcon || resolved.icon || '🏷️';
+          let subId = resolved.subId || entry.subcategoryId;
+          let subName = resolved.subName;
+          let subIcon = resolved.subIcon || resolved.icon || '🏷️';
 
-        if (!subId || !subName) {
-          subId = `geral_${parentId}`;
-          subName = `${parentName} (Geral)`;
-          subIcon = parentIcon;
-        }
+          if (!subId || !subName) {
+            subId = `geral_${parentId}`;
+            subName = `${parentName} (Geral)`;
+            subIcon = parentIcon;
+          }
 
-        const uniqueKey = `${parentId}__${subId}`;
+          const uniqueKey = `${parentId}__${subId}`;
 
-        if (!map[uniqueKey]) {
-          map[uniqueKey] = {
-            id: uniqueKey,
-            name: subName.toUpperCase(),
-            icon: subIcon,
-            amount: 0,
-            parentCategoryId: parentId,
-            parentCategoryName: parentName,
-            parentCategoryIcon: parentIcon,
-          };
-        }
-        map[uniqueKey].amount += t.amount;
+          if (!map[uniqueKey]) {
+            map[uniqueKey] = {
+              id: uniqueKey,
+              name: subName.toUpperCase(),
+              icon: subIcon,
+              amount: 0,
+              parentCategoryId: parentId,
+              parentCategoryName: parentName,
+              parentCategoryIcon: parentIcon,
+            };
+          }
+          map[uniqueKey].amount += entry.amount;
+        });
       });
 
       const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
@@ -553,17 +562,21 @@ export const ReportsPage: React.FC = () => {
 
     const catMap = new Map<string, { id: string; name: string; icon: string; total: number; count: number }>();
     monthTxs.forEach(t => {
-      const resolved = resolveCategory(categories, t.categoryId, t.subcategoryId, targetType);
-      const existing = catMap.get(resolved.id) || {
-        id: resolved.id,
-        name: resolved.name,
-        icon: resolved.icon,
-        total: 0,
-        count: 0,
-      };
-      existing.total += t.amount;
-      existing.count += 1;
-      catMap.set(resolved.id, existing);
+      const entries = getAnalyticalEntries(t);
+      entries.forEach(entry => {
+        if (entry.includeInReports === false) return;
+        const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, targetType);
+        const existing = catMap.get(resolved.id) || {
+          id: resolved.id,
+          name: resolved.name,
+          icon: resolved.icon,
+          total: 0,
+          count: 0,
+        };
+        existing.total += entry.amount;
+        existing.count += 1;
+        catMap.set(resolved.id, existing);
+      });
     });
 
     return Array.from(catMap.values()).sort((a, b) => b.total - a.total);

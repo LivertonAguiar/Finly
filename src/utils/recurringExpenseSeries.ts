@@ -2,6 +2,7 @@ import type {
   RecurringExpenseSeries,
   SupportedRecurrenceFrequency,
   Transaction,
+  TransactionComponent,
   TransactionStatus,
 } from '../types';
 import { allocateCardTransaction } from './invoiceCalculator';
@@ -121,10 +122,66 @@ const buildOccurrence = (
     dueDate = dueDateForOccurrence(series, sequence - 1);
   }
 
+  let hasComponents = false;
+  let components: TransactionComponent[] | undefined = undefined;
+  let occurrenceAmount = amountForDate(series, date);
+
+  if (series.hasComponents && Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
+    const projectedComponents: TransactionComponent[] = [];
+
+    series.componentTemplates.forEach((tmpl, index) => {
+      // Regra para one_time: só gera na primeira ocorrência (sequence === 1)
+      if (tmpl.type === 'one_time' && sequence > 1) {
+        return;
+      }
+
+      // Regra para temporário: incrementa a parcela
+      let recurrenceConfig = tmpl.recurrenceConfig ? { ...tmpl.recurrenceConfig } : undefined;
+      if (tmpl.type === 'temporary' && recurrenceConfig?.enabled) {
+        const startInstallment = recurrenceConfig.currentInstallment || 1;
+        const projectedInstallment = startInstallment + (sequence - 1);
+        const total = recurrenceConfig.totalInstallments || 1;
+
+        // Se já ultrapassou o total de parcelas, não inclui nesta ocorrência
+        if (projectedInstallment > total) {
+          return;
+        }
+
+        recurrenceConfig.currentInstallment = projectedInstallment;
+      }
+
+      const compId = (tmpl as any).id || `tmpl-${index}`;
+      projectedComponents.push({
+        id: `comp-${series.id}-${date}-${compId}`,
+        transactionId: `tx-${series.id}-${date}`,
+        description: tmpl.description,
+        amount: tmpl.amount,
+        categoryId: tmpl.categoryId || series.categoryId,
+        subcategoryId: tmpl.subcategoryId || series.subcategoryId,
+        type: tmpl.type,
+        recurrenceConfig,
+        includeInReports: tmpl.includeInReports ?? true,
+        includeInBudget: tmpl.includeInBudget ?? true,
+        notes: tmpl.notes,
+        createdAt: `${date}T12:00:00.000Z`,
+        updatedAt: `${date}T12:00:00.000Z`,
+      });
+    });
+
+    if (projectedComponents.length > 0) {
+      hasComponents = true;
+      components = projectedComponents;
+      const totalCents = projectedComponents.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+      occurrenceAmount = Math.round(totalCents) / 100;
+    }
+  }
+
   return {
     id: `tx-${series.id}-${date}`,
     description: series.description,
-    amount: amountForDate(series, date),
+    amount: occurrenceAmount,
+    hasComponents,
+    components,
     type: 'expense',
     date,
     dueDate,

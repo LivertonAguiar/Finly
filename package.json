@@ -1,7 +1,7 @@
 {
   "name": "finly",
   "private": true,
-  "version": "1.1.75",
+  "version": "1.1.76",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,7 +24,8 @@
     "test:series-category": "node scripts/run-ts-test.mjs tests/seriesCategoryPropagationAndSubIcon.test.ts",
     "test:expense-toast": "node scripts/run-ts-test.mjs tests/expenseToast.test.ts",
     "test:web-update": "node scripts/run-ts-test.mjs tests/webUpdateService.test.ts",
-    "test:transactions": "npm run test:card-series && npm run test:recurring-series && npm run test:series-category && npm run test:expense-toast && npm run test:transaction-impact && npm run test:series-scope && npm run test:series-migration && npm run test:notifications && npm run test:transfers && npm run test:mutation-journal && npm run test:view-regimes && npm run test:web-update",
+    "test:splits": "node scripts/run-ts-test.mjs tests/transactionSplits.test.ts",
+    "test:transactions": "npm run test:card-series && npm run test:recurring-series && npm run test:series-category && npm run test:expense-toast && npm run test:splits && npm run test:transaction-impact && npm run test:series-scope && npm run test:series-migration && npm run test:notifications && npm run test:transfers && npm run test:mutation-journal && npm run test:view-regimes && npm run test:web-update",
     "check:version": "node scripts/check-version-sync.mjs",
     "verify:build-version": "node scripts/verify-built-version.mjs",
     "build": "tsc && vite build && npm run verify:build-version",

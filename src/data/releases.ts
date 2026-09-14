@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-14',
+    summary: 'Novo recurso de detalhamento de transações e divisão analítica por categorias (Transaction Splits), orçamentos e relatórios com integridade matemática e zero dupla contabilização.',
+    highlights: [
+      {
+        title: 'Divisão por Categorias (Detalhamento)',
+        description: 'Permite dividir um único lançamento financeiro (como condomínio, compras ou boletos compostos) em múltiplos componentes analíticos independentes.',
+        type: 'feature',
+      },
+      {
+        title: 'Zero Dupla Contabilização',
+        description: 'O saldo bancário movimenta estritamente o valor total da transação pai, enquanto orçamentos, gráficos e relatórios consomem com precisão apenas as frações categorizadas.',
+        type: 'feature',
+      },
+      {
+        title: 'Motor de Recorrência Inteligente',
+        description: 'Suporte a itens fixos replicáveis, variáveis a confirmar, temporários com parcelamento progressivo e itens eventuais de parcela única.',
+        type: 'feature',
+      },
+      {
+        title: 'Atalhos e Precisão em Centavos',
+        description: 'Predefinições rápidas para condomínio (taxa ordinária, água, taxa extra, salão), botão para distribuir valor restante e validação de soma sem desvios de ponto flutuante.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.75',
+    releaseDate: '2026-09-14',
     summary: 'Correção de início de compras recorrentes no cartão de crédito respeitando a fatura de destino selecionada e preservando datas informadas no passado recente.',
     highlights: [
       {

@@ -1,37 +1,36 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-14",
-  "notes": "Correção de início de compras recorrentes no cartão respeitando a fatura de destino selecionada e preservando datas no passado recente.",
+  "notes": "Detalhamento de transações e divisão analítica por categorias (Transaction Splits), orçamentos e relatórios sem dupla contabilização.",
   "isLatest": true,
   "sections": {
-    "features": [],
-    "fixes": [
-      "Início preciso na fatura selecionada para assinaturas e compras recorrentes no cartão de crédito",
-      "Preservação da primeira ocorrência em compras recorrentes com data anterior ao dia atual",
-      "Eliminação definitiva de cortes prematuros em descrições de transações e subcategorias",
-      "Compatibilidade universal do Live Update OTA (minNativeVersion 1.1.0) para atualização automática em segundo plano"
+    "features": [
+      "Divisão analítica de transações em múltiplos componentes por categoria e subcategoria",
+      "Garantia absoluta de integridade: soma exata em centavos e zero dupla contabilização no saldo bancário",
+      "Motor de recorrência com componentes fixos, variáveis a confirmar, temporários com parcelamento progressivo e eventuais de parcela única"
     ],
+    "fixes": [],
     "improvements": [
-      "Sequenciamento cronológico automático de faturas subsequentes da série recorrente",
-      "Tipografia ampliada (15px mobile, 16px desktop) e quebra em até 2 linhas",
-      "Badge de status adaptativa no celular liberando mais de 75px de espaço horizontal no card"
+      "Atalhos de condomínio (taxa ordinária, água, taxa extra e salão) com 1 toque",
+      "Botão de preenchimento automático 'Distribuir restante'",
+      "Visualização expansível dos componentes no modal de detalhes e badge na listagem de transações"
     ]
   },
   "highlights": [
     {
-      "title": "Fatura de Destino em Compras Recorrentes",
-      "description": "Assinaturas e compras fixas no cartão iniciam rigorosamente na fatura selecionada (ex: Outubro), avançando mês a mês.",
-      "type": "fix"
+      "title": "Divisão por Categorias (Detalhamento)",
+      "description": "Divida um único lançamento (como condomínio ou supermercado) em categorias diferentes sem duplicar a saída da sua conta bancária.",
+      "type": "feature"
     },
     {
-      "title": "Preservação da Data Inicial",
-      "description": "Compras recorrentes cadastradas com datas anteriores ao dia atual não têm mais sua primeira parcela descartada.",
-      "type": "fix"
+      "title": "Zero Dupla Contabilização",
+      "description": "O saldo bancário movimenta apenas a transação principal; orçamentos e gráficos consomem as divisões analíticas.",
+      "type": "feature"
     },
     {
-      "title": "Tipografia Ampliada e Sem Corte",
-      "description": "Descrições de transações agora quebram em até 2 linhas completas com fonte maior (15px mobile), sem cortes prematuros.",
-      "type": "visual"
+      "title": "Recorrência Inteligente de Itens",
+      "description": "Componentes fixos se replicam, temporários avançam as parcelas até expirar e eventuais não se repetem no mês seguinte.",
+      "type": "feature"
     }
   ]
 }

@@ -1844,10 +1844,21 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Transaction Actions
   const addTransaction = (tx: Omit<Transaction, 'id' | 'createdAt'>) => {
+    const txId = `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const components = tx.hasComponents && Array.isArray(tx.components)
+      ? tx.components.map((c, i) => ({
+          ...c,
+          id: c.id || `comp-${txId}-${i + 1}`,
+          transactionId: txId,
+        }))
+      : undefined;
+
     const newTx: Transaction = {
       ...tx,
       amount: round2(tx.amount),
-      id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: txId,
+      hasComponents: Boolean(tx.hasComponents && components && components.length > 0),
+      components,
       createdAt: new Date().toISOString(),
     };
 
@@ -1884,10 +1895,32 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const oldTx = transactions.find(t => t.id === id);
     if (!oldTx) return;
 
+    const components = data.hasComponents !== undefined
+      ? (data.hasComponents && Array.isArray(data.components)
+          ? data.components.map((c, i) => ({
+              ...c,
+              id: c.id || `comp-${id}-${i + 1}`,
+              transactionId: id,
+            }))
+          : undefined)
+      : (data.components !== undefined
+          ? data.components.map((c, i) => ({
+              ...c,
+              id: c.id || `comp-${id}-${i + 1}`,
+              transactionId: id,
+            }))
+          : oldTx.components);
+
+    const hasComponents = data.hasComponents !== undefined
+      ? Boolean(data.hasComponents && components && components.length > 0)
+      : (components && components.length > 0 ? oldTx.hasComponents : false);
+
     const newTx: Transaction = {
       ...oldTx,
       ...data,
       amount: data.amount !== undefined ? round2(data.amount) : oldTx.amount,
+      hasComponents,
+      components,
     };
 
     const isCategoryChanged =

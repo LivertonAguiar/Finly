@@ -542,6 +542,94 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         </div>
 
         {/* ========================================================================= */}
+        {/* 3.1 TRANSACTION SPLIT BREAKDOWN (DETALHAMENTO ANALÍTICO) */}
+        {/* ========================================================================= */}
+        {transaction.hasComponents && transaction.components && transaction.components.length > 0 && (
+          <div className="p-4 rounded-[22px] bg-white dark:bg-[#2C2C2E] border border-emerald-500/30 dark:border-emerald-500/20 space-y-3.5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <Layers className="w-4 h-4" />
+                </span>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Composição Analítica ({transaction.components.length} divisões)
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    O saldo financeiro movimentou apenas o valor total; cada item distribui em relatórios e orçamentos.
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                Total: {formatCurrency(transaction.amount, user.currency, !user.showValues)}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {transaction.components.map(comp => {
+                const compCat = categories.find(c => c.id === comp.categoryId);
+                const compSub = compCat?.subcategories?.find(s => s.id === comp.subcategoryId);
+                const recurrenceBadge = comp.recurrenceConfig?.enabled
+                  ? comp.type === 'temporary'
+                    ? `Parcela ${comp.recurrenceConfig.currentInstallment || 1}/${comp.recurrenceConfig.totalInstallments || '?'}`
+                    : comp.type === 'variable'
+                    ? 'Variável'
+                    : 'Fixo'
+                  : null;
+
+                return (
+                  <div
+                    key={comp.id}
+                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span className="text-base shrink-0">
+                        {compSub?.icon || compCat?.icon || '📁'}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate">
+                          {comp.description}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 flex-wrap">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {compCat?.name || 'Geral'}
+                          </span>
+                          {compSub && (
+                            <>
+                              <span>•</span>
+                              <span className="text-purple-600 dark:text-purple-400 font-semibold">{compSub.name}</span>
+                            </>
+                          )}
+                          {recurrenceBadge && (
+                            <>
+                              <span>•</span>
+                              <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-[9px]">
+                                {recurrenceBadge}
+                              </span>
+                            </>
+                          )}
+                          {comp.notes && (
+                            <>
+                              <span>•</span>
+                              <span className="italic truncate max-w-[120px]">{comp.notes}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-slate-900 dark:text-white">
+                        {formatCurrency(comp.amount, user.currency, !user.showValues)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
         {/* 4. SPECIAL INVOICE COMPOSITION BREAKDOWN (IF THIS IS AN INVOICE PAYMENT) */}
         {/* ========================================================================= */}
         {invoiceComposingData && (

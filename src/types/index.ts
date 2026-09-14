@@ -96,10 +96,37 @@ export interface RecurringExpenseSeries extends TransactionSeriesBase {
     effectiveFrom: string;
     amount: number;
   }>;
+  hasComponents?: boolean;
+  componentTemplates?: Array<Omit<TransactionComponent, 'id' | 'transactionId'>>;
   needsReview?: boolean;
 }
 
 export type TransactionSeries = CardInstallmentSeries | RecurringExpenseSeries;
+
+export type ComponentRepetitionType = 'fixed' | 'variable' | 'temporary' | 'one_time';
+
+export interface ComponentRecurrenceConfig {
+  enabled?: boolean;
+  totalInstallments?: number;
+  currentInstallment?: number;
+}
+
+export interface TransactionComponent {
+  id: string;
+  transactionId: string;
+  description: string;
+  amount: number;
+  categoryId: string;
+  subcategoryId?: string;
+  type?: ComponentRepetitionType;
+  recurrenceConfig?: ComponentRecurrenceConfig;
+  notes?: string;
+  isRemainder?: boolean;
+  includeInReports?: boolean;
+  includeInBudget?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface Transaction {
   id: string;
@@ -121,6 +148,8 @@ export interface Transaction {
   isSeriesException?: boolean;
   recurringNeedsReview?: boolean;
   analyticsExclusionReason?: AnalyticsExclusionReason;
+  hasComponents?: boolean;
+  components?: TransactionComponent[];
   installments?: {
     current: number;
     total: number;

@@ -3,6 +3,26 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.76] - 2026-09-14
+
+### 🏢 Detalhamento de Transações / Divisão por Categorias (Transaction Splits)
+- **Um Lançamento Financeiro, Múltiplos Componentes Analíticos**:
+  - Implementado o recurso de divisão de transações (Splits), permitindo que um pagamento unificado (como condomínio, compras ou boletos) seja dividido em várias categorias e subcategorias.
+  - **Zero Dupla Contabilização**: O saldo da conta bancária deduz estritamente o valor principal da transação. Gráficos de categorias, orçamentos e relatórios distribuem apenas os componentes.
+  - **Validação Rigorosa em Centavos**: A soma dos componentes é validada matematicamente em centavos inteiros (`validateTransactionComponents`), prevenindo erros de arredondamento de ponto flutuante.
+- **Motor de Recorrência Inteligente**:
+  - Componentes classificados como `fixo` se replicam automaticamente nos meses seguintes.
+  - Componentes `variável` preservam estimativa e ficam sinalizados para confirmação.
+  - Componentes `temporário` incrementam as parcelas progressivamente (ex: 3/10 -> 4/10) e encerram ao atingir o limite.
+  - Componentes `one_time` (eventual) aplicam-se apenas ao primeiro mês e não se repetem.
+- **Interface & Experiência de Uso (UX)**:
+  - Editor reativo `TransactionSplitEditor` integrado ao formulário de transações.
+  - Presets inteligentes para condomínio (taxa ordinária, água, taxa extra, salão).
+  - Botão inteligente "Distribuir restante" para alocação com 1 clique.
+  - Badge `{N} itens` na listagem (mobile e desktop) e detalhamento completo no modal de detalhes.
+- **Integração com Orçamento e Relatórios**:
+  - Motor analítico `getAnalyticalEntries` conectado ao Orçamento mensal e anual (visão matriz e cards) e gráficos do Dashboard e Relatórios.
+
 ## [1.1.75] - 2026-09-14
 
 ### 💳 Cartões de Crédito: Correção de Início em Compras Recorrentes
