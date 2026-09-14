@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.73/finly-v1.1.73.apk"
   },
   "web": {
-    "version": "1.1.70.10",
+    "version": "1.1.70.11",
     "minNativeVersion": "1.1.73",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.10.zip",
-    "sha256": "4319340150c0737ae2c61acd77f56a6df562a5610da8d664cb479ba1e71c7dd6",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.11.zip",
+    "sha256": "f0b33c666ad980dd68d8d873ff91bf56d611e0fe66ab7df7854fd1ecd0724997",
     "mandatory": false,
     "releaseDate": "2026-09-14",
-    "notes": "Sincronizacao final v1.1.73"
+    "notes": "Recalculo de parcelas Caixa a partir de outubro em 750.88"
   }
 }
