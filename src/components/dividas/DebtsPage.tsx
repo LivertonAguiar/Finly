@@ -315,6 +315,8 @@ export const DebtsPage: React.FC = () => {
       defaultAccountId: defaultAccountId || undefined,
       syncToTransactions,
       notes: notes.trim() || undefined,
+      payments: editingDebt?.payments || [],
+      historicalPaidCount: editingDebt?.historicalPaidCount ?? pInst,
     };
 
     if (editingDebt) {
@@ -464,7 +466,14 @@ export const DebtsPage: React.FC = () => {
                 {/* Middle: Progress */}
                 <div className="flex-1 max-w-xs space-y-1">
                   <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-                    <span>{d.paidInstallments}/{d.totalInstallments} pagas ({d.totalInstallments - d.paidInstallments} rest.)</span>
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <span>{d.paidInstallments}/{d.totalInstallments} pagas ({d.totalInstallments - d.paidInstallments} rest.)</span>
+                      {d.payments?.some(p => p.isHistorical || p.status === 'historical_paid') && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          {d.payments.filter(p => p.isHistorical || p.status === 'historical_paid').length} antes do Finly
+                        </span>
+                      )}
+                    </span>
                     <span>{progressPct.toFixed(0)}%</span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -674,7 +683,14 @@ export const DebtsPage: React.FC = () => {
                   {/* Progress Bar */}
                   <div className="mt-3.5">
                     <div className="flex justify-between text-[11px] text-slate-400 mb-1 font-semibold">
-                      <span>{d.paidInstallments} de {d.totalInstallments} pagas</span>
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        <span>{d.paidInstallments} de {d.totalInstallments} pagas</span>
+                        {d.payments?.some(p => p.isHistorical || p.status === 'historical_paid') && (
+                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {d.payments.filter(p => p.isHistorical || p.status === 'historical_paid').length} antes do Finly
+                          </span>
+                        )}
+                      </span>
                       <span>{progressPct.toFixed(0)}% ({d.totalInstallments - d.paidInstallments} restantes)</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">

@@ -239,12 +239,21 @@ export const BUILT_IN_RULES: KeywordRule[] = [
   {
     keywords: [
       'consulta', 'medico', 'hospital', 'laboratorio', 'dentista', 'unimed',
-      'bradesco saude', 'sulamerica', 'otica', 'psicologo', 'exame', 'terapia', 'fisioterapia'
+      'bradesco saude', 'sulamerica', 'psicologo', 'exame', 'terapia', 'fisioterapia'
     ],
     categoryType: 'expense',
     categoryMatcher: ['saude'],
     subcategoryMatcher: ['consultas', 'exames', 'plano de saude', 'dentista'],
     defaultTags: ['saude', 'medico', 'consultas'],
+  },
+  {
+    keywords: [
+      'otica', 'oculos', 'lentes', 'lente de contato', 'armacao', 'oftalmo', 'oftalmologista', 'lente'
+    ],
+    categoryType: 'expense',
+    categoryMatcher: ['saude'],
+    subcategoryMatcher: ['oculos & lentes', 'oculos', 'lentes', 'otica'],
+    defaultTags: ['saude', 'oculos', 'lentes', 'otica'],
   },
 
   // ACADEMIA & ESPORTES
@@ -338,7 +347,9 @@ export function normalizeText(text: string): string {
 }
 
 /**
- * Normalizes a single tag: converts to lower case, removes leading #, converts spaces to hyphens.
+ * Normalizes a single tag: converts to lower case, removes accents/diacritics
+ * while preserving the base letter (e.g., "óculos" -> "oculos", "alimentação" -> "alimentacao"),
+ * removes leading #, converts spaces to hyphens, strips unwanted punctuation, and limits length.
  */
 export function normalizeTag(tag: string): string {
   if (!tag) return '';
@@ -346,8 +357,12 @@ export function normalizeTag(tag: string): string {
     .trim()
     .replace(/^#+/, '')
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9\-_]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
     .slice(0, 30);
 }
 

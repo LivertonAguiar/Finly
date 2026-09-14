@@ -7,10 +7,17 @@ import {
 import { DEFAULT_CATEGORIES } from '../src/utils/defaultCategories';
 import type { Transaction } from '../src/types';
 
-// 1. Test normalizeTag
+// 1. Test normalizeTag (remoção de acentos e pontuações mantendo as letras base)
 assert.equal(normalizeTag(' #Limpeza Casa '), 'limpeza-casa');
 assert.equal(normalizeTag('MERCADO'), 'mercado');
 assert.equal(normalizeTag('viagem 2026!'), 'viagem-2026');
+assert.equal(normalizeTag('óculos'), 'oculos');
+assert.equal(normalizeTag('Saúde!'), 'saude');
+assert.equal(normalizeTag('Alimentação'), 'alimentacao');
+assert.equal(normalizeTag('Habitação & Reforma'), 'habitacao-reforma');
+assert.equal(normalizeTag('Médico e Dentista'), 'medico-e-dentista');
+assert.equal(normalizeTag('#farmácia'), 'farmacia');
+assert.equal(normalizeTag('👓 Óculos & Lentes'), 'oculos-lentes');
 
 // 2. Test predictCategoryAndSubcategory with Built-in Dictionary
 // A. Moradia -> Aluguel
@@ -138,5 +145,11 @@ const predSalario = predictCategoryAndSubcategory('Salário Empresa XYZ', 'incom
 assert.ok(predSalario);
 assert.equal(predSalario.categoryId, 'cat-rec-trabalho');
 assert.equal(predSalario.subcategoryId, 'sub-rec-salario');
+
+// F. Óculos & Lentes prediction
+const predOculos = predictCategoryAndSubcategory('Ótica Diniz lentes de grau e armação', 'expense', DEFAULT_CATEGORIES);
+assert.ok(predOculos);
+assert.equal(predOculos.categoryId, 'cat-desp-saude');
+assert.equal(predOculos.subcategoryId, 'sub-saude-oculos-lentes');
 
 console.log('✅ smartTagAndSubcategoryPrediction.test.ts: Todos os testes passaram com 100% de sucesso!');

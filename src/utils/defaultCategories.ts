@@ -30,7 +30,7 @@ export const EMOJI_GROUPS: EmojiGroup[] = [
   {
     name: 'Saúde & Esporte',
     icon: '🩺',
-    emojis: ['🩺', '💊', '🏥', '👨‍⚕️', '🧪', '🦷', '🧴', '🏋️', '⚽', '🥤', '🚴', '🏊', '🧘', '🩹', '💉', '🩻']
+    emojis: ['🩺', '💊', '🏥', '👨‍⚕️', '🧪', '🦷', '🧴', '🏋️', '⚽', '🥤', '🚴', '🏊', '🧘', '🩹', '💉', '🩻', '👓']
   },
   {
     name: 'Lazer & Família',
@@ -287,6 +287,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "id": "sub-saude-odonto",
         "name": "Odontologia",
         "icon": "🦷",
+        "categoryId": "cat-desp-saude"
+      },
+      {
+        "id": "sub-saude-oculos-lentes",
+        "name": "Óculos & Lentes",
+        "icon": "👓",
         "categoryId": "cat-desp-saude"
       }
     ]

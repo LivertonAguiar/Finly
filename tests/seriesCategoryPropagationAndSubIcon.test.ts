@@ -31,6 +31,12 @@ console.log('🧪 Iniciando testes de propagação de categorias e emoji de subc
   assert.ok(resolvedFarmacia.icon, 'Deve ter ícone resolvido');
   assert.equal(resolvedFarmacia.subId, 'sub-saude-farmacia');
 
+  // Com subcategoria Óculos & Lentes em Saúde -> Deve exibir 👓
+  const resolvedOculos = resolveCategory(DEFAULT_CATEGORIES, 'cat-desp-saude', 'sub-saude-oculos-lentes', 'expense');
+  assert.equal(resolvedOculos.icon, '👓', 'Subcategoria Óculos & Lentes deve ter emoji 👓');
+  assert.equal(resolvedOculos.subName, 'Óculos & Lentes');
+  assert.equal(resolvedOculos.subId, 'sub-saude-oculos-lentes');
+
   console.log('✅ 1. Resolução prioritária do emoji de subcategoria aprovada com sucesso!');
 }
 

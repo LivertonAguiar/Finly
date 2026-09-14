@@ -12,6 +12,7 @@ import {
   TransactionSeries,
 } from '../types';
 import { DEFAULT_CATEGORIES } from './defaultCategories';
+import { DEFAULT_CAIXA_FINANCING_DEBT } from '../data/caixaFinancingContract';
 
 export interface FullDemoStore {
   accounts: Account[];
@@ -1078,39 +1079,7 @@ export function generateRealisticDemoStore(): FullDemoStore {
 
   // 8. DÍVIDAS E FINANCIAMENTOS (Debts com sistemas SAC e Price + TR)
   const debts: Debt[] = [
-    {
-      id: 'debt-financiamento-caixa',
-      title: 'Financiamento Imobiliário Caixa',
-      creditor: 'Caixa Econômica Federal',
-      contractType: 'real_estate',
-      contractNumber: 'CAIXA-SFH-2024-001',
-      totalAmount: 200000.00,
-      remainingAmount: 182000.00,
-      interestRate: 9.5,
-      amortizationSystem: 'PRICE',
-      indexer: 'TR',
-      indexerRate: 0.1708,
-      insuranceMonthly: 38.50,
-      adminFeeMonthly: 25.00,
-      totalInstallments: 360,
-      paidInstallments: 28,
-      installmentAmount: 1520.00,
-      dueDay: 15,
-      nextDueDate: getDateInCurrentMonth(15),
-      defaultAccountId: 'acc-demo-itau',
-      syncToTransactions: true,
-      payments: [
-        { id: 'pay-d1', amount: 1520.00, date: getDateInCurrentMonth(15), installmentNumber: 28 },
-        {
-          id: 'pay-d-extra',
-          amount: 5000.00,
-          date: getDateInOffsetMonth(-1, 20),
-          installmentNumber: 27,
-          amortizationAmount: 5000.00,
-          remainingBalanceAfter: 183520.00,
-        },
-      ],
-    },
+    { ...DEFAULT_CAIXA_FINANCING_DEBT },
     {
       id: 'debt-veiculo-sac',
       title: 'Financiamento Veicular SUV',

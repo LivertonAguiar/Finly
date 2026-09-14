@@ -270,6 +270,12 @@ export const reconcileDebtTransactions = (
       return;
     }
 
+    const matchingDebt = normalizedDebts.find(d => d.id === debtId);
+    // Parcelas pendentes históricas (já quitadas antes do Finly ou anteriores ao marco de início): não devem constar no extrato
+    if (matchingDebt && installmentNumber <= (matchingDebt.paidInstallments || 0)) {
+      return;
+    }
+
     // Se já processamos uma transação pendente para este mesmo número de parcela, descartar duplicata
     if (seenPendingKeys.has(key)) {
       return;

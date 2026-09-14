@@ -36,11 +36,38 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-13';
+export const CURRENT_BUILD_DATE = '2026-09-14';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-14',
+    summary: 'Financiamento imobiliário Caixa com histórico de parcelas anteriores ao Finly e dados contratuais no relatório, nova subcategoria Óculos & Lentes em Saúde, normalização de tags e resiliência no pipeline de APK.',
+    highlights: [
+      {
+        title: 'Financiamento Imobiliário Caixa & Relatório Detalhado',
+        description: 'Vínculo do contrato oficial Caixa com 20 parcelas anteriores ao Finly auditadas no extrato da dívida, dados contratuais no relatório e isolamento do extrato bancário anterior a outubro/2026.',
+        type: 'feature',
+      },
+      {
+        title: 'Nova Subcategoria em Saúde: 👓 Óculos & Lentes',
+        description: 'Disponibilização da subcategoria dedicada para despesas oftalmológicas, lentes e armações na categoria Saúde.',
+        type: 'feature',
+      },
+      {
+        title: 'Normalização Inteligente de Tags',
+        description: 'Remoção automática de acentos e pontuação ao cadastrar novas tags sem perder os caracteres digitados.',
+        type: 'improvement',
+      },
+      {
+        title: 'Resiliência no Pipeline CI/CD do APK',
+        description: 'Proteção contra falsos erros no GitHub Actions ao enviar commits sem alteração de versão nativa.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.70',
     releaseDate: '2026-09-13',
     summary: 'Implementação de Atualizações OTA / Live Update do bundle web com Capacitor 8, suporte offline-first, verificação de integridade SHA-256, controle de minNativeVersion, rollback automático e distribuição na VPS.',
     highlights: [

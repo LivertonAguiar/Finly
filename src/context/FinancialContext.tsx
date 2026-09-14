@@ -39,6 +39,7 @@ import { applyRecurringAmountChange } from '../utils/recurringExpenseSeries';
 import { propagateCategoryChange } from '../utils/seriesCategorySync';
 import { selectSeriesTargets, SeriesMutationScope, SeriesTargetSelection } from '../utils/transactionSeriesScope';
 import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
+import { normalizeUserDebts } from '../data/caixaFinancingContract';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -589,7 +590,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
     }
-    return Array.from(byId.values());
+    return normalizeUserDebts(Array.from(byId.values()), currentUser?.email, userId);
   };
 
   const reconcileRemoteGoals = (remoteGoals: Goal[]): Goal[] => {
@@ -732,7 +733,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const withDebtTransactionBackfill = (store: UserStoreData): UserStoreData => {
-    const reconciled = reconcileDebtTransactions(store.debts, store.transactions, store.accounts);
+    const normalizedDebts = normalizeUserDebts(store.debts || [], currentUser?.email, userId);
+    const reconciled = reconcileDebtTransactions(normalizedDebts, store.transactions, store.accounts);
     const migrated = migrateLegacyTransactionSeries({
       transactions: reconciled.transactions,
       series: store.transactionSeries || [],

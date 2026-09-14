@@ -223,6 +223,12 @@
       "skillPath": "skills/postgresql-optimization/SKILL.md",
       "computedHash": "8022448de70ba9a485e3b5bce34c5bbc644f93eb39b68431c9f7dabcf03aeb09"
     },
+    "progressive-web-app": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/progressive-web-app/SKILL.md",
+      "computedHash": "d603316c47c9951fe879fb4d28f4d8f67d36289e35c88029b1f6b6aa5f03ed5c"
+    },
     "proxmox-admin": {
       "source": "bastos/skills",
       "sourceType": "github",
@@ -271,11 +277,23 @@
       "skillPath": "skills/scale-and-responsive/SKILL.md",
       "computedHash": "a6d70e6e8191a7038f15ade6ac7dc9cb2c33bde8c64a3e82ae54cc84a640fa58"
     },
+    "security-and-hardening": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "f9c4060f6f8dcd2f89801973c798111372fe7fece71ef2ad0b7684237c8f7ae4"
+    },
     "security-best-practices": {
       "source": "openai/skills",
       "sourceType": "github",
       "skillPath": "skills/.curated/security-best-practices/SKILL.md",
       "computedHash": "0c42fff660b6f7e85add36437edc36976466bb254b7cd9eb38ec67b2ad64a9bf"
+    },
+    "senior-frontend": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/senior-frontend/SKILL.md",
+      "computedHash": "0e391bbe81e162279da7164be128a0f911979738257b85253acb58de1c039fc5"
     },
     "shopify-liquid-themes": {
       "source": "benjaminsehl/liquid-skills",
@@ -301,11 +319,23 @@
       "skillPath": "skills/orchestration/supabase-pentest/SKILL.md",
       "computedHash": "cf53e79ad50403d471080df4d76380ab447e8fa07e3b31d5f074e37999d273e1"
     },
+    "supabase-postgres-best-practices": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "15bd002371fb82a48cc1733c1bb4c63f95c12e3bd5d85fb744598bc213111a70"
+    },
     "tailwindcss-mobile-first": {
       "source": "josiahsiegel/claude-plugin-marketplace",
       "sourceType": "github",
       "skillPath": "plugins/tailwindcss-master/skills/tailwindcss-mobile-first/SKILL.md",
       "computedHash": "b57cdd86a0bc0bfb35e5e42e6adf79c5fece774cea7340f1d992ff6e93cdc002"
+    },
+    "tanstack-query-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/tanstack-query-expert/SKILL.md",
+      "computedHash": "06a1a73e5c624fb6118c343ec736ebf708202742ce7895cdfd156bd69cdea96c"
     },
     "tdd": {
       "source": "mattpocock/skills",
@@ -343,6 +373,12 @@
       "skillPath": "typescript/SKILL.md",
       "computedHash": "4d7494a8eb35339459ba2e999bd0774d453d422af905fa1ed0ab333ba4758b90"
     },
+    "typescript-pro": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/typescript-pro/SKILL.md",
+      "computedHash": "f70d030f6d4f43858003aeaacc28a477ba40958fe78aae87b8cd9d96b29f51dd"
+    },
     "typeui-fundamentals": {
       "source": "bergside/typeui",
       "sourceType": "github",
@@ -361,11 +397,29 @@
       "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
       "computedHash": "3f1e66e08e3d1d3feaf2a3187705022812e0bece8ff5bee80fe7cf782f26fe8b"
     },
+    "ux-audit": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ux-audit/SKILL.md",
+      "computedHash": "7a748e711b23ee820dcda86bf12c3b00bc2b9184c053db64c428807c7302f13f"
+    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    },
+    "vibe-code-cleanup": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vibe-code-cleanup/SKILL.md",
+      "computedHash": "be44675ab27109d0654c1eee8737fec88af16b5593447ac15f14a3e9c9f30712"
+    },
+    "vitest-skill": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vitest-skill/SKILL.md",
+      "computedHash": "9d7c480039d850b14eaa009535e391326d76a8635db5a569b922098b884cc107"
     },
     "wayfinder": {
       "source": "mattpocock/skills",
@@ -384,6 +438,24 @@
       "sourceType": "github",
       "skillPath": "skills/web-design-guidelines/SKILL.md",
       "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "web-performance-optimization": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-performance-optimization/SKILL.md",
+      "computedHash": "a116a9f4c32ae06bc360025eaa22b748d1792a1a2ccf25f75005a5c7009dc1ba"
+    },
+    "zod-validation-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/zod-validation-expert/SKILL.md",
+      "computedHash": "7d1d2b83f3abaf36d27a25bb6390da963c42de28925f8298e6108f566524b4e4"
+    },
+    "zustand-store-ts": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/zustand-store-ts/SKILL.md",
+      "computedHash": "c79475b3882f1a17c902094dd667d521a5c08e3ef89579e43e8a275e97c2dd19"
     }
   }
 }

@@ -39,6 +39,7 @@ const apiProcess = spawn(process.execPath, ['server/apiServer.js'], {
 let apiInfo;
 let lastApiError;
 let apiStderr = '';
+apiProcess.stdout.resume();
 apiProcess.stderr.on('data', chunk => { apiStderr += chunk.toString(); });
 try {
   const deadline = Date.now() + 8000;

@@ -32,48 +32,59 @@ jobs:
           PKG_VER=$(node -p "require('./package.json').version")
           echo "VERSION=v${PKG_VER}" >> $GITHUB_ENV
 
-      - name: 🛑 Impedir Sobrescrita de Release Existente
+      - name: 🛑 Verificar se Versão já foi Publicada
         run: |
           if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
             TAG_COMMIT=$(git rev-list -n 1 "${VERSION}")
             if [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
-              echo "::error::A versão ${VERSION} já pertence ao commit ${TAG_COMMIT}. Atualize o package.json antes de publicar outro APK."
-              exit 1
+              echo "::notice::A versão ${VERSION} já pertence ao commit ${TAG_COMMIT}. Pulando compilação do APK e publicação de release para este commit intermediário."
+              echo "SKIP_RELEASE=true" >> $GITHUB_ENV
+              exit 0
             fi
           fi
+          echo "SKIP_RELEASE=false" >> $GITHUB_ENV
 
       - name: 📦 Instalar Dependências Web
+        if: env.SKIP_RELEASE != 'true'
         run: npm ci
 
       - name: ✅ Validar Sincronização da Versão
+        if: env.SKIP_RELEASE != 'true'
         run: npm run check:version
 
       - name: 🔨 Compilar Web Bundle (Vite)
+        if: env.SKIP_RELEASE != 'true'
         run: npm run build
 
       - name: ☕ Configurar Java JDK 21
+        if: env.SKIP_RELEASE != 'true'
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
       - name: 📱 Configurar Android SDK
+        if: env.SKIP_RELEASE != 'true'
         uses: android-actions/setup-android@v3
 
       - name: 🔄 Sincronizar Capacitor Android
+        if: env.SKIP_RELEASE != 'true'
         run: npx cap sync android
 
       - name: ⚙️ Permissões no Gradle Wrapper
+        if: env.SKIP_RELEASE != 'true'
         run: |
           sed -i '/org.gradle.java.home/d' android/gradle.properties || true
           chmod +x android/gradlew
 
       - name: 🚀 Compilar APK (Debug)
+        if: env.SKIP_RELEASE != 'true'
         run: |
           cd android
           ./gradlew assembleDebug --stacktrace
 
       - name: 🔎 Validar Versão Dentro do APK
+        if: env.SKIP_RELEASE != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -124,9 +135,11 @@ jobs:
           echo "APK validado: versionName=$APK_VERSION_NAME, versionCode=$APK_VERSION_CODE, bundle=$BUNDLE_VERSION"
 
       - name: 🏷️ Preparar APK da Release
+        if: env.SKIP_RELEASE != 'true'
         run: cp android/app/build/outputs/apk/debug/*.apk ./finly-${{ env.VERSION }}.apk
 
       - name: 📝 Gerar Notas de Versão Dinâmicas
+        if: env.SKIP_RELEASE != 'true'
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           echo "## 📱 Finly - Versão ${{ env.VERSION }}" > release_notes.md
@@ -144,6 +157,7 @@ jobs:
           echo "📲 **Download do APK:** Baixe o arquivo \`finly-${{ env.VERSION }}.apk\` abaixo e instale diretamente no seu celular Android!" >> release_notes.md
 
       - name: 📤 Publicar APK como Artefato de Download
+        if: env.SKIP_RELEASE != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: finly-${{ env.VERSION }}
@@ -153,7 +167,7 @@ jobs:
 
       - name: 🌟 Publicar GitHub Release Oficial
         uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && env.SKIP_RELEASE != 'true'
         with:
           tag_name: ${{ env.VERSION }}
           name: Finly ${{ env.VERSION }}

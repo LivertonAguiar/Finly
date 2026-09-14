@@ -3,6 +3,29 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.71] - 2026-09-14
+
+### 🏠 Financiamento Habitacional Caixa & Histórico Auditado
+- **Vínculo Oficial ao Perfil**:
+  - Contrato habitacional Caixa (420 parcelas, Price + TR, taxa nominal 4,25% a.a.) associado diretamente ao perfil do usuário.
+  - Consolidação das 20 parcelas pagas anteriormente ao Finly com detalhamento auditado de amortização, juros, seguros e taxas.
+  - Isolamento do extrato bancário para meses anteriores a outubro/2026, iniciando a cobrança ativa da parcela 21 em diante.
+- **Relatório de Financiamento Completo**:
+  - Exibição de dados contratuais de origem (data de assinatura 17/01/2025, valor financiado, avaliação e FGTS).
+  - Resumo financeiro consolidado do valor total pago até o momento e saldo devedor atualizado.
+  - Tabela interativa expansível de comprovantes com todas as parcelas do histórico.
+
+### 🏷️ Categorias & Tags
+- **Nova Subcategoria em Saúde**:
+  - Adicionada a subcategoria 👓 Óculos & Lentes para lançamentos oftalmológicos.
+- **Normalização de Tags**:
+  - Tratamento inteligente de acentuação e pontuação na criação de tags sem perder caracteres digitados.
+
+### ⚙️ CI/CD & Resiliência de APK
+- **Workflow do GitHub Actions Otimizado**:
+  - Prevenção de falhas falsas no build de APK em commits que não alteram a versão do pacote.
+  - Drenagem e sincronização otimizada nos scripts de validação de versão.
+
 ## [1.1.70] - 2026-09-13
 
 ### ⚡ Atualizações OTA / Live Update do Bundle Web com Capacitor 8

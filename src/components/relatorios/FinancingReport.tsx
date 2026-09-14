@@ -20,11 +20,16 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   ShieldCheck,
   AlertCircle,
   HelpCircle,
+  CheckCircle2,
+  FileText,
+  DollarSign,
+  Landmark,
 } from 'lucide-react';
-import { Debt } from '../../types';
+import { Debt, DebtPayment } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import {
   generateAmortizationSchedule,
@@ -57,6 +62,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
 
   // Estado de simulação extraordinária rápida
   const [extraAmount, setExtraAmount] = useState<number>(5000);
+  const [showHistoricalList, setShowHistoricalList] = useState<boolean>(false);
 
   // Geração do cronograma e métricas do contrato selecionado
   const scheduleData = useMemo(() => {
@@ -67,7 +73,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
 
     const result = generateAmortizationSchedule({
       principal: selectedDebt.remainingAmount || selectedDebt.totalAmount,
-      nominalAnnualRate: selectedDebt.interestRate || 8.5,
+      nominalAnnualRate: selectedDebt.interestRate || 4.25,
       remainingMonths,
       paidInstallments: selectedDebt.paidInstallments || 0,
       system: selectedDebt.amortizationSystem || 'PRICE',
@@ -91,7 +97,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
 
     return simulateExtraordinaryAmortization({
       currentBalance: selectedDebt.remainingAmount || selectedDebt.totalAmount,
-      nominalAnnualRate: selectedDebt.interestRate || 8.5,
+      nominalAnnualRate: selectedDebt.interestRate || 4.25,
       remainingMonths,
       system: selectedDebt.amortizationSystem || 'PRICE',
       indexer: selectedDebt.indexer || (selectedDebt.contractType === 'loan' ? 'FIXED' : 'TR'),
@@ -104,49 +110,94 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
     });
   }, [selectedDebt, extraAmount]);
 
-  // Amostragem para gráficos (amostra de pontos para contratos longos ex: 360 meses)
+  // Totais consolidados das parcelas históricas pagas antes do Finly
+  const historicalStats = useMemo(() => {
+    if (!selectedDebt?.payments || selectedDebt.payments.length === 0) return null;
+
+    const payments = selectedDebt.payments.filter(
+      p => p.installmentNumber <= (selectedDebt.paidInstallments || 0)
+    );
+
+    if (payments.length === 0) return null;
+
+    const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalAmortized = payments.reduce((sum, p) => sum + (p.amortizationAmount || 0), 0);
+    const totalInterest = payments.reduce((sum, p) => sum + (p.interestAmount || 0), 0);
+    const totalInsurance = payments.reduce((sum, p) => sum + (p.insuranceAmount || 0), 0);
+    const totalCorrection = payments.reduce((sum, p) => sum + (p.correctionAmount || 0), 0);
+
+    return {
+      count: payments.length,
+      totalPaid,
+      totalAmortized,
+      totalInterest,
+      totalInsurance,
+      totalCorrection,
+      payments: [...payments].sort((a, b) => a.installmentNumber - b.installmentNumber),
+    };
+  }, [selectedDebt]);
+
+  // Amostragem para gráficos (combinando histórico e projeção futura)
   const chartData = useMemo(() => {
     if (!scheduleData?.schedule) return [];
+
+    const result: Array<{
+      month: string;
+      saldo: number;
+      amortizacao: number;
+      juros: number;
+      encargos: number;
+      parcela: number;
+    }> = [];
+
+    // 1. Incluir pontos históricos se existirem
+    if (historicalStats && historicalStats.payments.length > 0) {
+      historicalStats.payments.forEach(p => {
+        result.push({
+          month: `P.${p.installmentNumber} (Paga)`,
+          saldo: Math.round(p.remainingBalanceAfter || 0),
+          amortizacao: Math.round(p.amortizationAmount || 0),
+          juros: Math.round(p.interestAmount || 0),
+          encargos: Math.round(p.insuranceAmount || 0),
+          parcela: Math.round(p.amount),
+        });
+      });
+    }
+
+    // 2. Incluir amostra das parcelas futuras
     const totalRows = scheduleData.schedule.length;
-    if (totalRows <= 36) {
-      return scheduleData.schedule.map(row => ({
+    const step = Math.max(1, Math.ceil(totalRows / 25));
+
+    for (let i = 0; i < totalRows; i += step) {
+      const row = scheduleData.schedule[i];
+      result.push({
         month: `P.${row.installmentNumber}`,
         saldo: Math.round(row.finalBalance),
         amortizacao: Math.round(row.amortizationAmount),
         juros: Math.round(row.interestAmount),
         encargos: Math.round(row.insuranceAmount + row.adminFeeAmount),
         parcela: Math.round(row.totalInstallment),
-      }));
+      });
     }
 
-    // Amostragem proporcional a cada N meses
-    const step = Math.ceil(totalRows / 30);
-    const sampled = [];
-    for (let i = 0; i < totalRows; i += step) {
-      const row = scheduleData.schedule[i];
-      sampled.push({
-        month: `Mês ${row.installmentNumber}`,
-        saldo: Math.round(row.finalBalance),
-        amortizacao: Math.round(row.amortizationAmount),
-        juros: Math.round(row.interestAmount),
-        encargos: Math.round(row.insuranceAmount + row.adminFeeAmount),
-        parcela: Math.round(row.totalInstallment),
-      });
+    // Garantir inclusão da última parcela
+    if (totalRows > 0) {
+      const lastRow = scheduleData.schedule[totalRows - 1];
+      const lastLabel = `P.${lastRow.installmentNumber}`;
+      if (result[result.length - 1]?.month !== lastLabel) {
+        result.push({
+          month: lastLabel,
+          saldo: Math.round(lastRow.finalBalance),
+          amortizacao: Math.round(lastRow.amortizationAmount),
+          juros: Math.round(lastRow.interestAmount),
+          encargos: Math.round(lastRow.insuranceAmount + lastRow.adminFeeAmount),
+          parcela: Math.round(lastRow.totalInstallment),
+        });
+      }
     }
-    // Incluir o último mês
-    const lastRow = scheduleData.schedule[totalRows - 1];
-    if (sampled[sampled.length - 1]?.month !== `Mês ${lastRow.installmentNumber}`) {
-      sampled.push({
-        month: `Mês ${lastRow.installmentNumber}`,
-        saldo: Math.round(lastRow.finalBalance),
-        amortizacao: Math.round(lastRow.amortizationAmount),
-        juros: Math.round(lastRow.interestAmount),
-        encargos: Math.round(lastRow.insuranceAmount + lastRow.adminFeeAmount),
-        parcela: Math.round(lastRow.totalInstallment),
-      });
-    }
-    return sampled;
-  }, [scheduleData]);
+
+    return result;
+  }, [scheduleData, historicalStats]);
 
   // Se não houver financiamentos/dívidas cadastradas
   if (!selectedDebt || !scheduleData) {
@@ -177,15 +228,20 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
             <Building className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                 {selectedDebt.title}
               </h2>
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 uppercase">
                 {selectedDebt.amortizationSystem || 'PRICE'}
               </span>
+              {selectedDebt.indexer && (
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40">
+                  {selectedDebt.indexer}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {selectedDebt.creditor || 'Contrato Ativo'} • {selectedDebt.paidInstallments || 0} de {selectedDebt.totalInstallments} parcelas pagas ({progressPercent}%)
             </p>
           </div>
@@ -214,7 +270,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
         {/* Saldo Devedor */}
         <div className="bg-white dark:bg-[#1A1A1E] border border-gray-100 dark:border-white/5 rounded-2xl p-4 sm:p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Saldo Devedor</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Saldo Devedor Atual</span>
             <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <TrendingDown className="w-4 h-4" />
             </div>
@@ -223,7 +279,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
             {formatCurrency(selectedDebt.remainingAmount || selectedDebt.totalAmount, currency)}
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            <span>Original:</span>
+            <span>Original Financiado:</span>
             <span className="font-semibold text-gray-700 dark:text-gray-300">
               {formatCurrency(selectedDebt.totalAmount, currency)}
             </span>
@@ -233,7 +289,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
         {/* Juros Futuros Projetados */}
         <div className="bg-white dark:bg-[#1A1A1E] border border-gray-100 dark:border-white/5 rounded-2xl p-4 sm:p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Juros Projetados</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Juros Futuros</span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Percent className="w-4 h-4" />
             </div>
@@ -242,9 +298,9 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
             {formatCurrency(scheduleData.totalInterest, currency)}
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            <span>Taxa:</span>
+            <span>Taxa Contratual:</span>
             <span className="font-semibold text-gray-700 dark:text-gray-300">
-              {selectedDebt.interestRate || 8.5}% a.a. {selectedDebt.indexer ? `+ ${selectedDebt.indexer}` : ''}
+              {selectedDebt.interestRate || 4.25}% a.a. {selectedDebt.indexer ? `+ ${selectedDebt.indexer}` : ''}
             </span>
           </div>
         </div>
@@ -277,9 +333,183 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
             {scheduleData.estimatedEndDate ? formatDate(scheduleData.estimatedEndDate) : `${remainingMonths} meses`}
           </div>
           <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Restam <strong className="text-gray-800 dark:text-gray-200">{remainingMonths}</strong> parcelas
+            Restam <strong className="text-gray-800 dark:text-gray-200">{remainingMonths}</strong> de {selectedDebt.totalInstallments} parcelas
           </div>
         </div>
+      </div>
+
+      {/* NOVO: Card Especial - Dados Iniciais do Contrato & Histórico de Parcelas Pagas antes do Finly */}
+      <div className="bg-white dark:bg-[#18181C] border border-slate-200/80 dark:border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+              <Landmark className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Dados Iniciais do Contrato & Histórico de Parcelas Pagas</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="w-3 h-3" />
+                  {selectedDebt.paidInstallments || 0} parcelas pagas antes do Finly
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Informações oficiais registradas na assinatura e demonstrativos bancários da Caixa Econômica Federal
+              </p>
+            </div>
+          </div>
+
+          {historicalStats && (
+            <button
+              onClick={() => setShowHistoricalList(prev => !prev)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-[#222228] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#2a2a32] text-xs font-bold transition-all cursor-pointer self-start sm:self-auto"
+            >
+              <span>{showHistoricalList ? 'Ocultar Lançamentos' : 'Ver 20 Comprovantes'}</span>
+              {showHistoricalList ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            </button>
+          )}
+        </div>
+
+        {/* Grade com os Dados Iniciais do Contrato */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1C1C22] border border-slate-200/60 dark:border-white/[0.05] space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+              Data de Assinatura
+            </span>
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 block">
+              17/01/2025
+            </span>
+            <span className="text-[11px] text-slate-500">Início da vigência Caixa SFH</span>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1C1C22] border border-slate-200/60 dark:border-white/[0.05] space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+              Valor Financiado
+            </span>
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 block font-mono">
+              {formatCurrency(selectedDebt.totalAmount, currency)}
+            </span>
+            <span className="text-[11px] text-slate-500">Prazo de 420 meses</span>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1C1C22] border border-slate-200/60 dark:border-white/[0.05] space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+              Avaliação do Imóvel
+            </span>
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 block font-mono">
+              {formatCurrency(213450.00, currency)}
+            </span>
+            <span className="text-[11px] text-slate-500">Garantia fiduciária</span>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1C1C22] border border-slate-200/60 dark:border-white/[0.05] space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+              FGTS na Entrada
+            </span>
+            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block font-mono">
+              {formatCurrency(2899.00, currency)}
+            </span>
+            <span className="text-[11px] text-slate-500">Abatimento inicial</span>
+          </div>
+        </div>
+
+        {/* Consolidação do que já foi pago no histórico (P1 a P20) */}
+        {historicalStats && (
+          <div className="p-4 rounded-2xl bg-emerald-500/[0.03] dark:bg-emerald-950/15 border border-emerald-500/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                <Clock className="w-4 h-4" />
+                Consolidação das 20 Parcelas Pagas no Histórico (Fev/2025 a Set/2026)
+              </span>
+              <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+                Total Pago: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(historicalStats.totalPaid, currency)}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-[#16161A] border border-slate-200/70 dark:border-white/[0.06]">
+                <span className="text-[10px] text-slate-400 block">Amortização do Principal</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm">
+                  {formatCurrency(historicalStats.totalAmortized, currency)}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-[#16161A] border border-slate-200/70 dark:border-white/[0.06]">
+                <span className="text-[10px] text-slate-400 block">Juros Pagos no Período</span>
+                <span className="font-bold text-rose-500 font-mono text-sm">
+                  {formatCurrency(historicalStats.totalInterest, currency)}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-[#16161A] border border-slate-200/70 dark:border-white/[0.06]">
+                <span className="text-[10px] text-slate-400 block">Seguros MIP/DFI Pagos</span>
+                <span className="font-bold text-purple-500 font-mono text-sm">
+                  {formatCurrency(historicalStats.totalInsurance, currency)}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-[#16161A] border border-slate-200/70 dark:border-white/[0.06]">
+                <span className="text-[10px] text-slate-400 block">Correção TR Acumulada</span>
+                <span className="font-bold text-amber-500 font-mono text-sm">
+                  +{formatCurrency(historicalStats.totalCorrection, currency)}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              * Conforme solicitado, essas 20 parcelas constam exclusivamente no registro de evolução da dívida e nos relatórios de patrimônio, <strong>sem poluir os lançamentos do extrato bancário dos meses anteriores</strong>. As transações ativas iniciam a partir de outubro/2026 com a Parcela 21.
+            </p>
+          </div>
+        )}
+
+        {/* Tabela expansível dos 20 comprovantes */}
+        {showHistoricalList && historicalStats && (
+          <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] overflow-hidden bg-white dark:bg-[#141418] mt-3">
+            <div className="overflow-x-auto max-h-[360px] scrollbar-thin">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50 dark:bg-[#1C1C22] text-[11px] font-mono text-slate-400 uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200 dark:border-white/[0.08]">
+                  <tr>
+                    <th className="py-2.5 px-3 text-center">Nº</th>
+                    <th className="py-2.5 px-3">Vencimento</th>
+                    <th className="py-2.5 px-3 text-right">Amortização</th>
+                    <th className="py-2.5 px-3 text-right">Juros</th>
+                    <th className="py-2.5 px-3 text-right">Seguro</th>
+                    <th className="py-2.5 px-3 text-right">Correção TR</th>
+                    <th className="py-2.5 px-3 text-right">Saldo Devedor</th>
+                    <th className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-white">Valor Pago</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05] font-mono">
+                  {historicalStats.payments.map(p => (
+                    <tr key={p.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1A1A22]">
+                      <td className="py-2 px-3 text-center font-bold text-slate-500 dark:text-slate-400">
+                        {p.installmentNumber}
+                      </td>
+                      <td className="py-2 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {formatDate(p.date)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold">
+                        {formatCurrency(p.amortizationAmount || 0, currency)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-rose-500 font-medium">
+                        {formatCurrency(p.interestAmount || 0, currency)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-purple-400 font-medium">
+                        {formatCurrency(p.insuranceAmount || 0, currency)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-amber-500 font-medium">
+                        +{formatCurrency(p.correctionAmount || 0, currency)}
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-800 dark:text-slate-200 font-medium">
+                        {formatCurrency(p.remainingBalanceAfter || 0, currency)}
+                      </td>
+                      <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-white">
+                        {formatCurrency(p.amount, currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Gráficos em Grade Bento ou Modo Focado */}
@@ -292,12 +522,12 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
                 Curva de Decaimento do Saldo Devedor
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Projeção matemática da redução do saldo até a quitação final
+                Histórico real (P1 a P20) seguido da projeção Price + TR até a quitação final
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-lg">
               <TrendingDown className="w-3.5 h-3.5" />
-              <span>Projeção Mensal</span>
+              <span>Histórico + Projeção</span>
             </div>
           </div>
 
@@ -416,7 +646,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
               <button
                 key={val}
                 onClick={() => setExtraAmount(val)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all ${
+                className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
                   extraAmount === val
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/30'
                     : 'bg-white dark:bg-[#202026] text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-indigo-500/50'

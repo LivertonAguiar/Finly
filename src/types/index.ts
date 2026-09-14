@@ -204,6 +204,8 @@ export interface DebtPayment {
   insuranceAmount?: number;
   adminFeeAmount?: number;
   remainingBalanceAfter?: number;
+  isHistorical?: boolean;
+  status?: 'historical_paid' | 'completed';
 }
 
 export type DebtContractType = 'loan' | 'real_estate' | 'vehicle';
@@ -221,6 +223,7 @@ export interface Debt {
   installmentAmount: number;
   totalInstallments: number;
   paidInstallments: number;
+  historicalPaidCount?: number; // Quantidade de parcelas pagas antes do início do controle no Finly
   dueDay: number;
   nextDueDate: string;
   notes?: string;
