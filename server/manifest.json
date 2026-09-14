@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.71",
+    "version": "1.1.72",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.71/finly-v1.1.71.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.72/finly-v1.1.72.apk"
   },
   "web": {
-    "version": "1.1.70.7",
-    "minNativeVersion": "1.1.71",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.7.zip",
-    "sha256": "464f54a1436b67ec97806b954a87c35473baefdd90ce6ba2dc018d9a3bbd5357",
+    "version": "1.1.70.8",
+    "minNativeVersion": "1.1.72",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.70.8.zip",
+    "sha256": "16d93f20253146b2f92341e277633cc4265dd8408f798973acd0c9333506b35c",
     "mandatory": false,
     "releaseDate": "2026-09-14",
-    "notes": "Popup interno de confirmacao de despesa adicionada"
+    "notes": "Expurgo de duplicidade do financiamento Caixa e protecoes de banco"
   }
 }
