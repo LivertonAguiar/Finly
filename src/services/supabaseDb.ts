@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { normalizeUserDebts } from '../data/caixaFinancingContract';
 import {
   Account,
   CreditCard,
@@ -13,6 +14,10 @@ import {
   NotificationItem,
   TransactionSeries,
 } from '../types';
+
+export const GHOST_DEBT_IDS = new Set([
+  'debt-1789003413274-l3jh',
+]);
 
 export interface UserStoreData {
   accounts: Account[];
@@ -207,6 +212,9 @@ export class SupabaseDbService {
           if (!r || !r.id) return false;
           const id = String(r.id);
           if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id.includes('1788193846930')) return false;
+          if (id.includes('debt-1789003413274-l3jh')) return false;
+          const debtId = String(r.debt_id || r.installments?.debtId || '');
+          if (GHOST_DEBT_IDS.has(debtId)) return false;
           if (r.date && (r.date.startsWith('2026-08-30') || r.date.startsWith('2026-08-31'))) return false;
           return true;
         })
@@ -287,7 +295,9 @@ export class SupabaseDbService {
         completed: Boolean(r.completed),
       }));
 
-      const debts: Debt[] = (debtsRes.data || []).map(r => ({
+      const rawDebts: Debt[] = (debtsRes.data || [])
+        .filter(r => r && !GHOST_DEBT_IDS.has(r.id))
+        .map(r => ({
         id: r.id,
         title: r.title,
         creditor: r.creditor,
@@ -311,6 +321,7 @@ export class SupabaseDbService {
         defaultAccountId: r.default_account_id || undefined,
         syncToTransactions: r.sync_to_transactions !== false,
       }));
+      const debts: Debt[] = normalizeUserDebts(rawDebts, undefined, targetUserId);
 
       const investments: InvestmentAsset[] = (investmentsRes.data || []).map(r => ({
         id: r.id,
@@ -488,9 +499,13 @@ export class SupabaseDbService {
         'card-1788916198444-dq3',
       ]);
 
-      // Explicitly delete any ghost cards for this user
+      // Explicitly delete any ghost cards and ghost debts for this user
       for (const ghostId of GHOST_CARDS) {
         await supabase.from('credit_cards').delete().eq('user_id', targetUserId).eq('id', ghostId);
+      }
+      for (const ghostDebtId of GHOST_DEBT_IDS) {
+        await supabase.from('debts').delete().eq('user_id', targetUserId).eq('id', ghostDebtId);
+        await supabase.from('transactions').delete().eq('user_id', targetUserId).eq('debt_id', ghostDebtId);
       }
 
       // 4. Categories Upsert
@@ -512,6 +527,9 @@ export class SupabaseDbService {
         if (!t || !t.id) return true;
         const id = String(t.id);
         if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id.includes('1788193846930')) return true;
+        if (id.includes('debt-1789003413274-l3jh')) return true;
+        const debtId = String(t.debtId || t.debt_id || t.installments?.debtId || '');
+        if (GHOST_DEBT_IDS.has(debtId)) return true;
         if (t.date && (t.date.startsWith('2026-08-30') || t.date.startsWith('2026-08-31'))) return true;
         if (t.createdAt && (String(t.createdAt).startsWith('2026-08-30') || String(t.createdAt).startsWith('2026-08-31'))) return true;
         return false;
@@ -632,8 +650,9 @@ export class SupabaseDbService {
       }
 
       // 8. Debts Upsert
-      if (store.debts && store.debts.length > 0) {
-        const rows = store.debts.map(d => ({
+      const activeDebts = normalizeUserDebts(store.debts || [], undefined, targetUserId).filter(d => d && !GHOST_DEBT_IDS.has(d.id));
+      if (activeDebts.length > 0) {
+        const rows = activeDebts.map(d => ({
           id: d.id,
           user_id: targetUserId,
           title: d.title,
@@ -922,7 +941,7 @@ export class SupabaseDbService {
    * Upsert single debt
    */
   public async upsertDebt(userId: string, d: Debt): Promise<boolean> {
-    if (!isSupabaseConfigured() || !userId) return false;
+    if (!isSupabaseConfigured() || !userId || !d || GHOST_DEBT_IDS.has(d.id)) return false;
     const targetUserId = this.getValidUserId(userId);
     if (!targetUserId) return false;
 

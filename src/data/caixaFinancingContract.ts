@@ -328,39 +328,34 @@ export function normalizeUserDebts(debts: Debt[], userEmail?: string, userId?: s
 
   let list = Array.isArray(debts) ? [...debts] : [];
 
-  const hasCaixa = list.some(
-    d => d.id === 'debt-financiamento-caixa' || (d.contractType === 'real_estate' && d.creditor?.toLowerCase().includes('caixa'))
-  );
+  // 1. Expurgar ID fantasma legado
+  list = list.filter(d => d && d.id !== 'debt-1789003413274-l3jh');
 
-  if (isLiverton && !hasCaixa) {
-    list.push({ ...DEFAULT_CAIXA_FINANCING_DEBT });
+  // 2. Identificador de financiamento Caixa
+  const isCaixaFinancing = (d: Debt) =>
+    Boolean(
+      d &&
+      (d.id === 'debt-financiamento-caixa' ||
+       d.contractNumber === 'SFH-17012025-001' ||
+       (d.contractType === 'real_estate' && d.creditor?.toLowerCase().includes('caixa')))
+    );
+
+  const caixaDebts = list.filter(isCaixaFinancing);
+  const otherDebts = list.filter(d => !isCaixaFinancing(d));
+
+  // 3. Se for Liverton ou se houver qualquer dívida Caixa, unificar estritamente em UMA ÚNICA dívida oficial
+  if (isLiverton || caixaDebts.length > 0) {
+    const primaryCaixa = caixaDebts[0] || {};
+    const unifiedCaixa: Debt = {
+      ...primaryCaixa,
+      ...DEFAULT_CAIXA_FINANCING_DEBT,
+      id: 'debt-financiamento-caixa',
+      defaultAccountId: primaryCaixa.defaultAccountId || DEFAULT_CAIXA_FINANCING_DEBT.defaultAccountId,
+    };
+    return [...otherDebts, unifiedCaixa];
   }
 
-  return list.map(d => {
-    const isCaixaFinancing =
-      d.id === 'debt-financiamento-caixa' ||
-      (d.contractType === 'real_estate' && d.creditor?.toLowerCase().includes('caixa'));
-
-    if (isCaixaFinancing) {
-      const needsUpdate =
-        d.totalAmount !== 152350 ||
-        d.paidInstallments !== 20 ||
-        d.totalInstallments !== 420 ||
-        !d.payments ||
-        d.payments.length < 20 ||
-        !d.payments.some(p => p.installmentNumber === 20);
-
-      if (needsUpdate) {
-        return {
-          ...d,
-          ...DEFAULT_CAIXA_FINANCING_DEBT,
-          id: d.id || DEFAULT_CAIXA_FINANCING_DEBT.id,
-          defaultAccountId: d.defaultAccountId || DEFAULT_CAIXA_FINANCING_DEBT.defaultAccountId,
-        };
-      }
-    }
-    return d;
-  });
+  return otherDebts;
 }
 
 

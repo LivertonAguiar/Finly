@@ -269,10 +269,17 @@ const GHOST_CARD_IDS = new Set([
   'card-1788916198444-dq3',
 ]);
 
+const GHOST_DEBT_IDS = new Set([
+  'debt-1789003413274-l3jh',
+]);
+
 function isGhostTransaction(tx: any): boolean {
   if (!tx) return false;
   const id = String(tx.id || '');
   if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id === 'tx-pay-1788193846930') return true;
+  if (id.includes('debt-1789003413274-l3jh')) return true;
+  const debtId = String(tx.debtId || tx.debt_id || tx.installments?.debtId || '');
+  if (GHOST_DEBT_IDS.has(debtId)) return true;
   if (tx.createdAt && (String(tx.createdAt).startsWith('2026-08-30') || String(tx.createdAt).startsWith('2026-08-31'))) return true;
   if (tx.created_at && (String(tx.created_at).startsWith('2026-08-30') || String(tx.created_at).startsWith('2026-08-31'))) return true;
   return false;
@@ -579,11 +586,21 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const reconcileRemoteDebts = (remoteDebts: Debt[]): Debt[] => {
     const byId = new Map<string, Debt>();
     for (const d of remoteDebts) {
-      if (d && d.id) byId.set(d.id, d);
+      if (d && d.id && !GHOST_DEBT_IDS.has(d.id)) byId.set(d.id, d);
     }
-    // Anti-data-loss: preservar dívidas locais existentes
+    // Anti-data-loss: preservar dívidas locais existentes (exceto fantasmas e duplicadas da Caixa)
     for (const localD of debtsRef.current) {
-      if (localD && localD.id && !byId.has(localD.id)) {
+      if (localD && localD.id && !GHOST_DEBT_IDS.has(localD.id) && !byId.has(localD.id)) {
+        const isCaixa = localD.id === 'debt-financiamento-caixa' ||
+          localD.contractNumber === 'SFH-17012025-001' ||
+          (localD.contractType === 'real_estate' && localD.creditor?.toLowerCase().includes('caixa'));
+        const alreadyHasCaixa = Array.from(byId.values()).some(d =>
+          d.id === 'debt-financiamento-caixa' ||
+          d.contractNumber === 'SFH-17012025-001' ||
+          (d.contractType === 'real_estate' && d.creditor?.toLowerCase().includes('caixa'))
+        );
+        if (isCaixa && alreadyHasCaixa) continue;
+
         byId.set(localD.id, localD);
         if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
           void supabaseDb.upsertDebt(currentUser.id, localD).catch(() => {});

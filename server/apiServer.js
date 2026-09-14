@@ -570,17 +570,24 @@ app.post('/api/auth/change-password', authenticateToken, (req, res) => {
   });
 });
 
-// Ghost Data Shields (Prevents resurrected stale August transactions and cards)
+// Ghost Data Shields (Prevents resurrected stale August transactions, cards, and duplicate debts)
 const GHOST_CARDS_SET = new Set([
   'card-1788094641945-bzt',
   'card-1788094677952-2ym',
   'card-1788916198444-dq3',
 ]);
 
+const GHOST_DEBTS_SET = new Set([
+  'debt-1789003413274-l3jh',
+]);
+
 const isGhostTransactionRecord = (t) => {
   if (!t || !t.id) return true;
   const id = String(t.id);
   if (id.startsWith('tx-1788095') || id.startsWith('tx-1788210') || id.includes('1788193846930')) return true;
+  if (id.includes('debt-1789003413274-l3jh')) return true;
+  const debtId = String(t.debtId || t.debt_id || t.installments?.debtId || '');
+  if (GHOST_DEBTS_SET.has(debtId)) return true;
   if (t.date && (t.date.startsWith('2026-08-30') || t.date.startsWith('2026-08-31'))) return true;
   if (t.createdAt && (String(t.createdAt).startsWith('2026-08-30') || String(t.createdAt).startsWith('2026-08-31'))) return true;
   return false;
@@ -591,6 +598,9 @@ const sanitizeStoreData = (store) => {
   const sanitized = { ...store };
   if (Array.isArray(sanitized.cards)) {
     sanitized.cards = sanitized.cards.filter(c => c && !GHOST_CARDS_SET.has(c.id));
+  }
+  if (Array.isArray(sanitized.debts)) {
+    sanitized.debts = sanitized.debts.filter(d => d && !GHOST_DEBTS_SET.has(d.id));
   }
   if (Array.isArray(sanitized.transactions)) {
     sanitized.transactions = sanitized.transactions.filter(t => !isGhostTransactionRecord(t));
