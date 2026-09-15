@@ -189,9 +189,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </div>
       )}
 
+      {/* Máscara de gradiente suave no rodapé para ocultar cards scrolláveis por trás da pílula */}
+      <div
+        className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-40 md:hidden bg-gradient-to-t from-[#F1F5F9] via-[#F1F5F9]/85 to-transparent dark:from-[var(--app-bg,#121214)] dark:via-[var(--app-bg,#121214)]/85 transition-all duration-200"
+        aria-hidden="true"
+      />
+
       {/* Main Bottom Navigation Bar - Pílula ampliada para toque confortável */}
       <nav
-        className="fixed left-0 right-0 z-50 flex justify-center items-center px-4 pointer-events-none md:hidden select-none transition-all duration-300"
+        className="bottom-nav-container fixed left-0 right-0 z-50 flex justify-center items-center px-4 pointer-events-none md:hidden select-none bg-transparent transition-all duration-300"
         style={{
           bottom: 'max(calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 8px), 12px)',
         }}

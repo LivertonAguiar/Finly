@@ -27,7 +27,6 @@ param (
 )
 
 $ErrorActionPreference = "Stop"
-Set-StrictMode -Version Latest
 
 $startTime = Get-Date
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -56,7 +55,7 @@ if ($gitStatus.Count -gt 0) {
     }
     Write-Host "Comitando alteracoes: '$Message'..." -ForegroundColor Yellow
     git -C $repoRoot add -A
-    git -C $repoRoot commit -m $Message
+    git -C $repoRoot commit -m "$Message"
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao comitar alteracoes locais."
     }
@@ -74,11 +73,12 @@ Write-Host "✔ Build de producao concluido com sucesso." -ForegroundColor Green
 
 # 3. Empacotar bundle OTA (Capacitor Live Update)
 Write-Host "`n📦 Empacotando novo bundle OTA para o aplicativo mobile..." -ForegroundColor Yellow
-$pkgArgs = @("scripts/package-web-bundle.mjs")
+$bundleScript = Join-Path $repoRoot "scripts\package-web-bundle.mjs"
 if ($Notes) {
-    $pkgArgs += @("--notes", $Notes)
+    node.exe $bundleScript --notes "$Notes"
+} else {
+    node.exe $bundleScript
 }
-node.exe (Join-Path $repoRoot "scripts/package-web-bundle.mjs") @pkgArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Falha ao empacotar bundle OTA."
 }
@@ -89,11 +89,12 @@ $webVer = $manifest.web.version
 Write-Host "✔ Bundle OTA v$webVer gerado com sucesso." -ForegroundColor Green
 
 # 4. Commit do manifesto atualizado e Push para GitHub
-Write-Host "`n📤 Comitando manifesto OTA e enviando para GitHub (origin/main)..." -ForegroundColor Yellow
+Write-Host "`n📤 Comitando manifesto OTA e enviando para GitHub..." -ForegroundColor Yellow
 git -C $repoRoot add server/manifest.json
 $manifestStatus = @(git -C $repoRoot status --porcelain server/manifest.json)
 if ($manifestStatus.Count -gt 0) {
-    git -C $repoRoot commit -m "chore(ota): publicar bundle web v$webVer"
+    $otaMsg = 'chore(ota): publicar bundle web v' + $webVer
+    git -C $repoRoot commit -m $otaMsg
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao comitar manifesto OTA."
     }

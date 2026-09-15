@@ -217,7 +217,7 @@ html:not(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
 /* Light mode Header, Sidebar & BottomNav borders */
 html:not(.dark) header,
 html:not(.dark) aside,
-html:not(.dark) nav {
+html:not(.dark) aside nav {
   border-color: #CBD5E1 !important;
   background-color: #FFFFFF !important;
 }
