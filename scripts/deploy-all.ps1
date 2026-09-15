@@ -100,7 +100,7 @@ if ($manifestStatus.Count -gt 0) {
     }
 }
 
-git -C $repoRoot push origin main
+git.exe -C $repoRoot push origin main
 if ($LASTEXITCODE -ne 0) {
     throw "Falha no git push origin main."
 }
