@@ -66,8 +66,11 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'tarifas-bancarias': { categoryId: 'cat-desp-financeiro', subcategoryId: 'sub-fin-tarifas', name: 'Financeiro', icon: '💳' },
   'cat-rec-reembolsos': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
   'reembolsos': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
-  'sub-mor-condominio-taxa': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
-  'sub-mor-taxa-extra': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
+  'sub-mor-condominio-taxa': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
+  'sub-mor-taxa-extra': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
+  'taxa extra de condominio': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
+  'taxa extra condominio': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
+  'taxa extra': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
   'sub-mor-reserva-salao': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
 };
 

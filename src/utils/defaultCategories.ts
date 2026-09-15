@@ -146,6 +146,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-desp-moradia"
       },
       {
+        "id": "sub-mor-taxa-extra-condominio",
+        "name": "Taxa Extra de Condomínio",
+        "icon": "🏗️",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
         "id": "sub-mor-energia",
         "name": "Energia Elétrica",
         "icon": "⚡",
