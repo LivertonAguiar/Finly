@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.77.3",
+    "version": "1.1.77.4",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.3.zip",
-    "sha256": "e0cc243b4765213cadbdd85825f2e1807548bba4d8c2ac714582dfef4c0df85e",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.4.zip",
+    "sha256": "16c9a1f533bb08660fae1d23488a039ae3300f51ec73599e4d39f4d303841118",
     "mandatory": true,
-    "releaseDate": "2026-09-14",
-    "notes": "Mascara de gradiente suave no rodape para isolar barra flutuante"
+    "releaseDate": "2026-09-15",
+    "notes": "Exibir composicao da taxa e carregar splits da serie de condominio"
   }
 }
