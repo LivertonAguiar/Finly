@@ -133,6 +133,7 @@ interface FinancialContextType {
   updateCategory: (id: string, data: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
   addSubcategory: (categoryId: string, name: string, icon?: string) => void;
+  updateSubcategory: (categoryId: string, subcategoryId: string, data: { name?: string; icon?: string }) => void;
   deleteSubcategory: (categoryId: string, subcategoryId: string) => void;
   resetCategoriesToDefault: () => void;
 
@@ -528,7 +529,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // a menos que o usuário as tenha deletado expressamente
     for (const localTx of transactionsRef.current) {
       if (localTx && localTx.id && !isGhostTransaction(localTx) && !pendingDeletes.has(localTx.id)) {
-        if (!byId.has(localTx.id)) {
+        const existing = byId.get(localTx.id);
+        if (existing) {
+          // Anti-data-loss: se a transação local possui componentes analíticos ou metadados e a remota não, preserva os locais
+          if ((!existing.components || existing.components.length === 0) && localTx.components && localTx.components.length > 0) {
+            existing.components = localTx.components;
+            existing.hasComponents = true;
+          }
+          if (!existing.financialNature && localTx.financialNature) {
+            existing.financialNature = localTx.financialNature;
+          }
+          if (!existing.characteristics && localTx.characteristics) {
+            existing.characteristics = localTx.characteristics;
+          }
+          if (!existing.relationships && localTx.relationships) {
+            existing.relationships = localTx.relationships;
+          }
+        } else {
           byId.set(localTx.id, localTx);
           if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
             void supabaseDb.upsertTransaction(currentUser.id, localTx).catch(() => {});
@@ -1819,6 +1836,23 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   };
 
+  const updateSubcategory = (categoryId: string, subcategoryId: string, data: { name?: string; icon?: string }) => {
+    setCategories(prev =>
+      prev.map(c => {
+        if (c.id !== categoryId) return c;
+        return {
+          ...c,
+          subcategories: c.subcategories.map(s => {
+            if (s.id !== subcategoryId) return s;
+            const nextName = data.name !== undefined ? data.name.trim() : s.name;
+            const nextIcon = data.icon !== undefined ? data.icon : s.icon;
+            return { ...s, name: nextName, icon: nextIcon };
+          }),
+        };
+      })
+    );
+  };
+
   const deleteSubcategory = (categoryId: string, subcategoryId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     const sub = cat?.subcategories.find(s => s.id === subcategoryId);
@@ -3089,6 +3123,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateCategory,
         deleteCategory,
         addSubcategory,
+        updateSubcategory,
         deleteSubcategory,
         resetCategoriesToDefault,
         transactions,

@@ -83,4 +83,52 @@ const perInstallment = buildCardInstallmentSeries({
 assert.equal(perInstallment.series.totalAmount, 100);
 assert.deepEqual(perInstallment.transactions.map(tx => tx.amount), [25, 25, 25, 25]);
 
-console.log('OK: séries parceladas preservam histórico, fatura, calendário e centavos.');
+// Teste de compras parceladas no cartão com detalhamento em itens analíticos
+const cardWithComponents = buildCardInstallmentSeries({
+  seriesId: 'series-card-mercado',
+  description: 'Supermercado Mensal',
+  amount: 300,
+  amountInputMode: 'total',
+  totalInstallments: 3,
+  firstTrackedInstallment: 1,
+  purchaseDate: '2026-09-15',
+  firstInvoiceMonth: '2026-09',
+  cardId: 'card-1',
+  cardClosingDay: 5,
+  cardDueDay: 10,
+  categoryId: 'cat-desp-alimentacao',
+  ignored: false,
+  isThirdParty: false,
+  tags: [],
+  createdAt: '2026-09-15T12:00:00.000Z',
+  hasComponents: true,
+  components: [
+    {
+      description: 'Alimentos e Carnes',
+      amount: 180, // 60%
+      categoryId: 'cat-desp-alimentacao',
+      type: 'one_time',
+    },
+    {
+      description: 'Produtos de Limpeza',
+      amount: 120, // 40%
+      categoryId: 'cat-desp-moradia',
+      type: 'one_time',
+    },
+  ],
+});
+
+assert.equal(cardWithComponents.transactions.length, 3);
+cardWithComponents.transactions.forEach(tx => {
+  assert.equal(tx.hasComponents, true);
+  assert.equal(tx.components?.length, 2);
+  assert.equal(tx.components?.[0].description, 'Alimentos e Carnes');
+  assert.equal(tx.components?.[0].amount, 60);
+  assert.equal(tx.components?.[1].description, 'Produtos de Limpeza');
+  assert.equal(tx.components?.[1].amount, 40);
+  // A soma dos componentes da parcela bate 100% com o valor da parcela (100)
+  const sumComp = (tx.components || []).reduce((acc, c) => acc + c.amount, 0);
+  assert.equal(sumComp, tx.amount);
+});
+
+console.log('OK: séries parceladas preservam histórico, fatura, calendário, centavos e detalhamento analítico de componentes.');

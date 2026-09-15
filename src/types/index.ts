@@ -68,6 +68,7 @@ export interface CardInstallmentSeries extends TransactionSeriesBase {
   totalInstallments: number;
   firstTrackedInstallment: number;
   amountInputMode: 'total' | 'per_installment';
+  componentTemplates?: Array<Omit<TransactionComponent, 'id' | 'transactionId'>>;
 }
 
 export interface RecurringExpenseSeries extends TransactionSeriesBase {
@@ -103,6 +104,66 @@ export interface RecurringExpenseSeries extends TransactionSeriesBase {
 
 export type TransactionSeries = CardInstallmentSeries | RecurringExpenseSeries;
 
+// =============================================================================
+// DIMENSÕES MULTIDIMENSIONAIS (ÁRVORE V3 & TAXONOMIA AVANÇADA)
+// =============================================================================
+
+export type FinancialNature =
+  | 'expense'               // 🔴 Despesa padrão de consumo/serviço
+  | 'income'                // 🟢 Receita/renda real que ingressa no caixa
+  | 'transfer'              // 🔄 Movimentação neutra entre contas próprias
+  | 'amortization'          // 📉 Abatimento do saldo principal de uma dívida/financiamento
+  | 'interest_paid'         // 📈 Custo financeiro do dinheiro (juros pagos)
+  | 'penalty_fee'           // ⚠️ Multas por atraso ou encargos contratuais
+  | 'financial_fee'         // 🏦 Tarifas bancárias, anuidade, taxas de operação
+  | 'insurance'             // 🛡️ Prêmio de proteção patrimonial/pessoal
+  | 'tax'                   // 🧾 Pagamento tributário compulsório (IPTU, IPVA, IR, taxas)
+  | 'investment_deposit'    // 🐷 Saída do caixa líquido para ativo investido (aporte)
+  | 'investment_yield'      // 💰 Ganhos de capital, dividendos, cupons de renda fixa
+  | 'investment_withdrawal' // 💵 Retorno de ativos investidos para liquidez de caixa
+  | 'reimbursement_inflow'  // ↩️ Devolução de gasto pago por/para terceiros
+  | 'chargeback_outflow'    // 🔙 Estorno emitido ou contestação
+  | 'monetary_correction';  // 💱 Ajuste cambial, TR, IPCA sobre saldos ou dívidas
+
+export interface TransactionCharacteristics {
+  recurrence?: {
+    enabled: boolean;
+    frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    isSubscription?: boolean;       // 📱 Contrato contínuo (Netflix, Spotify, ChatGPT, Academia)
+    variability?: 'fixed' | 'variable' | 'eventual'; // 📌 Fixo vs 🔄 Variável vs ⚡ Eventual
+  };
+  installment?: {
+    enabled: boolean;
+    current?: number;
+    total?: number;
+    parentSeriesId?: string;
+  };
+  necessity?: 'essential' | 'discretionary' | 'strategic';
+  scope?: 'personal' | 'professional' | 'shared';
+  taxStatus?: 'deductible' | 'non_deductible' | 'review_required';
+  reimbursement?: {
+    isReimbursable: boolean;
+    status?: 'none' | 'pending' | 'partially_reimbursed' | 'settled';
+    expectedAmount?: number;
+    receivedAmount?: number;
+    relatedTransactionId?: string;
+  };
+  debtControl?: {
+    isExtraordinaryAmortization?: boolean;
+  };
+}
+
+export interface TransactionRelationships {
+  vehicleId?: string;        // 🚗 Civic, Compass, Moto
+  propertyId?: string;       // 🏠 Apto 402, Casa de Praia, Terreno
+  personId?: string;         // 👤 Esposa, Levi (Filho), Mãe
+  petId?: string;            // 🐾 Thor, Luna
+  tripId?: string;           // ✈️ Viagem Recife 2027, Férias Chile
+  projectId?: string;        // 🎯 Reforma da Cozinha, Casamento
+  debtContractId?: string;   // 💳 Financiamento Caixa, Empréstimo Pessoal
+  investmentAssetId?: string;// 📈 Tesouro IPCA+, MXRF11, Fundo X
+}
+
 export type ComponentRepetitionType = 'fixed' | 'variable' | 'temporary' | 'one_time';
 
 export interface ComponentRecurrenceConfig {
@@ -118,6 +179,9 @@ export interface TransactionComponent {
   amount: number;
   categoryId: string;
   subcategoryId?: string;
+  financialNature?: FinancialNature;
+  characteristics?: TransactionCharacteristics;
+  relationships?: TransactionRelationships;
   type?: ComponentRepetitionType;
   recurrenceConfig?: ComponentRecurrenceConfig;
   notes?: string;
@@ -128,6 +192,8 @@ export interface TransactionComponent {
   updatedAt?: string;
 }
 
+export type TransactionComponentTemplate = Omit<TransactionComponent, 'id' | 'transactionId'>;
+
 export interface Transaction {
   id: string;
   description: string;
@@ -136,6 +202,11 @@ export interface Transaction {
   date: string; // ISO format: YYYY-MM-DD
   categoryId: string;
   subcategoryId?: string;
+  financialNature?: FinancialNature;
+  characteristics?: TransactionCharacteristics;
+  relationships?: TransactionRelationships;
+  hasComponents?: boolean;
+  components?: TransactionComponent[];
   accountId?: string;
   targetAccountId?: string; // For transfers
   cardId?: string; // For credit card expenses
@@ -148,8 +219,6 @@ export interface Transaction {
   isSeriesException?: boolean;
   recurringNeedsReview?: boolean;
   analyticsExclusionReason?: AnalyticsExclusionReason;
-  hasComponents?: boolean;
-  components?: TransactionComponent[];
   installments?: {
     current: number;
     total: number;

@@ -39,6 +39,12 @@ import { saveOrShareFile } from '../../utils/fileDownloadHelper';
 import { SeriesDeleteModal } from './SeriesDeleteModal';
 import { ReimbursementModal } from './ReimbursementModal';
 import { buildCardInstallmentTimeline } from '../../utils/cardInstallmentSeries';
+import {
+  FINANCIAL_NATURE_CONFIG,
+  NECESSITY_CONFIG,
+  SCOPE_CONFIG,
+  inferSmartTaxonomy,
+} from '../../utils/smartTaxonomy';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -51,7 +57,7 @@ interface TransactionDetailModalProps {
 export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   isOpen,
   onClose,
-  transaction,
+  transaction: propTransaction,
   onEdit,
   onDuplicate,
 }) => {
@@ -71,6 +77,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const { confirm } = useConfirm();
   const [deleteCandidate, setDeleteCandidate] = React.useState<Transaction | null>(null);
   const [reimbursementCandidate, setReimbursementCandidate] = React.useState<Transaction | null>(null);
+
+  const transaction = React.useMemo(() => {
+    if (!propTransaction) return null;
+    return transactions.find(t => t.id === propTransaction.id) || propTransaction;
+  }, [propTransaction, transactions]);
 
   // Intercept Android back button & swipe gestures
   useBackButton(isOpen && !!transaction, onClose);
@@ -132,6 +143,30 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const account = accounts.find(a => a.id === transaction.accountId);
   const targetAccount = accounts.find(a => a.id === transaction.targetAccountId);
   const card = cards.find(c => c.id === transaction.cardId);
+
+  // 6D Multidimensional Taxonomy Resolution
+  const effectiveTaxonomy = useMemo(() => {
+    if (!transaction) return null;
+    if (transaction.financialNature && transaction.characteristics) {
+      return {
+        financialNature: transaction.financialNature,
+        characteristics: transaction.characteristics,
+        relationships: transaction.relationships,
+      };
+    }
+    const inferred = inferSmartTaxonomy({
+      description: transaction.description,
+      type: transaction.type,
+      categoryId: transaction.categoryId,
+      subcategoryId: transaction.subcategoryId,
+      isRecurring: transaction.recurring,
+    });
+    return {
+      financialNature: transaction.financialNature || inferred.financialNature,
+      characteristics: transaction.characteristics || inferred.characteristics,
+      relationships: transaction.relationships,
+    };
+  }, [transaction]);
 
   // Check if this transaction is an Invoice Payment (e.g. "Pagamento Fatura Nubank")
   const isInvoicePayment =
@@ -542,9 +577,89 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         </div>
 
         {/* ========================================================================= */}
+        {/* 3.01 CLASSIFICAÇÃO & NATUREZA MULTIDIMENSIONAL (6D) */}
+        {/* ========================================================================= */}
+        {effectiveTaxonomy && (
+          <div className="p-4 rounded-[22px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Classificação & Natureza
+              </span>
+              {effectiveTaxonomy.financialNature && (
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white"
+                  style={{
+                    backgroundColor:
+                      FINANCIAL_NATURE_CONFIG[effectiveTaxonomy.financialNature]?.color || '#8b5cf6',
+                  }}
+                >
+                  {FINANCIAL_NATURE_CONFIG[effectiveTaxonomy.financialNature]?.badge || 'Classificado'}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Natureza Financeira */}
+              {effectiveTaxonomy.financialNature && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span>{FINANCIAL_NATURE_CONFIG[effectiveTaxonomy.financialNature]?.icon}</span>
+                  <span>{FINANCIAL_NATURE_CONFIG[effectiveTaxonomy.financialNature]?.label}</span>
+                </div>
+              )}
+
+              {/* Necessidade 50-30-20 */}
+              {effectiveTaxonomy.characteristics?.necessity && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span>{NECESSITY_CONFIG[effectiveTaxonomy.characteristics.necessity]?.icon}</span>
+                  <span>{NECESSITY_CONFIG[effectiveTaxonomy.characteristics.necessity]?.shortLabel}</span>
+                </div>
+              )}
+
+              {/* Assinatura Contínua */}
+              {effectiveTaxonomy.characteristics?.recurrence?.isSubscription && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs font-bold text-purple-700 dark:text-purple-300">
+                  <span>📱</span>
+                  <span>Assinatura Contínua</span>
+                </div>
+              )}
+
+              {/* Dedutível IR */}
+              {effectiveTaxonomy.characteristics?.taxStatus === 'deductible' && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                  <span>🦁</span>
+                  <span>Dedutível no IR</span>
+                </div>
+              )}
+
+              {/* Reembolsável */}
+              {effectiveTaxonomy.characteristics?.reimbursement?.isReimbursable && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs font-bold text-sky-700 dark:text-sky-300">
+                  <span>↩️</span>
+                  <span>Reembolsável</span>
+                </div>
+              )}
+
+              {/* Escopo */}
+              {effectiveTaxonomy.characteristics?.scope && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400">
+                  <span>{SCOPE_CONFIG[effectiveTaxonomy.characteristics.scope]?.icon}</span>
+                  <span>{SCOPE_CONFIG[effectiveTaxonomy.characteristics.scope]?.label}</span>
+                </div>
+              )}
+            </div>
+
+            {effectiveTaxonomy.financialNature && (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                {FINANCIAL_NATURE_CONFIG[effectiveTaxonomy.financialNature]?.description}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
         {/* 3.1 TRANSACTION SPLIT BREAKDOWN (DETALHAMENTO ANALÍTICO) */}
         {/* ========================================================================= */}
-        {transaction.hasComponents && transaction.components && transaction.components.length > 0 && (
+        {Array.isArray(transaction.components) && transaction.components.length > 0 && (
           <div className="p-4 rounded-[22px] bg-white dark:bg-[#2C2C2E] border border-emerald-500/30 dark:border-emerald-500/20 space-y-3.5 shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
               <div className="flex items-center gap-2">
@@ -597,7 +712,24 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                           {compSub && (
                             <>
                               <span>•</span>
-                              <span className="text-purple-600 dark:text-purple-400 font-semibold">{compSub.name}</span>
+                              <span className="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1">
+                                {compSub.icon && <span>{compSub.icon}</span>}
+                                <span>{compSub.name}</span>
+                              </span>
+                            </>
+                          )}
+                          {comp.financialNature && (
+                            <>
+                              <span>•</span>
+                              <span
+                                className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase text-white"
+                                style={{
+                                  backgroundColor:
+                                    FINANCIAL_NATURE_CONFIG[comp.financialNature]?.color || '#8b5cf6',
+                                }}
+                              >
+                                {FINANCIAL_NATURE_CONFIG[comp.financialNature]?.badge || comp.financialNature}
+                              </span>
                             </>
                           )}
                           {recurrenceBadge && (

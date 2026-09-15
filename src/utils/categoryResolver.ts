@@ -56,6 +56,19 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'sub-comp-clubes-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
   'clubes-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
   'clube-beneficios': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-clubes-assinaturas', name: 'Compras & Pessoal', icon: '🛍️' },
+  // Descontaminação Árvore V3 (Assinaturas, Seguros, Tarifas, Reembolsos)
+  'cat-desp-assinaturas': { categoryId: 'cat-desp-lazer', subcategoryId: 'sub-lazer-streaming', name: 'Lazer & Entretenimento', icon: '🎮' },
+  'assinaturas': { categoryId: 'cat-desp-lazer', subcategoryId: 'sub-lazer-streaming', name: 'Lazer & Entretenimento', icon: '🎮' },
+  'servicos-digitais': { categoryId: 'cat-desp-compras-pessoal', subcategoryId: 'sub-comp-software', name: 'Compras & Pessoal', icon: '🛍️' },
+  'cat-desp-seguros': { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-seguro', name: 'Transporte', icon: '🚗' },
+  'seguros': { categoryId: 'cat-desp-transporte', subcategoryId: 'sub-trans-seguro', name: 'Transporte', icon: '🚗' },
+  'cat-desp-tarifas': { categoryId: 'cat-desp-financeiro', subcategoryId: 'sub-fin-tarifas', name: 'Financeiro', icon: '💳' },
+  'tarifas-bancarias': { categoryId: 'cat-desp-financeiro', subcategoryId: 'sub-fin-tarifas', name: 'Financeiro', icon: '💳' },
+  'cat-rec-reembolsos': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
+  'reembolsos': { categoryId: 'cat-rec-beneficios-outras', name: 'Benefícios, Reembolsos & Outros', icon: '✨' },
+  'sub-mor-condominio-taxa': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
+  'sub-mor-taxa-extra': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
+  'sub-mor-reserva-salao': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
 };
 
 export function splitEmojiFromName(name: string, fallbackIcon?: string): { name: string; cleanName: string; icon?: string } {

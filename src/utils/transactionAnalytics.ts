@@ -1,6 +1,9 @@
 import type {
+  FinancialNature,
   Transaction,
+  TransactionCharacteristics,
   TransactionComponent,
+  TransactionRelationships,
   TransactionStatus,
   TransactionType,
 } from '../types';
@@ -12,6 +15,9 @@ export interface AnalyticalEntry {
   amount: number;
   categoryId: string;
   subcategoryId?: string;
+  financialNature?: FinancialNature;
+  characteristics?: TransactionCharacteristics;
+  relationships?: TransactionRelationships;
   date: string;
   type: TransactionType;
   status: TransactionStatus;
@@ -102,6 +108,9 @@ export const getAnalyticalEntries = (transaction: Transaction): AnalyticalEntry[
       amount: fromCents(toCents(comp.amount)),
       categoryId: comp.categoryId || transaction.categoryId,
       subcategoryId: comp.subcategoryId,
+      financialNature: comp.financialNature || transaction.financialNature,
+      characteristics: comp.characteristics || transaction.characteristics,
+      relationships: comp.relationships || transaction.relationships,
       date: transaction.date,
       type: transaction.type,
       status: transaction.status,
@@ -121,6 +130,9 @@ export const getAnalyticalEntries = (transaction: Transaction): AnalyticalEntry[
       amount: fromCents(toCents(transaction.amount)),
       categoryId: transaction.categoryId,
       subcategoryId: transaction.subcategoryId,
+      financialNature: transaction.financialNature,
+      characteristics: transaction.characteristics,
+      relationships: transaction.relationships,
       date: transaction.date,
       type: transaction.type,
       status: transaction.status,

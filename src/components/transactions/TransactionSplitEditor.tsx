@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { Plus, Trash2, CheckCircle2, AlertTriangle, Layers, Sparkles } from 'lucide-react';
-import type { Category, ComponentRepetitionType, TransactionComponent } from '../../types';
+import type { Category, ComponentRepetitionType, FinancialNature, TransactionComponent } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { toCents, fromCents, validateTransactionComponents } from '../../utils/transactionAnalytics';
+import { FINANCIAL_NATURE_CONFIG, inferSmartTaxonomy } from '../../utils/smartTaxonomy';
 
 export type SplitFormItem = {
   id?: string;
@@ -10,6 +11,8 @@ export type SplitFormItem = {
   amount: number;
   categoryId: string;
   subcategoryId?: string;
+  financialNature?: FinancialNature;
+  necessity?: 'essential' | 'discretionary' | 'strategic';
   type?: ComponentRepetitionType;
   currentInstallment?: number;
   totalInstallments?: number;
@@ -56,25 +59,44 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
   );
 
   const handleAddItem = (presetDescription?: string, presetType?: ComponentRepetitionType) => {
-    // Se houver saldo restante a distribuir, usa como valor inicial do item; senão 0
-    const remainingValue = validation.difference > 0 ? validation.difference : 0;
+    const inferred = inferSmartTaxonomy({
+      description: presetDescription || '',
+      type: 'expense',
+      categoryId: '',
+      subcategoryId: '',
+    });
 
     const newItem: SplitFormItem = {
       id: `comp-draft-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       description: presetDescription || '',
-      amount: remainingValue,
-      categoryId: defaultCategoryId || expenseCategories[0]?.id || '',
-      subcategoryId: defaultSubcategoryId || '',
+      amount: 0,
+      categoryId: '',
+      subcategoryId: '',
+      financialNature: inferred.financialNature,
+      necessity: inferred.characteristics.necessity,
       type: presetType || (isRecurring ? 'fixed' : 'one_time'),
-      currentInstallment: presetType === 'temporary' ? 1 : undefined,
-      totalInstallments: presetType === 'temporary' ? 10 : undefined,
+      currentInstallment: undefined,
+      totalInstallments: undefined,
     };
 
     onChange([...components, newItem]);
   };
 
   const handleUpdateItem = (index: number, patch: Partial<SplitFormItem>) => {
-    const updated = components.map((item, i) => (i === index ? { ...item, ...patch } : item));
+    const current = components[index];
+    let nextFinancialNature = patch.financialNature !== undefined ? patch.financialNature : current.financialNature;
+    if (patch.description && !current.financialNature) {
+      const inferred = inferSmartTaxonomy({
+        description: patch.description,
+        type: 'expense',
+        categoryId: patch.categoryId || current.categoryId,
+        subcategoryId: patch.subcategoryId || current.subcategoryId,
+      });
+      nextFinancialNature = inferred.financialNature;
+    }
+    const updated = components.map((item, i) =>
+      i === index ? { ...item, ...patch, financialNature: nextFinancialNature } : item
+    );
     onChange(updated);
   };
 
@@ -86,7 +108,7 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
     if (validation.difference <= 0) return;
 
     if (components.length === 0) {
-      handleAddItem('Taxa principal');
+      handleAddItem();
       return;
     }
 
@@ -178,20 +200,39 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
                 {/* Descrição do Item */}
-                <div className="sm:col-span-4">
+                <div className="sm:col-span-8">
                   <label className={labelClass}>Descrição do item</label>
                   <input
                     type="text"
                     className={fieldClass}
-                    placeholder="Ex: Taxa ordinária, Água..."
+                    placeholder="Ex: Taxa ordinária, Água, Material..."
                     value={item.description}
                     onChange={e => handleUpdateItem(index, { description: e.target.value })}
                     required
                   />
                 </div>
 
-                {/* Categoria */}
-                <div className="sm:col-span-3">
+                {/* Valor */}
+                <div className="sm:col-span-4">
+                  <label className={labelClass}>Valor (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    className={`${fieldClass} font-bold text-right`}
+                    value={item.amount || ''}
+                    onChange={e =>
+                      handleUpdateItem(index, {
+                        amount: Math.max(0, parseFloat(e.target.value) || 0),
+                      })
+                    }
+                    required
+                  />
+                </div>
+
+                {/* Categoria (Largura ampla para evitar corte) */}
+                <div className="sm:col-span-6">
                   <label className={labelClass}>Categoria</label>
                   <select
                     className={fieldClass}
@@ -204,7 +245,7 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                     }
                     required
                   >
-                    <option value="">Selecione...</option>
+                    <option value="">Selecione uma categoria...</option>
                     {expenseCategories.map(cat => (
                       <option key={cat.id} value={cat.id}>
                         {cat.icon} {cat.name}
@@ -213,15 +254,21 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                   </select>
                 </div>
 
-                {/* Subcategoria */}
-                <div className="sm:col-span-3">
+                {/* Subcategoria (Largura ampla para evitar corte) */}
+                <div className="sm:col-span-6">
                   <label className={labelClass}>Subcategoria</label>
                   <select
                     className={fieldClass}
                     value={item.subcategoryId || ''}
                     onChange={e => handleUpdateItem(index, { subcategoryId: e.target.value })}
                   >
-                    <option value="">Nenhuma</option>
+                    <option value="">
+                      {!item.categoryId
+                        ? 'Selecione primeiro uma categoria'
+                        : selectedCategory?.subcategories && selectedCategory.subcategories.length > 0
+                        ? `Nenhuma (${selectedCategory.subcategories.length} disponíveis)`
+                        : 'Sem subcategorias cadastradas'}
+                    </option>
                     {selectedCategory?.subcategories?.map(sub => (
                       <option key={sub.id} value={sub.id}>
                         {sub.icon ? `${sub.icon} ` : ''}
@@ -231,22 +278,35 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                   </select>
                 </div>
 
-                {/* Valor */}
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Valor (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className={`${fieldClass} font-bold text-right`}
-                    value={item.amount || ''}
+                {/* Natureza Contábil deste item */}
+                <div className="sm:col-span-12 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                  <span className="text-slate-400 font-bold uppercase text-[9.5px]">Natureza Contábil:</span>
+                  <select
+                    className="px-2 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                    value={item.financialNature || 'expense'}
                     onChange={e =>
                       handleUpdateItem(index, {
-                        amount: Math.max(0, parseFloat(e.target.value) || 0),
+                        financialNature: e.target.value as FinancialNature,
                       })
                     }
-                    required
-                  />
+                  >
+                    {Object.values(FINANCIAL_NATURE_CONFIG).map(cfg => (
+                      <option key={cfg.id} value={cfg.id}>
+                        {cfg.icon} {cfg.label}
+                      </option>
+                    ))}
+                  </select>
+                  {item.financialNature && (
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase"
+                      style={{
+                        backgroundColor:
+                          FINANCIAL_NATURE_CONFIG[item.financialNature]?.color || '#8b5cf6',
+                      }}
+                    >
+                      {FINANCIAL_NATURE_CONFIG[item.financialNature]?.badge}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -258,11 +318,15 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                     <select
                       className={fieldClass}
                       value={item.type || 'fixed'}
-                      onChange={e =>
+                      onChange={e => {
+                        const newType = e.target.value as ComponentRepetitionType;
                         handleUpdateItem(index, {
-                          type: e.target.value as ComponentRepetitionType,
-                        })
-                      }
+                          type: newType,
+                          ...(newType !== 'temporary'
+                            ? { currentInstallment: undefined, totalInstallments: undefined }
+                            : {}),
+                        });
+                      }}
                     >
                       <option value="fixed">Fixo (copiar todo mês)</option>
                       <option value="variable">Variável (confirmar valor a cada mês)</option>
@@ -278,13 +342,15 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                         <input
                           type="number"
                           min="1"
+                          placeholder="Ex: 1"
                           className={fieldClass}
-                          value={item.currentInstallment || 1}
-                          onChange={e =>
+                          value={item.currentInstallment !== undefined ? item.currentInstallment : ''}
+                          onChange={e => {
+                            const val = e.target.value;
                             handleUpdateItem(index, {
-                              currentInstallment: parseInt(e.target.value, 10) || 1,
-                            })
-                          }
+                              currentInstallment: val === '' ? undefined : parseInt(val, 10) || undefined,
+                            });
+                          }}
                         />
                       </div>
                       <div>
@@ -293,13 +359,15 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                           type="number"
                           min="2"
                           max="120"
+                          placeholder="Ex: 12"
                           className={fieldClass}
-                          value={item.totalInstallments || 10}
-                          onChange={e =>
+                          value={item.totalInstallments !== undefined ? item.totalInstallments : ''}
+                          onChange={e => {
+                            const val = e.target.value;
                             handleUpdateItem(index, {
-                              totalInstallments: parseInt(e.target.value, 10) || 10,
-                            })
-                          }
+                              totalInstallments: val === '' ? undefined : parseInt(val, 10) || undefined,
+                            });
+                          }}
                         />
                       </div>
                     </div>

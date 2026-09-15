@@ -1,6 +1,8 @@
 import type {
   CardInstallmentSeries,
   Transaction,
+  TransactionComponent,
+  TransactionComponentTemplate,
   TransactionStatus,
 } from '../types';
 
@@ -26,6 +28,9 @@ export interface BuildCardInstallmentSeriesInput {
   attachmentUrl?: string;
   attachmentName?: string;
   createdAt: string;
+  hasComponents?: boolean;
+  components?: Array<Omit<TransactionComponent, 'id' | 'transactionId'> & { id?: string; transactionId?: string }>;
+  componentTemplates?: TransactionComponentTemplate[];
 }
 
 export interface CardInstallmentTimelineItem {
@@ -121,6 +126,24 @@ export const buildCardInstallmentSeries = (
     input.amountInputMode,
     input.totalInstallments,
   );
+  const hasSplitComponents = Boolean(
+    input.hasComponents &&
+    Array.isArray(input.components) &&
+    input.components.length > 0
+  );
+
+  const componentTemplates: TransactionComponentTemplate[] | undefined = hasSplitComponents
+    ? (input.componentTemplates || input.components!.map(c => ({
+        description: c.description,
+        amount: c.amount,
+        categoryId: c.categoryId,
+        subcategoryId: c.subcategoryId,
+        type: c.type,
+        recurrenceConfig: c.recurrenceConfig,
+        notes: c.notes,
+      })))
+    : undefined;
+
   const series: CardInstallmentSeries = {
     id: input.seriesId,
     kind: 'card_installment',
@@ -135,6 +158,7 @@ export const buildCardInstallmentSeries = (
     totalInstallments: input.totalInstallments,
     firstTrackedInstallment: input.firstTrackedInstallment,
     amountInputMode: input.amountInputMode,
+    componentTemplates,
     createdAt: input.createdAt,
     updatedAt: input.createdAt,
   };
@@ -147,8 +171,56 @@ export const buildCardInstallmentSeries = (
         input.firstInvoiceMonth,
         sequence - input.firstTrackedInstallment,
       );
+      const txId = `tx-${input.seriesId}-${sequence}`;
+
+      let transactionComponents: TransactionComponent[] | undefined = undefined;
+      if (hasSplitComponents && input.components && input.components.length > 0) {
+        if (input.amountInputMode === 'per_installment') {
+          transactionComponents = input.components.map((c, cIdx) => ({
+            id: `comp-${txId}-${cIdx + 1}`,
+            transactionId: txId,
+            description: c.description,
+            amount: c.amount,
+            categoryId: c.categoryId,
+            subcategoryId: c.subcategoryId,
+            type: c.type,
+            financialNature: c.financialNature,
+            characteristics: c.characteristics,
+            relationships: c.relationships,
+            recurrenceConfig: c.recurrenceConfig,
+            notes: c.notes,
+          }));
+        } else {
+          const fullTotal = totalCents / 100;
+          let runningCompSum = 0;
+          transactionComponents = input.components.map((c, cIdx) => {
+            const isLast = cIdx === input.components!.length - 1;
+            let partAmount = Math.round(((c.amount / (fullTotal > 0 ? fullTotal : 1)) * installmentAmount) * 100) / 100;
+            if (isLast) {
+              partAmount = Math.max(0, Math.round((installmentAmount - runningCompSum) * 100) / 100);
+            } else {
+              runningCompSum = Math.round((runningCompSum + partAmount) * 100) / 100;
+            }
+            return {
+              id: `comp-${txId}-${cIdx + 1}`,
+              transactionId: txId,
+              description: c.description,
+              amount: partAmount,
+              categoryId: c.categoryId,
+              subcategoryId: c.subcategoryId,
+              type: c.type,
+              financialNature: c.financialNature,
+              characteristics: c.characteristics,
+              relationships: c.relationships,
+              recurrenceConfig: c.recurrenceConfig,
+              notes: c.notes,
+            };
+          });
+        }
+      }
+
       return {
-        id: `tx-${input.seriesId}-${sequence}`,
+        id: txId,
         description: `${series.description} (${sequence}/${input.totalInstallments})`,
         amount: installmentAmount,
         type: 'expense',
@@ -161,6 +233,8 @@ export const buildCardInstallmentSeries = (
         cardId: input.cardId,
         status: 'pending',
         recurring: false,
+        hasComponents: Boolean(hasSplitComponents && transactionComponents && transactionComponents.length > 0),
+        components: transactionComponents,
         seriesId: series.id,
         seriesSequence: sequence,
         occurrenceKey: `card:${sequence}`,

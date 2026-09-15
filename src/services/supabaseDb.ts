@@ -232,6 +232,9 @@ export class SupabaseDbService {
             categoryId: r.category_id,
             subcategoryId: r.subcategory_id || undefined,
             type: r.type,
+            financialNature: r.financial_nature || undefined,
+            characteristics: r.characteristics || undefined,
+            relationships: r.relationships || undefined,
             recurrenceConfig: r.recurrence_config || undefined,
             notes: r.notes || undefined,
             isRemainder: Boolean(r.is_remainder),
@@ -264,6 +267,9 @@ export class SupabaseDbService {
             date: r.date,
             categoryId: r.category_id,
             subcategoryId: r.subcategory_id,
+            financialNature: r.financial_nature || undefined,
+            characteristics: r.characteristics || undefined,
+            relationships: r.relationships || undefined,
             accountId: r.account_id,
             targetAccountId: r.target_account_id,
             cardId: r.card_id,
@@ -615,12 +621,49 @@ export class SupabaseDbService {
             reimbursement_for_transaction_id: t.reimbursementForTransactionId,
             reimbursement_for_series_id: t.reimbursementForSeriesId,
           } : {}),
+          has_components: Boolean(t.hasComponents),
+          financial_nature: t.financialNature || null,
+          characteristics: t.characteristics || null,
+          relationships: t.relationships || null,
           created_at: t.createdAt || new Date().toISOString(),
           debt_id: t.debtId || null,
           debt_installment_number: t.debtInstallmentNumber ?? null,
         }));
         const { error } = await supabase.from('transactions').upsert(rows);
         if (error) throw error;
+
+        // Sincronização dos componentes em lote se suportado
+        if (this.transactionComponentsSupported) {
+          const allComps: any[] = [];
+          for (const t of activeTxs) {
+            if (t.hasComponents && Array.isArray(t.components) && t.components.length > 0) {
+              const now = new Date().toISOString();
+              for (const c of t.components) {
+                allComps.push({
+                  id: c.id,
+                  transaction_id: t.id,
+                  user_id: targetUserId,
+                  description: c.description,
+                  amount: c.amount,
+                  category_id: c.categoryId,
+                  subcategory_id: c.subcategoryId || null,
+                  type: c.type || 'one_time',
+                  financial_nature: c.financialNature || null,
+                  characteristics: c.characteristics || null,
+                  relationships: c.relationships || null,
+                  recurrence_config: c.recurrenceConfig || null,
+                  notes: c.notes || null,
+                  is_remainder: Boolean(c.isRemainder),
+                  created_at: c.createdAt || now,
+                  updated_at: now,
+                });
+              }
+            }
+          }
+          if (allComps.length > 0) {
+            await supabase.from('transaction_components').upsert(allComps);
+          }
+        }
       } else {
         // User cleaned transactions: ensure Supabase transactions are fully deleted
         await supabase.from('transactions').delete().eq('user_id', targetUserId);
@@ -793,6 +836,9 @@ export class SupabaseDbService {
           reimbursement_for_series_id: t.reimbursementForSeriesId,
         } : {}),
         has_components: Boolean(t.hasComponents),
+        financial_nature: t.financialNature || null,
+        characteristics: t.characteristics || null,
+        relationships: t.relationships || null,
         created_at: t.createdAt || new Date().toISOString(),
       });
 
@@ -811,6 +857,9 @@ export class SupabaseDbService {
             category_id: c.categoryId,
             subcategory_id: c.subcategoryId || null,
             type: c.type || 'one_time',
+            financial_nature: c.financialNature || null,
+            characteristics: c.characteristics || null,
+            relationships: c.relationships || null,
             recurrence_config: c.recurrenceConfig || null,
             notes: c.notes || null,
             is_remainder: Boolean(c.isRemainder),

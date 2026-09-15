@@ -668,6 +668,15 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                                 </span>
                               </>
                             )}
+                            {t.components && t.components.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                                  <Layers className="w-2.5 h-2.5" />
+                                  {t.components.length} itens
+                                </span>
+                              </>
+                            )}
                             {t.isThirdParty && (
                               <>
                                 <span>•</span>
@@ -1644,29 +1653,48 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       >
                         <div className="flex items-center gap-3 min-w-0 pr-2">
                           <div
-                            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black"
+                            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black select-none shadow-2xs"
                             style={{
                               backgroundColor: (cat?.color || '#7c4dff') + '20',
                               color: cat?.color || '#7c4dff',
                             }}
                           >
-                            {cat?.icon || '💳'}
+                            {cat?.subIcon || cat?.icon || '💳'}
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="tx-description font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug break-words">
                                 {t.description}
                               </span>
                               {t.installments && t.installments.total > 1 && (
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
                                   {t.installments.current}/{t.installments.total}
                                 </span>
                               )}
+                              {t.hasComponents && Array.isArray(t.components) && t.components.length > 0 && (
+                                <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                                  {t.components.length} itens
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                              <span className="font-mono">{formatDate(t.date)}</span>
-                              {cat?.name && <span>• {cat.name}</span>}
-                              {cat?.subName && <span>/ {cat.subName}</span>}
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span className="font-mono text-slate-400 shrink-0">{formatDate(t.date)}</span>
+                              {cat?.subName ? (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                                  <span className="font-semibold text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
+                                    {cat.subIcon && <span>{cat.subIcon}</span>}
+                                    <span>{cat.subName}</span>
+                                  </span>
+                                  <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                                  <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold shrink-0">{cat.name}</span>
+                                </>
+                              ) : cat?.name ? (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                                  <span className="font-bold text-slate-600 dark:text-slate-300 shrink-0">{cat.name}</span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
                         </div>
