@@ -174,7 +174,52 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     transaction.tags?.includes('fatura') ||
     transaction.description.toLowerCase().startsWith('pagamento fatura');
 
-  // If it is an invoice payment, extract card and month to find composing transactions
+  // Detalhamento analítico de divisões (splits), com fallback para séries recorrentes (ex: condomínio)
+  const effectiveComponents = useMemo(() => {
+    if (Array.isArray(transaction?.components) && transaction.components.length > 0) {
+      return transaction.components;
+    }
+    if (Array.isArray(propTransaction?.components) && propTransaction.components.length > 0) {
+      return propTransaction.components;
+    }
+    const seriesId = transaction?.seriesId || propTransaction?.seriesId;
+    const targetDate = transaction?.date || propTransaction?.date || '';
+    const sequence = transaction?.seriesSequence || propTransaction?.seriesSequence || 1;
+
+    if (seriesId) {
+      const series = transactionSeries.find(s => s.id === seriesId);
+      if (series && series.kind === 'recurring_expense' && Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
+        return series.componentTemplates.map((tmpl, idx) => {
+          let recurrenceConfig = tmpl.recurrenceConfig ? { ...tmpl.recurrenceConfig } : undefined;
+          if (tmpl.type === 'temporary' && recurrenceConfig?.enabled) {
+            const startInstallment = recurrenceConfig.currentInstallment || 1;
+            const projectedInstallment = startInstallment + (sequence - 1);
+            recurrenceConfig.currentInstallment = projectedInstallment;
+          }
+          const compId = (tmpl as any).id || `tmpl-${idx}`;
+          return {
+            id: `comp-${series.id}-${targetDate}-${compId}`,
+            transactionId: transaction?.id || propTransaction?.id || '',
+            description: tmpl.description,
+            amount: tmpl.amount,
+            categoryId: tmpl.categoryId || series.categoryId,
+            subcategoryId: tmpl.subcategoryId || series.subcategoryId,
+            type: tmpl.type,
+            recurrenceConfig,
+            notes: tmpl.notes,
+            financialNature: (tmpl as any).financialNature,
+            characteristics: (tmpl as any).characteristics,
+            createdAt: `${targetDate}T12:00:00.000Z`,
+            updatedAt: `${targetDate}T12:00:00.000Z`,
+          };
+        });
+      }
+    }
+    return [];
+  }, [transaction, propTransaction, transactionSeries]);
+
+  // If this transaction is a credit card invoice payment (e.g. "Pagamento Fatura"),
+  // find the corresponding credit card and compute the breakdown of expenses included in that invoice.
   const invoiceComposingData = useMemo(() => {
     if (!isInvoicePayment) return null;
 
@@ -657,9 +702,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 3.1 TRANSACTION SPLIT BREAKDOWN (DETALHAMENTO ANALÍTICO) */}
+        {/* 3.1 TRANSACTION SPLIT BREAKDOWN (DETALHAMENTO ANALÍTICO / COMPOSIÇÃO DA TAXA) */}
         {/* ========================================================================= */}
-        {Array.isArray(transaction.components) && transaction.components.length > 0 && (
+        {effectiveComponents.length > 0 && (
           <div className="p-4 rounded-[22px] bg-white dark:bg-[#2C2C2E] border border-emerald-500/30 dark:border-emerald-500/20 space-y-3.5 shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
               <div className="flex items-center gap-2">
@@ -668,10 +713,10 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 </span>
                 <div>
                   <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    Composição Analítica ({transaction.components.length} divisões)
+                    Composição da Taxa ({effectiveComponents.length} {effectiveComponents.length === 1 ? 'item' : 'itens'})
                   </h4>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    O saldo financeiro movimentou apenas o valor total; cada item distribui em relatórios e orçamentos.
+                    O débito na conta é pelo valor integral; cada item discriminado abaixo distribui em relatórios e orçamentos.
                   </p>
                 </div>
               </div>
@@ -681,9 +726,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              {transaction.components.map(comp => {
-                const compCat = categories.find(c => c.id === comp.categoryId);
-                const compSub = compCat?.subcategories?.find(s => s.id === comp.subcategoryId);
+              {effectiveComponents.map(comp => {
+                const resolvedComp = resolveCategory(categories, comp.categoryId, comp.subcategoryId, transaction.type);
+                const compCatName = resolvedComp.name || 'Geral';
+                const compSubName = resolvedComp.subName;
+                const compIcon = resolvedComp.subIcon || resolvedComp.icon || '📁';
                 const recurrenceBadge = comp.recurrenceConfig?.enabled
                   ? comp.type === 'temporary'
                     ? `Parcela ${comp.recurrenceConfig.currentInstallment || 1}/${comp.recurrenceConfig.totalInstallments || '?'}`
@@ -699,7 +746,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <span className="text-base shrink-0">
-                        {compSub?.icon || compCat?.icon || '📁'}
+                        {compIcon}
                       </span>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-900 dark:text-white truncate">
@@ -707,14 +754,14 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                         </p>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 flex-wrap">
                           <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            {compCat?.name || 'Geral'}
+                            {compCatName}
                           </span>
-                          {compSub && (
+                          {compSubName && (
                             <>
                               <span>•</span>
                               <span className="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1">
-                                {compSub.icon && <span>{compSub.icon}</span>}
-                                <span>{compSub.name}</span>
+                                {resolvedComp.subIcon && <span>{resolvedComp.subIcon}</span>}
+                                <span>{compSubName}</span>
                               </span>
                             </>
                           )}
@@ -725,10 +772,10 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                                 className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase text-white"
                                 style={{
                                   backgroundColor:
-                                    FINANCIAL_NATURE_CONFIG[comp.financialNature]?.color || '#8b5cf6',
+                                    FINANCIAL_NATURE_CONFIG[comp.financialNature as keyof typeof FINANCIAL_NATURE_CONFIG]?.color || '#8b5cf6',
                                 }}
                               >
-                                {FINANCIAL_NATURE_CONFIG[comp.financialNature]?.badge || comp.financialNature}
+                                {FINANCIAL_NATURE_CONFIG[comp.financialNature as keyof typeof FINANCIAL_NATURE_CONFIG]?.badge || comp.financialNature}
                               </span>
                             </>
                           )}

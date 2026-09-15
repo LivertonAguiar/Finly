@@ -215,6 +215,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       Array.isArray(tx?.components) &&
       tx.components.length > 0
     );
+    const seriesTemplates = editingSeries?.kind === 'recurring_expense' && Array.isArray(editingSeries.componentTemplates) && editingSeries.componentTemplates.length > 0
+      ? editingSeries.componentTemplates
+      : null;
+
     if (txHasComponents && tx?.components) {
       setHasSplit(true);
       setSplitItems(
@@ -230,6 +234,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           currentInstallment: c.recurrenceConfig?.currentInstallment,
           totalInstallments: c.recurrenceConfig?.totalInstallments,
           notes: c.notes,
+        })),
+      );
+    } else if (seriesTemplates) {
+      setHasSplit(true);
+      setSplitItems(
+        seriesTemplates.map((t, idx) => ({
+          id: (t as any).id || `tmpl-${idx}`,
+          description: t.description,
+          amount: t.amount,
+          categoryId: t.categoryId || tx?.categoryId || '',
+          subcategoryId: t.subcategoryId || tx?.subcategoryId || '',
+          type: t.type,
+          currentInstallment: t.recurrenceConfig?.currentInstallment,
+          totalInstallments: t.recurrenceConfig?.totalInstallments,
+          notes: t.notes,
         })),
       );
     } else {
@@ -720,6 +739,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         attachmentName,
         ignored: Boolean(txData.ignored),
         analyticsExclusionReason: txData.analyticsExclusionReason,
+        hasComponents: Boolean(hasSplit && splitItems.length > 0),
         componentTemplates: hasSplit && splitItems.length > 0 ? splitItems.map(item => ({
           description: item.description.trim() || 'Item sem descrição',
           amount: item.amount,
@@ -767,6 +787,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         frequency, defaultAmount: amountNumber, amountRules: [], tags: [...txData.tags],
         notes: txData.notes, attachmentUrl, attachmentName, ignored: Boolean(txData.ignored),
         analyticsExclusionReason: txData.analyticsExclusionReason, reminder: txData.reminder,
+        hasComponents: Boolean(hasSplit && splitItems.length > 0),
         componentTemplates: hasSplit && splitItems.length > 0 ? splitItems.map(item => ({
           description: item.description.trim() || 'Item sem descrição',
           amount: item.amount,

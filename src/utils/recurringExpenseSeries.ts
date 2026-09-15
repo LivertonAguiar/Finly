@@ -99,6 +99,63 @@ const amountForDate = (series: RecurringExpenseSeries, date: string) => {
   return rule?.amount ?? series.defaultAmount;
 };
 
+export const projectRecurringComponents = (
+  series: RecurringExpenseSeries,
+  date: string,
+  sequence: number,
+): TransactionComponent[] => {
+  const hasSeriesComponents = Boolean(
+    series.hasComponents ||
+    (Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0)
+  );
+  if (!hasSeriesComponents || !Array.isArray(series.componentTemplates) || series.componentTemplates.length === 0) {
+    return [];
+  }
+
+  const projectedComponents: TransactionComponent[] = [];
+
+  series.componentTemplates.forEach((tmpl, index) => {
+    // Regra para one_time: só gera na primeira ocorrência (sequence === 1)
+    if (tmpl.type === 'one_time' && sequence > 1) {
+      return;
+    }
+
+    // Regra para temporário: incrementa a parcela
+    let recurrenceConfig = tmpl.recurrenceConfig ? { ...tmpl.recurrenceConfig } : undefined;
+    if (tmpl.type === 'temporary' && recurrenceConfig?.enabled) {
+      const startInstallment = recurrenceConfig.currentInstallment || 1;
+      const projectedInstallment = startInstallment + (sequence - 1);
+      const total = recurrenceConfig.totalInstallments || 1;
+
+      // Se já ultrapassou o total de parcelas, não inclui nesta ocorrência
+      if (projectedInstallment > total) {
+        return;
+      }
+
+      recurrenceConfig.currentInstallment = projectedInstallment;
+    }
+
+    const compId = (tmpl as any).id || `tmpl-${index}`;
+    projectedComponents.push({
+      id: `comp-${series.id}-${date}-${compId}`,
+      transactionId: `tx-${series.id}-${date}`,
+      description: tmpl.description,
+      amount: tmpl.amount,
+      categoryId: tmpl.categoryId || series.categoryId,
+      subcategoryId: tmpl.subcategoryId || series.subcategoryId,
+      type: tmpl.type,
+      recurrenceConfig,
+      includeInReports: tmpl.includeInReports ?? true,
+      includeInBudget: tmpl.includeInBudget ?? true,
+      notes: tmpl.notes,
+      createdAt: `${date}T12:00:00.000Z`,
+      updatedAt: `${date}T12:00:00.000Z`,
+    });
+  });
+
+  return projectedComponents;
+};
+
 const buildOccurrence = (
   series: RecurringExpenseSeries,
   date: string,
@@ -126,54 +183,12 @@ const buildOccurrence = (
   let components: TransactionComponent[] | undefined = undefined;
   let occurrenceAmount = amountForDate(series, date);
 
-  if (series.hasComponents && Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
-    const projectedComponents: TransactionComponent[] = [];
-
-    series.componentTemplates.forEach((tmpl, index) => {
-      // Regra para one_time: só gera na primeira ocorrência (sequence === 1)
-      if (tmpl.type === 'one_time' && sequence > 1) {
-        return;
-      }
-
-      // Regra para temporário: incrementa a parcela
-      let recurrenceConfig = tmpl.recurrenceConfig ? { ...tmpl.recurrenceConfig } : undefined;
-      if (tmpl.type === 'temporary' && recurrenceConfig?.enabled) {
-        const startInstallment = recurrenceConfig.currentInstallment || 1;
-        const projectedInstallment = startInstallment + (sequence - 1);
-        const total = recurrenceConfig.totalInstallments || 1;
-
-        // Se já ultrapassou o total de parcelas, não inclui nesta ocorrência
-        if (projectedInstallment > total) {
-          return;
-        }
-
-        recurrenceConfig.currentInstallment = projectedInstallment;
-      }
-
-      const compId = (tmpl as any).id || `tmpl-${index}`;
-      projectedComponents.push({
-        id: `comp-${series.id}-${date}-${compId}`,
-        transactionId: `tx-${series.id}-${date}`,
-        description: tmpl.description,
-        amount: tmpl.amount,
-        categoryId: tmpl.categoryId || series.categoryId,
-        subcategoryId: tmpl.subcategoryId || series.subcategoryId,
-        type: tmpl.type,
-        recurrenceConfig,
-        includeInReports: tmpl.includeInReports ?? true,
-        includeInBudget: tmpl.includeInBudget ?? true,
-        notes: tmpl.notes,
-        createdAt: `${date}T12:00:00.000Z`,
-        updatedAt: `${date}T12:00:00.000Z`,
-      });
-    });
-
-    if (projectedComponents.length > 0) {
-      hasComponents = true;
-      components = projectedComponents;
-      const totalCents = projectedComponents.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
-      occurrenceAmount = Math.round(totalCents) / 100;
-    }
+  const projected = projectRecurringComponents(series, date, sequence);
+  if (projected.length > 0) {
+    hasComponents = true;
+    components = projected;
+    const totalCents = projected.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+    occurrenceAmount = Math.round(totalCents) / 100;
   }
 
   return {
@@ -232,8 +247,22 @@ export const reconcileRecurringExpenseSeries = ({
     const key = `recurring:${date}`;
     const existing = byOccurrence.get(key);
     if (existing) {
+      let changed = false;
+      let updated = { ...existing };
       if (existing.status === 'scheduled' && date <= today) {
-        const updated = { ...existing, status: 'pending' as const };
+        updated.status = 'pending';
+        changed = true;
+      }
+      // Se a série possui componentTemplates e a ocorrência existente não possui components, preenche-os
+      if ((!existing.components || existing.components.length === 0) && Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
+        const projected = projectRecurringComponents(series, date, index + 1);
+        if (projected.length > 0) {
+          updated.hasComponents = true;
+          updated.components = projected;
+          changed = true;
+        }
+      }
+      if (changed) {
         byOccurrence.set(key, updated);
         toUpdate.push(updated);
       }
