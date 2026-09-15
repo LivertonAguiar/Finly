@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.77.1",
+    "version": "1.1.77.2",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.1.zip",
-    "sha256": "29c0f181808584ec6057c6d2c2f5f254ab7d78548519bcf0d6882d51427eefd7",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.2.zip",
+    "sha256": "f53aa8dfed55a30b7a95c5734b66da51ed2802878b5bb14d5076bb8be52dccae",
     "mandatory": true,
     "releaseDate": "2026-09-14",
-    "notes": "Lançamento de despesas simplificado, seletor completo de subcategorias e melhorias de privacidade e publicação."
+    "notes": "BottomNav ampliado para ergonomia mobile e subcategoria Taxa Extra de Condomínio"
   }
 }
