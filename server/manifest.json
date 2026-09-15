@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.76/finly-v1.1.76.apk"
   },
   "web": {
-    "version": "1.1.76.1",
+    "version": "1.1.76.2",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.76.1.zip",
-    "sha256": "411363d31c7e43842248e2850a43d71e31e6091c29529bd539c9027621856267",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.76.2.zip",
+    "sha256": "f2679a8ebfa90e8b6c0871d4921ecf08b19138df77c280df82ac0cc1358bc4b8",
     "mandatory": true,
-    "releaseDate": "2026-09-14",
-    "notes": "Detalhamento de transações e divisão analítica por categorias (Transaction Splits), orçamentos e relatórios sem dupla contabilização."
+    "releaseDate": "2026-09-15",
+    "notes": "Ajuste na listagem de categorias, busca, remocao de valores pre-preenchidos e correcoes visuais"
   }
 }
