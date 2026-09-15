@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.77.2",
+    "version": "1.1.77.3",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.2.zip",
-    "sha256": "f53aa8dfed55a30b7a95c5734b66da51ed2802878b5bb14d5076bb8be52dccae",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.3.zip",
+    "sha256": "e0cc243b4765213cadbdd85825f2e1807548bba4d8c2ac714582dfef4c0df85e",
     "mandatory": true,
     "releaseDate": "2026-09-14",
-    "notes": "BottomNav ampliado para ergonomia mobile e subcategoria Taxa Extra de Condomínio"
+    "notes": "Mascara de gradiente suave no rodape para isolar barra flutuante"
   }
 }
