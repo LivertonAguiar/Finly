@@ -47,7 +47,9 @@ assert.match(workflow, /if: github\.event_name != 'pull_request'/u);
 assert.match(workflow, /actions\/checkout@v5/u);
 assert.match(workflow, /actions\/setup-node@v5/u);
 assert.match(workflow, /actions\/setup-java@v5/u);
-assert.match(workflow, /android-actions\/setup-android@v4/u);
+assert.doesNotMatch(workflow, /android-actions\/setup-android/u);
+assert.match(workflow, /Validar Android SDK do Runner/u);
+assert.match(workflow, /ANDROID_SDK_ROOT=\$SDK_ROOT/u);
 
 assert.match(deployVps, /Get-FileHash/u);
 assert.match(deployVps, /bundle OTA difere do manifesto/u);

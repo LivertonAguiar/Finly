@@ -76,9 +76,19 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: 📱 Configurar Android SDK
+      - name: 📱 Validar Android SDK do Runner
         if: env.SKIP_RELEASE != 'true'
-        uses: android-actions/setup-android@v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "$SDK_ROOT" || ! -d "$SDK_ROOT" ]]; then
+            echo "::error::O runner não disponibilizou o Android SDK pré-instalado."
+            exit 1
+          fi
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "Android SDK pré-instalado confirmado em $SDK_ROOT"
 
       - name: 🔄 Sincronizar Capacitor Android
         if: env.SKIP_RELEASE != 'true'

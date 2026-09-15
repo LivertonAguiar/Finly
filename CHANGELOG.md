@@ -16,7 +16,7 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
   - A API deixou de registrar o conteúdo das requisições e stores financeiros; o log conserva somente método, rota, IP e nomes dos campos.
 - **Publicação verificável**:
   - O GitHub Actions agora diferencia tag existente de release/APK realmente publicado e falha de forma explícita diante de tags órfãs.
-  - Adicionada confirmação final do APK oficial e atualização para `actions/setup-java@v5`.
+  - Adicionada confirmação final do APK oficial, ações compatíveis com Node 24 e uso validado do Android SDK pré-instalado no runner.
 
 ## [1.1.76] - 2026-09-14
 
