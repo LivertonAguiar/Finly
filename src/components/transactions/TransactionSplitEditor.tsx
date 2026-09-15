@@ -3,7 +3,8 @@ import { Plus, Trash2, CheckCircle2, AlertTriangle, Layers, Sparkles } from 'luc
 import type { Category, ComponentRepetitionType, FinancialNature, TransactionComponent } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { toCents, fromCents, validateTransactionComponents } from '../../utils/transactionAnalytics';
-import { FINANCIAL_NATURE_CONFIG, inferSmartTaxonomy } from '../../utils/smartTaxonomy';
+import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
+import { SubcategoryPicker } from '../ui/SubcategoryPicker';
 
 export type SplitFormItem = {
   id?: string;
@@ -84,18 +85,28 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
 
   const handleUpdateItem = (index: number, patch: Partial<SplitFormItem>) => {
     const current = components[index];
-    let nextFinancialNature = patch.financialNature !== undefined ? patch.financialNature : current.financialNature;
-    if (patch.description && !current.financialNature) {
+    const shouldReclassify = patch.description !== undefined
+      || patch.categoryId !== undefined
+      || patch.subcategoryId !== undefined;
+    let nextFinancialNature = current.financialNature;
+    let nextNecessity = current.necessity;
+    if (shouldReclassify) {
       const inferred = inferSmartTaxonomy({
-        description: patch.description,
+        description: patch.description ?? current.description,
         type: 'expense',
-        categoryId: patch.categoryId || current.categoryId,
-        subcategoryId: patch.subcategoryId || current.subcategoryId,
+        categoryId: patch.categoryId ?? current.categoryId,
+        subcategoryId: patch.subcategoryId ?? current.subcategoryId,
       });
       nextFinancialNature = inferred.financialNature;
+      nextNecessity = inferred.characteristics.necessity;
     }
     const updated = components.map((item, i) =>
-      i === index ? { ...item, ...patch, financialNature: nextFinancialNature } : item
+      i === index ? {
+        ...item,
+        ...patch,
+        financialNature: nextFinancialNature,
+        necessity: nextNecessity,
+      } : item
     );
     onChange(updated);
   };
@@ -257,56 +268,12 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                 {/* Subcategoria (Largura ampla para evitar corte) */}
                 <div className="sm:col-span-6">
                   <label className={labelClass}>Subcategoria</label>
-                  <select
-                    className={fieldClass}
+                  <SubcategoryPicker
                     value={item.subcategoryId || ''}
-                    onChange={e => handleUpdateItem(index, { subcategoryId: e.target.value })}
-                  >
-                    <option value="">
-                      {!item.categoryId
-                        ? 'Selecione primeiro uma categoria'
-                        : selectedCategory?.subcategories && selectedCategory.subcategories.length > 0
-                        ? `Nenhuma (${selectedCategory.subcategories.length} disponíveis)`
-                        : 'Sem subcategorias cadastradas'}
-                    </option>
-                    {selectedCategory?.subcategories?.map(sub => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.icon ? `${sub.icon} ` : ''}
-                        {sub.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Natureza Contábil deste item */}
-                <div className="sm:col-span-12 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                  <span className="text-slate-400 font-bold uppercase text-[9.5px]">Natureza Contábil:</span>
-                  <select
-                    className="px-2 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-                    value={item.financialNature || 'expense'}
-                    onChange={e =>
-                      handleUpdateItem(index, {
-                        financialNature: e.target.value as FinancialNature,
-                      })
-                    }
-                  >
-                    {Object.values(FINANCIAL_NATURE_CONFIG).map(cfg => (
-                      <option key={cfg.id} value={cfg.id}>
-                        {cfg.icon} {cfg.label}
-                      </option>
-                    ))}
-                  </select>
-                  {item.financialNature && (
-                    <span
-                      className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase"
-                      style={{
-                        backgroundColor:
-                          FINANCIAL_NATURE_CONFIG[item.financialNature]?.color || '#8b5cf6',
-                      }}
-                    >
-                      {FINANCIAL_NATURE_CONFIG[item.financialNature]?.badge}
-                    </span>
-                  )}
+                    disabled={!item.categoryId || !selectedCategory?.subcategories?.length}
+                    subcategories={selectedCategory?.subcategories}
+                    onChange={value => handleUpdateItem(index, { subcategoryId: value })}
+                  />
                 </div>
               </div>
 

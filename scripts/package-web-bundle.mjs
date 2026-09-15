@@ -21,6 +21,12 @@ const distDir = path.join(rootDir, 'dist');
 const manifestPath = path.join(rootDir, 'server', 'manifest.json');
 const bundlesDir = path.join(rootDir, 'server', 'public', 'bundles');
 const packageJsonPath = path.join(rootDir, 'package.json');
+const releaseDate = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Fortaleza',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
 
 // Ensure dist directory exists
 if (!existsSync(distDir)) {
@@ -48,7 +54,7 @@ let manifest = {
     bundleUrl: '',
     sha256: '',
     mandatory: true,
-    releaseDate: new Date().toISOString().split('T')[0],
+    releaseDate,
     notes: 'Atualização OTA do bundle web do Finly.',
   },
 };
@@ -147,7 +153,7 @@ manifest.web = {
   bundleUrl: bundlePublicUrl,
   sha256,
   mandatory,
-  releaseDate: new Date().toISOString().split('T')[0],
+  releaseDate,
   notes,
 };
 

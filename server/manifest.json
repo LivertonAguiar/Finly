@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.76",
+    "version": "1.1.77",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.76/finly-v1.1.76.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.76.3",
+    "version": "1.1.77.1",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.76.3.zip",
-    "sha256": "1d835f179d19b1a52844a57b7539c4e32a217350be6cb586bc387ea9a5c7578f",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.1.zip",
+    "sha256": "29c0f181808584ec6057c6d2c2f5f254ab7d78548519bcf0d6882d51427eefd7",
     "mandatory": true,
-    "releaseDate": "2026-09-15",
-    "notes": "Correcao no campo parcela atual aberta: inicializacao limpa e sem valor fixo"
+    "releaseDate": "2026-09-14",
+    "notes": "Lançamento de despesas simplificado, seletor completo de subcategorias e melhorias de privacidade e publicação."
   }
 }

@@ -89,15 +89,15 @@ app.use(cors({
 // Body parser with 20MB limit
 app.use(express.json({ limit: '20mb' }));
 
-// Audit & Debug Request Logger
+// Audit logger: registra somente metadados da requisição, nunca dados financeiros ou credenciais.
 app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
     const timestamp = new Date().toISOString();
-    const sanitizedBody = req.body ? { ...req.body } : {};
-    if (sanitizedBody.password) sanitizedBody.password = '***';
-    if (sanitizedBody.newPassword) sanitizedBody.newPassword = '***';
-    if (sanitizedBody.oldPassword) sanitizedBody.oldPassword = '***';
-    console.log(`[${timestamp}] [HTTP ${req.method}] ${req.path} - IP: ${req.ip} - Body:`, JSON.stringify(sanitizedBody));
+    const bodyFields = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
+      ? Object.keys(req.body).sort()
+      : [];
+    const fieldsSummary = bodyFields.length > 0 ? ` - Fields: ${bodyFields.join(',')}` : '';
+    console.log(`[${timestamp}] [HTTP ${req.method}] ${req.path} - IP: ${req.ip}${fieldsSummary}`);
   }
   next();
 });

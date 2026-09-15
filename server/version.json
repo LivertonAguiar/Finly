@@ -1,36 +1,36 @@
 {
   "minSupportedVersion": "1.0.0",
   "releaseDate": "2026-09-14",
-  "notes": "Detalhamento de transações e divisão analítica por categorias (Transaction Splits), orçamentos e relatórios sem dupla contabilização.",
+  "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável.",
   "isLatest": true,
   "sections": {
     "features": [
-      "Divisão analítica de transações em múltiplos componentes por categoria e subcategoria",
-      "Garantia absoluta de integridade: soma exata em centavos e zero dupla contabilização no saldo bancário",
-      "Motor de recorrência com componentes fixos, variáveis a confirmar, temporários com parcelamento progressivo e eventuais de parcela única"
+      "Seletor visual com busca, contador e todas as subcategorias acessíveis"
     ],
-    "fixes": [],
+    "fixes": [
+      "Remoção de conteúdo financeiro sensível dos logs da API",
+      "Workflow do APK agora valida a presença real da release e do arquivo publicado"
+    ],
     "improvements": [
-      "Atalhos de condomínio (taxa ordinária, água, taxa extra e salão) com 1 toque",
-      "Botão de preenchimento automático 'Distribuir restante'",
-      "Visualização expansível dos componentes no modal de detalhes e badge na listagem de transações"
+      "Formulário sem controles manuais de natureza contábil, propriedades especiais, necessidade e escopo",
+      "Classificação analítica mantida automaticamente sem exigir decisões técnicas"
     ]
   },
   "highlights": [
     {
-      "title": "Divisão por Categorias (Detalhamento)",
-      "description": "Divida um único lançamento (como condomínio ou supermercado) em categorias diferentes sem duplicar a saída da sua conta bancária.",
-      "type": "feature"
+      "title": "Todas as Subcategorias em uma Lista Melhor",
+      "description": "Busque e selecione qualquer subcategoria em uma folha visual com rolagem confortável e nomes completos.",
+      "type": "visual"
     },
     {
-      "title": "Zero Dupla Contabilização",
-      "description": "O saldo bancário movimenta apenas a transação principal; orçamentos e gráficos consomem as divisões analíticas.",
-      "type": "feature"
+      "title": "Lançamento Mais Simples",
+      "description": "O Finly cuida das classificações técnicas automaticamente e mantém o formulário focado nas informações financeiras.",
+      "type": "improvement"
     },
     {
-      "title": "Recorrência Inteligente de Itens",
-      "description": "Componentes fixos se replicam, temporários avançam as parcelas até expirar e eventuais não se repetem no mês seguinte.",
-      "type": "feature"
+      "title": "Privacidade e Publicação Confiável",
+      "description": "Dados financeiros não são gravados nos logs e o APK só é considerado publicado depois da confirmação do arquivo oficial.",
+      "type": "fix"
     }
   ]
 }

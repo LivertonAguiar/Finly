@@ -24,12 +24,8 @@ import { resolveCategory } from '../../utils/categoryResolver';
 import { emitExpenseAddedConfirmation } from '../../utils/expenseToastEmitter';
 import { TransactionSplitEditor, SplitFormItem } from './TransactionSplitEditor';
 import { validateTransactionComponents } from '../../utils/transactionAnalytics';
-import {
-  inferSmartTaxonomy,
-  FINANCIAL_NATURE_CONFIG,
-  NECESSITY_CONFIG,
-  SCOPE_CONFIG,
-} from '../../utils/smartTaxonomy';
+import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
+import { SubcategoryPicker } from '../ui/SubcategoryPicker';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -129,7 +125,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [scope, setScope] = useState<'personal' | 'professional' | 'shared'>('personal');
   const [isDeductible, setIsDeductible] = useState(false);
   const [isReimbursable, setIsReimbursable] = useState(false);
-  const [manuallyChangedTaxonomy, setManuallyChangedTaxonomy] = useState(false);
 
   const isCard = type === 'expense' && paymentMethod === 'card';
   const isTransfer = type === 'transfer';
@@ -252,7 +247,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setScope(tx.characteristics?.scope || 'personal');
       setIsDeductible(tx.characteristics?.taxStatus === 'deductible');
       setIsReimbursable(Boolean(tx.characteristics?.reimbursement?.isReimbursable));
-      setManuallyChangedTaxonomy(true);
     } else {
       const inferred = inferSmartTaxonomy({
         description: '',
@@ -267,13 +261,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setScope(inferred.characteristics.scope || 'personal');
       setIsDeductible(inferred.characteristics.taxStatus === 'deductible');
       setIsReimbursable(false);
-      setManuallyChangedTaxonomy(false);
     }
   }, [isOpen, editingTransaction?.id, initialType, initialAccountId, initialCardId, initialPaymentMethod]);
 
   // Atualiza automaticamente as dimensões taxonômicas caso o usuário não as tenha alterado manualmente
   useEffect(() => {
-    if (editingTransaction || manuallyChangedTaxonomy) return;
+    if (editingTransaction) return;
     const inferred = inferSmartTaxonomy({
       description,
       type,
@@ -288,10 +281,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     if (inferred.characteristics.recurrence?.isSubscription !== undefined) {
       setIsSubscription(Boolean(inferred.characteristics.recurrence.isSubscription));
     }
+    setScope(inferred.characteristics.scope || 'personal');
     if (inferred.characteristics.taxStatus) {
       setIsDeductible(inferred.characteristics.taxStatus === 'deductible');
     }
-  }, [description, categoryId, subcategoryId, type, fixedExpense, isCardRecurring, editingTransaction, manuallyChangedTaxonomy]);
+    setIsReimbursable(Boolean(inferred.characteristics.reimbursement?.isReimbursable));
+  }, [description, categoryId, subcategoryId, type, fixedExpense, isCardRecurring, editingTransaction]);
 
   useEffect(() => {
     if (!isCard || !selectedCard || editingTransaction) return;
@@ -947,29 +942,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
             <div>
               <label className={labelClass}>SUBCATEGORIA</label>
-              <select
-                className={fieldClass}
+              <SubcategoryPicker
                 value={subcategoryId}
-                onChange={event => {
-                  setSubcategoryId(event.target.value);
+                disabled={!categoryId || !selectedCategory?.subcategories?.length}
+                subcategories={selectedCategory?.subcategories}
+                onChange={value => {
+                  setSubcategoryId(value);
                   setManuallyChangedCategory(true);
                   setPredictedInfo(null);
                 }}
-              >
-                <option value="">
-                  {!categoryId
-                    ? 'Selecione primeiro a categoria'
-                    : selectedCategory?.subcategories && selectedCategory.subcategories.length > 0
-                    ? `Nenhuma (${selectedCategory.subcategories.length} disponíveis)`
-                    : 'Sem subcategorias cadastradas'}
-                </option>
-                {selectedCategory?.subcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.icon ? `${subcategory.icon} ` : ''}
-                    {subcategory.name}
-                  </option>
-                ))}
-              </select>
+                emptyLabel="Nenhuma subcategoria"
+              />
             </div>
           </div>
           {editingTransaction && Boolean(editingSeries || editingTransaction.installments || editingTransaction.debtId || editingTransaction.recurring) && (
@@ -1308,164 +1291,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
         {moreDetails && <div className="space-y-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 p-3">
-          {/* PAINEL DE CLASSIFICAÇÃO MULTIDIMENSIONAL (6D) */}
-          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 space-y-3.5 shadow-2xs">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-base">{FINANCIAL_NATURE_CONFIG[financialNature]?.icon || '🏷️'}</span>
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 block">
-                    Classificação & Natureza
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Definido automaticamente por Smart Defaults • Editável livremente
-                  </span>
-                </div>
-              </div>
-              <span
-                className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white"
-                style={{ backgroundColor: FINANCIAL_NATURE_CONFIG[financialNature]?.color || '#8b5cf6' }}
-              >
-                {FINANCIAL_NATURE_CONFIG[financialNature]?.badge || 'Classificado'}
-              </span>
-            </div>
-
-            {/* Natureza Financeira */}
-            <div>
-              <label className={labelClass}>Natureza Financeira (Patrimonial / Contábil)</label>
-              <select
-                className={fieldClass}
-                value={financialNature}
-                onChange={e => {
-                  setFinancialNature(e.target.value as FinancialNature);
-                  setManuallyChangedTaxonomy(true);
-                }}
-              >
-                {Object.values(FINANCIAL_NATURE_CONFIG).map(config => (
-                  <option key={config.id} value={config.id}>
-                    {config.icon} {config.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
-                {FINANCIAL_NATURE_CONFIG[financialNature]?.description}
-              </p>
-            </div>
-
-            {/* Classificação de Necessidade (50-30-20) */}
-            <div>
-              <label className={labelClass}>Necessidade do Gasto (Orçamento 50-30-20)</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['essential', 'discretionary', 'strategic'] as const).map(key => {
-                  const cfg = NECESSITY_CONFIG[key];
-                  const isSelected = necessity === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setNecessity(key);
-                        setManuallyChangedTaxonomy(true);
-                      }}
-                      className={`px-2 py-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all border cursor-pointer ${
-                        isSelected
-                          ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-500 text-purple-700 dark:text-purple-300 shadow-xs'
-                          : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
-                      }`}
-                    >
-                      <span className="text-sm">{cfg.icon}</span>
-                      <span className="text-[11px] leading-tight text-center">{cfg.shortLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Características Rápidas (Chips interativos) */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
-              <label className={labelClass}>Propriedades Especiais</label>
-              <div className="flex flex-wrap gap-2">
-                {/* Assinatura Contínua */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSubscription(v => !v);
-                    setManuallyChangedTaxonomy(true);
-                  }}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isSubscription
-                      ? 'bg-purple-100 dark:bg-purple-950/80 border-purple-500 text-purple-700 dark:text-purple-300 shadow-2xs'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <span>📱</span>
-                  <span>Assinatura Contínua</span>
-                </button>
-
-                {/* Dedutível no IR */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDeductible(v => !v);
-                    setManuallyChangedTaxonomy(true);
-                  }}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isDeductible
-                      ? 'bg-emerald-100 dark:bg-emerald-950/80 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-2xs'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <span>🦁</span>
-                  <span>Dedutível IR</span>
-                </button>
-
-                {/* Reembolsável */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsReimbursable(v => !v);
-                    setManuallyChangedTaxonomy(true);
-                  }}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isReimbursable
-                      ? 'bg-sky-100 dark:bg-sky-950/80 border-sky-500 text-sky-700 dark:text-sky-300 shadow-2xs'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <span>↩️</span>
-                  <span>Reembolsável</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Escopo */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2">
-              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Escopo do Lançamento:</span>
-              <div className="flex gap-1">
-                {(['personal', 'professional', 'shared'] as const).map(sc => {
-                  const cfg = SCOPE_CONFIG[sc];
-                  const isSel = scope === sc;
-                  return (
-                    <button
-                      key={sc}
-                      type="button"
-                      onClick={() => {
-                        setScope(sc);
-                        setManuallyChangedTaxonomy(true);
-                      }}
-                      className={`px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-                        isSel
-                          ? 'bg-purple-600 border-purple-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      {cfg.icon} {cfg.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
           {/* Compra Recorrente no Cartão (somente na adição de despesa no cartão) */}
           {isCard && type === 'expense' && !installment && !editingTransaction && (
             <div className="rounded-2xl border border-purple-200 dark:border-purple-900/80 p-3.5 space-y-3 bg-white dark:bg-slate-800/80 shadow-xs">

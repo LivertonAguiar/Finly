@@ -3,6 +3,21 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.77] - 2026-09-14
+
+### 📱 Lançamento Enxuto e Subcategorias Completas
+- **Novo seletor de subcategorias**:
+  - Substituída a caixa nativa do Android por uma folha visual do Finly com busca, contador, nomes completos, seleção destacada e rolagem independente.
+  - Todas as subcategorias da categoria ficam renderizadas e acessíveis, inclusive em telas móveis pequenas.
+- **Classificação contábil automática**:
+  - Removidos do formulário os controles manuais de natureza contábil, necessidade 50-30-20, propriedades especiais e escopo do lançamento.
+  - As dimensões analíticas continuam sendo inferidas automaticamente e preservadas nos dados e detalhes da transação.
+- **Proteção de dados nos logs**:
+  - A API deixou de registrar o conteúdo das requisições e stores financeiros; o log conserva somente método, rota, IP e nomes dos campos.
+- **Publicação verificável**:
+  - O GitHub Actions agora diferencia tag existente de release/APK realmente publicado e falha de forma explícita diante de tags órfãs.
+  - Adicionada confirmação final do APK oficial e atualização para `actions/setup-java@v5`.
+
 ## [1.1.76] - 2026-09-14
 
 ### 🏢 Detalhamento de Transações / Divisão por Categorias (Transaction Splits)

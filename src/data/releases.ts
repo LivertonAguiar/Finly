@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-09-14',
+    summary: 'Lançamento de despesa mais simples, novo seletor móvel com todas as subcategorias, logs sem conteúdo financeiro e publicação de APK com verificação efetiva da release.',
+    highlights: [
+      {
+        title: 'Subcategorias Completas e Pesquisáveis',
+        description: 'A lista nativa foi substituída por uma folha visual com busca, contador, rolagem confortável, nomes completos e seleção destacada.',
+        type: 'visual',
+      },
+      {
+        title: 'Formulário sem Decisões Contábeis Técnicas',
+        description: 'Natureza, necessidade, propriedades especiais e escopo deixam de ser controles manuais e continuam classificados automaticamente.',
+        type: 'improvement',
+      },
+      {
+        title: 'Logs com Privacidade',
+        description: 'O servidor não grava mais stores ou conteúdos financeiros das requisições nos logs de produção.',
+        type: 'fix',
+      },
+      {
+        title: 'APK com Confirmação de Publicação',
+        description: 'O workflow só conclui depois de confirmar que a release e o APK oficial estão realmente disponíveis.',
+        type: 'fix',
+      },
+    ],
+  },
+  {
+    version: '1.1.76',
+    releaseDate: '2026-09-14',
     summary: 'Novo recurso de detalhamento de transações e divisão analítica por categorias (Transaction Splits), orçamentos e relatórios com integridade matemática e zero dupla contabilização.',
     highlights: [
       {

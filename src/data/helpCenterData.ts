@@ -189,10 +189,10 @@ export const HELP_GUIDES: HelpGuide[] = [
       {
         stepNumber: 2,
         title: 'Preencher na nova ordem enxuta',
-        description: 'O formulário apresenta primeiro as informações essenciais e mantém opções ocasionais dentro de Mais detalhes.',
-        webInstruction: 'Em receita ou despesa, preencha Valor, Situação, Data, Descrição, Categoria, Subcategoria e Conta bancária, nessa ordem. Abra "Mais detalhes" somente para anexo, tags, observações e opções adicionais aplicáveis.',
-        androidInstruction: 'Role de cima para baixo na mesma ordem. Os controles têm áreas de toque amplas e "Mais detalhes" concentra o que não é obrigatório.',
-        tip: 'Em despesas pendentes ou com lembrete, informe também o campo Vencimento.',
+        description: 'O formulário apresenta primeiro as informações essenciais e mantém apenas opções ocasionais dentro de Mais detalhes. Classificações contábeis são calculadas automaticamente pelo Finly.',
+        webInstruction: 'Em receita ou despesa, preencha Valor, Situação, Data, Descrição, Categoria, Subcategoria e Conta bancária, nessa ordem. O seletor de subcategoria mostra todas as opções da categoria, permite buscar pelo nome e destaca a escolha atual. Abra "Mais detalhes" somente para anexo, tags, observações e opções adicionais aplicáveis.',
+        androidInstruction: 'Role de cima para baixo na mesma ordem. Ao tocar em Subcategoria, use a lista interna com rolagem e busca; o contador confirma quantas opções estão disponíveis. Natureza contábil, propriedades e escopo não precisam ser definidos manualmente.',
+        tip: 'Em despesas pendentes ou com lembrete, informe também o campo Vencimento. A classificação analítica continua automática e pode ser consultada nos detalhes do lançamento.',
         callout: {
           area: 'modal',
           targetLabel: 'Campos do Modal de Transação',

@@ -17,12 +17,12 @@ jobs:
 
     steps:
       - name: 📥 Clonar Repositório
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: 🟢 Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -33,15 +33,28 @@ jobs:
           echo "VERSION=v${PKG_VER}" >> $GITHUB_ENV
 
       - name: 🛑 Verificar se Versão já foi Publicada
+        shell: bash
         run: |
+          set -euo pipefail
+          ASSET_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${VERSION}/finly-${VERSION}.apk"
+
           if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
             TAG_COMMIT=$(git rev-list -n 1 "${VERSION}")
-            if [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
-              echo "::notice::A versão ${VERSION} já pertence ao commit ${TAG_COMMIT}. Pulando compilação do APK e publicação de release para este commit intermediário."
+
+            if curl --fail --location --silent --head --max-time 30 "$ASSET_URL" >/dev/null; then
+              echo "::notice::A release ${VERSION} e o APK oficial já estão publicados. Pulando recompilação para este commit."
               echo "SKIP_RELEASE=true" >> $GITHUB_ENV
               exit 0
             fi
+
+            if [ "$GITHUB_EVENT_NAME" != "pull_request" ] && [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
+              echo "::error::A tag ${VERSION} existe no commit ${TAG_COMMIT}, mas a release ou o APK oficial está ausente. Incremente a versão ou repare a tag antes de publicar."
+              exit 1
+            fi
+
+            echo "::warning::A tag ${VERSION} existe neste commit sem APK. O workflow tentará recuperar a publicação."
           fi
+
           echo "SKIP_RELEASE=false" >> $GITHUB_ENV
 
       - name: 📦 Instalar Dependências Web
@@ -58,14 +71,14 @@ jobs:
 
       - name: ☕ Configurar Java JDK 21
         if: env.SKIP_RELEASE != 'true'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '21'
 
       - name: 📱 Configurar Android SDK
         if: env.SKIP_RELEASE != 'true'
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: 🔄 Sincronizar Capacitor Android
         if: env.SKIP_RELEASE != 'true'
@@ -177,3 +190,20 @@ jobs:
           files: finly-${{ env.VERSION }}.apk
           body_path: release_notes.md
           generate_release_notes: true
+
+      - name: ✅ Confirmar APK Oficial Publicado
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ASSET_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${VERSION}/finly-${VERSION}.apk"
+          for attempt in {1..10}; do
+            if curl --fail --location --silent --head --max-time 30 "$ASSET_URL" >/dev/null; then
+              echo "APK oficial confirmado: $ASSET_URL"
+              exit 0
+            fi
+            echo "Aguardando propagação do APK oficial (${attempt}/10)..."
+            sleep 3
+          done
+          echo "::error::O workflow terminou sem disponibilizar o APK oficial em $ASSET_URL"
+          exit 1
