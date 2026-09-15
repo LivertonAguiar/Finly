@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.76/finly-v1.1.76.apk"
   },
   "web": {
-    "version": "1.1.76.2",
+    "version": "1.1.76.3",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.76.2.zip",
-    "sha256": "f2679a8ebfa90e8b6c0871d4921ecf08b19138df77c280df82ac0cc1358bc4b8",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.76.3.zip",
+    "sha256": "1d835f179d19b1a52844a57b7539c4e32a217350be6cb586bc387ea9a5c7578f",
     "mandatory": true,
     "releaseDate": "2026-09-15",
-    "notes": "Ajuste na listagem de categorias, busca, remocao de valores pre-preenchidos e correcoes visuais"
+    "notes": "Correcao no campo parcela atual aberta: inicializacao limpa e sem valor fixo"
   }
 }

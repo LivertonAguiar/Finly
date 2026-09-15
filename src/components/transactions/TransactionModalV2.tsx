@@ -97,7 +97,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [isCustomInstallment, setIsCustomInstallment] = useState(false);
   const [alreadyStarted, setAlreadyStarted] = useState(false);
   const [firstTrackedInstallment, setFirstTrackedInstallment] = useState(1);
-  const [firstTrackedStr, setFirstTrackedStr] = useState('1');
+  const [firstTrackedStr, setFirstTrackedStr] = useState('');
   const [moreDetails, setMoreDetails] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState<string>();
   const [attachmentName, setAttachmentName] = useState<string>();
@@ -186,8 +186,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setIsCustomInstallment(count > 24);
     const tracked = Math.max(1, tx?.installments?.current || 1);
     setFirstTrackedInstallment(tracked);
-    setFirstTrackedStr(String(tracked));
-    setAlreadyStarted(Boolean(isEditingInstallment && tracked > 1));
+    const hasAlreadyStarted = Boolean(isEditingInstallment && tracked > 1);
+    setAlreadyStarted(hasAlreadyStarted);
+    setFirstTrackedStr(hasAlreadyStarted ? String(tracked) : '');
     setMoreDetails(false);
     setAttachmentUrl(tx?.attachmentUrl);
     setAttachmentName(tx?.attachmentName);
@@ -475,14 +476,20 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         const clamped = Math.min(installmentCount, num);
         setFirstTrackedInstallment(clamped);
       }
+    } else {
+      setFirstTrackedInstallment(1);
     }
   };
 
   const handleFirstTrackedBlur = () => {
+    if (firstTrackedStr.trim() === '') {
+      setFirstTrackedInstallment(1);
+      return;
+    }
     const num = parseInt(firstTrackedStr, 10);
     if (isNaN(num) || num < 1) {
       setFirstTrackedInstallment(1);
-      setFirstTrackedStr('1');
+      setFirstTrackedStr('');
     } else {
       const clamped = Math.min(installmentCount, num);
       setFirstTrackedInstallment(clamped);
@@ -1252,10 +1259,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           type="checkbox"
                           checked={alreadyStarted}
                           onChange={event => {
-                            setAlreadyStarted(event.target.checked);
-                            if (!event.target.checked) {
+                            const isChecked = event.target.checked;
+                            setAlreadyStarted(isChecked);
+                            if (!isChecked) {
                               setFirstTrackedInstallment(1);
-                              setFirstTrackedStr('1');
+                              setFirstTrackedStr('');
+                            } else {
+                              setFirstTrackedStr('');
                             }
                           }}
                           className="w-4 h-4 rounded text-purple-600 cursor-pointer"
@@ -1271,7 +1281,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
-                              placeholder="1"
+                              placeholder="Ex: 2"
                               value={firstTrackedStr}
                               onChange={e => handleFirstTrackedChange(e.target.value)}
                               onBlur={handleFirstTrackedBlur}
@@ -1281,7 +1291,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {Math.max(0, firstTrackedInstallment - 1)} parcela(s) já paga(s) antes do Finly
+                            {firstTrackedStr.trim() === ''
+                              ? 'Informe o número da parcela que está aberta nesta fatura'
+                              : `${Math.max(0, firstTrackedInstallment - 1)} parcela(s) já paga(s) antes do Finly`}
                           </p>
                         </div>
                       )}
