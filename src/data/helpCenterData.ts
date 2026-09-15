@@ -467,7 +467,7 @@ export const HELP_GUIDES: HelpGuide[] = [
     title: 'Guia do Usuário: Recursos e Atalhos do Aplicativo Finly',
     category: 'mobile_web',
     categoryLabel: 'Recursos do App Android',
-    summary: 'Aprenda a tirar o máximo proveito do aplicativo Finly no seu celular: navegação inferior, menu em arco e notificações em tempo real.',
+    summary: 'Aprenda a tirar o máximo proveito do aplicativo Finly no seu celular: navegação inferior, cartões de ações rápidas e notificações em tempo real.',
     readTime: '3 min',
     badge: 'Guia Visual',
     steps: [
@@ -476,14 +476,14 @@ export const HELP_GUIDES: HelpGuide[] = [
         title: 'Navegação e Barra Inferior Mobile',
         description: 'Barra de navegação ergonômica posicionada estrategicamente para alcance fácil com o polegar.',
         webInstruction: 'No Computador: Acesso rápido pela barra lateral expansível e atalhos de teclado.',
-        androidInstruction: 'Na parte inferior do celular, você tem acesso imediato a Principal, Transações, (+) Ações Rápidas, Cartões e Mais (com Planejamento e módulos avançados), com suporte completo à área segura do aparelho.',
+        androidInstruction: 'Na parte inferior do celular, uma barra em formato de cápsula ampliada oferece acesso imediato a Principal, Transações, (+) Ações Rápidas, Cartões e Mais. O botão central (+) é maior e mais destacado para facilitar o uso com o polegar.',
       },
       {
         stepNumber: 2,
-        title: 'Lançamentos Rápidos com Menu em Arco',
+        title: 'Lançamentos Rápidos com Cartões Maiores',
         description: 'Agilidade máxima para lançamentos de gastos ou receitas no dia a dia.',
         webInstruction: 'No Computador: Clique no botão "+ Nova Transação" no topo ou pressione a tecla "N".',
-        androidInstruction: 'Toque no botão central circular com (+). Abre-se um leque com 4 atalhos rápidos: Receita, Despesa, Despesa de Cartão e Transferência.',
+        androidInstruction: 'Toque no botão central circular com (+). Abre-se uma grade com 4 cartões grandes: Nova Receita, Nova Despesa, Despesa de Cartão e Transferência. O ícone e o texto fazem parte da mesma área de toque.',
       },
       {
         stepNumber: 3,
