@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isSupabaseConfigured()) return;
 
     // Check existing active Supabase session on startup
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
       // Don't overwrite explicit demo user session
       if (activeId === DEFAULT_DEMO_USER.id) return;
@@ -119,6 +119,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setCurrentUser(mappedUser);
         localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
+      } else if (activeId) {
+        // No active Supabase session, but localStorage references a previous login.
+        // This typically happens on the WEB when the browser session token has expired.
+        // On Android/Capacitor the session is auto-refreshed, but on the web browser
+        // clearing cookies/storage or long inactivity can cause token expiry.
+        const isRealUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeId);
+        if (isRealUser) {
+          // Attempt to recover session via stored refresh token
+          try {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshData?.session?.user && !refreshError) {
+              const rs = refreshData.session;
+              localStorage.setItem('finly_auth_token', rs.access_token);
+              const u = rs.user;
+              const recoveredUser: AuthUser = {
+                id: u.id,
+                name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+                email: u.email || '',
+                phone: u.user_metadata?.phone,
+                role: u.user_metadata?.role || 'admin',
+                avatarUrl: u.user_metadata?.avatar_url,
+                createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+              };
+              setCurrentUser(recoveredUser);
+              localStorage.setItem(ACTIVE_SESSION_KEY, recoveredUser.id);
+              console.info('[Finly Auth] Sessão Supabase restaurada via refresh token.');
+            } else {
+              // Refresh token also expired — force re-login
+              console.warn('[Finly Auth] Sessão Supabase expirada no browser. Redirecionando para login.');
+              setCurrentUser(null);
+              localStorage.removeItem(ACTIVE_SESSION_KEY);
+              localStorage.removeItem('finly_auth_token');
+            }
+          } catch (_) {
+            console.warn('[Finly Auth] Falha ao restaurar sessão Supabase. Redirecionando para login.');
+            setCurrentUser(null);
+            localStorage.removeItem(ACTIVE_SESSION_KEY);
+            localStorage.removeItem('finly_auth_token');
+          }
+        }
       }
     });
 

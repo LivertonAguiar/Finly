@@ -1098,6 +1098,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             apiSync.pushStore(currentUser.id, cleanStore, true);
             return;
           }
+          // Supabase configured but returned no data — likely expired auth session or first-time user
+          console.warn('[Finly Sync] Supabase retornou store vazio/null para userId:', currentUser.id,
+            '— sessão de autenticação pode estar expirada. Tentando fallback para servidor Express.');
         } catch (sbErr) {
           console.warn('Supabase store fetch notice:', sbErr);
           if (!canApplySnapshot()) return;
