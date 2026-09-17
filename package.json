@@ -28,6 +28,7 @@
     "test:taxonomy": "node scripts/run-ts-test.mjs tests/multidimensionalTaxonomy.test.ts",
     "test:release-guards": "node scripts/run-ts-test.mjs tests/uiReleaseAndLoggingGuards.test.ts",
     "test:bottom-nav": "node scripts/run-ts-test.mjs tests/bottomNavQuickActions.test.ts",
+    "test:dashboard-sync": "node scripts/run-ts-test.mjs tests/dashboardTransactionsMonthSync.test.ts",
     "test:transactions": "npm run test:card-series && npm run test:recurring-series && npm run test:series-category && npm run test:expense-toast && npm run test:splits && npm run test:taxonomy && npm run test:transaction-impact && npm run test:series-scope && npm run test:series-migration && npm run test:notifications && npm run test:transfers && npm run test:mutation-journal && npm run test:view-regimes && npm run test:web-update && npm run test:release-guards",
     "check:version": "node scripts/check-version-sync.mjs",
     "verify:build-version": "node scripts/verify-built-version.mjs",

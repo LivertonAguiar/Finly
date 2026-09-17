@@ -13,7 +13,7 @@ import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
 import { DashboardPage } from './components/dashboard/DashboardPage';
 import { CreditTab } from './components/dashboard/CreditTab';
-import { TransactionsPage } from './components/transactions/TransactionsPage';
+import { TransactionsPage, TransactionsNavParams } from './components/transactions/TransactionsPage';
 import { CadastrosPage } from './components/cadastros/CadastrosPage';
 import { BudgetPage } from './components/orcamento/BudgetPage';
 import { GoalsPage } from './components/metas/GoalsPage';
@@ -300,6 +300,26 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Shared active month offset and parameterized navigation to transactions
+  const [sharedMonthOffset, setSharedMonthOffset] = useState<number>(0);
+  const [transactionsNavParams, setTransactionsNavParams] = useState<TransactionsNavParams | null>(null);
+  const [transactionsNavKey, setTransactionsNavKey] = useState<number>(0);
+
+  const handleOpenTransactions = useCallback((params?: TransactionsNavParams) => {
+    if (params) {
+      if (typeof params.monthOffset === 'number') {
+        setSharedMonthOffset(params.monthOffset);
+      }
+      setTransactionsNavParams(params);
+    }
+    setTransactionsNavKey(prev => prev + 1);
+    setActiveTab('transacoes');
+    const targetPath = TAB_TO_PATH['transacoes'] || '/transacoes';
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ tab: 'transacoes' }, '', targetPath);
+    }
+  }, []);
+
   // Sync URL with browser Back/Forward (popstate)
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
@@ -453,9 +473,20 @@ const AppContent: React.FC = () => {
                 onOpenNewCard={() => setIsNewCardOpen(true)}
                 setActiveTab={handleSelectTab}
                 onOpenCardDetail={handleOpenCardDetail}
+                selectedMonthOffset={sharedMonthOffset}
+                onChangeMonthOffset={setSharedMonthOffset}
+                onNavigateToTransactions={handleOpenTransactions}
               />
             )}
-            {activeTab === 'transacoes' && <TransactionsPage />}
+            {activeTab === 'transacoes' && (
+              <TransactionsPage
+                key={`tx-nav-${transactionsNavKey}`}
+                selectedMonthOffset={sharedMonthOffset}
+                onChangeMonthOffset={setSharedMonthOffset}
+                initialNavParams={transactionsNavParams}
+                onClearNavParams={() => setTransactionsNavParams(null)}
+              />
+            )}
             {activeTab === 'cartoes' && (
               <CreditTab
                 key={cardsNavKey}

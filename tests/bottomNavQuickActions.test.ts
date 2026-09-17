@@ -14,10 +14,8 @@ assert.equal((bottomNav.match(/min-h-\[96px\] rounded-3xl/gu) || []).length, 4);
 assert.equal((bottomNav.match(/w-8 h-8 stroke-\[2\.4\]/gu) || []).length, 4);
 assert.equal((bottomNav.match(/min-h-11 px-3 py-2 rounded-2xl/gu) || []).length, 4);
 assert.match(bottomNav, /data-testid="mobile-bottom-navbar"/u);
-assert.match(bottomNav, /h-\[52px\].*max-w-\[336px\]/u);
-assert.equal((bottomNav.match(/w-11 h-11 rounded-full/gu) || []).length, 5);
-assert.equal((bottomNav.match(/w-\[22px\] h-\[22px\] stroke-\[2\.2\]/gu) || []).length, 4);
-assert.equal((bottomNav.match(/w-6 h-6 stroke-\[3\]/gu) || []).length, 2);
+assert.match(bottomNav, /grid grid-cols-5/u);
+assert.match(bottomNav, /data-testid="bottom-nav-fab-action"/u);
 
 const order = ['income', 'expense', 'card_expense', 'transfer'].map(action =>
   bottomNav.indexOf(`data-quick-action="${action}"`),

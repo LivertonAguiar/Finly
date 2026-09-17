@@ -64,11 +64,20 @@ import { isInvoicePaymentTransaction, allocateCardTransaction } from '../../util
 import { useTranslation } from '../../utils/i18n';
 import { isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
 
+export interface TransactionsNavParams {
+  monthOffset?: number;
+  filterType?: 'all' | 'expense' | 'income' | 'transfer';
+  status?: 'all' | 'pending' | 'completed';
+}
+
 interface OverviewTabProps {
   onOpenNewTransaction: () => void;
   onOpenNewCard?: () => void;
   setActiveTab: (tab: string) => void;
   onOpenCardDetail?: (cardId: string) => void;
+  selectedMonthOffset?: number;
+  onChangeMonthOffset?: (offset: number) => void;
+  onNavigateToTransactions?: (params?: TransactionsNavParams) => void;
 }
 
 export interface DashboardCardsState {
@@ -227,12 +236,26 @@ const renderActiveDonutShape = (props: any) => {
   );
 };
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, onOpenNewCard, setActiveTab, onOpenCardDetail }) => {
+export const OverviewTab: React.FC<OverviewTabProps> = ({
+  onOpenNewTransaction,
+  onOpenNewCard,
+  setActiveTab,
+  onOpenCardDetail,
+  selectedMonthOffset: controlledMonthOffset,
+  onChangeMonthOffset,
+  onNavigateToTransactions,
+}) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
   const { lang, t, translateCategory } = useTranslation();
   const isApp = isNativeCapacitor() || isMobileDevice();
 
-  const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
+  const [internalMonthOffset, setInternalMonthOffset] = useState<number>(controlledMonthOffset ?? 0);
+  const selectedMonthOffset = controlledMonthOffset !== undefined ? controlledMonthOffset : internalMonthOffset;
+  const setSelectedMonthOffset = (val: number | ((prev: number) => number)) => {
+    const nextVal = typeof val === 'function' ? val(selectedMonthOffset) : val;
+    setInternalMonthOffset(nextVal);
+    onChangeMonthOffset?.(nextVal);
+  };
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedCardForPay, setSelectedCardForPay] = useState<string | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<{ name: string; icon: string; value: number; percentage: number; color: string; id?: string } | null>(null);
@@ -2451,7 +2474,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Receitas */}
           <div
-            onClick={() => setActiveTab('transacoes')}
+            onClick={() => {
+              if (onNavigateToTransactions) {
+                onNavigateToTransactions({ monthOffset: selectedMonthOffset, filterType: 'income' });
+              } else {
+                setActiveTab('transacoes');
+              }
+            }}
             className="group p-4 rounded-[22px] bg-emerald-500/[0.04] dark:bg-emerald-950/20 border border-emerald-500/20 dark:border-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer space-y-2.5"
           >
             <div className="flex items-center justify-between">
@@ -2484,7 +2513,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
 
           {/* Despesas */}
           <div
-            onClick={() => setActiveTab('transacoes')}
+            onClick={() => {
+              if (onNavigateToTransactions) {
+                onNavigateToTransactions({ monthOffset: selectedMonthOffset, filterType: 'expense' });
+              } else {
+                setActiveTab('transacoes');
+              }
+            }}
             className="group p-4 rounded-[22px] bg-rose-500/[0.04] dark:bg-rose-950/20 border border-rose-500/20 dark:border-rose-500/20 hover:border-rose-500/40 transition-all cursor-pointer space-y-2.5"
           >
             <div className="flex items-center justify-between">
@@ -2535,7 +2570,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onOpenNewTransaction, 
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
           {/* Alert 1: Despesas pendentes */}
           <div
-            onClick={() => setActiveTab('transacoes')}
+            onClick={() => {
+              if (onNavigateToTransactions) {
+                onNavigateToTransactions({ monthOffset: selectedMonthOffset, filterType: 'expense', status: 'pending' });
+              } else {
+                setActiveTab('transacoes');
+              }
+            }}
             className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
           >
             <div className="flex items-center justify-between">

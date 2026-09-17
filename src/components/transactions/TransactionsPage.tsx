@@ -45,7 +45,25 @@ import { ReimbursementModal } from './ReimbursementModal';
 import { downloadCSV } from '../../utils/reportExportService';
 import { exportTransactionsToExcel } from '../../utils/excelExportService';
 
-export const TransactionsPage: React.FC = () => {
+export interface TransactionsNavParams {
+  monthOffset?: number;
+  filterType?: 'all' | 'expense' | 'income' | 'transfer';
+  status?: 'all' | 'pending' | 'completed';
+}
+
+interface TransactionsPageProps {
+  selectedMonthOffset?: number;
+  onChangeMonthOffset?: (offset: number) => void;
+  initialNavParams?: TransactionsNavParams | null;
+  onClearNavParams?: () => void;
+}
+
+export const TransactionsPage: React.FC<TransactionsPageProps> = ({
+  selectedMonthOffset: controlledMonthOffset,
+  onChangeMonthOffset,
+  initialNavParams,
+  onClearNavParams,
+}) => {
   const { confirm } = useConfirm();
   const {
     transactions,
@@ -58,8 +76,36 @@ export const TransactionsPage: React.FC = () => {
     user,
   } = useFinancial();
 
-  const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
-  const [filterType, setFilterType] = useState<string>('all'); // 'all' | 'expense' | 'income' | 'transfer'
+  const [internalMonthOffset, setInternalMonthOffset] = useState<number>(() => {
+    if (initialNavParams?.monthOffset !== undefined) return initialNavParams.monthOffset;
+    if (controlledMonthOffset !== undefined) return controlledMonthOffset;
+    return 0;
+  });
+
+  const selectedMonthOffset = controlledMonthOffset !== undefined ? controlledMonthOffset : internalMonthOffset;
+
+  const setSelectedMonthOffset = (val: number | ((prev: number) => number)) => {
+    const nextVal = typeof val === 'function' ? val(selectedMonthOffset) : val;
+    setInternalMonthOffset(nextVal);
+    onChangeMonthOffset?.(nextVal);
+  };
+
+  const [filterType, setFilterType] = useState<string>(() => initialNavParams?.filterType || 'all');
+
+  useEffect(() => {
+    if (initialNavParams) {
+      if (initialNavParams.monthOffset !== undefined) {
+        setSelectedMonthOffset(initialNavParams.monthOffset);
+      }
+      if (initialNavParams.filterType) {
+        setFilterType(initialNavParams.filterType);
+      }
+      if (initialNavParams.status) {
+        setFilters(prev => ({ ...prev, status: initialNavParams.status as any }));
+      }
+      onClearNavParams?.();
+    }
+  }, [initialNavParams]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);

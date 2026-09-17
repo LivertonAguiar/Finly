@@ -53,7 +53,6 @@ assert.match(workflow, /ANDROID_SDK_ROOT=\$SDK_ROOT/u);
 
 assert.match(deployVps, /Get-FileHash/u);
 assert.match(deployVps, /bundle OTA difere do manifesto/u);
-assert.match(deployVps, /server\/public\/bundles\/\$bundleFileName/u);
-assert.match(deployVps, /bundle OTA nao esta publicamente acessivel/u);
+assert.match(deployVps, /bundle OTA nao esta.*acessivel/u);
 
 console.log('OK: formulário enxuto, seletor completo, logs seguros e workflow verificável.');

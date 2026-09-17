@@ -191,26 +191,44 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </div>
       )}
 
-      {/* Máscara de gradiente suave no rodapé para ocultar cards scrolláveis por trás da pílula */}
-      <div
-        className={`fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-40 md:hidden bg-gradient-to-t from-[#F1F5F9] via-[#F1F5F9]/85 to-transparent dark:from-[var(--app-bg,#121214)] dark:via-[var(--app-bg,#121214)]/85 transition-all duration-200 ${
-          isHidden ? 'opacity-0' : 'opacity-100'
+      {/* Floating Action Button (FAB) Discreto no canto inferior direito para Ações Rápidas */}
+      <button
+        type="button"
+        data-testid="bottom-nav-fab-action"
+        onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
+        style={{
+          backgroundColor: accentColor,
+          color: '#FFFFFF',
+          bottom: 'calc(68px + max(var(--sab, env(safe-area-inset-bottom, 0px)), 4px))',
+        }}
+        className={`fixed right-4 z-50 md:hidden w-12 h-12 rounded-full shadow-md active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+          isHidden ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100'
         }`}
-        aria-hidden="true"
-      />
+        title="Nova Transação / Ação Rápida"
+        aria-label="Nova Transação / Ação Rápida"
+      >
+        {isSpeedDialOpen ? (
+          <X className="w-6 h-6 stroke-[2.5]" />
+        ) : (
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        )}
+      </button>
 
-      {/* Main Bottom Navigation Bar - Pílula ampliada para toque confortável */}
+      {/* Main Bottom Navigation Bar - Tab Bar Bancária Sóbria Borda a Borda */}
       <nav
-        className={`bottom-nav-container fixed left-0 right-0 z-50 flex justify-center items-center px-4 pointer-events-none md:hidden select-none bg-transparent transition-all duration-300 ${
-          isHidden ? 'opacity-0 translate-y-16 pointer-events-none' : 'opacity-100 translate-y-0'
+        className={`fixed bottom-0 left-0 right-0 z-50 md:hidden select-none bg-white dark:bg-[#121316] border-t border-slate-200 dark:border-[#222328] transition-transform duration-200 ${
+          isHidden ? 'translate-y-full' : 'translate-y-0'
         }`}
         style={{
-          bottom: 'max(calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 8px), 12px)',
+          paddingBottom: 'max(var(--sab, env(safe-area-inset-bottom, 0px)), 4px)',
         }}
         aria-label="Navegação Mobile"
       >
-        <div data-testid="mobile-bottom-navbar" className="pointer-events-auto flex items-center justify-between px-2 h-[52px] w-full max-w-[336px] rounded-full bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-2xl border border-slate-300/90 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
-          {/* 1. Principal / Dashboard */}
+        <div
+          data-testid="mobile-bottom-navbar"
+          className="w-full grid grid-cols-5 h-[58px] items-stretch"
+        >
+          {/* 1. Início */}
           <button
             type="button"
             onClick={() => {
@@ -218,27 +236,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               setActiveTab('dashboard');
             }}
             style={activeTab === 'dashboard' ? { color: accentColor } : undefined}
-            className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-full transition-all active:scale-90 cursor-pointer ${
+            className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
               activeTab === 'dashboard'
                 ? 'font-bold'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title={t('nav.dashboard', 'Principal')}
-            aria-label={t('nav.dashboard', 'Principal')}
+            title={t('nav.dashboard', 'Início')}
+            aria-label={t('nav.dashboard', 'Início')}
           >
-            <Home className="w-[22px] h-[22px] stroke-[2.2]" />
             {activeTab === 'dashboard' && (
               <span
-                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
-                style={{
-                  backgroundColor: accentColor,
-                  boxShadow: `0 0 6px ${accentColor}`,
-                }}
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
+                style={{ backgroundColor: accentColor }}
               />
             )}
+            <Home className="w-5 h-5 stroke-[2]" />
+            <span className="text-[10px] leading-none tracking-tight">
+              {t('nav.dashboard', 'Início')}
+            </span>
           </button>
 
-          {/* 2. Transações / Extrato */}
+          {/* 2. Extrato */}
           <button
             type="button"
             onClick={() => {
@@ -246,49 +264,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               setActiveTab('transacoes');
             }}
             style={activeTab === 'transacoes' ? { color: accentColor } : undefined}
-            className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-full transition-all active:scale-90 cursor-pointer ${
+            className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
               activeTab === 'transacoes'
                 ? 'font-bold'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title={t('nav.transactions', 'Transações')}
-            aria-label={t('nav.transactions', 'Transações')}
+            title={t('nav.transactions', 'Extrato')}
+            aria-label={t('nav.transactions', 'Extrato')}
           >
-            <ArrowLeftRight className="w-[22px] h-[22px] stroke-[2.2]" />
             {activeTab === 'transacoes' && (
               <span
-                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
-                style={{
-                  backgroundColor: accentColor,
-                  boxShadow: `0 0 6px ${accentColor}`,
-                }}
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
+                style={{ backgroundColor: accentColor }}
               />
             )}
+            <ArrowLeftRight className="w-5 h-5 stroke-[2]" />
+            <span className="text-[10px] leading-none tracking-tight">
+              {t('nav.transactions', 'Extrato')}
+            </span>
           </button>
 
-          {/* 3. Botão Central '+' (Ações Rápidas) */}
-          <button
-            type="button"
-            onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
-            style={{
-              backgroundColor: accentColor,
-              color: 'var(--primary-accent-foreground, #FFFFFF)',
-              boxShadow: `0 4px 14px ${accentColor}80`,
-            }}
-            className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-lg active:scale-85 transition-transform duration-200 cursor-pointer hover:brightness-110 ${
-              isSpeedDialOpen ? 'rotate-90 brightness-95' : ''
-            }`}
-            title="Ações Rápidas"
-            aria-label="Ações Rápidas"
-          >
-            {isSpeedDialOpen ? (
-              <X className="w-6 h-6 stroke-[3]" style={{ stroke: 'currentColor' }} />
-            ) : (
-              <Plus className="w-6 h-6 stroke-[3]" style={{ stroke: 'currentColor' }} />
-            )}
-          </button>
-
-          {/* 4. Cartões */}
+          {/* 3. Cartões */}
           <button
             type="button"
             onClick={() => {
@@ -296,27 +292,55 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               setActiveTab('cartoes');
             }}
             style={activeTab === 'cartoes' ? { color: accentColor } : undefined}
-            className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-full transition-all active:scale-90 cursor-pointer ${
+            className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
               activeTab === 'cartoes'
                 ? 'font-bold'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
             title={t('nav.cards_short', 'Cartões')}
             aria-label={t('nav.cards_short', 'Cartões')}
           >
-            <CreditCard className="w-[22px] h-[22px] stroke-[2.2]" />
             {activeTab === 'cartoes' && (
               <span
-                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
-                style={{
-                  backgroundColor: accentColor,
-                  boxShadow: `0 0 6px ${accentColor}`,
-                }}
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
+                style={{ backgroundColor: accentColor }}
               />
             )}
+            <CreditCard className="w-5 h-5 stroke-[2]" />
+            <span className="text-[10px] leading-none tracking-tight">
+              {t('nav.cards_short', 'Cartões')}
+            </span>
           </button>
 
-          {/* 5. Mais */}
+          {/* 4. Planejamento / Metas */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSpeedDialOpen(false);
+              setActiveTab('metas');
+            }}
+            style={activeTab === 'metas' ? { color: accentColor } : undefined}
+            className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+              activeTab === 'metas'
+                ? 'font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+            title={t('nav.goals', 'Planejar')}
+            aria-label={t('nav.goals', 'Planejar')}
+          >
+            {activeTab === 'metas' && (
+              <span
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
+                style={{ backgroundColor: accentColor }}
+              />
+            )}
+            <TrendingUp className="w-5 h-5 stroke-[2]" />
+            <span className="text-[10px] leading-none tracking-tight">
+              {t('nav.planning', 'Planejar')}
+            </span>
+          </button>
+
+          {/* 5. Mais / Menu */}
           <button
             type="button"
             onClick={() => {
@@ -324,24 +348,24 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               setActiveTab('mais');
             }}
             style={activeTab === 'mais' ? { color: accentColor } : undefined}
-            className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-full transition-all active:scale-90 cursor-pointer ${
+            className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
               activeTab === 'mais'
                 ? 'font-bold'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
             title={t('nav.more', 'Mais')}
             aria-label={t('nav.more', 'Mais')}
           >
-            <MoreHorizontal className="w-[22px] h-[22px] stroke-[2.2]" />
             {activeTab === 'mais' && (
               <span
-                className="absolute bottom-1 w-1.5 h-1.5 rounded-full transition-all animate-in zoom-in duration-200"
-                style={{
-                  backgroundColor: accentColor,
-                  boxShadow: `0 0 6px ${accentColor}`,
-                }}
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
+                style={{ backgroundColor: accentColor }}
               />
             )}
+            <MoreHorizontal className="w-5 h-5 stroke-[2]" />
+            <span className="text-[10px] leading-none tracking-tight">
+              {t('nav.more', 'Mais')}
+            </span>
           </button>
         </div>
       </nav>
