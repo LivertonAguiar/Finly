@@ -708,6 +708,32 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
 
   try {
     const sanitizedStore = sanitizeStoreData(store);
+
+    // Guard shield: prevent an empty/new client session from accidentally wiping out
+    // rich collections (transactions, cards, series) already persisted on the server
+    if (fs.existsSync(storePath)) {
+      try {
+        const existing = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+        if ((!sanitizedStore.transactions || sanitizedStore.transactions.length === 0) && (existing.transactions?.length > 0)) {
+          console.warn(`🛡️ [STORE SHIELD] Preservando ${existing.transactions.length} transações existentes no servidor.`);
+          sanitizedStore.transactions = existing.transactions;
+          if (!sanitizedStore.transactionSeries || sanitizedStore.transactionSeries.length === 0) {
+            sanitizedStore.transactionSeries = existing.transactionSeries || [];
+          }
+        }
+        if ((!sanitizedStore.cards || sanitizedStore.cards.length === 0) && (existing.cards?.length > 0)) {
+          console.warn(`🛡️ [STORE SHIELD] Preservando ${existing.cards.length} cartões existentes no servidor.`);
+          sanitizedStore.cards = existing.cards;
+        }
+        if ((!sanitizedStore.accounts || sanitizedStore.accounts.length === 0) && (existing.accounts?.length > 0)) {
+          sanitizedStore.accounts = existing.accounts;
+        }
+        if ((!sanitizedStore.debts || sanitizedStore.debts.length === 0) && (existing.debts?.length > 0)) {
+          sanitizedStore.debts = existing.debts;
+        }
+      } catch (_) {}
+    }
+
     const payload = {
       ...sanitizedStore,
       _serverTimestamp: new Date().toISOString(),
@@ -729,31 +755,52 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
     }
 
     // Direct background sync with Supabase PostgreSQL using Admin SDK (bypasses RLS)
-    if (supabaseAdmin && Array.isArray(sanitizedStore.cards)) {
+    if (supabaseAdmin) {
       const postgresUserId = POSTGRES_USER_UUID_MAP[userId] || 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b';
-      const cardRows = sanitizedStore.cards
-        .filter(c => c && !GHOST_CARDS_SET.has(c.id))
-        .map(c => ({
-          id: c.id,
-          user_id: postgresUserId,
-          name: c.name || 'Cartão de Crédito',
-          brand: c.brand || 'Mastercard',
-          limit: Number(c.limit) || 0,
-          closing_day: Number(c.closingDay) || 1,
-          due_day: Number(c.dueDay) || 10,
-          color: c.color || '#820ad1',
-          default_account_id: c.defaultAccountId || null,
-        }));
+      
+      // 1. Sync cards
+      if (Array.isArray(sanitizedStore.cards)) {
+        const cardRows = sanitizedStore.cards
+          .filter(c => c && !GHOST_CARDS_SET.has(c.id))
+          .map(c => ({
+            id: c.id,
+            user_id: postgresUserId,
+            name: c.name || 'Cartão de Crédito',
+            brand: c.brand || 'Mastercard',
+            limit: Number(c.limit) || 0,
+            closing_day: Number(c.closingDay) || 1,
+            due_day: Number(c.dueDay) || 10,
+            color: c.color || '#820ad1',
+            default_account_id: c.defaultAccountId || null,
+          }));
 
-      if (cardRows.length > 0) {
-        supabaseAdmin
-          .from('credit_cards')
-          .upsert(cardRows)
-          .then(({ error }) => {
-            if (error) console.warn('⚠️ Erro ao persistir cartões no Supabase via Admin:', error.message);
-            else console.log(`💳 [SUPABASE ADMIN] ${cardRows.length} cartões sincronizados com sucesso.`);
-          })
-          .catch(err => console.warn('⚠️ Falha Supabase card upsert:', err.message));
+        if (cardRows.length > 0) {
+          supabaseAdmin
+            .from('credit_cards')
+            .upsert(cardRows)
+            .then(({ error }) => {
+              if (error) console.warn('⚠️ Erro ao persistir cartões no Supabase via Admin:', error.message);
+              else console.log(`💳 [SUPABASE ADMIN] ${cardRows.length} cartões sincronizados.`);
+            })
+            .catch(err => console.warn('⚠️ Falha Supabase card upsert:', err.message));
+        }
+      }
+
+      // 2. Sync accounts
+      if (Array.isArray(sanitizedStore.accounts) && sanitizedStore.accounts.length > 0) {
+        const accRows = sanitizedStore.accounts.map(a => ({
+          id: a.id,
+          user_id: postgresUserId,
+          name: a.name || 'Conta',
+          type: a.type || 'checking',
+          balance: Number(a.balance) || 0,
+          initial_balance: Number(a.initialBalance) || 0,
+          institution: a.institution || '',
+          color: a.color || '#10b981',
+          include_in_total: a.includeInTotal !== false,
+          account_number: a.accountNumber || null,
+        }));
+        supabaseAdmin.from('accounts').upsert(accRows).catch(() => {});
       }
     }
 

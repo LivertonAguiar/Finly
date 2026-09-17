@@ -105,24 +105,28 @@ class ApiSyncService {
   private getAuthHeaders(userId: string | null = this.currentUserId): Record<string, string> {
     const headers: Record<string, string> = {};
     if (typeof window !== 'undefined') {
-      let token = localStorage.getItem('finly_auth_token');
-      // If native token is absent, check for active Supabase session token in localStorage
-      if (!token) {
-        try {
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.startsWith('sb-') || key.includes('supabase')) && key.endsWith('-auth-token')) {
-              const raw = localStorage.getItem(key);
-              if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed?.access_token) {
-                  token = parsed.access_token;
-                  break;
-                }
+      let token = '';
+      // 1. Check active Supabase storage key first for freshest token
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('supabase')) && key.endsWith('-auth-token')) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed?.access_token) {
+                token = parsed.access_token;
+                localStorage.setItem('finly_auth_token', token);
+                break;
               }
             }
           }
-        } catch (_) {}
+        }
+      } catch (_) {}
+
+      // 2. Fallback to finly_auth_token
+      if (!token) {
+        token = localStorage.getItem('finly_auth_token') || '';
       }
 
       if (token) {
@@ -147,6 +151,12 @@ class ApiSyncService {
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          console.warn('[Finly Sync] Servidor rejeitou token (401). Purgando finly_auth_token.');
+          try {
+            localStorage.removeItem('finly_auth_token');
+          } catch (_) {}
+        }
         this.setStatus('offline');
         return null;
       }

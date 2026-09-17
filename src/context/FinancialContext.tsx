@@ -1115,9 +1115,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           console.warn('Supabase store fetch notice:', sbErr);
           if (!canApplySnapshot()) return;
           canWriteFullStoreToSupabaseRef.current = false;
-          // Once local/cached data is available, a failed Supabase snapshot must
-          // not fall through to a potentially older secondary copy.
-          if (hasInitialRemoteSyncFinishedRef.current || localStorage.getItem(userStoreKey)) {
+          let hasLocalContent = false;
+          try {
+            const rawLocal = localStorage.getItem(userStoreKey);
+            if (rawLocal) {
+              const parsed = JSON.parse(rawLocal);
+              hasLocalContent = Boolean((parsed.cards?.length > 0) || (parsed.transactions?.length > 0));
+            }
+          } catch (_) {}
+
+          if (hasInitialRemoteSyncFinishedRef.current || hasLocalContent) {
             hasInitialRemoteSyncFinishedRef.current = true;
             return;
           }

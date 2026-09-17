@@ -103,31 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Don't overwrite explicit demo user session
       if (activeId === DEFAULT_DEMO_USER.id) return;
 
-      if (session?.user) {
-        if (session.access_token && !localStorage.getItem('finly_auth_token')) {
-          localStorage.setItem('finly_auth_token', session.access_token);
-        }
-        const u = session.user;
-        const mappedUser: AuthUser = {
-          id: u.id,
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-          email: u.email || '',
-          phone: u.user_metadata?.phone,
-          role: u.user_metadata?.role || 'admin',
-          avatarUrl: u.user_metadata?.avatar_url,
-          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-        };
-        setCurrentUser(mappedUser);
-        localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
-      } else if (activeId) {
-        // No active Supabase session, but localStorage references a previous login.
-        // This typically happens on the WEB when the browser session token has expired.
-        // On Android/Capacitor the session is auto-refreshed, but on the web browser
-        // clearing cookies/storage or long inactivity can cause token expiry.
-        const isRealUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeId);
-        if (isRealUser) {
-          // Attempt to recover session via stored refresh token
-          try {
+      if (session?.access_token) {
+        try {
+          // Verify with Gotrue whether token signature and claims are actually valid
+          const { data: userData, error: userError } = await supabase.auth.getUser(session.access_token);
+          if (userError || !userData?.user) {
+            console.warn('[Finly Auth] Sessão Supabase inválida/expirada no servidor:', userError?.message);
+            // Attempt to refresh session via stored refresh token
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             if (refreshData?.session?.user && !refreshError) {
               const rs = refreshData.session;
@@ -144,26 +126,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
               setCurrentUser(recoveredUser);
               localStorage.setItem(ACTIVE_SESSION_KEY, recoveredUser.id);
-              console.info('[Finly Auth] Sessão Supabase restaurada via refresh token.');
-            } else {
-              // Refresh token also expired — force re-login
-              console.warn('[Finly Auth] Sessão Supabase expirada no browser. Redirecionando para login.');
-              setCurrentUser(null);
-              localStorage.removeItem(ACTIVE_SESSION_KEY);
-              localStorage.removeItem('finly_auth_token');
+              console.info('[Finly Auth] Sessão Supabase restaurada com sucesso via refresh token.');
+              return;
             }
-          } catch (_) {
-            console.warn('[Finly Auth] Falha ao restaurar sessão Supabase. Redirecionando para login.');
-            setCurrentUser(null);
+
+            // Both token and refresh failed: purge stale tokens and require fresh login
+            console.warn('[Finly Auth] Sessão irrecuperável. Limpando credenciais locais e redirecionando para login.');
             localStorage.removeItem(ACTIVE_SESSION_KEY);
             localStorage.removeItem('finly_auth_token');
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+              const key = localStorage.key(i);
+              if (key && (key.startsWith('sb-') || key.includes('auth-token') || key.includes('session'))) {
+                localStorage.removeItem(key);
+              }
+            }
+            await supabase.auth.signOut().catch(() => {});
+            setCurrentUser(null);
+            return;
           }
+
+          // Token is 100% valid and verified by Gotrue
+          localStorage.setItem('finly_auth_token', session.access_token);
+          const u = userData.user;
+          const mappedUser: AuthUser = {
+            id: u.id,
+            name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+            email: u.email || '',
+            phone: u.user_metadata?.phone,
+            role: u.user_metadata?.role || 'admin',
+            avatarUrl: u.user_metadata?.avatar_url,
+            createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          };
+          setCurrentUser(mappedUser);
+          localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
+        } catch (err) {
+          console.warn('[Finly Auth] Erro inesperado ao verificar sessão:', err);
+        }
+      } else {
+        // No active Supabase session
+        if (activeId && activeId !== DEFAULT_DEMO_USER.id) {
+          console.warn('[Finly Auth] Nenhuma sessão Supabase ativa. Redirecionando para login.');
+          setCurrentUser(null);
+          localStorage.removeItem(ACTIVE_SESSION_KEY);
+          localStorage.removeItem('finly_auth_token');
         }
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
         if (session.access_token) {
           localStorage.setItem('finly_auth_token', session.access_token);
         }
@@ -184,6 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (activeId !== DEFAULT_DEMO_USER.id) {
           setCurrentUser(null);
           localStorage.removeItem(ACTIVE_SESSION_KEY);
+          localStorage.removeItem('finly_auth_token');
         }
       }
     });
@@ -387,6 +399,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
     localStorage.removeItem(ACTIVE_SESSION_KEY);
     localStorage.removeItem('finly_auth_token');
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('sb-') || key.includes('auth-token') || key.includes('session'))) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (_) {}
   };
 
   const updateUserAccount = (data: Partial<AuthUser>) => {
