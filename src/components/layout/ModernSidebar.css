@@ -329,7 +329,8 @@ html.dark {
     width: 280px !important;
     height: 100dvh;
     padding-top: max(20px, env(safe-area-inset-top, 20px));
-    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    padding-bottom: max(32px, calc(env(safe-area-inset-bottom, 0px) + 24px));
+    z-index: 100 !important;
   }
 
   .finly-modern-sidebar .brand-title,

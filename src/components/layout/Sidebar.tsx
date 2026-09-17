@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-xs transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 z-[90] md:hidden backdrop-blur-xs transition-opacity duration-300"
           onClick={() => setMobileOpen(false)}
         />
       )}

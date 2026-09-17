@@ -494,6 +494,7 @@ const AppContent: React.FC = () => {
         setActiveTab={handleSelectTab}
         onOpenNewTransaction={() => handleOpenSpeedDialAction('expense')}
         onOpenAction={handleOpenSpeedDialAction}
+        isHidden={mobileMenuOpen}
       />
 
       {/* Global Modals */}
