@@ -95,6 +95,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "Falha ao enviar manifesto para a VPS."
 }
 
+# 6.1 Update dist inside running container for instant Web browser update
+Write-Host "Atualizando frontend web dentro do container..." -ForegroundColor Yellow
+$distTar = Join-Path ([IO.Path]::GetTempPath()) ("dist-{0}.tar.gz" -f [guid]::NewGuid().ToString('N'))
+tar.exe -czf $distTar -C "$repoRoot/dist" .
+scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $distTar "$($server):$remoteDir/dist-update.tar.gz"
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "mkdir -p $remoteDir/dist_tmp && tar -xzf $remoteDir/dist-update.tar.gz -C $remoteDir/dist_tmp && docker cp $remoteDir/dist_tmp/. finly-app:/app/dist/ && rm -rf $remoteDir/dist_tmp $remoteDir/dist-update.tar.gz"
+Remove-Item -LiteralPath $distTar -Force -ErrorAction SilentlyContinue
+
 # 7. Validate endpoints on VPS
 Write-Host "Validando manifesto e download do bundle na VPS..." -ForegroundColor Yellow
 $manifestCheck = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsS http://127.0.0.1:3000/api/app/manifest"
