@@ -93,7 +93,7 @@ Write-Host "`n📤 Comitando manifesto OTA e enviando para GitHub..." -Foregroun
 git -C $repoRoot add server/manifest.json
 $manifestStatus = @(git -C $repoRoot status --porcelain server/manifest.json)
 if ($manifestStatus.Count -gt 0) {
-    $otaMsg = "chore(ota): publicar bundle web v$webVer"
+    $otaMsg = 'chore(ota): publicar bundle web v' + $webVer
     git -C $repoRoot commit -m "$otaMsg"
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao comitar manifesto OTA."
