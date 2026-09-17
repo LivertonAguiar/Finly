@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.77.4",
+    "version": "1.1.77.5",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.4.zip",
-    "sha256": "16c9a1f533bb08660fae1d23488a039ae3300f51ec73599e4d39f4d303841118",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.5.zip",
+    "sha256": "023df03e0a8c018d76e3bb810eb450b8b5415414f1bd5c67f4891d2b21dfec29",
     "mandatory": true,
-    "releaseDate": "2026-09-15",
-    "notes": "Exibir composicao da taxa e carregar splits da serie de condominio"
+    "releaseDate": "2026-09-16",
+    "notes": "fix(ui): corrigir alinhamento do modal de filtros no mobile via portal responsivo"
   }
 }
