@@ -426,7 +426,7 @@ const AppContent: React.FC = () => {
       />
 
       {/* Main Column (Header + Content) */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen md:pl-[108px] transition-all duration-300">
         {/* Floating In-App Update Notice Popup on Entry (Exclusivo Android Nativo) */}
         {isNativeCapacitor() && <UpdateNoticeCard onGoToUpdate={handleGoToUpdate} />}
 
