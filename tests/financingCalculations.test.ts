@@ -3,6 +3,7 @@ import {
   getMonthlyInterestRate,
   calculatePricePMT,
   generateAmortizationSchedule,
+  simulateExtraordinaryAmortization,
 } from '../src/utils/financingCalculations';
 
 // ────────────────────────────────────────────────────────────────
@@ -237,6 +238,53 @@ import {
   assert.equal(result.schedule[400].finalBalance, 0, 'Cronograma final deve zerar saldo devedor');
 
   console.log(`OK: caso real Caixa auditado centavo a centavo (P20: R$ ${p20.totalInstallment}, Eficiência: ${p20.installmentEfficiency}%, Variação TR: +R$ ${p20.netBalanceVariation})`);
+}
+
+// ────────────────────────────────────────────────────────────────
+// 9. Simulação de Amortização Extraordinária (Redução de Prazo vs Redução de Parcela)
+// ────────────────────────────────────────────────────────────────
+{
+  const testDebt = {
+    currentBalance: 154070.7,
+    nominalAnnualRate: 4.25,
+    remainingMonths: 400,
+    system: 'PRICE' as const,
+    indexer: 'TR' as const,
+    monthlyIndexerRate: 0.1708,
+    monthlyTR: 0.1708,
+    monthlyInsurance: 28.76,
+    adminFee: 0,
+  };
+
+  const sim1k = simulateExtraordinaryAmortization({ ...testDebt, extraLumpSum: 1000 });
+  const sim5k = simulateExtraordinaryAmortization({ ...testDebt, extraLumpSum: 5000 });
+  const sim10k = simulateExtraordinaryAmortization({ ...testDebt, extraLumpSum: 10000 });
+  const sim20k = simulateExtraordinaryAmortization({ ...testDebt, extraLumpSum: 20000 });
+
+  // Opção 1: Redução de Prazo deve ter valores estritamente positivos e crescentes
+  assert.ok(sim1k.reduceTerm.monthsSaved > 0, `1k deve reduzir meses: ${sim1k.reduceTerm.monthsSaved}`);
+  assert.ok(sim5k.reduceTerm.monthsSaved > sim1k.reduceTerm.monthsSaved, '5k deve reduzir mais meses que 1k');
+  assert.ok(sim10k.reduceTerm.monthsSaved > sim5k.reduceTerm.monthsSaved, '10k deve reduzir mais meses que 5k');
+  assert.ok(sim20k.reduceTerm.monthsSaved > sim10k.reduceTerm.monthsSaved, '20k deve reduzir mais meses que 10k');
+
+  assert.ok(sim1k.reduceTerm.interestSaved > 0, 'Juros economizados > 0 para 1k');
+  assert.ok(sim10k.reduceTerm.interestSaved > sim5k.reduceTerm.interestSaved, 'Juros economizados 10k > 5k');
+
+  // Opção 2: Redução de Parcela deve reduzir prestação
+  assert.ok(sim10k.reduceInstallment.monthlyReduction > sim5k.reduceInstallment.monthlyReduction, 'Redução mensal 10k > 5k');
+  assert.ok(sim10k.reduceInstallment.newInstallment < sim10k.reduceInstallment.originalInstallment, 'Nova parcela < original');
+
+  // SAC: Redução de prazo
+  const simSac = simulateExtraordinaryAmortization({
+    currentBalance: 120000,
+    nominalAnnualRate: 6.0,
+    remainingMonths: 120,
+    system: 'SAC',
+    extraLumpSum: 10000,
+  });
+  assert.ok(simSac.reduceTerm.monthsSaved >= 9 && simSac.reduceTerm.monthsSaved <= 11, `SAC 10k/120k deve economizar ~10 meses: ${simSac.reduceTerm.monthsSaved}`);
+
+  console.log(`OK: simulação extraordinária dinâmica validada (1k: -${sim1k.reduceTerm.monthsSaved}m, 10k: -${sim10k.reduceTerm.monthsSaved}m / economiza R$ ${sim10k.reduceTerm.interestSaved})`);
 }
 
 console.log('\n✅ Todos os testes de financingCalculations passaram!');

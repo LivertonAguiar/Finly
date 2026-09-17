@@ -105,6 +105,7 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
       monthlyTR: selectedDebt.indexer === 'TR' ? rate : 0,
       monthlyInsurance: selectedDebt.insuranceMonthly || 0,
       adminFee: selectedDebt.adminFeeMonthly || 0,
+      startDate: selectedDebt.nextDueDate ? new Date(selectedDebt.nextDueDate) : new Date(),
       extraLumpSum: extraAmount,
       extraMonthlyPayment: 0,
     });
@@ -640,8 +641,20 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
             </div>
           </div>
 
-          {/* Botões Rápidos de Aporte Extra */}
+          {/* Botões Rápidos e Campo Personalizado de Aporte Extra */}
           <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex items-center">
+              <span className="absolute left-2.5 text-xs font-bold text-gray-400">R$</span>
+              <input
+                type="number"
+                min="0"
+                step="500"
+                value={extraAmount || ''}
+                onChange={(e) => setExtraAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                placeholder="Outro valor..."
+                className="w-28 sm:w-32 pl-8 pr-2 py-1.5 text-xs font-bold rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#202026] text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all"
+              />
+            </div>
             {[1000, 3000, 5000, 10000, 20000].map((val) => (
               <button
                 key={val}

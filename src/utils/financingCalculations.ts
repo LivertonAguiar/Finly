@@ -288,6 +288,7 @@ export function simulateExtraordinaryAmortization(options: {
   monthlyTR?: number;
   monthlyInsurance?: number;
   adminFee?: number;
+  startDate?: Date; // Data base de início
   extraLumpSum: number; // Aporte único imediato (ex: 10.000)
   extraMonthlyPayment?: number; // Aporte mensal extra recorrente (ex: 500/mês)
 }): ExtraAmortizationSimulation {
@@ -301,6 +302,7 @@ export function simulateExtraordinaryAmortization(options: {
     monthlyTR = 0,
     monthlyInsurance = 0,
     adminFee = 0,
+    startDate = new Date(),
     extraLumpSum,
     extraMonthlyPayment = 0,
   } = options;
@@ -316,6 +318,7 @@ export function simulateExtraordinaryAmortization(options: {
     monthlyTR,
     monthlyInsurance,
     adminFee,
+    startDate,
   });
 
   const originalTotalInterest = original.totalInterest;
@@ -337,42 +340,77 @@ export function simulateExtraordinaryAmortization(options: {
     effectiveIndexerRate = monthlyIndexerRate !== undefined ? monthlyIndexerRate : monthlyTR;
   }
   const indexerMonthlyDecimal = Math.max(0, effectiveIndexerRate) / 100;
-  const baseOriginalPMT = original.schedule.length > 0
-    ? original.schedule[0].amortizationAmount + original.schedule[0].interestAmount
-    : 0;
   const recurringExtra = Math.max(0, extraMonthlyPayment);
 
-  let simBalance = balanceAfterLumpSum;
   let newMonthsCount = 0;
   let newTotalInterestTerm = 0;
 
-  while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
-    newMonthsCount++;
-    const trCorrection = simBalance * indexerMonthlyDecimal;
-    const corrected = simBalance + trCorrection;
-    const interest = corrected * iMonthly;
-    newTotalInterestTerm += interest;
+  if (balanceAfterLumpSum <= 0) {
+    // Quitação imediata total
+    newMonthsCount = 0;
+    newTotalInterestTerm = 0;
+  } else if (system === 'SAC') {
+    // SAC: Manter a quota de amortização mensal base (corrigida pelo indexador)
+    const baseAmortization = original.schedule.length > 0
+      ? original.schedule[0].amortizationAmount
+      : (currentBalance / remainingMonths);
 
-    let amort = 0;
-    if (system === 'PRICE') {
-      amort = Math.max(0, baseOriginalPMT - interest) + recurringExtra;
-    } else {
-      const remainingTerm = Math.max(1, remainingMonths - newMonthsCount + 1);
-      amort = (corrected / remainingTerm) + recurringExtra;
+    let simBalance = balanceAfterLumpSum;
+    let currentAmort = baseAmortization;
+
+    while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
+      newMonthsCount++;
+      if (indexerMonthlyDecimal > 0) {
+        currentAmort *= (1 + indexerMonthlyDecimal);
+      }
+      const trCorrection = simBalance * indexerMonthlyDecimal;
+      const corrected = simBalance + trCorrection;
+      const interest = corrected * iMonthly;
+      newTotalInterestTerm += interest;
+
+      let amort = currentAmort + recurringExtra;
+      if (amort >= corrected) {
+        amort = corrected;
+        simBalance = 0;
+        break;
+      }
+      simBalance = Math.max(0, corrected - amort);
     }
+  } else {
+    // PRICE: A prestação contratual base é reajustada pela TR a cada mês
+    // Na Caixa SFH, P_m = P_{m-1} * (1 + TR), de modo que a prestação em termos reais é constante
+    const basePMT = original.schedule.length > 0
+      ? original.schedule[0].amortizationAmount + original.schedule[0].interestAmount
+      : calculatePricePMT(currentBalance, iMonthly, remainingMonths);
 
-    if (amort >= corrected) {
-      amort = corrected;
+    let simBalance = balanceAfterLumpSum;
+    let currentPMT = basePMT;
+
+    while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
+      newMonthsCount++;
+      if (indexerMonthlyDecimal > 0) {
+        currentPMT *= (1 + indexerMonthlyDecimal);
+      }
+      const trCorrection = simBalance * indexerMonthlyDecimal;
+      const corrected = simBalance + trCorrection;
+      const interest = corrected * iMonthly;
+      newTotalInterestTerm += interest;
+
+      let amort = Math.max(0, currentPMT - interest) + recurringExtra;
+      if (amort >= corrected) {
+        amort = corrected;
+        simBalance = 0;
+        break;
+      }
+      simBalance = Math.max(0, corrected - amort);
     }
-
-    simBalance = Math.max(0, corrected - amort);
   }
 
   const monthsSaved = Math.max(0, remainingMonths - newMonthsCount);
   const yearsSaved = Math.round((monthsSaved / 12) * 10) / 10;
   const interestSavedTerm = Math.max(0, originalTotalInterest - newTotalInterestTerm);
 
-  const termEndDate = new Date();
+  const termEndDate = new Date(startDate);
   termEndDate.setMonth(termEndDate.getMonth() + newMonthsCount);
 
   // -------------------------------------------------------------
