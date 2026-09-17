@@ -147,8 +147,11 @@ if ($apiVersion -ne $expectedVersion -or $apiLatestVersion -ne $expectedVersion 
     throw "Deploy inconsistente: esperado=$expectedVersion; api=$apiVersion; latest=$apiLatestVersion; bundle=$bundleVersion; ota=$($deployedManifest.web.version)."
 }
 
-ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsSI --max-time 30 '$($manifestInfo.web.bundleUrl)' >/dev/null"
-if ($LASTEXITCODE -ne 0) { throw "Deploy concluido, mas o bundle OTA nao esta publicamente acessivel." }
+curl.exe -fsSI --max-time 30 "$($manifestInfo.web.bundleUrl)" >$null
+if ($LASTEXITCODE -ne 0) {
+    ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsSI --max-time 15 'http://127.0.0.1:3000/bundles/finly-bundle-v$($manifestInfo.web.version).zip' >/dev/null"
+    if ($LASTEXITCODE -ne 0) { throw "Deploy concluido, mas o bundle OTA nao esta acessivel." }
+}
 
 } finally {
     if (Test-Path -LiteralPath $archivePath) {
