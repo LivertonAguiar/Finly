@@ -55,7 +55,7 @@ if ($gitStatus.Count -gt 0) {
     }
     Write-Host "Comitando alteracoes: '$Message'..." -ForegroundColor Yellow
     git.exe -C $repoRoot add -A
-    git.exe -C $repoRoot commit -m $Message
+    git.exe -C $repoRoot commit -m "$Message"
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao comitar alteracoes locais."
     }
