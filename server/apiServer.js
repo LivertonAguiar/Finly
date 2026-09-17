@@ -637,32 +637,55 @@ app.get('/api/user/store', authenticateToken, (req, res) => {
   }
 });
 
-// 3.1 REAL-TIME PUSH: SERVER-SENT EVENTS (SSE) STREAM
-app.get('/api/sync/events', (req, res) => {
+// 3.1 REAL-TIME PUSH: SERVER-SENT EVENTS (SSE) STREAM (Authenticated + CORS-safe)
+app.get('/api/sync/events', async (req, res) => {
   let token = req.query.token;
   if (!token && req.headers.authorization) {
     token = req.headers.authorization.replace(/^Bearer\s+/i, '');
   }
 
-  let sessionUser = null;
-  if (token) {
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Acesso negado: Token de autenticação ausente para eventos em tempo real.' });
+  }
+
+  let userId = null;
+
+  // 1. Primary: Verify Supabase JWT token
+  if (supabaseAdmin) {
     try {
-      sessionUser = verifySessionToken(token, APP_SECRET);
+      const { data: sbData, error: sbErr } = await supabaseAdmin.auth.getUser(token);
+      if (!sbErr && sbData?.user) {
+        userId = sbData.user.id;
+      }
     } catch (_) {}
   }
 
-  const userId = sessionUser?.userId || req.query.userId || req.headers['x-user-id'];
+  // 2. Fallback: Verify HMAC session token
   if (!userId) {
-    return res.status(401).json({ success: false, message: 'Não autorizado para eventos em tempo real.' });
+    const verification = verifySessionToken(token, APP_SECRET);
+    if (verification.valid && verification.payload) {
+      userId = verification.payload.userId;
+    }
+  }
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Token inválido ou expirado. Reconecte-se para eventos em tempo real.' });
   }
 
   const canonicalId = CANONICAL_USER_MAP[userId] || userId;
+
+  // Derive CORS origin from whitelist (never wildcard)
+  const requestOrigin = req.headers.origin;
+  const corsOrigin = (requestOrigin && allowedOrigins.includes(requestOrigin))
+    ? requestOrigin
+    : allowedOrigins[0];
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Credentials': 'true',
   });
 
   res.write(`data: ${JSON.stringify({ type: 'CONNECTED', userId: canonicalId })}\n\n`);
@@ -800,7 +823,12 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
           include_in_total: a.includeInTotal !== false,
           account_number: a.accountNumber || null,
         }));
-        supabaseAdmin.from('accounts').upsert(accRows).catch(() => {});
+        supabaseAdmin.from('accounts').upsert(accRows)
+          .then(({ error }) => {
+            if (error) console.warn('⚠️ Erro ao persistir contas no Supabase via Admin:', error.message);
+            else console.log(`🏦 [SUPABASE ADMIN] ${accRows.length} contas sincronizadas.`);
+          })
+          .catch(err => console.warn('⚠️ Falha Supabase account upsert:', err.message));
       }
     }
 
@@ -916,6 +944,7 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
     return res.status(400).json({ success: false, message: 'E-mail é obrigatório.' });
   }
 
+  const cleanEmail = email.toLowerCase().trim();
   let user = findUserByEmail(cleanEmail);
   if (!user && supabaseAdmin) {
     try {
