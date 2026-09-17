@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Filter,
   Calendar,
@@ -89,18 +90,18 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Close when clicking outside
+  // Prevent background scroll and allow Escape key when open
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -169,7 +170,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
 
   return (
     <div className={`relative ${className}`} ref={popoverRef}>
-      {/* TRIGGER BUTTON (Matching Reference Image) */}
+      {/* TRIGGER BUTTON */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -188,46 +189,70 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
         )}
       </button>
 
-      {/* FLOATING POPOVER MODAL */}
-      {isOpen && (
-        <div
-          className="absolute right-0 top-12 z-50 w-80 sm:w-96 max-h-[85vh] overflow-y-auto rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-5 space-y-4 animate-in fade-in zoom-in-95 backdrop-blur-md"
-          style={{ scrollbarWidth: 'thin' }}
-        >
-          {/* Header with Title and Reset */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-purple-500" />
-              <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Filtros</h3>
-              {activeFiltersCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 text-[10px] font-black">
-                  {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
-                </span>
-              )}
+      {/* MODAL / BOTTOM SHEET VIA PORTAL */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[220] flex items-end sm:items-center justify-center sm:p-4">
+          {/* Backdrop */}
+          <button
+            type="button"
+            aria-label="Fechar modal de filtros"
+            onClick={() => setIsOpen(false)}
+            className="absolute inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
+          />
+
+          {/* Dialog Container */}
+          <div
+            className="relative w-full sm:max-w-md max-h-[85dvh] sm:max-h-[85vh] bg-white dark:bg-[#18181B] rounded-t-[28px] sm:rounded-[28px] border border-slate-200/90 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
+          >
+            {/* Header */}
+            <div className="px-5 pt-3.5 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600 mx-auto mb-3 sm:hidden" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <Filter className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Filtros</h3>
+                      {activeFiltersCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 text-[10px] font-black">
+                          {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {activeFiltersCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Limpar</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                    aria-label="Fechar"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {activeFiltersCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Limpar</span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-3 divide-y divide-slate-100 dark:divide-slate-800/80">
+            {/* Scrollable Accordion Content */}
+            <div
+              className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4"
+              style={{ scrollbarWidth: 'thin' }}
+            >
+              <div className="space-y-3 divide-y divide-slate-100 dark:divide-slate-800/80">
             {/* 1. FILTRAR POR PERÍODO */}
             {showPeriod && (
               <div className="pt-2 first:pt-0 space-y-2">
@@ -666,19 +691,31 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
                 )}
               </div>
             )}
-          </div>
+              </div>
+            </div>
 
-          {/* Footer Action */}
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="w-full py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-purple-600/20 cursor-pointer hover:scale-[1.02]"
-            >
-              Aplicar Filtros
-            </button>
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-sm shrink-0 flex items-center gap-2">
+              {activeFiltersCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="flex-1 py-3 px-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer text-center"
+                >
+                  Limpar
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex-[2] py-3 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-600 active:scale-[0.98] text-white text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-cyan-500/20 cursor-pointer text-center"
+              >
+                Aplicar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
