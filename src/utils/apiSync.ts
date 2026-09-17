@@ -2,6 +2,11 @@ import { getApiUrl } from '../services/apiConfig';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error';
 
+// Identificador único da sessão/aba atual para evitar eco de eventos SSE para o próprio remetente
+const CLIENT_SESSION_ID = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+  ? crypto.randomUUID()
+  : `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
 class ApiSyncService {
   private syncTimer: any = null;
   private pendingPayload: any = null;
@@ -64,7 +69,7 @@ class ApiSyncService {
       token = localStorage.getItem('finly_auth_token') || '';
     } catch (_) {}
 
-    const url = getApiUrl(`/api/sync/events?userId=${encodeURIComponent(userId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`);
+    const url = getApiUrl(`/api/sync/events?userId=${encodeURIComponent(userId)}&sessionId=${encodeURIComponent(CLIENT_SESSION_ID)}${token ? `&token=${encodeURIComponent(token)}` : ''}`);
     try {
       const es = new EventSource(url);
       this.eventSource = es;
@@ -126,6 +131,7 @@ class ApiSyncService {
       if (userId) {
         headers['x-user-id'] = userId;
       }
+      headers['x-session-id'] = CLIENT_SESSION_ID;
     }
     return headers;
   }
@@ -218,7 +224,7 @@ class ApiSyncService {
           'Content-Type': 'application/json',
           ...this.getAuthHeaders(userId),
         },
-        body: JSON.stringify({ userId, store }),
+        body: JSON.stringify({ userId, store, sessionId: CLIENT_SESSION_ID }),
       });
 
       if (res.ok) {

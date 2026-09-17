@@ -292,6 +292,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const isResettingRef = useRef<boolean>(false);
   const hasInitialRemoteSyncFinishedRef = useRef<boolean>(false);
   const localMutationRevisionRef = useRef(0);
+  const lastSavedMutationRevisionRef = useRef(0);
   const remotePullSequenceRef = useRef(0);
   const canWriteFullStoreToSupabaseRef = useRef(false);
   const pendingCardMutationsRef = useRef<PendingCardMutations>({ upserts: {}, deletes: [] });
@@ -787,7 +788,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const isDemo = userId === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com';
 
     try {
-      const saved = localStorage.getItem(userStoreKey);
+      let saved = localStorage.getItem(userStoreKey);
+      if (!saved && (userId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b' || userId === 'usr-default-liverton')) {
+        saved = localStorage.getItem('finly_user_usr-default-liverton_store') || localStorage.getItem('finly_user_e2208d7b-f536-4ff8-a0a6-5ed82ebae52b_store');
+      }
       if (saved) {
         const parsed = JSON.parse(saved);
         // If demo user and stored dataset is legacy or incomplete, refresh to full comprehensive dataset
@@ -945,6 +949,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     remotePullSequenceRef.current += 1;
     localMutationRevisionRef.current = 0;
+    lastSavedMutationRevisionRef.current = 0;
     isStoreLoadedForUserIdRef.current = null;
     hasInitialRemoteSyncFinishedRef.current = false;
     canWriteFullStoreToSupabaseRef.current = false;
@@ -1078,6 +1083,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (sbStore.userProfile) setUser(mergedUserProfile);
 
             hasInitialRemoteSyncFinishedRef.current = true;
+            isStoreLoadedForUserIdRef.current = currentUser.id;
+            setStoreOwnerUserId(currentUser.id);
+            lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
 
             // Sync server store and local storage to match Supabase truth
             const cleanStore = {
@@ -1094,8 +1102,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             };
             try {
               localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
+              if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+                localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(cleanStore));
+              }
             } catch (_) {}
-            apiSync.pushStore(currentUser.id, cleanStore, true);
             return;
           }
           // Supabase configured but returned no data — likely expired auth session or first-time user
@@ -1152,11 +1162,36 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setNotifications(serverStore.notifications);
         }
         hasInitialRemoteSyncFinishedRef.current = true;
+        isStoreLoadedForUserIdRef.current = currentUser.id;
+        setStoreOwnerUserId(currentUser.id);
+        lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
+        try {
+          const cleanStore = {
+            ...serverStore,
+            accounts: cleanAccounts,
+            cards: cleanCards,
+            debts: reconciledDebts.debts,
+            goals: cleanGoals,
+            budgets: cleanBudgets,
+            investments: cleanInvestments,
+            transactions: migratedSeries.transactions,
+            transactionSeries: migratedSeries.series,
+          };
+          localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
+          if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+            localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(cleanStore));
+          }
+        } catch (_) {}
         return;
       }
 
       // 3. New User or first-time login: neither Supabase nor server had existing data yet
-      if (canApplySnapshot()) hasInitialRemoteSyncFinishedRef.current = true;
+      if (canApplySnapshot()) {
+        hasInitialRemoteSyncFinishedRef.current = true;
+        isStoreLoadedForUserIdRef.current = currentUser.id;
+        setStoreOwnerUserId(currentUser.id);
+        lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
+      }
     };
 
     pullData();
@@ -1232,9 +1267,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // 1. Save to local storage as instant offline cache
     try {
       localStorage.setItem(userStoreKey, JSON.stringify(currentStore));
+      if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+        localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(currentStore));
+      }
     } catch (e) {
       console.error('Error saving user store to localStorage:', e);
     }
+
+    // Only push to remote backends if there are genuine local user mutations
+    // (Prevents loop where pulling remote data causes immediate push back to server)
+    const hasLocalMutations = localMutationRevisionRef.current > lastSavedMutationRevisionRef.current;
+    if (!hasLocalMutations) {
+      return;
+    }
+    lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
 
     const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
 
@@ -1325,6 +1371,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (sbStore.userProfile) setUser(mergedUserProfile);
 
             hasInitialRemoteSyncFinishedRef.current = true;
+            isStoreLoadedForUserIdRef.current = currentUser.id;
+            setStoreOwnerUserId(currentUser.id);
+            lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
 
             // Update server store to match Supabase
             const cleanStore = {
@@ -1341,8 +1390,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             };
             try {
               localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
+              if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+                localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(cleanStore));
+              }
             } catch (_) {}
-            apiSync.pushStore(currentUser.id, cleanStore, true);
             return;
           }
         } catch (sbErr) {
@@ -1395,6 +1446,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
 
         hasInitialRemoteSyncFinishedRef.current = true;
+        isStoreLoadedForUserIdRef.current = currentUser.id;
+        setStoreOwnerUserId(currentUser.id);
+        lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
         return;
       } else {
         // Fallback reload from local storage
@@ -1412,6 +1466,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setFamilyMembers(store.familyMembers);
         setNotifications(store.notifications);
         hasInitialRemoteSyncFinishedRef.current = true;
+        isStoreLoadedForUserIdRef.current = currentUser.id;
+        setStoreOwnerUserId(currentUser.id);
+        lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
       }
     } catch (err) {
       console.warn('Sync completed with local cache fallback:', err);

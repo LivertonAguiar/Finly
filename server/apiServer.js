@@ -83,7 +83,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-auth-token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-auth-token', 'x-session-id'],
 }));
 
 // Body parser with 20MB limit
@@ -366,7 +366,7 @@ const POSTGRES_USER_UUID_MAP = {
 // Active SSE clients for instant push synchronization (Web <-> Mobile)
 const sseClients = new Map(); // canonicalUserId -> Set<Response>
 
-function broadcastStoreUpdate(userId, eventData) {
+function broadcastStoreUpdate(userId, eventData, originSessionId) {
   const canonicalId = CANONICAL_USER_MAP[userId] || userId;
   const targetIds = new Set([canonicalId, userId]);
   for (const [alias, mapped] of Object.entries(CANONICAL_USER_MAP)) {
@@ -381,6 +381,9 @@ function broadcastStoreUpdate(userId, eventData) {
     const clients = sseClients.get(id);
     if (clients) {
       clients.forEach(clientRes => {
+        if (originSessionId && clientRes.sessionId && clientRes.sessionId === originSessionId) {
+          return; // Skip echo back to originating client session
+        }
         try {
           clientRes.write(payloadString);
         } catch (_) {
@@ -664,6 +667,9 @@ app.get('/api/sync/events', (req, res) => {
 
   res.write(`data: ${JSON.stringify({ type: 'CONNECTED', userId: canonicalId })}\n\n`);
 
+  const sessionId = req.query.sessionId || req.headers['x-session-id'];
+  res.sessionId = sessionId;
+
   if (!sseClients.has(canonicalId)) {
     sseClients.set(canonicalId, new Set());
   }
@@ -752,11 +758,12 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
     }
 
     // Instant real-time push broadcast to all other open clients (Web <-> Mobile)
+    const originSessionId = req.headers['x-session-id'] || req.body?.sessionId;
     broadcastStoreUpdate(userId, {
       type: 'STORE_UPDATED',
       timestamp: payload._serverTimestamp,
       store: sanitizedStore,
-    });
+    }, originSessionId);
 
     return res.json({
       success: true,
