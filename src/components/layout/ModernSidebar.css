@@ -38,7 +38,7 @@ html.dark {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: 84px;
   padding: 20px;
   border-radius: 24px;
@@ -62,131 +62,77 @@ html.dark {
   }
 }
 
-/* Profile Section */
-.finly-modern-sidebar .profile {
+/* Brand Logo Section */
+.finly-modern-sidebar .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  height: 44px;
   flex-shrink: 0;
   cursor: pointer;
-  position: relative;
 }
 
-.finly-modern-sidebar .profile .avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: var(--finly-chip);
-  border: 1px solid var(--finly-border);
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--finly-accent);
-}
-
-.finly-modern-sidebar .profile .details {
-  display: flex;
-  flex-direction: column;
+.finly-modern-sidebar .brand-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--finly-text);
+  letter-spacing: -0.02em;
   opacity: 0;
   transition: opacity 0.15s ease;
-  overflow: hidden;
+  white-space: nowrap;
 }
 
-.finly-modern-sidebar:hover .profile .details,
-.finly-modern-sidebar:hover .profile .chevron {
+.finly-modern-sidebar:hover .brand-title {
   opacity: 1;
   transition: opacity 0.25s 0.1s ease;
 }
 
-.finly-modern-sidebar .profile .name {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--finly-text);
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-
-.finly-modern-sidebar .profile .role {
-  margin: 3px 0 0 0;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--finly-muted);
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.finly-modern-sidebar .profile .chevron {
-  width: 18px;
-  height: 18px;
-  color: var(--finly-muted);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-/* Search Box */
-.finly-modern-sidebar .search {
-  position: relative;
+/* Quick New Action Button */
+.finly-modern-sidebar .quick-new-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
-  flex: 0 0 44px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.finly-modern-sidebar .quick-new-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.finly-modern-sidebar .quick-new-btn:active {
+  transform: translateY(0);
+}
+
+.finly-modern-sidebar .quick-new-btn .btn-icon {
   width: 44px;
   height: 44px;
-  border: 1px solid var(--finly-border);
-  border-radius: 12px;
-  background: var(--finly-chip);
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
-.finly-modern-sidebar:hover .search {
-  width: 100%;
-}
-
-.finly-modern-sidebar .search input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 0 40px 0 14px;
+.finly-modern-sidebar .quick-new-btn .btn-label {
   opacity: 0;
   transition: opacity 0.15s ease;
-  color: var(--finly-text);
-  outline: 0;
+  white-space: nowrap;
+  padding-right: 12px;
 }
 
-.finly-modern-sidebar:hover .search input {
+.finly-modern-sidebar:hover .quick-new-btn .btn-label {
   opacity: 1;
   transition: opacity 0.25s 0.1s ease;
-}
-
-.finly-modern-sidebar .search input::placeholder {
-  color: var(--finly-muted);
-  font-weight: 500;
-}
-
-.finly-modern-sidebar .search > .icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--finly-muted);
-  pointer-events: none;
-  width: 18px;
-  height: 18px;
 }
 
 /* Navigation List */
@@ -198,7 +144,7 @@ html.dark {
   overflow-y: auto;
   overflow-x: hidden;
   margin: 0 -8px;
-  padding: 0 8px;
+  padding: 4px 8px;
   scrollbar-width: none;
 }
 
@@ -323,58 +269,54 @@ html.dark {
   flex-shrink: 0;
 }
 
-/* Actions Footer Dock */
-.finly-modern-sidebar .actions {
-  position: relative;
-  flex-shrink: 0;
+/* Bottom Footer Action: Customize Menu */
+.finly-modern-sidebar .footer-action-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
   height: 44px;
-  margin-top: auto;
-  transition: height 0.35s ease;
-}
-
-.finly-modern-sidebar .action {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--finly-chip);
   color: var(--finly-soft);
-  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  border: 0;
+  padding: 0;
   cursor: pointer;
-  outline: none;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-top: auto;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.finly-modern-sidebar .action:hover {
-  color: var(--finly-accent);
+.finly-modern-sidebar .footer-action-btn:hover {
   background: var(--finly-active);
-  transform: translateY(-2px);
+  color: var(--finly-accent);
+  transform: translateY(-1px);
 }
 
-.finly-modern-sidebar .action:active {
+.finly-modern-sidebar .footer-action-btn:active {
   transform: translateY(0);
 }
 
-.finly-modern-sidebar:hover .action:nth-child(2) {
-  left: 56px;
+.finly-modern-sidebar .footer-action-btn .btn-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
-.finly-modern-sidebar:hover .action:nth-child(3) {
-  left: 112px;
+.finly-modern-sidebar .footer-action-btn .btn-label {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  padding-right: 12px;
 }
 
-.finly-modern-sidebar:hover .action:nth-child(4) {
-  left: 168px;
-}
-
-.finly-modern-sidebar .action .icon {
-  width: 20px;
-  height: 20px;
+.finly-modern-sidebar:hover .footer-action-btn .btn-label {
+  opacity: 1;
+  transition: opacity 0.25s 0.1s ease;
 }
 
 /* Mobile Drawer Overlay Support */
@@ -390,15 +332,11 @@ html.dark {
     padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
   }
 
-  .finly-modern-sidebar .profile .details,
-  .finly-modern-sidebar .profile .chevron,
-  .finly-modern-sidebar .search input,
+  .finly-modern-sidebar .brand-title,
+  .finly-modern-sidebar .quick-new-btn .btn-label,
+  .finly-modern-sidebar .footer-action-btn .btn-label,
   .finly-modern-sidebar .nav-item p {
     opacity: 1 !important;
-  }
-
-  .finly-modern-sidebar .search {
-    width: 100% !important;
   }
 
   .finly-modern-sidebar .nav-item::before {
@@ -410,17 +348,5 @@ html.dark {
     top: 50% !important;
     right: 12px !important;
     transform: translateY(-50%) !important;
-  }
-
-  .finly-modern-sidebar .action:nth-child(2) {
-    left: 56px !important;
-  }
-
-  .finly-modern-sidebar .action:nth-child(3) {
-    left: 112px !important;
-  }
-
-  .finly-modern-sidebar .action:nth-child(4) {
-    left: 168px !important;
   }
 }

@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.77.5",
+    "version": "1.1.77.6",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.5.zip",
-    "sha256": "023df03e0a8c018d76e3bb810eb450b8b5415414f1bd5c67f4891d2b21dfec29",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.6.zip",
+    "sha256": "62f1f8317b3c07ab306f4a147baa063dff043c9409b1774ce2a36f4700224ea7",
     "mandatory": true,
     "releaseDate": "2026-09-16",
-    "notes": "fix(ui): corrigir alinhamento do modal de filtros no mobile via portal responsivo"
+    "notes": "refactor(ui): simplificar sidebar moderna removendo busca, perfil, tema e hide"
   }
 }

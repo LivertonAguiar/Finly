@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   MoreHorizontal,
-  ChevronDown,
   Plus,
   SlidersHorizontal,
-  Search,
-  Moon,
-  Sun,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
-import { useAuth } from '../../context/AuthContext';
+import { FinlyLogo } from '../ui/FinlyLogo';
 import {
   ALL_SIDEBAR_ITEMS,
   getStoredSidebarItems,
@@ -36,22 +30,15 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
-  collapsed,
-  setCollapsed,
   mobileOpen,
   setMobileOpen,
   onOpenNewTransaction,
 }) => {
-  const { user, toggleTheme, toggleHideValues, notifications } = useFinancial();
-  const { currentUser } = useAuth();
+  const { user, notifications } = useFinancial();
   const { lang, t } = useTranslation();
   const [activeItemIds, setActiveItemIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [accentColor, setAccentColor] = useState<string>(() => user.accentColor || localStorage.getItem('finly_accent_color') || '#7C4DFF');
-
-  // Detect dark theme
-  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
   // Close mobile sidebar drawer on Android back gesture
   useBackButton(mobileOpen, () => setMobileOpen(false));
@@ -86,28 +73,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Build the list of active navigation items in user-defined order
   const customNavItems: SidebarItemDef[] = useMemo(() => {
-    const list = activeItemIds
+    return activeItemIds
       .map(id => itemMap.get(id))
       .filter((item): item is SidebarItemDef => !!item);
-
-    if (!searchQuery.trim()) return list;
-
-    const q = searchQuery.toLowerCase().trim();
-    return list.filter(item => {
-      const label = getSidebarItemLabel(item.id, lang).toLowerCase();
-      return label.includes(q) || item.id.toLowerCase().includes(q);
-    });
-  }, [activeItemIds, itemMap, searchQuery, lang]);
-
-  // User details for profile widget
-  const userName = user.name || currentUser?.name || currentUser?.email?.split('@')[0] || 'Finly User';
-  const userRole = currentUser?.role === 'admin' ? 'Admin' : 'Finly Pro';
-  const userInitials = userName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w: string) => w[0]?.toUpperCase())
-    .join('') || 'F';
+  }, [activeItemIds, itemMap]);
 
   // Badge count for pending notifications
   const unreadNotifs = notifications ? notifications.filter(n => !n.read).length : 0;
@@ -136,37 +105,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : undefined
         }
       >
-        {/* 1. Profile Section */}
+        {/* 1. Brand Logo Section */}
         <div
-          className="profile"
+          className="brand"
           onClick={() => {
-            setActiveTab('perfil');
+            setActiveTab('dashboard');
             setMobileOpen(false);
           }}
-          title={t('nav.profile', 'Perfil do Usuário')}
+          title="Finly Dashboard"
         >
-          {user.avatarUrl ? (
-            <img className="avatar" src={user.avatarUrl} alt={userName} />
-          ) : (
-            <div className="avatar">{userInitials}</div>
-          )}
-          <div className="details">
-            <p className="name">{userName}</p>
-            <p className="role">{userRole}</p>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0">
+            <FinlyLogo size="md" showText={false} />
           </div>
-          <ChevronDown className="chevron" />
+          <span className="brand-title">
+            Finly
+          </span>
         </div>
 
-        {/* 2. Search Section */}
-        <div className="search">
-          <input
-            type="text"
-            placeholder={t('search.placeholder', 'Buscar menu...')}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-          <Search className="icon" />
-        </div>
+        {/* 2. Quick New Transaction Button */}
+        <button
+          type="button"
+          onClick={() => {
+            onOpenNewTransaction();
+            setMobileOpen(false);
+          }}
+          style={{
+            backgroundColor: accentColor,
+            color: 'var(--primary-accent-foreground, #FFFFFF)',
+            boxShadow: `0 4px 14px 0 ${accentColor}35`,
+          }}
+          className="quick-new-btn"
+          title={t('action.new_transaction', 'Novo Lançamento')}
+        >
+          <div className="btn-icon">
+            <Plus className="w-5 h-5 stroke-[2.5]" />
+          </div>
+          <span className="btn-label">
+            {t('action.new_transaction', 'Novo')}
+          </span>
+        </button>
 
         {/* 3. Navigation List */}
         <nav>
@@ -211,59 +188,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </nav>
 
-        {/* 4. Sliding Horizontal Actions Footer */}
-        <div className="actions">
-          {/* Action 1: Theme Toggle (Sun / Moon) */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="action"
-            title={isDark ? t('theme.light', 'Alternar para Modo Claro') : t('theme.dark', 'Alternar para Modo Escuro')}
-          >
-            {isDark ? (
-              <Sun className="icon text-amber-400" />
-            ) : (
-              <Moon className="icon text-indigo-500" />
-            )}
-          </button>
-
-          {/* Action 2: Quick New Transaction */}
-          <button
-            type="button"
-            onClick={() => {
-              onOpenNewTransaction();
-              setMobileOpen(false);
-            }}
-            className="action"
-            title={t('action.new_transaction', 'Novo Lançamento')}
-          >
-            <Plus className="icon text-emerald-500 stroke-[2.5]" />
-          </button>
-
-          {/* Action 3: Customize Menu */}
-          <button
-            type="button"
-            onClick={() => setIsCustomizerOpen(true)}
-            className="action"
-            title={t('nav.customize_menu', 'Personalizar menu lateral')}
-          >
-            <SlidersHorizontal className="icon text-purple-500" />
-          </button>
-
-          {/* Action 4: Eye / EyeOff Toggle Values */}
-          <button
-            type="button"
-            onClick={toggleHideValues}
-            className="action"
-            title={user.showValues ? t('action.hide_values', 'Ocultar valores') : t('action.show_values', 'Mostrar valores')}
-          >
-            {user.showValues ? (
-              <Eye className="icon text-sky-400" />
-            ) : (
-              <EyeOff className="icon text-rose-400" />
-            )}
-          </button>
-        </div>
+        {/* 4. Footer Action: Customize Menu */}
+        <button
+          type="button"
+          onClick={() => setIsCustomizerOpen(true)}
+          className="footer-action-btn"
+          title={t('nav.customize_menu', 'Personalizar menu')}
+        >
+          <div className="btn-icon">
+            <SlidersHorizontal className="w-4.5 h-4.5" />
+          </div>
+          <span className="btn-label">
+            {t('nav.customize_menu', 'Personalizar menu')}
+          </span>
+        </button>
       </aside>
 
       {/* Sidebar Customizer Modal */}
