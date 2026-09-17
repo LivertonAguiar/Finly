@@ -76,7 +76,7 @@ Write-Host "  - Arquivo: $bundleFileName" -ForegroundColor White
 
 # 4. Ensure remote directories exist on VPS
 Write-Host "Criando diretorios remotos na VPS..." -ForegroundColor Yellow
-ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server "mkdir -p $remoteBundlesDir"
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "mkdir -p $remoteBundlesDir"
 if ($LASTEXITCODE -ne 0) {
     throw "Falha ao criar diretorio remoto de bundles na VPS."
 }
@@ -97,7 +97,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # 7. Validate endpoints on VPS
 Write-Host "Validando manifesto e download do bundle na VPS..." -ForegroundColor Yellow
-$manifestCheck = ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsS http://127.0.0.1:3000/api/app/manifest"
+$manifestCheck = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsS http://127.0.0.1:3000/api/app/manifest"
 if ($LASTEXITCODE -ne 0 -or -not $manifestCheck) {
     throw "Falha ao validar endpoint /api/app/manifest na VPS."
 }

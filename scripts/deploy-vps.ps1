@@ -101,24 +101,24 @@ scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $archivePath "$($server)
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao enviar o pacote para a VPS." }
 
 Write-Host "Enviando bundle OTA validado ($bundleFileName)..." -ForegroundColor Yellow
-ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server "mkdir -p '$remoteDir/server/public/bundles'"
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "mkdir -p '$remoteDir/server/public/bundles'"
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao preparar o diretorio remoto de bundles." }
 scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $bundlePath "$($server):$remoteDir/server/public/bundles/$bundleFileName"
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao enviar o bundle OTA." }
 
 Write-Host "Reconstruindo container Docker no servidor..." -ForegroundColor Yellow
 $cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" --exclude="server/public/bundles/*" && rm -f finly-update.tar.gz && docker compose up -d --build --remove-orphans'
-ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server $cmd
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $cmd
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou durante a reconstrucao do container." }
 
 Write-Host "Aplicando migrações SQL no banco de dados Supabase..." -ForegroundColor Yellow
 $migrationCmd = 'for f in /opt/docker/finly/supabase/migrations/*.sql; do if [ -f "$f" ]; then cat "$f" | sudo docker exec -i supabase-db psql -U postgres -d postgres >/dev/null 2>&1 || true; fi; done'
-ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server $migrationCmd
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $migrationCmd
 
 Write-Host "Validando API e bundle implantados..." -ForegroundColor Yellow
 $apiRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {
-    $apiRaw = ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/version' 2>$null
+    $apiRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/version' 2>$null
     if ($LASTEXITCODE -eq 0 -and $apiRaw) { break }
     Start-Sleep -Seconds 2
 }
@@ -127,13 +127,13 @@ if (-not $apiRaw) { throw "Deploy concluido, mas a API nao respondeu ao health c
 
 $manifestRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {
-    $manifestRaw = ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/manifest' 2>$null
+    $manifestRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/manifest' 2>$null
     if ($LASTEXITCODE -eq 0 -and $manifestRaw) { break }
     Start-Sleep -Seconds 2
 }
 if (-not $manifestRaw) { throw "Deploy concluido, mas o manifesto OTA nao respondeu ao health check." }
 
-$bundleRaw = ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/app-version.json'
+$bundleRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/app-version.json'
 if ($LASTEXITCODE -ne 0 -or -not $bundleRaw) {
     throw "Deploy concluido, mas o manifesto de versao do bundle nao respondeu."
 }
@@ -147,7 +147,7 @@ if ($apiVersion -ne $expectedVersion -or $apiLatestVersion -ne $expectedVersion 
     throw "Deploy inconsistente: esperado=$expectedVersion; api=$apiVersion; latest=$apiLatestVersion; bundle=$bundleVersion; ota=$($deployedManifest.web.version)."
 }
 
-ssh.exe -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsSI --max-time 30 '$($manifestInfo.web.bundleUrl)' >/dev/null"
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsSI --max-time 30 '$($manifestInfo.web.bundleUrl)' >/dev/null"
 if ($LASTEXITCODE -ne 0) { throw "Deploy concluido, mas o bundle OTA nao esta publicamente acessivel." }
 
 } finally {
