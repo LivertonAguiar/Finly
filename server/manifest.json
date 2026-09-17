@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.77/finly-v1.1.77.apk"
   },
   "web": {
-    "version": "1.1.77.7",
+    "version": "1.1.77.8",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.7.zip",
-    "sha256": "869aabadeabe57b6d4ccbfb1fc9acc9edf158051be20c8d253baebb4dabb63f7",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.77.8.zip",
+    "sha256": "7795932293d1bb49ae9e72b03c3f1485659fb13279bf9685b8713abb94586b5c",
     "mandatory": true,
-    "releaseDate": "2026-09-16",
-    "notes": "fix(ui): z-index e ocultacao da navbar inferior ao abrir sidebar no mobile"
+    "releaseDate": "2026-09-17",
+    "notes": "fix(relatorios): recalcular reducao de prazo com TR e adicionar campo de valor customizado no simulador"
   }
 }
