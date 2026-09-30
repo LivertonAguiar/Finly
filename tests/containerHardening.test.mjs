@@ -28,5 +28,10 @@ assert.match(
   /base64 -d \| docker exec -i finly-app node/iu,
   'A validação pós-deploy deve consultar a API de dentro do contêiner isolado.',
 );
+assert.match(
+  deploy,
+  /\(\$bundleRaw -join ''\)\.Trim\(\)/u,
+  'O JSON retornado por SSH deve ser normalizado antes da leitura em modo estrito.',
+);
 
 console.log('OK: contêiner sem porta pública, com saúde, limites, rotação e usuário não-root.');

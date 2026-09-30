@@ -154,11 +154,11 @@ if ($LASTEXITCODE -ne 0 -or -not $bundleRaw) {
     throw "Deploy concluido, mas o manifesto de versao do bundle nao respondeu."
 }
 
-$apiInfo = $apiRaw | ConvertFrom-Json
-$deployedManifest = $manifestRaw | ConvertFrom-Json
+$apiInfo = (($apiRaw -join '').Trim()) | ConvertFrom-Json
+$deployedManifest = (($manifestRaw -join '').Trim()) | ConvertFrom-Json
 $apiVersion = $apiInfo.version
 $apiLatestVersion = $apiInfo.latestVersion
-$bundleVersion = ($bundleRaw | ConvertFrom-Json).version
+$bundleVersion = ((($bundleRaw -join '').Trim()) | ConvertFrom-Json).version
 if ($apiVersion -ne $expectedVersion -or $apiLatestVersion -ne $expectedVersion -or $bundleVersion -ne $expectedVersion -or $deployedManifest.native.version -ne $expectedVersion -or $deployedManifest.web.version -ne $manifestInfo.web.version -or $deployedManifest.web.sha256 -ne $bundleHash) {
     throw "Deploy inconsistente: esperado=$expectedVersion; api=$apiVersion; latest=$apiLatestVersion; bundle=$bundleVersion; ota=$($deployedManifest.web.version)."
 }
