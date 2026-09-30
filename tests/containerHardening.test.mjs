@@ -25,7 +25,7 @@ assert.doesNotMatch(
 );
 assert.match(
   deploy,
-  /docker exec finly-app node -e/iu,
+  /base64 -d \| docker exec -i finly-app node/iu,
   'A validação pós-deploy deve consultar a API de dentro do contêiner isolado.',
 );
 

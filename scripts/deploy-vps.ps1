@@ -11,6 +11,19 @@ $remoteDir = "/opt/docker/finly"
 $archiveName = 'finly-update.tar.gz'
 $archivePath = Join-Path ([IO.Path]::GetTempPath()) ("finly-update-{0}.tar.gz" -f [guid]::NewGuid().ToString('N'))
 
+function New-ContainerFetchCommand {
+    param (
+        [Parameter(Mandatory = $true)][string]$Url,
+        [ValidateSet('GET', 'HEAD')][string]$Method = 'GET',
+        [bool]$PrintBody = $true
+    )
+
+    $successAction = if ($PrintBody) { 'console.log(await r.text())' } else { 'process.exit(0)' }
+    $script = "fetch('$Url',{method:'$Method'}).then(async r=>{if(!r.ok)process.exit(1);$successAction}).catch(()=>process.exit(1))"
+    $encodedScript = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($script))
+    return "printf '%s' '$encodedScript' | base64 -d | docker exec -i finly-app node"
+}
+
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "INICIANDO DEPLOY DO FINLY NA VPS ORACLE" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -116,24 +129,27 @@ $migrationCmd = 'for f in /opt/docker/finly/supabase/migrations/*.sql; do if [ -
 ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $migrationCmd
 
 Write-Host "Validando API e bundle implantados..." -ForegroundColor Yellow
+$apiHealthCommand = New-ContainerFetchCommand -Url 'http://127.0.0.1:3000/api/app/version'
 $apiRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {
-    $apiRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/api/app/version'').then(async r=>{if(!r.ok)process.exit(1);console.log(await r.text())}).catch(()=>process.exit(1))"' 2>$null
+    $apiRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $apiHealthCommand 2>$null
     if ($LASTEXITCODE -eq 0 -and $apiRaw) { break }
     Start-Sleep -Seconds 2
 }
 
 if (-not $apiRaw) { throw "Deploy concluido, mas a API nao respondeu ao health check." }
 
+$manifestHealthCommand = New-ContainerFetchCommand -Url 'http://127.0.0.1:3000/api/app/manifest'
 $manifestRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {
-    $manifestRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/api/app/manifest'').then(async r=>{if(!r.ok)process.exit(1);console.log(await r.text())}).catch(()=>process.exit(1))"' 2>$null
+    $manifestRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $manifestHealthCommand 2>$null
     if ($LASTEXITCODE -eq 0 -and $manifestRaw) { break }
     Start-Sleep -Seconds 2
 }
 if (-not $manifestRaw) { throw "Deploy concluido, mas o manifesto OTA nao respondeu ao health check." }
 
-$bundleRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/app-version.json'').then(async r=>{if(!r.ok)process.exit(1);console.log(await r.text())}).catch(()=>process.exit(1))"'
+$bundleHealthCommand = New-ContainerFetchCommand -Url 'http://127.0.0.1:3000/app-version.json'
+$bundleRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $bundleHealthCommand
 if ($LASTEXITCODE -ne 0 -or -not $bundleRaw) {
     throw "Deploy concluido, mas o manifesto de versao do bundle nao respondeu."
 }
@@ -149,7 +165,7 @@ if ($apiVersion -ne $expectedVersion -or $apiLatestVersion -ne $expectedVersion 
 
 curl.exe -fsSI --max-time 30 "$($manifestInfo.web.bundleUrl)" >$null
 if ($LASTEXITCODE -ne 0) {
-    $remoteBundleHealthCommand = 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/bundles/finly-bundle-v{0}.zip'',{{method:''HEAD''}}).then(r=>{{if(!r.ok)process.exit(1)}}).catch(()=>process.exit(1))"' -f $manifestInfo.web.version
+    $remoteBundleHealthCommand = New-ContainerFetchCommand -Url "http://127.0.0.1:3000/bundles/finly-bundle-v$($manifestInfo.web.version).zip" -Method HEAD -PrintBody $false
     ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $remoteBundleHealthCommand
     if ($LASTEXITCODE -ne 0) { throw "Deploy concluido, mas o bundle OTA nao esta acessivel." }
 }
