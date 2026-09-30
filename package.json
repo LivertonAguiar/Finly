@@ -1,7 +1,7 @@
 {
   "name": "finly",
   "private": true,
-  "version": "1.1.77",
+  "version": "1.1.78",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,6 +29,14 @@
     "test:release-guards": "node scripts/run-ts-test.mjs tests/uiReleaseAndLoggingGuards.test.ts",
     "test:bottom-nav": "node scripts/run-ts-test.mjs tests/bottomNavQuickActions.test.ts",
     "test:dashboard-sync": "node scripts/run-ts-test.mjs tests/dashboardTransactionsMonthSync.test.ts",
+    "test:assistant": "node scripts/run-ts-test.mjs tests/assistantTransactionDraft.test.ts && node scripts/run-ts-test.mjs tests/smartTagAndSubcategoryPrediction.test.ts",
+    "test:security-backend": "node server/tests/backendSecurity.integration.test.mjs",
+    "test:security-android": "node scripts/run-ts-test.mjs tests/androidSecurityAndReleaseWorkflow.test.ts",
+    "test:security-realtime": "node scripts/run-ts-test.mjs tests/apiSyncSecureRealtime.test.ts",
+    "test:ops": "node tests/containerHardening.test.mjs && node tests/backupArtifactGuards.test.mjs",
+    "test:build-budget": "node tests/buildPerformanceBudget.test.mjs",
+    "test:responsive": "node tests/responsiveBrowserSmoke.test.mjs",
+    "test:security": "npm run test:security-backend && npm run test:security-android && npm run test:security-realtime && npm run test:assistant && npm run test:ops",
     "test:transactions": "npm run test:card-series && npm run test:recurring-series && npm run test:series-category && npm run test:expense-toast && npm run test:splits && npm run test:taxonomy && npm run test:transaction-impact && npm run test:series-scope && npm run test:series-migration && npm run test:notifications && npm run test:transfers && npm run test:mutation-journal && npm run test:view-regimes && npm run test:web-update && npm run test:release-guards",
     "check:version": "node scripts/check-version-sync.mjs",
     "verify:build-version": "node scripts/verify-built-version.mjs",

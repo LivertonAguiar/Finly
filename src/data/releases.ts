@@ -36,11 +36,38 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-14';
+export const CURRENT_BUILD_DATE = '2026-09-30';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-09-30',
+    summary: 'Segurança reforçada, assistente com confirmação explícita, carregamento inicial mais leve e operação da VPS com backup restaurável.',
+    highlights: [
+      {
+        title: 'Sessões e Recuperação Protegidas',
+        description: 'A API valida a identidade no Supabase, evita aliases implícitos, protege a recuperação com código hash e limita tentativas por origem.',
+        type: 'fix',
+      },
+      {
+        title: 'Assistente com Rascunho Confirmável',
+        description: 'Textos em linguagem natural geram um rascunho categorizado e só viram lançamento após revisão e confirmação explícita.',
+        type: 'feature',
+      },
+      {
+        title: 'Web Mais Leve e Responsiva',
+        description: 'As páginas passam a carregar sob demanda, o bundle inicial foi reduzido e o extrato foi validado de 320 a 1366 pixels.',
+        type: 'perf',
+      },
+      {
+        title: 'APK e VPS Auditáveis',
+        description: 'O CI sempre executa as validações, assina o APK com segredo protegido e a VPS ganha isolamento, healthcheck e backup diário com restauração testada.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.77',
     releaseDate: '2026-09-14',
     summary: 'Lançamento de despesa mais simples, novo seletor móvel com todas as subcategorias, logs sem conteúdo financeiro e publicação de APK com verificação efetiva da release.',
     highlights: [

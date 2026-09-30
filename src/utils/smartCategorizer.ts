@@ -346,6 +346,13 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
+function containsWholePhrase(normalizedText: string, phrase: string): boolean {
+  const normalizedPhrase = normalizeText(phrase).replace(/\s+/g, ' ');
+  const haystack = normalizedText.replace(/\s+/g, ' ');
+  if (!normalizedPhrase) return false;
+  return ` ${haystack} `.includes(` ${normalizedPhrase} `);
+}
+
 /**
  * Normalizes a single tag: converts to lower case, removes accents/diacritics
  * while preserving the base letter (e.g., "óculos" -> "oculos", "alimentação" -> "alimentacao"),
@@ -504,7 +511,7 @@ export function predictCategoryAndSubcategory(
     let bestHistoryTx: Transaction | undefined = historicalTransactions.find(t => {
       if (t.type !== txType || !t.categoryId) return false;
       const hNorm = normalizeText(t.description);
-      return hNorm === normDesc || normDesc.includes(hNorm) || hNorm.includes(normDesc);
+      return containsWholePhrase(normDesc, hNorm) || containsWholePhrase(hNorm, normDesc);
     });
 
     if (!bestHistoryTx && normDesc.length >= 3) {
@@ -516,7 +523,7 @@ export function predictCategoryAndSubcategory(
           const hNorm = normalizeText(t.description);
           let overlap = 0;
           for (const tok of descTokens) {
-            if (hNorm.includes(tok)) overlap++;
+            if (containsWholePhrase(hNorm, tok)) overlap++;
           }
           if (overlap >= 2 && overlap > maxOverlap) {
             maxOverlap = overlap;
@@ -569,7 +576,7 @@ export function predictCategoryAndSubcategory(
   for (const rule of BUILT_IN_RULES) {
     if (rule.categoryType !== txType && !(txType === 'expense' && rule.categoryType === 'expense')) continue;
 
-    const matchedKeyword = rule.keywords.find(kw => normDesc.includes(kw));
+    const matchedKeyword = rule.keywords.find(kw => containsWholePhrase(normDesc, kw));
     if (matchedKeyword) {
       // Find matching category in the user's category list
       const matchedCategory = typeCategories.find(c => {
@@ -579,9 +586,15 @@ export function predictCategoryAndSubcategory(
 
       if (matchedCategory) {
         // Find matching subcategory if available
-        let matchedSub = undefined;
+        let matchedSub = Array.isArray(matchedCategory.subcategories)
+          ? matchedCategory.subcategories.find(s => {
+              const normSubName = normalizeText(s.name);
+              return containsWholePhrase(normSubName, matchedKeyword)
+                || containsWholePhrase(normalizeText(matchedKeyword), normSubName);
+            })
+          : undefined;
         if (rule.subcategoryMatcher && Array.isArray(matchedCategory.subcategories)) {
-          for (const sm of rule.subcategoryMatcher) {
+          for (const sm of matchedSub ? [] : rule.subcategoryMatcher) {
             const found = matchedCategory.subcategories.find(s => {
               const normSubName = normalizeText(s.name);
               return normSubName.includes(sm) || sm.includes(normSubName);
@@ -676,7 +689,7 @@ export function suggestDynamicTags({
   // 2. Match with Built-in Dictionary Rules
   if (normDesc.length >= 2) {
     for (const rule of BUILT_IN_RULES) {
-      if (rule.keywords.some(kw => normDesc.includes(kw))) {
+      if (rule.keywords.some(kw => containsWholePhrase(normDesc, kw))) {
         rule.defaultTags?.forEach(t => addScore(t, 12));
       }
     }
@@ -691,13 +704,15 @@ export function suggestDynamicTags({
       if (!Array.isArray(tx.tags) || tx.tags.length === 0) continue;
 
       const txNormDesc = normalizeText(tx.description);
-      const isDescMatch = normDesc.length >= 3 && (txNormDesc.includes(normDesc) || normDesc.includes(txNormDesc));
+      const isDescMatch = normDesc.length >= 3 && (
+        containsWholePhrase(txNormDesc, normDesc) || containsWholePhrase(normDesc, txNormDesc)
+      );
 
       // Token overlap count
       let tokenMatches = 0;
       if (descTokens.length > 0) {
         for (const tok of descTokens) {
-          if (txNormDesc.includes(tok)) tokenMatches++;
+          if (containsWholePhrase(txNormDesc, tok)) tokenMatches++;
         }
       }
 

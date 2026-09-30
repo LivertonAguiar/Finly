@@ -130,7 +130,7 @@ html {
 
 /* Base Body Styles (Samsung Browser, Chrome, iOS Safari) */
 html, body, #root {
-  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Noto Sans', 'Maven Pro', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
   min-height: 100dvh;

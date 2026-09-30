@@ -11,16 +11,36 @@ if (versionParts.size() != 3 || versionParts.any { it < 0 || it > 999 }) {
 def semanticVersionCode = versionParts[0] * 1000000 + versionParts[1] * 1000 + versionParts[2]
 def appVersionCode = (System.getenv('VERSION_CODE') ?: semanticVersionCode.toString()).toInteger()
 
+def signingValue = { String name ->
+    def value = System.getenv(name) ?: project.findProperty(name)
+    value?.toString()?.trim()
+}
+def releaseStoreFile = signingValue('FINLY_RELEASE_STORE_FILE')
+def releaseStorePassword = signingValue('FINLY_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = signingValue('FINLY_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = signingValue('FINLY_RELEASE_KEY_PASSWORD')
+def releaseSigningAvailable = [
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+].every { it }
+if (releaseSigningAvailable && !file(releaseStoreFile).isFile()) {
+    throw new GradleException("Keystore release nao encontrado: ${releaseStoreFile}")
+}
+
 android {
     namespace = "com.finly.app"
     compileSdk = rootProject.ext.compileSdkVersion
 
     signingConfigs {
         release {
-            storeFile file('finly-release.keystore')
-            storePassword 'finly123456'
-            keyAlias 'finlykey'
-            keyPassword 'finly123456'
+            if (releaseSigningAvailable) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
         }
     }
 
@@ -38,11 +58,11 @@ android {
         }
     }
     buildTypes {
-        debug {
-            signingConfig signingConfigs.release
-        }
+        debug {}
         release {
-            signingConfig signingConfigs.release
+            if (releaseSigningAvailable) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

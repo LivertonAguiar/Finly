@@ -1,0 +1,17 @@
+[Unit]
+Description=Backup e verificação restaurável do Finly
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/opt/docker/finly/scripts/backup-vps.sh
+ExecStartPost=/opt/docker/finly/scripts/verify-vps-backup.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/backups/finly

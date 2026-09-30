@@ -1,9 +1,4 @@
-import { CalendarPage } from './components/calendario/CalendarPage';
-import { SettingsPage } from './components/settings/SettingsPage';
-import { ReportsPage } from './components/relatorios/ReportsPage';
-import { AccountsPage } from './components/accounts/AccountsPage';
-import { MorePage } from './components/more/MorePage';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UndoToastProvider } from './context/UndoToastContext';
 import { FinancialProvider, useFinancial } from './context/FinancialContext';
@@ -11,21 +6,8 @@ import { ConfirmProvider } from './context/ConfirmContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
-import { DashboardPage } from './components/dashboard/DashboardPage';
-import { CreditTab } from './components/dashboard/CreditTab';
-import { TransactionsPage, TransactionsNavParams } from './components/transactions/TransactionsPage';
-import { CadastrosPage } from './components/cadastros/CadastrosPage';
-import { BudgetPage } from './components/orcamento/BudgetPage';
-import { GoalsPage } from './components/metas/GoalsPage';
-import { DebtsPage } from './components/dividas/DebtsPage';
-import { InvestmentsTab } from './components/dashboard/InvestmentsTab';
-import { ProfilePage } from './components/perfil/ProfilePage';
-import { FamilyPage } from './components/familia/FamilyPage';
-import { WhatsAppPage } from './components/whatsapp/WhatsAppPage';
-import { FinancialSkillsPage } from './components/skills/FinancialSkillsPage';
+import type { TransactionsNavParams } from './components/transactions/TransactionsPage';
 import { AuthPage } from './components/auth/AuthPage';
-import { TransactionModal } from './components/transactions/TransactionModal';
-import { CardModal } from './components/cadastros/CardModal';
 import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
 import { checkForAppUpdates, isNativeCapacitor } from './utils/appUpdateService';
 import {
@@ -41,7 +23,6 @@ import { InAppNotificationToast } from './components/common/InAppNotificationToa
 import { ExpenseAddedToast } from './components/common/ExpenseAddedToast';
 import { AppUpdateModal } from './components/common/AppUpdateModal';
 import { WebWhatsNewModal } from './components/common/WebWhatsNewModal';
-import { HelpCenterPage } from './components/help/HelpCenterPage';
 import { setRootBackHandler } from './utils/backButtonManager';
 import { PinLockScreen } from './components/common/PinLockScreen';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -53,6 +34,36 @@ import {
   recordActivity,
   shouldLockDueToInactivity,
 } from './utils/securityManager';
+
+const CalendarPage = lazy(() => import('./components/calendario/CalendarPage').then(module => ({ default: module.CalendarPage })));
+const SettingsPage = lazy(() => import('./components/settings/SettingsPage').then(module => ({ default: module.SettingsPage })));
+const ReportsPage = lazy(() => import('./components/relatorios/ReportsPage').then(module => ({ default: module.ReportsPage })));
+const AccountsPage = lazy(() => import('./components/accounts/AccountsPage').then(module => ({ default: module.AccountsPage })));
+const MorePage = lazy(() => import('./components/more/MorePage').then(module => ({ default: module.MorePage })));
+const DashboardPage = lazy(() => import('./components/dashboard/DashboardPage').then(module => ({ default: module.DashboardPage })));
+const CreditTab = lazy(() => import('./components/dashboard/CreditTab').then(module => ({ default: module.CreditTab })));
+const TransactionsPage = lazy(() => import('./components/transactions/TransactionsPage').then(module => ({ default: module.TransactionsPage })));
+const CadastrosPage = lazy(() => import('./components/cadastros/CadastrosPage').then(module => ({ default: module.CadastrosPage })));
+const BudgetPage = lazy(() => import('./components/orcamento/BudgetPage').then(module => ({ default: module.BudgetPage })));
+const GoalsPage = lazy(() => import('./components/metas/GoalsPage').then(module => ({ default: module.GoalsPage })));
+const DebtsPage = lazy(() => import('./components/dividas/DebtsPage').then(module => ({ default: module.DebtsPage })));
+const InvestmentsTab = lazy(() => import('./components/dashboard/InvestmentsTab').then(module => ({ default: module.InvestmentsTab })));
+const ProfilePage = lazy(() => import('./components/perfil/ProfilePage').then(module => ({ default: module.ProfilePage })));
+const FamilyPage = lazy(() => import('./components/familia/FamilyPage').then(module => ({ default: module.FamilyPage })));
+const WhatsAppPage = lazy(() => import('./components/whatsapp/WhatsAppPage').then(module => ({ default: module.WhatsAppPage })));
+const FinancialSkillsPage = lazy(() => import('./components/skills/FinancialSkillsPage').then(module => ({ default: module.FinancialSkillsPage })));
+const HelpCenterPage = lazy(() => import('./components/help/HelpCenterPage').then(module => ({ default: module.HelpCenterPage })));
+const TransactionModal = lazy(() => import('./components/transactions/TransactionModal').then(module => ({ default: module.TransactionModal })));
+const CardModal = lazy(() => import('./components/cadastros/CardModal').then(module => ({ default: module.CardModal })));
+
+const PageLoadingFallback: React.FC = () => (
+  <div className="min-h-[45vh] flex items-center justify-center" role="status" aria-live="polite">
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 px-4 py-3 shadow-sm">
+      <span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" aria-hidden="true" />
+      <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Carregando...</span>
+    </div>
+  </div>
+);
 
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
@@ -467,6 +478,7 @@ const AppContent: React.FC = () => {
         <PullToRefresh onRefresh={refreshData}>
           <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 w-full max-w-full overflow-x-hidden">
             <div className="w-full max-w-[1600px] mx-auto overflow-x-hidden">
+            <Suspense fallback={<PageLoadingFallback />}>
             {activeTab === 'dashboard' && (
               <DashboardPage
                 onOpenNewTransaction={() => setIsNewTxOpen(true)}
@@ -514,6 +526,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'cadastro' && <CadastrosPage />}
             {activeTab === 'perfil' && <ProfilePage />}
             {activeTab === 'ajuda' && <HelpCenterPage onNavigateToTab={handleSelectTab} />}
+            </Suspense>
           </div>
         </main>
         </PullToRefresh>
@@ -529,20 +542,28 @@ const AppContent: React.FC = () => {
       />
 
       {/* Global Modals */}
-      <TransactionModal
-        key={`tx-modal-${newTxInitialType}-${newTxPaymentMethod}`}
-        isOpen={isNewTxOpen}
-        onClose={() => setIsNewTxOpen(false)}
-        initialType={newTxInitialType}
-        initialPaymentMethod={newTxPaymentMethod}
-        onNavigateToTab={handleSelectTab}
-        onOpenNewCard={() => setIsNewCardOpen(true)}
-      />
+      {isNewTxOpen && (
+        <Suspense fallback={null}>
+          <TransactionModal
+            key={`tx-modal-${newTxInitialType}-${newTxPaymentMethod}`}
+            isOpen
+            onClose={() => setIsNewTxOpen(false)}
+            initialType={newTxInitialType}
+            initialPaymentMethod={newTxPaymentMethod}
+            onNavigateToTab={handleSelectTab}
+            onOpenNewCard={() => setIsNewCardOpen(true)}
+          />
+        </Suspense>
+      )}
 
-      <CardModal
-        isOpen={isNewCardOpen}
-        onClose={() => setIsNewCardOpen(false)}
-      />
+      {isNewCardOpen && (
+        <Suspense fallback={null}>
+          <CardModal
+            isOpen
+            onClose={() => setIsNewCardOpen(false)}
+          />
+        </Suspense>
+      )}
 
       {/* App Version & Update Modal (Exclusivo Android Nativo) */}
       {isNativeCapacitor() && (
@@ -564,7 +585,6 @@ const AppContent: React.FC = () => {
 
       {/* Pop-up interno de confirmação de despesa adicionada */}
       <ExpenseAddedToast />
-      <InAppNotificationToast />
 
       {/* Floating Web Update Ready Notification */}
       {pendingWebUpdate && (

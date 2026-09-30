@@ -20,7 +20,8 @@ class ApiSyncService {
   public currentStatus: SyncStatus = 'synced';
   private initialConnected = false;
 
-  private eventSource: EventSource | null = null;
+  private realtimeController: AbortController | null = null;
+  private realtimeReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private realtimeListeners: ((event: { type: string; store?: any; timestamp?: string }) => void)[] = [];
 
   public setUserId(userId: string | null) {
@@ -33,60 +34,97 @@ class ApiSyncService {
       clearTimeout(this.syncTimer);
       this.syncTimer = null;
     }
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
+    this.stopRealtimeStream();
     // A request already sent keeps its original explicit user headers/body.
     // Abort only on account switches; reset uses an awaited barrier below.
     this.activePushController?.abort();
     if (userId && this.realtimeListeners.length > 0) {
-      this.ensureEventSourceConnected();
+      this.ensureRealtimeConnected();
     }
   }
 
   public subscribeRealtimeEvents(listener: (event: { type: string; store?: any; timestamp?: string }) => void) {
     this.realtimeListeners.push(listener);
-    this.ensureEventSourceConnected();
+    this.ensureRealtimeConnected();
     return () => {
       this.realtimeListeners = this.realtimeListeners.filter(l => l !== listener);
-      if (this.realtimeListeners.length === 0 && this.eventSource) {
-        this.eventSource.close();
-        this.eventSource = null;
-      }
+      if (this.realtimeListeners.length === 0) this.stopRealtimeStream();
     };
   }
 
-  private ensureEventSourceConnected() {
-    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
-    if (this.eventSource && this.eventSource.readyState !== EventSource.CLOSED) return;
+  private stopRealtimeStream() {
+    this.realtimeController?.abort();
+    this.realtimeController = null;
+    if (this.realtimeReconnectTimer) {
+      clearTimeout(this.realtimeReconnectTimer);
+      this.realtimeReconnectTimer = null;
+    }
+  }
 
+  private scheduleRealtimeReconnect(userId: string) {
+    if (this.realtimeReconnectTimer || this.realtimeListeners.length === 0 || this.currentUserId !== userId) return;
+    this.realtimeReconnectTimer = setTimeout(() => {
+      this.realtimeReconnectTimer = null;
+      this.ensureRealtimeConnected();
+    }, 3000);
+  }
+
+  private ensureRealtimeConnected() {
+    if (typeof window === 'undefined' || typeof fetch === 'undefined') return;
+    if (this.realtimeController) return;
     const userId = this.currentUserId;
     if (!userId || userId === 'guest' || userId === 'usr-demo-financeiro') return;
 
-    let token = '';
-    try {
-      token = localStorage.getItem('finly_auth_token') || '';
-    } catch (_) {}
+    const controller = new AbortController();
+    this.realtimeController = controller;
+    void this.consumeRealtimeStream(userId, controller);
+  }
 
-    const url = getApiUrl(`/api/sync/events?userId=${encodeURIComponent(userId)}&sessionId=${encodeURIComponent(CLIENT_SESSION_ID)}${token ? `&token=${encodeURIComponent(token)}` : ''}`);
+  private async consumeRealtimeStream(userId: string, controller: AbortController) {
     try {
-      const es = new EventSource(url);
-      this.eventSource = es;
+      const url = getApiUrl(`/api/sync/events?sessionId=${encodeURIComponent(CLIENT_SESSION_ID)}`);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'text/event-stream',
+          ...this.getAuthHeaders(userId),
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) throw new Error(`SSE indisponível (${response.status})`);
 
-      es.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (data && data.type === 'STORE_UPDATED') {
-            this.realtimeListeners.forEach(cb => cb(data));
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (!controller.signal.aborted) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer = (buffer + decoder.decode(value, { stream: true })).replace(/\r\n/g, '\n');
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary >= 0) {
+          const block = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          const payload = block
+            .split('\n')
+            .filter(line => line.startsWith('data:'))
+            .map(line => line.slice(5).trimStart())
+            .join('\n');
+          if (payload) {
+            try {
+              const data = JSON.parse(payload);
+              if (data?.type === 'STORE_UPDATED') this.realtimeListeners.forEach(cb => cb(data));
+            } catch (_) {}
           }
-        } catch (_) {}
-      };
-
-      es.onerror = () => {
-        // Will auto-reconnect automatically by standard browser EventSource
-      };
-    } catch (_) {}
+          boundary = buffer.indexOf('\n\n');
+        }
+      }
+    } catch (_) {
+      // Network transitions are expected; reconnect below while subscribers remain.
+    } finally {
+      if (this.realtimeController === controller) this.realtimeController = null;
+      if (!controller.signal.aborted) this.scheduleRealtimeReconnect(userId);
+    }
   }
 
   public subscribeStatus(listener: (status: SyncStatus) => void) {

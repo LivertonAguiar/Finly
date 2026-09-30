@@ -10,7 +10,7 @@ export const isNativeCapacitorPlatform = (): boolean => {
 };
 
 export const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string) ||
+  ((import.meta as ImportMeta & { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL as string) ||
   (isNativeCapacitorPlatform() ? PRODUCTION_API_URL : '');
 
 export function getApiUrl(endpoint: string): string {
@@ -21,4 +21,3 @@ export function getApiUrl(endpoint: string): string {
   }
   return `${base.replace(/\/$/, '')}${cleanEndpoint}`;
 }
-

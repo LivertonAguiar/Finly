@@ -3,6 +3,27 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.78] - 2026-09-30
+
+### Segurança, assistente confirmável e operação resiliente
+- **Identidade e recuperação de acesso**:
+  - A API passa a validar tokens diretamente no Supabase e usa o UUID autenticado, sem usuário fixo ou alias implícito entre stores.
+  - Códigos de recuperação usam geração criptográfica, hash com salt, expiração, resposta antienumeração e limites específicos por IP.
+  - O canal de eventos em tempo real envia o token somente no cabeçalho de autorização.
+- **Assistente de transações seguro**:
+  - Texto em linguagem natural prepara um rascunho com valor, descrição, conta e categoria canônicas.
+  - Nenhuma transação é gravada sem a ação explícita “Confirmar lançamento”, com bloqueio de confirmações duplicadas.
+  - A interface identifica honestamente o recurso como simulador local, sem alegar integração ativa com WhatsApp, áudio, foto ou modelo externo.
+- **Desempenho e responsividade**:
+  - Páginas e modais principais passam a ser carregados sob demanda.
+  - O JavaScript inicial compactado caiu de aproximadamente 1.286 KiB para menos de 300 KiB.
+  - Extrato validado em 320, 390, 768 e 1366 px, sem overflow global e com alvos de toque de 44 px.
+- **Android, containers e continuidade**:
+  - O CI sempre executa tipos, testes, build Web, orçamento de bundle e variantes Android antes de assinar e publicar o APK.
+  - Keystore e dados locais deixam de ser rastreados; a assinatura é materializada apenas por GitHub Actions Secrets e tem certificado verificado.
+  - Container sem porta 3000 pública, usuário não-root, healthcheck, limites de recursos e rotação de logs.
+  - Backup diário de PostgreSQL e arquivos locais com checksum, retenção e restauração automatizada de prova.
+
 ## [1.1.77] - 2026-09-14
 
 ### 📱 Lançamento Enxuto e Subcategorias Completas

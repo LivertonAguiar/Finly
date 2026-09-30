@@ -697,18 +697,18 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
       </div>
 
       {/* 2. 4 TOP SUMMARY KPIS (INTERACTIVE FILTER BUTTONS) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* KPI 1: Saldo atual */}
         <button
           type="button"
           onClick={() => setFilterType('all')}
-          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+          className={`min-h-20 p-3 sm:p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-center gap-2.5 sm:gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
             filterType === 'all'
               ? 'bg-white dark:bg-[#2C2C2E] border-blue-500/50 ring-2 ring-blue-500/30'
               : 'bg-white/90 dark:bg-[#2C2C2E]/90 border-slate-200/80 dark:border-slate-800/80 hover:bg-white dark:hover:bg-[#2C2C2E]'
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-[#42a5f5]/15 text-[#42a5f5] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#42a5f5]/15 text-[#42a5f5] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform">
             <Building2 className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -716,7 +716,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
               <span>Saldo atual</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 truncate">
+            <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight mt-0.5 leading-tight tabular-nums">
               {formatCurrency(totalCurrentBalance, user.currency, !user.showValues)}
             </p>
           </div>
@@ -726,13 +726,13 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         <button
           type="button"
           onClick={() => setFilterType(filterType === 'expense' ? 'all' : 'expense')}
-          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+          className={`min-h-20 p-3 sm:p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-2.5 sm:gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
             filterType === 'expense'
               ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/40'
               : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-[#343437]'
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-[#ef5350]/15 text-[#ef5350] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#ef5350]/15 text-[#ef5350] flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
             <ArrowUpRight className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
@@ -740,7 +740,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
               <span>Despesas</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className="text-sm sm:text-base font-black text-[#ef5350] tracking-tight mt-0.5 truncate">
+            <p className="text-sm sm:text-base font-black text-[#ef5350] tracking-tight mt-0.5 leading-tight tabular-nums">
               {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
             </p>
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
@@ -757,13 +757,13 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         <button
           type="button"
           onClick={() => setFilterType(filterType === 'income' ? 'all' : 'income')}
-          className={`p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
+          className={`min-h-20 p-3 sm:p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-2.5 sm:gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group ${
             filterType === 'income'
               ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/40'
               : 'bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-[#343437]'
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
             <ArrowDownLeft className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
@@ -771,7 +771,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
               <span>Receitas</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className="text-sm sm:text-base font-black text-[#66bb6a] tracking-tight mt-0.5 truncate">
+            <p className="text-sm sm:text-base font-black text-[#66bb6a] tracking-tight mt-0.5 leading-tight tabular-nums">
               {formatCurrency(monthlyIncome, user.currency, !user.showValues)}
             </p>
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
@@ -786,9 +786,9 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         <button
           type="button"
           onClick={() => setFilterType('all')}
-          className="p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80"
+          className="min-h-20 p-3 sm:p-4 rounded-[25px] border shadow-sm dark:shadow-2xl flex items-start gap-2.5 sm:gap-3.5 text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] group bg-white dark:bg-[#2C2C2E] border-slate-200/80 dark:border-slate-800/80"
         >
-          <div className="w-10 h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#66bb6a] text-white flex items-center justify-center font-black shrink-0 group-hover:scale-110 transition-transform mt-0.5">
             <Scale className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
@@ -796,7 +796,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
               <span>Total / Balanço</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <p className={`text-sm sm:text-base font-black tracking-tight mt-0.5 truncate ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
+            <p className={`text-sm sm:text-base font-black tracking-tight mt-0.5 leading-tight tabular-nums ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
               {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
             </p>
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
@@ -807,12 +807,12 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
       </div>
 
       {/* 2.5 VIEW REGIME TOGGLE (COMPETÊNCIA VS DATA DA COMPRA VS VENCIMENTO) */}
-      <div className="flex items-center justify-center">
-        <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-xs font-bold shadow-xs">
+      <div className="flex items-center justify-start sm:justify-center overflow-x-auto -mx-4 px-4 pb-1 sm:mx-0 sm:px-0" aria-label="Critério de exibição das transações">
+        <div className="inline-flex flex-none w-max p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-xs font-bold shadow-xs">
           <button
             type="button"
             onClick={() => setViewRegime('invoice_month')}
-            className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`min-h-11 px-3.5 py-2 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               viewRegime === 'invoice_month'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -826,7 +826,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
           <button
             type="button"
             onClick={() => setViewRegime('purchase_date')}
-            className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`min-h-11 px-3.5 py-2 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               viewRegime === 'purchase_date'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -840,7 +840,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
           <button
             type="button"
             onClick={() => setViewRegime('due_date')}
-            className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`min-h-11 px-3.5 py-2 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               viewRegime === 'due_date'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -858,7 +858,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         <button
           type="button"
           onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="min-w-11 min-h-11 p-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"
           title="Mês anterior"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -869,7 +869,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         <button
           type="button"
           onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="min-w-11 min-h-11 p-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"
           title="Próximo mês"
         >
           <ChevronRight className="w-5 h-5" />

@@ -41,7 +41,6 @@ scratch_minha_grana/
 
 # User Data Stores (Strictly local/runtime - never track in Git)
 server/data/stores/*
-!server/data/stores/usr-demo-financeiro.json
 server/data/users.json
 server/data/verification_codes.json
 

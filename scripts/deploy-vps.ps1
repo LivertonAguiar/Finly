@@ -118,7 +118,7 @@ ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $migrationCmd
 Write-Host "Validando API e bundle implantados..." -ForegroundColor Yellow
 $apiRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {
-    $apiRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/version' 2>$null
+    $apiRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/api/app/version'').then(async r=>{if(!r.ok)process.exit(1);console.log(await r.text())}).catch(()=>process.exit(1))"' 2>$null
     if ($LASTEXITCODE -eq 0 -and $apiRaw) { break }
     Start-Sleep -Seconds 2
 }
@@ -127,13 +127,13 @@ if (-not $apiRaw) { throw "Deploy concluido, mas a API nao respondeu ao health c
 
 $manifestRaw = $null
 for ($attempt = 1; $attempt -le 5; $attempt++) {
-    $manifestRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/api/app/manifest' 2>$null
+    $manifestRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/api/app/manifest'').then(async r=>{if(!r.ok)process.exit(1);console.log(await r.text())}).catch(()=>process.exit(1))"' 2>$null
     if ($LASTEXITCODE -eq 0 -and $manifestRaw) { break }
     Start-Sleep -Seconds 2
 }
 if (-not $manifestRaw) { throw "Deploy concluido, mas o manifesto OTA nao respondeu ao health check." }
 
-$bundleRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'curl -fsS http://127.0.0.1:3000/app-version.json'
+$bundleRaw = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/app-version.json'').then(async r=>{if(!r.ok)process.exit(1);console.log(await r.text())}).catch(()=>process.exit(1))"'
 if ($LASTEXITCODE -ne 0 -or -not $bundleRaw) {
     throw "Deploy concluido, mas o manifesto de versao do bundle nao respondeu."
 }
@@ -149,7 +149,8 @@ if ($apiVersion -ne $expectedVersion -or $apiLatestVersion -ne $expectedVersion 
 
 curl.exe -fsSI --max-time 30 "$($manifestInfo.web.bundleUrl)" >$null
 if ($LASTEXITCODE -ne 0) {
-    ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsSI --max-time 15 'http://127.0.0.1:3000/bundles/finly-bundle-v$($manifestInfo.web.version).zip' >/dev/null"
+    $remoteBundleHealthCommand = 'docker exec finly-app node -e "fetch(''http://127.0.0.1:3000/bundles/finly-bundle-v{0}.zip'',{{method:''HEAD''}}).then(r=>{{if(!r.ok)process.exit(1)}}).catch(()=>process.exit(1))"' -f $manifestInfo.web.version
+    ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $remoteBundleHealthCommand
     if ($LASTEXITCODE -ne 0) { throw "Deploy concluido, mas o bundle OTA nao esta acessivel." }
 }
 

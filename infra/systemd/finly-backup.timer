@@ -1,0 +1,11 @@
+[Unit]
+Description=Agenda diária de backup do Finly
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=10m
+Persistent=true
+Unit=finly-backup.service
+
+[Install]
+WantedBy=timers.target

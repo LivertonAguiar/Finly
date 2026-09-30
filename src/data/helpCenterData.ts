@@ -603,9 +603,16 @@ export const HELP_FAQS: HelpFaqItem[] = [
   {
     id: 'faq-regimes-visualizacao',
     question: 'Como funcionam os modos "Por Competência/Fatura", "Por Data da Compra" e "Por Vencimento"?',
-    answer: 'Na tela Transações, você pode alternar entre 3 visões: 1) Por Competência/Fatura (Padrão Contábil): exibe todas as despesas comuns do mês e as compras de cartão pertencentes à fatura daquele mês, mesmo que ainda estejam abertas ou pendentes; 2) Por Data da Compra: exibe os lançamentos exatamente no dia em que foram efetuados; 3) Por Vencimento: exibe no dia do vencimento da conta ou da fatura do cartão (ideal para acompanhar fluxo de caixa de saídas bancárias).',
+    answer: 'Na tela Transações, você pode alternar entre 3 visões: 1) Por Competência/Fatura (Padrão Contábil): exibe todas as despesas comuns do mês e as compras de cartão pertencentes à fatura daquele mês, mesmo que ainda estejam abertas ou pendentes; 2) Por Data da Compra: exibe os lançamentos exatamente no dia em que foram efetuados; 3) Por Vencimento: exibe no dia do vencimento da conta ou da fatura do cartão (ideal para acompanhar fluxo de caixa de saídas bancárias). Em celulares estreitos, deslize horizontalmente a faixa de modos para acessar as três opções; os cartões de resumo se reorganizam para manter valores e textos legíveis.',
     category: 'transacoes',
     tags: ['competencia', 'fatura', 'vencimento', 'regime', 'transacoes', 'extrato', 'data da compra'],
+  },
+  {
+    id: 'faq-assistente-transacao-local',
+    question: 'O Assistente de Transações já é uma IA conectada ao WhatsApp?',
+    answer: 'Ainda não. A tela atual é um simulador local de sugestões: ela interpreta o texto com regras do próprio aparelho, prepara um rascunho com valor, descrição, conta e categoria e só registra o lançamento depois que você toca em “Confirmar lançamento”. Não há conexão com WhatsApp oficial, modelo de linguagem externo, áudio ou leitura de fotos nesta versão. Revise sempre o rascunho antes de confirmar.',
+    category: 'transacoes',
+    tags: ['assistente', 'whatsapp', 'simulador', 'rascunho', 'confirmacao', 'ia'],
   },
   {
     id: 'faq-despesa-duplicacao-fatura',

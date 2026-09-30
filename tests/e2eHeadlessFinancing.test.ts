@@ -186,8 +186,15 @@ console.log('\n--- 4. TESTE LIVE ROUNDTRIP NO SUPABASE POSTGRES ---');
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://finly.lpaguiar.com.br';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const LIVE_E2E_ENABLED = process.env.FINLY_ALLOW_LIVE_SUPABASE_E2E === 'true';
+const PRODUCTION_E2E_ENABLED = process.env.FINLY_ALLOW_PRODUCTION_E2E === 'true';
+const IS_PRODUCTION_ENDPOINT = new URL(SUPABASE_URL).hostname === 'finly.lpaguiar.com.br';
 
-if (SUPABASE_KEY) {
+if (LIVE_E2E_ENABLED && IS_PRODUCTION_ENDPOINT && !PRODUCTION_E2E_ENABLED) {
+  throw new Error('Teste live bloqueado no Supabase de produção. Use um ambiente de staging ou habilite FINLY_ALLOW_PRODUCTION_E2E=true conscientemente.');
+}
+
+if (LIVE_E2E_ENABLED && SUPABASE_KEY) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // Usuário de demonstração com UUID canônico
@@ -309,8 +316,10 @@ if (SUPABASE_KEY) {
     console.error('❌ Erro no teste live Supabase:', err);
     throw err;
   }
+} else if (LIVE_E2E_ENABLED) {
+  throw new Error('FINLY_ALLOW_LIVE_SUPABASE_E2E=true, mas nenhuma chave Supabase foi configurada.');
 } else {
-  console.log('⚠️ SUPABASE_SERVICE_ROLE_KEY não configurada no ambiente. Teste live pulado.');
+  console.log('⚠️ Teste live Supabase desabilitado por segurança. Defina FINLY_ALLOW_LIVE_SUPABASE_E2E=true em staging para executá-lo.');
 }
 
 // ==============================================================================
