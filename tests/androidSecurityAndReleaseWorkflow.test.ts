@@ -91,7 +91,10 @@ assert.match(releaseJob, /APKSIGNER_PATH"?\s+sign/u);
 assert.match(releaseJob, /EXPECTED_SIGNING_CERT_SHA256/u);
 assert.match(releaseJob, /verify --print-certs[^\r\n]*2>&1/u);
 assert.match(releaseJob, /certificate sha-256 digest/u);
+assert.match(releaseJob, /api\.github\.com\/repos\/\$\{GITHUB_REPOSITORY\}\/releases\/tags\/\$\{VERSION\}/u);
+assert.match(releaseJob, /a\.state==='uploaded'&&a\.size>0/u);
 assert.doesNotMatch(releaseJob, /outputs\/apk\/debug/u);
+assert.doesNotMatch(releaseJob, /curl[^\r\n]*--head/u);
 assert.match(androidGitignore, /^\*\.keystore\s*$/mu);
 assert.match(androidGitignore, /^\*\.jks\s*$/mu);
 
