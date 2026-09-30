@@ -40,6 +40,7 @@ assert.doesNotMatch(
 
 assert.match(manifest, /android:allowBackup="false"/u);
 assert.match(manifest, /android:usesCleartextTraffic="false"/u);
+assert.match(manifest, /tools:replace="android:usesCleartextTraffic"/u);
 assert.doesNotMatch(manifest, /android:largeHeap="true"/u);
 assert.match(manifest, /android:dataExtractionRules="@xml\/data_extraction_rules"/u);
 
