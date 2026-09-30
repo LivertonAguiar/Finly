@@ -244,9 +244,9 @@ jobs:
             "$ALIGNED_APK"
 
           "$APKSIGNER_PATH" verify --verbose "$SIGNED_APK"
-          CERT_SHA256=$("$APKSIGNER_PATH" verify --print-certs "$SIGNED_APK" \
-            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' \
-            | head -n 1 \
+          CERT_OUTPUT=$("$APKSIGNER_PATH" verify --print-certs "$SIGNED_APK" 2>&1)
+          CERT_SHA256=$(printf '%s\n' "$CERT_OUTPUT" \
+            | awk -F': ' 'tolower($0) ~ /certificate sha-256 digest/ { print $NF; exit }' \
             | tr '[:lower:]' '[:upper:]' \
             | tr -d ':[:space:]')
           if [[ "$CERT_SHA256" != "$EXPECTED_SIGNING_CERT_SHA256" ]]; then
