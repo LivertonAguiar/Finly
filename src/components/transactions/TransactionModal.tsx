@@ -23,6 +23,7 @@ import {
 import { predictCategory, trainFromHistory } from '../../utils/smartCategorizer';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
+import { OptionPicker } from '../ui/OptionPicker';
 import { useFinancial } from '../../context/FinancialContext';
 import { Transaction, TransactionType, TransactionStatus } from '../../types';
 import { formatCurrency, formatLocalDateISO, getTodayString, round2 } from '../../utils/formatters';
@@ -712,23 +713,22 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
                   </span>
                 )}
               </div>
-              <select
+              <OptionPicker
+                title="Escolher Categoria"
+                placeholder="Selecione uma categoria..."
+                searchPlaceholder="Buscar categoria..."
                 value={categoryId}
-                onChange={e => {
-                  setCategoryId(e.target.value);
+                onChange={val => {
+                  setCategoryId(String(val));
                   setSubcategoryId('');
                   setAutoPredictedBadge(null);
                 }}
-                required
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"
-              >
-                <option value="">Selecione uma categoria...</option>
-                {filteredCategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
-              </select>
+                options={filteredCategories.map(cat => ({
+                  value: cat.id,
+                  label: cat.name,
+                  icon: <span className="text-base">{cat.icon}</span>,
+                }))}
+              />
             </div>
 
             <div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, ChevronDown, FileText, Layers, Paperclip, Repeat, Sparkles, Tag, Trash2, Upload } from 'lucide-react';
+import { Bell, Calendar, ChevronDown, CreditCard, FileText, Layers, Paperclip, Repeat, Sparkles, Tag, Trash2, Upload, Wallet } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
@@ -26,6 +26,7 @@ import { TransactionSplitEditor, SplitFormItem } from './TransactionSplitEditor'
 import { validateTransactionComponents } from '../../utils/transactionAnalytics';
 import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
 import { SubcategoryPicker } from '../ui/SubcategoryPicker';
+import { OptionPicker } from '../ui/OptionPicker';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -917,8 +918,40 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         </div>}
 
         {isTransfer ? <>
-          <div><label className={labelClass}>CONTA DE ORIGEM</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>
-          <div><label className={labelClass}>CONTA DE DESTINO</label><select className={fieldClass} value={targetAccountId} onChange={event => setTargetAccountId(event.target.value)}>{accounts.filter(account => account.id !== accountId).map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>
+          <div>
+            <label className={labelClass}>CONTA DE ORIGEM</label>
+            <OptionPicker
+              title="Conta de Origem"
+              placeholder="Selecione a conta de origem"
+              searchPlaceholder="Buscar conta..."
+              value={accountId}
+              onChange={val => setAccountId(String(val))}
+              options={accounts.map(account => ({
+                value: account.id,
+                label: account.name,
+                sublabel: `Saldo: ${formatCurrency(account.balance, user.currency)}`,
+                icon: <Wallet className="w-4 h-4 text-emerald-500" />,
+              }))}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>CONTA DE DESTINO</label>
+            <OptionPicker
+              title="Conta de Destino"
+              placeholder="Selecione a conta de destino"
+              searchPlaceholder="Buscar conta..."
+              value={targetAccountId}
+              onChange={val => setTargetAccountId(String(val))}
+              options={accounts
+                .filter(account => account.id !== accountId)
+                .map(account => ({
+                  value: account.id,
+                  label: account.name,
+                  sublabel: `Saldo: ${formatCurrency(account.balance, user.currency)}`,
+                  icon: <Wallet className="w-4 h-4 text-purple-500" />,
+                }))}
+            />
+          </div>
           <div><label className={labelClass}>DATA</label><DatePicker value={date} onChange={value => { setDate(value); setStatus(value > getTodayString() ? 'scheduled' : 'completed'); }} variant="modal" /></div>
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} placeholder="Ex: Reserva mensal" /></div>
         </> : <>
@@ -942,24 +975,23 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>CATEGORIA</label>
-              <select
-                className={fieldClass}
+              <OptionPicker
+                title="Escolher Categoria"
+                placeholder="Selecione uma categoria..."
+                searchPlaceholder="Buscar categoria..."
                 value={categoryId}
-                onChange={event => {
-                  setCategoryId(event.target.value);
+                onChange={val => {
+                  setCategoryId(String(val));
                   setSubcategoryId('');
                   setManuallyChangedCategory(true);
                   setPredictedInfo(null);
                 }}
-                required
-              >
-                <option value="">Selecione uma categoria...</option>
-                {filteredCategories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.icon} {category.name}
-                  </option>
-                ))}
-              </select>
+                options={filteredCategories.map(category => ({
+                  value: category.id,
+                  label: category.name,
+                  icon: <span className="text-base">{category.icon}</span>,
+                }))}
+              />
             </div>
             <div>
               <label className={labelClass}>SUBCATEGORIA</label>
@@ -1029,7 +1061,22 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           )}
           {isCard ? <>
-            <div><label className={labelClass}>CARTÃO DE CRÉDITO</label><select className={fieldClass} value={cardId} onChange={event => setCardId(event.target.value)}>{cards.map(card => <option key={card.id} value={card.id}>{card.name} — {card.brand}</option>)}</select></div>
+            <div>
+              <label className={labelClass}>CARTÃO DE CRÉDITO</label>
+              <OptionPicker
+                title="Cartão de Crédito"
+                placeholder="Selecione o cartão..."
+                searchPlaceholder="Buscar cartão..."
+                value={cardId}
+                onChange={val => setCardId(String(val))}
+                options={cards.map(card => ({
+                  value: card.id,
+                  label: card.name,
+                  sublabel: card.brand ? `Bandeira: ${card.brand}` : undefined,
+                  icon: <CreditCard className="w-4 h-4 text-purple-500" />,
+                }))}
+              />
+            </div>
             {!editingTransaction && (
               <div className="rounded-2xl border border-purple-200 dark:border-purple-900/80 p-3.5 space-y-3.5 bg-purple-50/20 dark:bg-purple-950/10">
                 {/* Header com Toggle Switch */}
@@ -1165,12 +1212,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           </button>
                         </div>
 
-                        {/* Select com Valores Detalhados por Parcela (2 a 24x) */}
-                        <select
-                          className={fieldClass}
+                        {/* Select Customizado com Valores Detalhados por Parcela (2 a 24x) */}
+                        <OptionPicker
+                          title="Quantidade de Parcelas"
+                          placeholder="Selecione o parcelamento"
+                          searchPlaceholder="Buscar parcelas..."
                           value={installmentCount <= 24 && !isCustomInstallment ? installmentCount : 'custom'}
-                          onChange={event => {
-                            const val = event.target.value;
+                          onChange={val => {
                             if (val === 'custom') {
                               setIsCustomInstallment(true);
                               if (installmentCount <= 24) {
@@ -1184,21 +1232,29 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                               setInstallmentInputStr(String(n));
                             }
                           }}
-                        >
-                          {Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
-                            const opt = calculateInstallmentOption(count);
-                            return (
-                              <option key={count} value={count}>
-                                {amountNumber > 0
-                                  ? `${count}x de ${formatCurrency(opt.installmentAmount, user.currency)} (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
-                                  : `${count}x parcelas`}
-                              </option>
-                            );
-                          })}
-                          <option value="custom">
-                            {installmentCount > 24 ? `${installmentCount}x personalizado (até 72x)` : 'Outra quantidade personalizada (até 72x)...'}
-                          </option>
-                        </select>
+                          options={[
+                            ...Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
+                              const opt = calculateInstallmentOption(count);
+                              return {
+                                value: count,
+                                label: `${count}x parcelas`,
+                                sublabel:
+                                  amountNumber > 0
+                                    ? `${formatCurrency(opt.installmentAmount, user.currency)}/mês (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
+                                    : undefined,
+                                icon: <Layers className="w-4 h-4 text-purple-500" />,
+                              };
+                            }),
+                            {
+                              value: 'custom',
+                              label:
+                                installmentCount > 24
+                                  ? `${installmentCount}x personalizado (até 72x)`
+                                  : 'Outra quantidade personalizada (até 72x)...',
+                              icon: <Repeat className="w-4 h-4 text-indigo-500" />,
+                            },
+                          ]}
+                        />
                       </div>
 
                       {/* Chips de Atalho Rápido para 1 Toque */}
@@ -1306,8 +1362,39 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 )}
               </div>
             )}
-            <div><label className={labelClass}>FATURA DE DESTINO</label><select className={fieldClass} value={invoiceMonth} onChange={event => setInvoiceMonth(event.target.value)}>{invoiceMonths.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}</select></div>
-          </> : <div><label className={labelClass}>CONTA BANCÁRIA</label><select className={fieldClass} value={accountId} onChange={event => setAccountId(event.target.value)}>{accounts.map(account => <option key={account.id} value={account.id}>{account.name} — {formatCurrency(account.balance, user.currency)}</option>)}</select></div>}
+            <div>
+              <label className={labelClass}>FATURA DE DESTINO</label>
+              <OptionPicker
+                title="Fatura de Destino"
+                placeholder="Selecione o mês da fatura"
+                searchPlaceholder="Buscar mês..."
+                value={invoiceMonth}
+                onChange={val => setInvoiceMonth(String(val))}
+                options={invoiceMonths.map(month => ({
+                  value: month.value,
+                  label: month.label,
+                  icon: <Calendar className="w-4 h-4 text-purple-500" />,
+                }))}
+              />
+            </div>
+          </> : (
+            <div>
+              <label className={labelClass}>CONTA BANCÁRIA</label>
+              <OptionPicker
+                title="Conta Bancária"
+                placeholder="Selecione a conta bancária"
+                searchPlaceholder="Buscar conta..."
+                value={accountId}
+                onChange={val => setAccountId(String(val))}
+                options={accounts.map(account => ({
+                  value: account.id,
+                  label: account.name,
+                  sublabel: `Saldo: ${formatCurrency(account.balance, user.currency)}`,
+                  icon: <Wallet className="w-4 h-4 text-emerald-500" />,
+                }))}
+              />
+            </div>
+          )}
         </>}
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
@@ -1351,15 +1438,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2.5 border-t border-purple-200/60 dark:border-purple-900/40 animate-in fade-in">
                   <div>
                     <label className={labelClass}>FREQUÊNCIA</label>
-                    <select
-                      className={fieldClass}
+                    <OptionPicker
+                      title="Frequência de Recorrência"
                       value={cardRecurrenceFrequency}
-                      onChange={event => setCardRecurrenceFrequency(event.target.value as SupportedRecurrenceFrequency)}
-                    >
-                      <option value="monthly">Mensal (Padrão)</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="yearly">Anual</option>
-                    </select>
+                      onChange={val => setCardRecurrenceFrequency(val as SupportedRecurrenceFrequency)}
+                      options={[
+                        { value: 'monthly', label: 'Mensal (Padrão)' },
+                        { value: 'weekly', label: 'Semanal' },
+                        { value: 'yearly', label: 'Anual' },
+                      ]}
+                    />
                   </div>
                   <div>
                     <label className={labelClass}>TÉRMINO OPCIONAL</label>
@@ -1500,10 +1588,87 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             )}
           </div>
           <div><label className={labelClass}>OBSERVAÇÕES</label><textarea className={fieldClass} rows={3} value={notes} onChange={event => setNotes(event.target.value)} /></div>
-          {type === 'expense' && !isCard && !isTransfer && <div className="space-y-2"><label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span>DESPESA FIXA</span><input type="checkbox" checked={fixedExpense} disabled={Boolean(editingTransaction)} onChange={event => setFixedExpense(event.target.checked)} /></label>{fixedExpense && <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label className={labelClass}>FREQUÊNCIA</label><select className={fieldClass} value={frequency} onChange={event => setFrequency(event.target.value as SupportedRecurrenceFrequency)}><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div><div><label className={labelClass}>TÉRMINO OPCIONAL</label><input className={fieldClass} type="date" min={date} value={recurrenceEndDate} onChange={event => setRecurrenceEndDate(event.target.value)} /></div></div>}</div>}
+          {type === 'expense' && !isCard && !isTransfer && (
+            <div className="space-y-2">
+              <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <span>DESPESA FIXA</span>
+                <input
+                  type="checkbox"
+                  checked={fixedExpense}
+                  disabled={Boolean(editingTransaction)}
+                  onChange={event => setFixedExpense(event.target.checked)}
+                />
+              </label>
+              {fixedExpense && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>FREQUÊNCIA</label>
+                    <OptionPicker
+                      title="Frequência"
+                      value={frequency}
+                      onChange={val => setFrequency(val as SupportedRecurrenceFrequency)}
+                      options={[
+                        { value: 'weekly', label: 'Semanal' },
+                        { value: 'monthly', label: 'Mensal' },
+                        { value: 'yearly', label: 'Anual' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>TÉRMINO OPCIONAL</label>
+                    <input
+                      className={fieldClass}
+                      type="date"
+                      min={date}
+                      value={recurrenceEndDate}
+                      onChange={event => setRecurrenceEndDate(event.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {isCard && <div className="space-y-2"><label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span>COMPRA DE TERCEIRO</span><input type="checkbox" checked={thirdParty} onChange={event => { setThirdParty(event.target.checked); if (event.target.checked) setIgnored(true); }} /></label>{thirdParty && <input className={fieldClass} value={thirdPartyName} onChange={event => setThirdPartyName(event.target.value)} placeholder="Nome da pessoa" />}</div>}
           {!isTransfer && <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span>IGNORAR NO ORÇAMENTO E RELATÓRIOS</span><input type="checkbox" checked={ignored} disabled={thirdParty} onChange={event => setIgnored(event.target.checked)} /></label>}
-          {type === 'expense' && !isCard && !isTransfer && <div className="space-y-2"><label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"><span><Bell className="inline w-4 h-4 mr-1" />LEMBRETE</span><input type="checkbox" checked={reminderEnabled} onChange={event => setReminderEnabled(event.target.checked)} /></label>{reminderEnabled && <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>ANTECEDÊNCIA</label><select className={fieldClass} value={reminderDaysBefore} onChange={event => setReminderDaysBefore(Number(event.target.value))}><option value={0}>No vencimento</option><option value={1}>1 dia antes</option><option value={2}>2 dias antes</option><option value={7}>1 semana antes</option></select></div><div><label className={labelClass}>HORÁRIO</label><input className={fieldClass} type="time" value={reminderTime} onChange={event => setReminderTime(event.target.value)} /></div></div>}</div>}
+          {type === 'expense' && !isCard && !isTransfer && (
+            <div className="space-y-2">
+              <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <span><Bell className="inline w-4 h-4 mr-1" />LEMBRETE</span>
+                <input
+                  type="checkbox"
+                  checked={reminderEnabled}
+                  onChange={event => setReminderEnabled(event.target.checked)}
+                />
+              </label>
+              {reminderEnabled && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>ANTECEDÊNCIA</label>
+                    <OptionPicker
+                      title="Antecedência do Lembrete"
+                      value={reminderDaysBefore}
+                      onChange={val => setReminderDaysBefore(Number(val))}
+                      options={[
+                        { value: 0, label: 'No vencimento' },
+                        { value: 1, label: '1 dia antes' },
+                        { value: 2, label: '2 dias antes' },
+                        { value: 7, label: '1 semana antes' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>HORÁRIO</label>
+                    <input
+                      className={fieldClass}
+                      type="time"
+                      value={reminderTime}
+                      onChange={event => setReminderTime(event.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {editingSeries?.kind === 'recurring_expense' && <div className="rounded-xl border border-amber-200 dark:border-amber-900 p-3 space-y-2"><p className="text-xs font-black uppercase tracking-wider">APLICAR ALTERAÇÃO DO VALOR</p><label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="radio" checked={fixedEditScope === 'single'} onChange={() => setFixedEditScope('single')} />Somente este mês</label><label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="radio" checked={fixedEditScope === 'current_and_future'} onChange={() => setFixedEditScope('current_and_future')} />Este e os próximos</label>{fixedEditScope === 'current_and_future' && <label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="checkbox" checked={overwriteExceptions} onChange={event => setOverwriteExceptions(event.target.checked)} />Sobrescrever valores excepcionais futuros</label>}</div>}
         </div>}
         {error && <p role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600">{error}</p>}

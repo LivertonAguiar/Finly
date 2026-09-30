@@ -334,3 +334,24 @@ Se alguma dessas funcionalidades só existir no Antigravity CLI e não dentro da
 
 Não simule suporte inexistente.
 
+---
+
+# 16. Acesso Permanente ao Servidor Oracle VPS e GitHub
+
+- **Servidor Oracle VPS (Ubuntu 24.04 ARM64)**:
+  - **Endereço IP**: `147.15.74.236`
+  - **Usuário**: `ubuntu`
+  - **Chave SSH Privada**: `C:\Users\Suporte\Downloads\Oracle\ssh-key-2026-08-24.key`
+  - **Chave SSH Pública**: `C:\Users\Suporte\Downloads\Oracle\ssh-key-2026-08-24.key.pub`
+  - **Alias SSH (configurado em ~/.ssh/config)**: `finly-vps`
+  - **Comando rápido de acesso**: `ssh finly-vps` ou `ssh -i "C:\Users\Suporte\Downloads\Oracle\ssh-key-2026-08-24.key" ubuntu@147.15.74.236`
+  - **Diretório da aplicação no servidor**: `/opt/docker/finly`
+  - **Domínio Web Oficial**: `https://finly.lpaguiar.com.br` (HTTP 200 via Cloudflare e Nginx Proxy Manager)
+  - **Containers Docker Ativos**: `finly-app` (porta 3000), `supabase-*`, `nginx-proxy-manager`, `portainer`
+
+- **Repositório GitHub**:
+  - **URL Remota**: `https://github.com/LivertonAguiar/Finly.git`
+  - **Branch Principal**: `main`
+  - **Pasta Local**: `c:\Users\Suporte\Documents\Finly\planner-financeiro`
+  - **Deploy**: `powershell -ExecutionPolicy Bypass -File .\scripts\deploy-vps.ps1`
+

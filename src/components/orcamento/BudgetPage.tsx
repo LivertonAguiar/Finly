@@ -28,6 +28,7 @@ import {
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
+import { OptionPicker } from '../ui/OptionPicker';
 import { downloadCSV } from '../../utils/reportExportService';
 import { doesTransactionBelongToMonth, isInvoicePaymentTransaction } from '../../utils/invoiceCalculator';
 import { getAnalyticalEntries } from '../../utils/transactionAnalytics';
@@ -1385,27 +1386,33 @@ export const BudgetPage: React.FC = () => {
           >
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
-              <select
+              <OptionPicker
+                title="Escolher Categoria"
+                placeholder="Selecione uma categoria..."
+                searchPlaceholder="Buscar categoria..."
                 value={selectedCatId}
-                onChange={e => {
-                  setSelectedCatId(e.target.value);
-                  const cat = categories.find(c => c.id === e.target.value);
-                  const currentPlan = getCategoryPlanned(e.target.value, currentMonthPrefix, cat?.type === 'income' ? 'income' : 'expense');
+                onChange={val => {
+                  const catId = String(val);
+                  setSelectedCatId(catId);
+                  const cat = categories.find(c => c.id === catId);
+                  const currentPlan = getCategoryPlanned(catId, currentMonthPrefix, cat?.type === 'income' ? 'income' : 'expense');
                   setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
                 }}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
-              >
-                <optgroup label="Despesas (Saídas)">
-                  {expenseCategories.map(c => (
-                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Receitas (Entradas)">
-                  {incomeCategories.map(c => (
-                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                  ))}
-                </optgroup>
-              </select>
+                options={[
+                  ...expenseCategories.map(c => ({
+                    value: c.id,
+                    label: c.name,
+                    sublabel: 'Despesa',
+                    icon: <span className="text-base">{c.icon}</span>,
+                  })),
+                  ...incomeCategories.map(c => ({
+                    value: c.id,
+                    label: c.name,
+                    sublabel: 'Receita',
+                    icon: <span className="text-base">{c.icon}</span>,
+                  })),
+                ]}
+              />
             </div>
 
             <div>

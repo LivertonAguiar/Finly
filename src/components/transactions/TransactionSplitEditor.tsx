@@ -5,6 +5,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { toCents, fromCents, validateTransactionComponents } from '../../utils/transactionAnalytics';
 import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
 import { SubcategoryPicker } from '../ui/SubcategoryPicker';
+import { OptionPicker } from '../ui/OptionPicker';
 
 export type SplitFormItem = {
   id?: string;
@@ -245,24 +246,23 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                 {/* Categoria (Largura ampla para evitar corte) */}
                 <div className="sm:col-span-6">
                   <label className={labelClass}>Categoria</label>
-                  <select
-                    className={fieldClass}
+                  <OptionPicker
+                    title="Escolher Categoria"
+                    placeholder="Selecione uma categoria..."
+                    searchPlaceholder="Buscar categoria..."
                     value={item.categoryId}
-                    onChange={e =>
+                    onChange={val =>
                       handleUpdateItem(index, {
-                        categoryId: e.target.value,
+                        categoryId: String(val),
                         subcategoryId: '',
                       })
                     }
-                    required
-                  >
-                    <option value="">Selecione uma categoria...</option>
-                    {expenseCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.icon} {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={expenseCategories.map(cat => ({
+                      value: cat.id,
+                      label: cat.name,
+                      icon: <span className="text-base">{cat.icon}</span>,
+                    }))}
+                  />
                 </div>
 
                 {/* Subcategoria (Largura ampla para evitar corte) */}
@@ -282,11 +282,11 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <label className={labelClass}>Comportamento mensal</label>
-                    <select
-                      className={fieldClass}
+                    <OptionPicker
+                      title="Comportamento Mensal"
                       value={item.type || 'fixed'}
-                      onChange={e => {
-                        const newType = e.target.value as ComponentRepetitionType;
+                      onChange={val => {
+                        const newType = val as ComponentRepetitionType;
                         handleUpdateItem(index, {
                           type: newType,
                           ...(newType !== 'temporary'
@@ -294,12 +294,13 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                             : {}),
                         });
                       }}
-                    >
-                      <option value="fixed">Fixo (copiar todo mês)</option>
-                      <option value="variable">Variável (confirmar valor a cada mês)</option>
-                      <option value="temporary">Temporário (taxa com parcelas)</option>
-                      <option value="one_time">Eventual (somente neste mês)</option>
-                    </select>
+                      options={[
+                        { value: 'fixed', label: 'Fixo (copiar todo mês)' },
+                        { value: 'variable', label: 'Variável (confirmar valor a cada mês)' },
+                        { value: 'temporary', label: 'Temporário (taxa com parcelas)' },
+                        { value: 'one_time', label: 'Eventual (somente neste mês)' },
+                      ]}
+                    />
                   </div>
 
                   {item.type === 'temporary' && (
