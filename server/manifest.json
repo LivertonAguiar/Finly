@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.78/finly-v1.1.78.apk"
   },
   "web": {
-    "version": "1.1.78.1",
+    "version": "1.1.78.2",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.1.zip",
-    "sha256": "d8ee3b44fcb5983352c409529d3d779fbbee3ff362fbaaf20b26a9f7c6f86137",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.2.zip",
+    "sha256": "96783da18c8420e0986eded856f5d0c88987b44cfeb275786513cf4533dd6fba",
     "mandatory": true,
     "releaseDate": "2026-09-30",
-    "notes": "Segurança reforçada, assistente confirmável, desempenho e responsividade."
+    "notes": "Seletores customizados in-app substituem selects nativos em categorias, contas, cartoes e orcamento"
   }
 }
