@@ -53,6 +53,8 @@ assert.match(filePaths, /<cache-path\s+name="shared_cache"\s+path="\."\s*\/>/u);
 assert.match(filePaths, /<external-files-path\s+name="camera_images"\s+path="Pictures\/"\s*\/>/u);
 
 assert.match(workflow, /permissions:\s*\n\s+contents: read/u);
+assert.match(workflow, /concurrency:\s*\r?\n\s+group: finly-release-/u);
+assert.match(workflow, /cancel-in-progress: true/u);
 assert.match(workflow, /release-apk:\s*\r?\n\s+name:[^\r\n]*\r?\n\s+needs: quality/u);
 
 const qualityStart = workflow.indexOf('  quality:');

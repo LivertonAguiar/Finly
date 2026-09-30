@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: finly-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Validar Web e Android
