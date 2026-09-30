@@ -8,7 +8,7 @@
     "version": "1.1.78.1",
     "minNativeVersion": "1.1.0",
     "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.1.zip",
-    "sha256": "9db46ed78b9caf25cae47adc834c3d9219ac890fc0dc25b31fdc1c6daf3fadc7",
+    "sha256": "d8ee3b44fcb5983352c409529d3d779fbbee3ff362fbaaf20b26a9f7c6f86137",
     "mandatory": true,
     "releaseDate": "2026-09-30",
     "notes": "Segurança reforçada, assistente confirmável, desempenho e responsividade."
