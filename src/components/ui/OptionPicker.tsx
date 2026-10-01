@@ -86,11 +86,9 @@ export function OptionPicker<T extends string | number = string>({
       const originalStyle = window.getComputedStyle(document.body).overflow;
       document.body.style.overflow = 'hidden';
 
-      // Foca na busca se disponível
+      // Posiciona no item selecionado se houver, sem abrir o teclado virtual automaticamente
       const timer = setTimeout(() => {
-        if (shouldShowSearch && searchInputRef.current) {
-          searchInputRef.current.focus();
-        } else if (selectedItemRef.current) {
+        if (selectedItemRef.current) {
           selectedItemRef.current.scrollIntoView({ block: 'nearest' });
         }
       }, 100);
@@ -100,7 +98,7 @@ export function OptionPicker<T extends string | number = string>({
         clearTimeout(timer);
       };
     }
-  }, [isOpen, shouldShowSearch]);
+  }, [isOpen]);
 
   // Fecha no Esc
   useEffect(() => {

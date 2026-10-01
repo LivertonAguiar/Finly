@@ -15,6 +15,7 @@ assert.match(optionPickerCode, /role="listbox"/u, 'OptionPicker deve ter atribut
 assert.match(optionPickerCode, /rounded-t-\[28px\]/u, 'OptionPicker deve suportar visual Bottom Sheet moderno no mobile');
 assert.match(optionPickerCode, /normalizeSearch/u, 'OptionPicker deve filtrar ignorando acentos');
 assert.match(optionPickerCode, /activeRadioClasses/u, 'OptionPicker deve ter indicador de rádio integrado');
+assert.doesNotMatch(optionPickerCode, /searchInputRef\.current\.focus\(\)/u, 'OptionPicker não deve focar o input automaticamente para evitar subir o teclado no Android');
 
 // 2. Validação da remoção dos selects nativos no TransactionModalV2
 assert.match(transactionModal, /<OptionPicker[^>]*title="Escolher Categoria"/u, 'Modal deve usar OptionPicker para Categoria');

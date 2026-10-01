@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.78/finly-v1.1.78.apk"
   },
   "web": {
-    "version": "1.1.78.2",
+    "version": "1.1.78.3",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.2.zip",
-    "sha256": "96783da18c8420e0986eded856f5d0c88987b44cfeb275786513cf4533dd6fba",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.3.zip",
+    "sha256": "541b5d98f4d3482a7b41925fb70dfc3eecf2274c6f06f4b203ba81a4f5b79d18",
     "mandatory": true,
-    "releaseDate": "2026-09-30",
-    "notes": "Seletores customizados in-app substituem selects nativos em categorias, contas, cartoes e orcamento"
+    "releaseDate": "2026-10-01",
+    "notes": "Removido foco automatico no OptionPicker para evitar subida involuntaria do teclado no Android"
   }
 }
