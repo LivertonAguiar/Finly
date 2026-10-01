@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.78/finly-v1.1.78.apk"
   },
   "web": {
-    "version": "1.1.78.3",
+    "version": "1.1.78.4",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.3.zip",
-    "sha256": "541b5d98f4d3482a7b41925fb70dfc3eecf2274c6f06f4b203ba81a4f5b79d18",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.4.zip",
+    "sha256": "521cb63d67a980680107e445ade56e54cf4fad2e4873dd091268a0c9da1c726c",
     "mandatory": true,
     "releaseDate": "2026-10-01",
-    "notes": "Removido foco automatico no OptionPicker para evitar subida involuntaria do teclado no Android"
+    "notes": "\\"
   }
 }

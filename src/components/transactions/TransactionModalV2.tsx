@@ -1148,46 +1148,66 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
                     {/* Seleção de Quantidade de Parcelas */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className={labelClass}>QUANTIDADE DE PARCELAS</label>
-                        <span className="text-xs font-black text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-lg border border-purple-200/50 dark:border-purple-800/40">
-                          {installmentCount}x
-                        </span>
-                      </div>
+                      <label className={labelClass}>QUANTIDADE DE PARCELAS</label>
 
-                      {/* Controle Integrado: Entrada Numérica Direta [- / +] e Select Detalhado */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {/* Entrada Numérica Direta com - e + (sem leading zero) */}
-                        <div className="flex items-center justify-between h-[42px] px-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = Math.max(2, installmentCount - 1);
-                              setInstallmentCount(next);
-                              setInstallmentInputStr(String(next));
-                              setIsCustomInstallment(next > 24);
-                            }}
-                            disabled={installmentCount <= 2}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 select-none"
-                            title="Diminuir 1 parcela"
-                          >
-                            -
-                          </button>
+                      {/* Seletor In-App com Valores Detalhados por Parcela (2 a 24x) */}
+                      <OptionPicker
+                        title="Quantidade de Parcelas"
+                        placeholder="Selecione o parcelamento"
+                        searchPlaceholder="Buscar parcelas..."
+                        value={installmentCount <= 24 && !isCustomInstallment ? installmentCount : 'custom'}
+                        onChange={val => {
+                          if (val === 'custom') {
+                            setIsCustomInstallment(true);
+                            if (installmentCount <= 24) {
+                              setInstallmentCount(25);
+                              setInstallmentInputStr('25');
+                            }
+                          } else {
+                            setIsCustomInstallment(false);
+                            const n = Number(val);
+                            setInstallmentCount(n);
+                            setInstallmentInputStr(String(n));
+                          }
+                        }}
+                        options={[
+                          ...Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
+                            const opt = calculateInstallmentOption(count);
+                            return {
+                              value: count,
+                              label: `${count}x parcelas`,
+                              sublabel:
+                                amountNumber > 0
+                                  ? `${formatCurrency(opt.installmentAmount, user.currency)}/mês (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
+                                  : undefined,
+                              icon: <Layers className="w-4 h-4 text-purple-500" />,
+                            };
+                          }),
+                          {
+                            value: 'custom',
+                            label:
+                              installmentCount > 24
+                                ? `${installmentCount}x personalizado (até 72x)`
+                                : 'Outra quantidade personalizada (até 72x)...',
+                            icon: <Repeat className="w-4 h-4 text-indigo-500" />,
+                          },
+                        ]}
+                      />
 
-                          <div className="flex-1 flex items-center justify-center gap-1">
+                      {/* Campo direto quando quantidade for personalizada (> 24x) */}
+                      {isCustomInstallment && (
+                        <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 animate-in fade-in">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Número de parcelas (2 a 72):
+                          </span>
+                          <div className="flex items-center gap-1.5">
                             <input
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
-                              className="borderless-money-input borderless-stepper-input w-8 text-center font-black text-base bg-transparent border-0 outline-none text-slate-900 dark:text-white p-0 m-0 focus:ring-0 focus:outline-none shadow-none"
-                              style={{
-                                border: 'none',
-                                background: 'transparent',
-                                boxShadow: 'none',
-                                outline: 'none',
-                              }}
+                              className="w-16 h-9 px-2 text-center font-black text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                               value={installmentInputStr}
-                              placeholder="2"
+                              placeholder="25"
                               onChange={e => handleInstallmentInputChange(e.target.value)}
                               onBlur={handleInstallmentInputBlur}
                             />
@@ -1195,67 +1215,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                               vezes
                             </span>
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = Math.min(72, installmentCount + 1);
-                              setInstallmentCount(next);
-                              setInstallmentInputStr(String(next));
-                              setIsCustomInstallment(next > 24);
-                            }}
-                            disabled={installmentCount >= 72}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 select-none"
-                            title="Aumentar 1 parcela"
-                          >
-                            +
-                          </button>
                         </div>
-
-                        {/* Select Customizado com Valores Detalhados por Parcela (2 a 24x) */}
-                        <OptionPicker
-                          title="Quantidade de Parcelas"
-                          placeholder="Selecione o parcelamento"
-                          searchPlaceholder="Buscar parcelas..."
-                          value={installmentCount <= 24 && !isCustomInstallment ? installmentCount : 'custom'}
-                          onChange={val => {
-                            if (val === 'custom') {
-                              setIsCustomInstallment(true);
-                              if (installmentCount <= 24) {
-                                setInstallmentCount(25);
-                                setInstallmentInputStr('25');
-                              }
-                            } else {
-                              setIsCustomInstallment(false);
-                              const n = Number(val);
-                              setInstallmentCount(n);
-                              setInstallmentInputStr(String(n));
-                            }
-                          }}
-                          options={[
-                            ...Array.from({ length: 23 }, (_, i) => i + 2).map(count => {
-                              const opt = calculateInstallmentOption(count);
-                              return {
-                                value: count,
-                                label: `${count}x parcelas`,
-                                sublabel:
-                                  amountNumber > 0
-                                    ? `${formatCurrency(opt.installmentAmount, user.currency)}/mês (Total: ${formatCurrency(opt.totalAmount, user.currency)})`
-                                    : undefined,
-                                icon: <Layers className="w-4 h-4 text-purple-500" />,
-                              };
-                            }),
-                            {
-                              value: 'custom',
-                              label:
-                                installmentCount > 24
-                                  ? `${installmentCount}x personalizado (até 72x)`
-                                  : 'Outra quantidade personalizada (até 72x)...',
-                              icon: <Repeat className="w-4 h-4 text-indigo-500" />,
-                            },
-                          ]}
-                        />
-                      </div>
+                      )}
 
                       {/* Chips de Atalho Rápido para 1 Toque */}
                       <div className="space-y-1 pt-0.5">
