@@ -972,13 +972,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setIsAiScanOpen(true)}
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsAiScanOpen(true);
+                }}
                 title="Preencher com Inteligência Artificial (Pix / Recibo)"
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-pink-500/10 hover:from-purple-500/20 hover:via-indigo-500/20 hover:to-pink-500/20 border border-purple-200 dark:border-purple-800/80 text-purple-700 dark:text-purple-300 text-xs font-black transition-all active:scale-95 whitespace-nowrap shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-pink-500/10 hover:from-purple-500/20 hover:via-indigo-500/20 hover:to-pink-500/20 border border-purple-200 dark:border-purple-800/80 text-purple-700 dark:text-purple-300 text-xs font-black transition-all active:scale-95 whitespace-nowrap shadow-sm cursor-pointer select-none"
               >
-                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-pulse" />
-                <span className="hidden sm:inline">IA Pix</span>
-                <span className="sm:hidden">IA</span>
+                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-pulse pointer-events-none" />
+                <span className="hidden sm:inline pointer-events-none">IA Pix</span>
+                <span className="sm:hidden pointer-events-none">IA</span>
               </button>
             </div>
           )}

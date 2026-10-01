@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.78/finly-v1.1.78.apk"
   },
   "web": {
-    "version": "1.1.78.6",
+    "version": "1.1.78.7",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.6.zip",
-    "sha256": "39d8ccfc03697dfad457499f447d14926e3605216ddd381e324d01bc06fa9a91",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.7.zip",
+    "sha256": "285930c60f4329aba72d5b6b136bf20b899fb517298f07cd10e4c4848704ce9e",
     "mandatory": true,
     "releaseDate": "2026-10-01",
-    "notes": "Adiciona IA local para leitura inteligente de Pix e comprovantes"
+    "notes": "Ajusta portal e z-index do modal de IA para exibicao imediata"
   }
 }
