@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { verifySessionToken } from './security/token.js';
+import { getAiHealth, extractTransactionData } from './aiService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -353,6 +354,27 @@ app.use('/bundles', express.static(BUNDLES_DIR, {
   maxAge: '1y',
   immutable: true,
 }));
+
+// =========================================================================
+// AI & Smart Receipt Recognition Endpoints (Local Ollama on VPS)
+// =========================================================================
+app.get('/api/ai/status', async (req, res) => {
+  const status = await getAiHealth();
+  res.json(status);
+});
+
+app.post('/api/ai/parse-receipt', async (req, res) => {
+  try {
+    const { text, categories = [], accounts = [], cards = [] } = req.body || {};
+    if (!text || !text.trim()) {
+      return res.status(400).json({ success: false, message: 'Texto do comprovante ou anotação é obrigatório.' });
+    }
+    const result = await extractTransactionData({ text, categories, accounts, cards });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || 'Falha ao processar comprovante com IA.' });
+  }
+});
 
 // Market Indicators (BACEN SGS: TR Série 226, IPCA Série 433)
 let cachedMarketIndicators = {

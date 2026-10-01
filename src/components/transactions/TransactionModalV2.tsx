@@ -27,6 +27,7 @@ import { validateTransactionComponents } from '../../utils/transactionAnalytics'
 import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
 import { SubcategoryPicker } from '../ui/SubcategoryPicker';
 import { OptionPicker } from '../ui/OptionPicker';
+import { AiScanModal } from './AiScanModal';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -118,6 +119,73 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [hasSplit, setHasSplit] = useState(false);
   const [splitItems, setSplitItems] = useState<SplitFormItem[]>([]);
   const [error, setError] = useState('');
+  const [isAiScanOpen, setIsAiScanOpen] = useState(false);
+
+  const handleAiApply = (parsed: {
+    amount?: number;
+    type?: TransactionType;
+    description?: string;
+    date?: string;
+    categoryName?: string;
+    categoryId?: string;
+    paymentMethod?: 'account' | 'card';
+    accountOrCardName?: string;
+    accountId?: string;
+    cardId?: string;
+    notes?: string;
+  }) => {
+    if (parsed.type) {
+      setType(parsed.type);
+    }
+    if (parsed.paymentMethod) {
+      setPaymentMethod(parsed.paymentMethod);
+    }
+    if (parsed.amount && parsed.amount > 0) {
+      const cents = Math.round(parsed.amount * 100);
+      setCentsAmount(cents);
+      setAmount((cents / 100).toFixed(2));
+    }
+    if (parsed.description) {
+      setDescription(parsed.description);
+    }
+    if (parsed.date) {
+      setDate(parsed.date);
+    }
+    if (parsed.categoryId) {
+      setCategoryId(parsed.categoryId);
+      setManuallyChangedCategory(true);
+    } else if (parsed.categoryName) {
+      const found = categories.find(c => c.name.toLowerCase().includes(parsed.categoryName!.toLowerCase()));
+      if (found) {
+        setCategoryId(found.id);
+        setManuallyChangedCategory(true);
+      }
+    }
+    if (parsed.cardId) {
+      setCardId(parsed.cardId);
+      setPaymentMethod('card');
+    } else if (parsed.accountId) {
+      setAccountId(parsed.accountId);
+      setPaymentMethod('account');
+    } else if (parsed.accountOrCardName) {
+      const foundAcc = accounts.find(a => a.name.toLowerCase().includes(parsed.accountOrCardName!.toLowerCase()));
+      if (foundAcc) {
+        setAccountId(foundAcc.id);
+        setPaymentMethod('account');
+      } else {
+        const foundCard = cards.find(c => c.name.toLowerCase().includes(parsed.accountOrCardName!.toLowerCase()));
+        if (foundCard) {
+          setCardId(foundCard.id);
+          setPaymentMethod('card');
+        }
+      }
+    }
+    if (parsed.notes) {
+      setNotes(prev => (prev ? `${prev}\n${parsed.notes}` : (parsed.notes || '')));
+      setMoreDetails(true);
+    }
+    setIsAiScanOpen(false);
+  };
 
   // 6D Multidimensional Taxonomy
   const [financialNature, setFinancialNature] = useState<FinancialNature>('expense');
@@ -859,34 +927,61 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     ? 'Nova transferência' : isCard ? 'Nova despesa de cartão' : type === 'income' ? 'Nova receita' : 'Nova despesa';
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      maxWidth="lg"
-      footer={<div className="flex justify-end gap-2 w-full">
-        <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300">Cancelar</button>
-        <button type="submit" form="transaction-form-v2" className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-black">
-          {editingTransaction ? 'Atualizar' : 'Salvar'}
-        </button>
-      </div>}
-    >
-      <form id="transaction-form-v2" onSubmit={handleSubmit} className="space-y-4">
-        {!editingTransaction && <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800">
-          {[
-            { label: 'Despesa', value: 'expense-account' },
-            { label: 'Receita', value: 'income-account' },
-            { label: 'Cartão', value: 'expense-card' },
-            { label: 'Transferir', value: 'transfer-account' },
-          ].map(option => {
-            const active = `${type}-${paymentMethod}` === option.value;
-            return <button key={option.value} type="button" onClick={() => {
-              const [nextType, nextMethod] = option.value.split('-') as [TransactionType, 'account' | 'card'];
-              setType(nextType); setPaymentMethod(nextMethod);
-              if (nextType === 'transfer') setStatus(date > getTodayString() ? 'scheduled' : 'completed');
-            }} className={`py-2 rounded-xl text-xs font-black ${active ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}>{option.label}</button>;
-          })}
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={title}
+        maxWidth="lg"
+        footer={<div className="flex justify-end gap-2 w-full">
+          <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300">Cancelar</button>
+          <button type="submit" form="transaction-form-v2" className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-black">
+            {editingTransaction ? 'Atualizar' : 'Salvar'}
+          </button>
         </div>}
+      >
+        <form id="transaction-form-v2" onSubmit={handleSubmit} className="space-y-4">
+          {!editingTransaction && (
+            <div className="flex items-center gap-2">
+              <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 flex-1">
+                {[
+                  { label: 'Despesa', value: 'expense-account' },
+                  { label: 'Receita', value: 'income-account' },
+                  { label: 'Cartão', value: 'expense-card' },
+                  { label: 'Transferir', value: 'transfer-account' },
+                ].map(option => {
+                  const active = `${type}-${paymentMethod}` === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        const [nextType, nextMethod] = option.value.split('-') as [TransactionType, 'account' | 'card'];
+                        setType(nextType);
+                        setPaymentMethod(nextMethod);
+                        if (nextType === 'transfer') setStatus(date > getTodayString() ? 'scheduled' : 'completed');
+                      }}
+                      className={`py-2 rounded-xl text-xs font-black transition-colors ${
+                        active ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAiScanOpen(true)}
+                title="Preencher com Inteligência Artificial (Pix / Recibo)"
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-pink-500/10 hover:from-purple-500/20 hover:via-indigo-500/20 hover:to-pink-500/20 border border-purple-200 dark:border-purple-800/80 text-purple-700 dark:text-purple-300 text-xs font-black transition-all active:scale-95 whitespace-nowrap shadow-sm"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-pulse" />
+                <span className="hidden sm:inline">IA Pix</span>
+                <span className="sm:hidden">IA</span>
+              </button>
+            </div>
+          )}
 
         <div
           onClick={focusAmountInput}
@@ -1653,5 +1748,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         {error && <p role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600">{error}</p>}
       </form>
     </Modal>
+    <AiScanModal
+      isOpen={isAiScanOpen}
+      onClose={() => setIsAiScanOpen(false)}
+      onApply={handleAiApply}
+      categories={categories}
+      accounts={accounts}
+      cards={cards}
+    />
+  </>
   );
 };
