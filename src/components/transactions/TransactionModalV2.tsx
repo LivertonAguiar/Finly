@@ -513,6 +513,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   };
 
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+
+  const focusAmountInput = () => {
+    if (amountInputRef.current) {
+      amountInputRef.current.focus();
+      const len = amountInputRef.current.value.length;
+      amountInputRef.current.setSelectionRange(len, len);
+    }
+  };
 
   const addTag = (textToAdd?: string) => {
     const candidate = typeof textToAdd === 'string' ? textToAdd : tagInput;
@@ -879,11 +888,20 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           })}
         </div>}
 
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-center bg-slate-50 dark:bg-slate-900/40">
-          <label className={labelClass}>VALOR</label>
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-xl sm:text-2xl font-black text-slate-400 dark:text-slate-500 select-none">R$</span>
+        <div
+          onClick={focusAmountInput}
+          role="button"
+          tabIndex={-1}
+          aria-label="Tocar para digitar o valor"
+          className="rounded-2xl border border-slate-200 dark:border-slate-700 py-4 px-4 text-center bg-slate-50 dark:bg-slate-900/40 cursor-pointer select-none transition-all active:scale-[0.99] focus-within:ring-2 focus-within:ring-purple-500/25 focus-within:border-purple-500 hover:border-slate-300 dark:hover:border-slate-600"
+        >
+          <label className={`${labelClass} pointer-events-none select-none mb-1.5`}>VALOR</label>
+          <div className="flex items-center justify-center gap-2 select-none">
+            <span className="text-2xl sm:text-3xl font-black text-slate-400 dark:text-slate-500 select-none pointer-events-none leading-none">
+              R$
+            </span>
             <input
+              ref={amountInputRef}
               type="text"
               inputMode="numeric"
               aria-label="VALOR"
@@ -898,7 +916,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 const len = (e.target as HTMLInputElement).value.length;
                 (e.target as HTMLInputElement).setSelectionRange(len, len);
               }}
-              className="borderless-money-input text-center text-3xl sm:text-4xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 text-purple-600 dark:text-purple-400"
+              className="borderless-money-input text-center text-5xl sm:text-6xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 text-purple-600 dark:text-purple-400 leading-none"
               style={{
                 width: `${Math.max(displayAmount.length + 1, 5)}ch`,
                 outline: 'none',

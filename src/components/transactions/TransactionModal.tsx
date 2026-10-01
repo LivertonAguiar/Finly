@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
   TrendingDown,
@@ -66,6 +66,14 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
     }
     return 0;
   });
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const focusAmountInput = () => {
+    if (amountInputRef.current) {
+      amountInputRef.current.focus();
+      const len = amountInputRef.current.value.length;
+      amountInputRef.current.setSelectionRange(len, len);
+    }
+  };
   const [date, setDate] = useState(getTodayString());
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
@@ -556,12 +564,19 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
         {/* ========================================================================= */}
         {/* 1. TOP VALUE BOX (DYNAMIC RIGHT-TO-LEFT REAL-TIME MONEY MASK) */}
         {/* ========================================================================= */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#1E1E22] border border-slate-200/80 dark:border-slate-800 flex items-center justify-center shadow-xs">
-          <div className="inline-flex items-center justify-center gap-2 max-w-full">
-            <span className="text-2xl sm:text-3xl font-black text-slate-400 dark:text-slate-500 select-none">
+        <div
+          onClick={focusAmountInput}
+          role="button"
+          tabIndex={-1}
+          aria-label="Tocar para digitar o valor"
+          className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#1E1E22] border border-slate-200/80 dark:border-slate-800 flex items-center justify-center shadow-xs cursor-pointer select-none transition-all active:scale-[0.99] focus-within:ring-2 focus-within:ring-purple-500/25 focus-within:border-purple-500 hover:border-slate-300 dark:hover:border-slate-700"
+        >
+          <div className="inline-flex items-center justify-center gap-2 max-w-full select-none">
+            <span className="text-2xl sm:text-3xl font-black text-slate-400 dark:text-slate-500 select-none pointer-events-none leading-none">
               R$
             </span>
             <input
+              ref={amountInputRef}
               type="text"
               inputMode="numeric"
               required
@@ -576,7 +591,7 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
                 const len = (e.target as HTMLInputElement).value.length;
                 (e.target as HTMLInputElement).setSelectionRange(len, len);
               }}
-              className={`borderless-money-input text-center text-3xl sm:text-4xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 ${
+              className={`borderless-money-input text-center text-5xl sm:text-6xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 leading-none ${
                 type === 'income'
                   ? 'text-[#66bb6a]'
                   : type === 'expense' && paymentMethod === 'card'
