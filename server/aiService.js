@@ -114,7 +114,7 @@ ${text.trim()}
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout for local CPU
+    const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout for CPU inference & cold start
 
     const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: 'POST',
@@ -125,6 +125,7 @@ ${text.trim()}
         prompt: `${systemPrompt}\n\n${userPrompt}`,
         format: 'json',
         stream: false,
+        keep_alive: '60m',
         options: {
           temperature: 0.1, // High determinism
           num_predict: 256, // Fast response
