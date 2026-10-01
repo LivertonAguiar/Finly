@@ -42,7 +42,7 @@ let apiStderr = '';
 apiProcess.stdout.resume();
 apiProcess.stderr.on('data', chunk => { apiStderr += chunk.toString(); });
 try {
-  const deadline = Date.now() + 8000;
+  const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     try {
       const response = await fetch(`http://127.0.0.1:${apiPort}/api/app/version`);
