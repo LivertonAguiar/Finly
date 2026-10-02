@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Sparkles, Upload, X, Check, Loader2, FileText, ArrowRight } from 'lucide-react';
+import { Camera, Sparkles, Upload, X, Check, Loader2, FileText, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
+import { getApiUrl } from '../../services/apiConfig';
 import type { Category, Account, CreditCard } from '../../types';
 
 interface AiScanModalProps {
@@ -25,6 +26,8 @@ export const AiScanModal: React.FC<AiScanModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'text' | 'image'>('text');
   const [inputText, setInputText] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
@@ -33,9 +36,12 @@ export const AiScanModal: React.FC<AiScanModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleProcess = async (textToProcess: string) => {
-    if (!textToProcess.trim()) {
-      setError('Por favor, informe o texto ou comprovante para a IA analisar.');
+  const handleProcess = async (textToProcess: string, imageToProcess?: string) => {
+    const textClean = (textToProcess || inputText).trim();
+    const imagePayload = imageToProcess || selectedImage;
+
+    if (!textClean && !imagePayload) {
+      setError('Por favor, informe o texto do Pix ou anexe a foto do comprovante para a IA analisar.');
       return;
     }
 
@@ -44,19 +50,24 @@ export const AiScanModal: React.FC<AiScanModalProps> = ({
     setExtractedData(null);
 
     try {
-      const response = await fetch('/api/ai/parse-receipt', {
+      const endpoint = getApiUrl('/api/ai/parse-receipt');
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: textToProcess,
+          text: textClean || 'Comprovante em imagem anexado',
+          image: imagePayload || undefined,
           categories,
           accounts,
           cards,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Falha na comunicação com o serviço de IA local.');
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error('Resposta não-JSON da API de IA:', errorText);
+        throw new Error('Falha de comunicação com o servidor de IA. Verifique sua conexão.');
       }
 
       const result = await response.json();
@@ -76,14 +87,22 @@ export const AiScanModal: React.FC<AiScanModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Use filename and simulated local OCR preview
+    setSelectedImageName(file.name);
     const reader = new FileReader();
     reader.onload = async () => {
-      const simulatedText = `Comprovante de pagamento: ${file.name.replace(/\.[^/.]+$/, '')}`;
-      setInputText(simulatedText);
-      await handleProcess(simulatedText);
+      const base64 = reader.result as string;
+      setSelectedImage(base64);
+      const promptText = inputText.trim() || `Comprovante: ${file.name.replace(/\.[^/.]+$/, '')}`;
+      setInputText(promptText);
+      await handleProcess(promptText, base64);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleClearImage = () => {
+    setSelectedImage(null);
+    setSelectedImageName(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleConfirmApply = () => {
@@ -172,10 +191,37 @@ export const AiScanModal: React.FC<AiScanModalProps> = ({
             onChange={handleFileChange}
           />
 
+          {/* Selected Image Preview (se houver) */}
+          {selectedImage && (
+            <div className="relative p-2.5 rounded-2xl border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20 flex items-center gap-3">
+              <img
+                src={selectedImage}
+                alt="Comprovante"
+                className="w-14 h-14 object-cover rounded-xl border border-purple-300 dark:border-purple-700 shadow-xs"
+              />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider block">
+                  Foto do comprovante anexada
+                </span>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {selectedImageName || 'comprovante.jpg'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleClearImage}
+                className="p-1.5 rounded-full hover:bg-rose-100 dark:hover:bg-rose-950/60 text-slate-400 hover:text-rose-600 transition-colors"
+                title="Remover foto"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Text Area */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
-              Cole o texto do Pix, recibo ou fatura:
+              {mode === 'image' ? 'Observações do comprovante (opcional):' : 'Cole o texto do Pix, recibo ou fatura:'}
             </label>
             <textarea
               rows={4}
@@ -190,7 +236,7 @@ export const AiScanModal: React.FC<AiScanModalProps> = ({
           <button
             type="button"
             onClick={() => handleProcess(inputText)}
-            disabled={isLoading || !inputText.trim()}
+            disabled={isLoading || (!inputText.trim() && !selectedImage)}
             className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (

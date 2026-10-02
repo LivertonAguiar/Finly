@@ -365,11 +365,11 @@ app.get('/api/ai/status', async (req, res) => {
 
 app.post('/api/ai/parse-receipt', async (req, res) => {
   try {
-    const { text, categories = [], accounts = [], cards = [] } = req.body || {};
-    if (!text || !text.trim()) {
-      return res.status(400).json({ success: false, message: 'Texto do comprovante ou anotação é obrigatório.' });
+    const { text, image, categories = [], accounts = [], cards = [] } = req.body || {};
+    if ((!text || !text.trim()) && !image) {
+      return res.status(400).json({ success: false, message: 'Texto do comprovante ou imagem é obrigatório.' });
     }
-    const result = await extractTransactionData({ text, categories, accounts, cards });
+    const result = await extractTransactionData({ text, image, categories, accounts, cards });
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, message: err.message || 'Falha ao processar comprovante com IA.' });

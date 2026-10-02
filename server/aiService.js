@@ -79,8 +79,45 @@ function parseMoneyValue(val) {
 /**
  * Extracts structured transaction details from raw text or receipt OCR text
  */
-export async function extractTransactionData({ text, categories = [], accounts = [], cards = [] }) {
-  if (!text || !text.trim()) {
+export async function extractTransactionData({ text, image, categories = [], accounts = [], cards = [] }) {
+  let combinedContent = (text || '').trim();
+
+  // Se houver imagem, transcreve os dados visuais via modelo moondream
+  if (image && typeof image === 'string') {
+    try {
+      const cleanBase64 = image.replace(/^data:image\/[a-z0-9]+;base64,/i, '');
+      const visionController = new AbortController();
+      const visionTimeout = setTimeout(() => visionController.abort(), 35000);
+
+      const visionRes = await fetch(`${OLLAMA_HOST}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: visionController.signal,
+        body: JSON.stringify({
+          model: 'moondream',
+          prompt: 'Transcribe all texts, numbers, bank names, receiver name, dates and values from this Brazilian receipt or Pix payment voucher:',
+          images: [cleanBase64],
+          stream: false,
+          options: { temperature: 0.1 },
+        }),
+      });
+      clearTimeout(visionTimeout);
+
+      if (visionRes.ok) {
+        const visionData = await visionRes.json();
+        const ocrResult = (visionData.response || '').trim();
+        if (ocrResult) {
+          combinedContent = combinedContent
+            ? `${combinedContent}\n\n[Dados do comprovante]:\n${ocrResult}`
+            : ocrResult;
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Falha ao ler imagem com moondream (prosseguindo com texto):', err.message);
+    }
+  }
+
+  if (!combinedContent) {
     throw new Error('Texto ou conteúdo do comprovante não fornecido.');
   }
 
@@ -109,7 +146,7 @@ Cartões de crédito do usuário: ${cardNames.join(', ') || 'Nenhum'}`;
 
   const userPrompt = `Analise o texto do lançamento/comprovante abaixo e extraia o JSON:
 ---
-${text.trim()}
+${combinedContent}
 ---`;
 
   try {
