@@ -103,7 +103,7 @@ if ($LASTEXITCODE -ne 0) {
 
 try {
 Write-Host "Empacotando arquivos do projeto..." -ForegroundColor Yellow
-tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data/stores" --exclude="server/data/stores/*" --exclude="server/data/*.json" --exclude="server/public/bundles/*" -czf $archivePath -C $repoRoot .
+tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data/stores" --exclude="server/data/stores/*" --exclude="server/data/ollama" --exclude="server/data/ollama/*" --exclude="server/data/*.json" --exclude="server/public/bundles" --exclude="server/public/bundles/*" -czf $archivePath -C $repoRoot .
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao criar o pacote de atualizacao." }
 if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf) -or (Get-Item -LiteralPath $archivePath).Length -le 0) {
     throw "Deploy falhou: o pacote de atualizacao esta ausente ou vazio."

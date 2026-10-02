@@ -9,3 +9,7 @@ android
 *.log
 scratch_minha_grana
 .github
+server/data/ollama
+server/data/ollama/*
+server/public/bundles
+server/public/bundles/*
