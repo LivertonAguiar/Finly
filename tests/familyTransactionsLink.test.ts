@@ -43,11 +43,29 @@ const mockEsposa: FamilyMember = {
   joinedAt: '2026-02-01',
 };
 
+// Caso C: Membro recém-convidado com status 'pending' (Pendente de aceite)
+const mockFilhoPendente: FamilyMember = {
+  id: 'fam-filho',
+  name: 'Lucas Pereira Aguiar',
+  email: 'lucas@gmail.com',
+  role: 'editor',
+  status: 'pending',
+  isOwner: false,
+  type: 'linked',
+  joinedAt: '2026-10-07',
+};
+
 const membersDuo = getFamilyMemberList(mockUser, [mockEsposa]);
 assert.equal(membersDuo.length, 2);
 assert.equal(membersDuo[0].isOwner, true);
 assert.equal(membersDuo[0].id, 'owner');
 assert.equal(membersDuo[1].id, 'fam-esposa');
+
+const membersTrio = getFamilyMemberList(mockUser, [mockEsposa, mockFilhoPendente]);
+assert.equal(membersTrio.length, 3);
+assert.equal(membersTrio[0].isOwner, true);
+assert.equal(membersTrio[2].status, 'pending');
+assert.equal(getMemberDisplayNameById('fam-filho', membersTrio), 'Lucas Aguiar');
 
 // 3. Validação de Resolução de Nome por ID
 assert.equal(getMemberDisplayNameById('owner', membersDuo), 'Liverton Aguiar');

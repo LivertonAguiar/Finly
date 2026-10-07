@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Users,
   UserPlus,
@@ -15,30 +15,23 @@ import {
   Lock,
   Plus,
   MessageSquare,
+  Clock,
+  Send,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { Modal } from '../ui/Modal';
 import { FamilyMember } from '../../types';
+import { getFamilyMemberList, formatMemberDisplayName } from '../../utils/familyUtils';
 
 export const FamilyPage: React.FC = () => {
-  const { user, familyMembers, inviteFamilyMember, updateFamilyMember, removeFamilyMember } = useFinancial();
+  const { user, familyMembers, inviteFamilyMember, resendFamilyInvite, updateFamilyMember, removeFamilyMember } = useFinancial();
   const { confirm } = useConfirm();
 
-  // Ensure user is in family list
-  const allMembers: FamilyMember[] = familyMembers.length > 0 ? familyMembers : [
-    {
-      id: 'mem-owner',
-      name: user.name || 'Titular',
-      email: user.email || '',
-      phone: user.phone || '',
-      role: 'admin',
-      status: 'active',
-      isOwner: true,
-      type: 'linked',
-      joinedAt: '01/01/2026',
-    }
-  ];
+  // Lista consolidada garantindo o Titular sempre no topo
+  const allMembers = useMemo(() => getFamilyMemberList(user, familyMembers), [user, familyMembers]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
@@ -48,6 +41,10 @@ export const FamilyPage: React.FC = () => {
   const [formEmail, setFormEmail] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formType, setFormType] = useState<'linked' | 'unlinked'>('linked');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
+  const [feedbackBanner, setFeedbackBanner] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   const handleOpenAdd = () => {
     setEditingMember(null);
@@ -55,6 +52,7 @@ export const FamilyPage: React.FC = () => {
     setFormEmail('');
     setFormPhone('');
     setFormType('linked');
+    setFormError('');
     setIsAddModalOpen(true);
   };
 
@@ -64,6 +62,7 @@ export const FamilyPage: React.FC = () => {
     setFormEmail(m.email);
     setFormPhone(m.phone || '');
     setFormType(m.type || 'linked');
+    setFormError('');
     setIsAddModalOpen(true);
   };
 
@@ -82,36 +81,120 @@ export const FamilyPage: React.FC = () => {
 
     if (ok) {
       removeFamilyMember(m.id);
+      setFeedbackBanner({
+        type: 'info',
+        message: `${m.name} foi removido do grupo familiar.`,
+      });
     }
   };
 
-  const handleSaveMember = (e: React.FormEvent) => {
+  const handleSaveMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim() || !formEmail.trim()) return;
+    setFormError('');
+    const cleanName = formName.trim();
+    const cleanEmail = formEmail.trim().toLowerCase();
+
+    if (!cleanName || !cleanEmail) {
+      setFormError('Preencha o nome e o e-mail do membro.');
+      return;
+    }
+
+    // Verificar duplicação de e-mail no grupo
+    const duplicate = allMembers.find(m => (!editingMember || m.id !== editingMember.id) && m.email?.trim().toLowerCase() === cleanEmail);
+    if (duplicate) {
+      setFormError('Já existe um membro ou titular cadastrado com este e-mail.');
+      return;
+    }
 
     if (editingMember) {
       updateFamilyMember(editingMember.id, {
-        name: formName.trim(),
-        email: formEmail.trim(),
+        name: cleanName,
+        email: cleanEmail,
         phone: formPhone.trim(),
         type: formType,
+      });
+      setIsAddModalOpen(false);
+      setFeedbackBanner({
+        type: 'success',
+        message: `Dados de ${cleanName} atualizados com sucesso.`,
       });
     } else {
-      inviteFamilyMember({
-        name: formName.trim(),
-        email: formEmail.trim(),
-        phone: formPhone.trim(),
-        role: 'editor',
-        status: 'active',
-        isOwner: false,
-        type: formType,
-      });
+      setIsSubmitting(true);
+      try {
+        const res = await inviteFamilyMember({
+          name: cleanName,
+          email: cleanEmail,
+          phone: formPhone.trim(),
+          role: 'editor',
+          status: 'pending', // Sempre pendente até o membro aceitar
+          isOwner: false,
+          type: formType,
+        });
+
+        setIsAddModalOpen(false);
+        setFeedbackBanner({
+          type: 'success',
+          message: res.message || `Convite enviado com sucesso para ${cleanEmail}! O membro consta como pendente de aceite até confirmar o acesso.`,
+        });
+      } catch (err: any) {
+        setFormError(err?.message || 'Ocorreu um erro ao enviar o convite.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
-    setIsAddModalOpen(false);
+  };
+
+  const handleResendInvite = async (m: FamilyMember) => {
+    setResendingId(m.id);
+    try {
+      const res = await resendFamilyInvite(m);
+      setFeedbackBanner({
+        type: 'success',
+        message: res.message || `Convite reenviado com sucesso para ${m.email}!`,
+      });
+    } catch (_) {
+      setFeedbackBanner({
+        type: 'error',
+        message: 'Não foi possível reenviar o convite no momento.',
+      });
+    } finally {
+      setResendingId(null);
+    }
   };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in pb-16">
+      {/* Banner de Feedback / Notificação */}
+      {feedbackBanner && (
+        <div
+          className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-xs font-bold transition-all shadow-sm ${
+            feedbackBanner.type === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : feedbackBanner.type === 'error'
+              ? 'bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200'
+              : 'bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {feedbackBanner.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            ) : feedbackBanner.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+            ) : (
+              <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+            )}
+            <span>{feedbackBanner.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedbackBanner(null)}
+            className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Title & Header Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -148,6 +231,7 @@ export const FamilyPage: React.FC = () => {
         <div className="space-y-3 pt-2">
           {allMembers.map((member) => {
             const initial = member.name.charAt(0).toUpperCase();
+            const isPending = member.status === 'pending';
 
             return (
               <div
@@ -164,14 +248,24 @@ export const FamilyPage: React.FC = () => {
                   </div>
 
                   {/* Name, Email, Phone, Badges */}
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
                         {member.name}
                       </h4>
-                      {member.isOwner && (
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                          Titular
+                      {member.isOwner ? (
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                          ⭐ Titular
+                        </span>
+                      ) : isPending ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                          <Clock className="w-3 h-3 text-amber-500" />
+                          Pendente de aceite
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          Ativo
                         </span>
                       )}
                     </div>
@@ -191,7 +285,7 @@ export const FamilyPage: React.FC = () => {
                     </div>
 
                     {/* Status Pill Badge */}
-                    <div className="pt-0.5">
+                    <div className="pt-0.5 flex items-center gap-2">
                       {member.type === 'linked' || !member.type ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-bold shadow-xs">
                           <LinkIcon className="w-2.5 h-2.5 text-emerald-400" />
@@ -209,6 +303,22 @@ export const FamilyPage: React.FC = () => {
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Reenviar convite para membros pendentes */}
+                  {!member.isOwner && isPending && (
+                    <button
+                      type="button"
+                      onClick={() => handleResendInvite(member)}
+                      disabled={resendingId === member.id}
+                      className="px-2.5 py-1.5 rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-purple-200 dark:border-purple-800/60"
+                      title="Reenviar e-mail de convite para este membro"
+                    >
+                      <Send className={`w-3.5 h-3.5 ${resendingId === member.id ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">
+                        {resendingId === member.id ? 'Reenviando...' : 'Reenviar'}
+                      </span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(member)}
@@ -312,11 +422,18 @@ export const FamilyPage: React.FC = () => {
       {/* Modal: Adicionar / Editar Membro */}
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title={editingMember ? 'Editar Membro da Família' : 'Novo Membro da Família'}
+        onClose={() => !isSubmitting && setIsAddModalOpen(false)}
+        title={editingMember ? 'Editar Membro da Família' : 'Convidar Novo Membro'}
         maxWidth="lg"
       >
         <form onSubmit={handleSaveMember} className="space-y-4">
+          {formError && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Nome Completo *
@@ -324,7 +441,7 @@ export const FamilyPage: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Nome completo do membro"
+              placeholder="Ex: Maria Aguiar"
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"
@@ -333,7 +450,7 @@ export const FamilyPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              E-mail *
+              E-mail para Convite e Acesso *
             </label>
             <input
               type="email"
@@ -390,19 +507,40 @@ export const FamilyPage: React.FC = () => {
             </div>
           </div>
 
+          {!editingMember && (
+            <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/40 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+              <div className="font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" />
+                <span>Disparo automático de e-mail</span>
+              </div>
+              <p>
+                Ao confirmar, um e-mail com link de acesso e instruções será enviado automaticamente. O membro constará como <strong>Pendente de aceite</strong> até acessar a conta.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
-              {editingMember ? 'Salvar Alterações' : 'Adicionar Membro'}
+              {isSubmitting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Enviando convite...</span>
+                </>
+              ) : (
+                <span>{editingMember ? 'Salvar Alterações' : 'Convidar Membro'}</span>
+              )}
             </button>
           </div>
         </form>

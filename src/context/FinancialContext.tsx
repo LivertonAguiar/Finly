@@ -20,6 +20,7 @@ import { splitEmojiFromName, resolveCategory } from '../utils/categoryResolver';
 import { getCurrentMonth, getTodayString, round2, sortCardsByDueDay } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
+import { getApiUrl } from '../services/apiConfig';
 import { generateRealisticDemoStore } from '../utils/demoDataGenerator';
 import { supabaseDb } from '../services/supabaseDb';
 import { isSupabaseConfigured } from '../services/supabaseClient';
@@ -197,7 +198,8 @@ interface FinancialContextType {
 
   // Family Members
   familyMembers: FamilyMember[];
-  inviteFamilyMember: (member: Omit<FamilyMember, 'id' | 'joinedAt'>) => void;
+  inviteFamilyMember: (member: Omit<FamilyMember, 'id' | 'joinedAt'>) => Promise<{ success: boolean; message?: string }>;
+  resendFamilyInvite: (member: FamilyMember) => Promise<{ success: boolean; message?: string }>;
   updateFamilyMember: (id: string, data: Partial<FamilyMember>) => void;
   removeFamilyMember: (id: string) => void;
 
@@ -2894,13 +2896,88 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Family Members
-  const inviteFamilyMember = (member: Omit<FamilyMember, 'id' | 'joinedAt'>) => {
+  const inviteFamilyMember = async (member: Omit<FamilyMember, 'id' | 'joinedAt'>): Promise<{ success: boolean; message?: string }> => {
     const newMember: FamilyMember = {
       ...member,
       id: `fam-${Date.now()}`,
+      status: 'pending',
       joinedAt: getTodayString(),
     };
     setFamilyMembers(prev => [...prev, newMember]);
+
+    try {
+      let token = '';
+      if (typeof localStorage !== 'undefined') {
+        token = localStorage.getItem('finly_auth_token') || '';
+      }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (userId && userId !== 'guest') headers['x-user-id'] = userId;
+
+      const res = await fetch(getApiUrl('/api/family/invite'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          memberName: newMember.name,
+          memberEmail: newMember.email,
+          relationshipType: newMember.type,
+          role: newMember.role,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
+        addNotification({
+          title: 'Convite Enviado',
+          message: `E-mail de convite enviado para ${newMember.email}`,
+          type: 'success',
+        });
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data?.message || 'Membro cadastrado, mas houve falha no envio do e-mail.' };
+    } catch (err: any) {
+      return { success: false, message: 'Membro registrado localmente. Servidor de e-mail temporariamente inacessível.' };
+    }
+  };
+
+  const resendFamilyInvite = async (member: FamilyMember): Promise<{ success: boolean; message?: string }> => {
+    try {
+      let token = '';
+      if (typeof localStorage !== 'undefined') {
+        token = localStorage.getItem('finly_auth_token') || '';
+      }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (userId && userId !== 'guest') headers['x-user-id'] = userId;
+
+      const res = await fetch(getApiUrl('/api/family/invite'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          memberName: member.name,
+          memberEmail: member.email,
+          relationshipType: member.type,
+          role: member.role,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
+        addNotification({
+          title: 'Convite Reenviado',
+          message: `E-mail de convite reenviado para ${member.email}`,
+          type: 'success',
+        });
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data?.message || 'Falha ao reenviar o convite por e-mail.' };
+    } catch (err: any) {
+      return { success: false, message: 'Erro de conexão ao reenviar convite.' };
+    }
   };
 
   const updateFamilyMember = (id: string, data: Partial<FamilyMember>) => {
@@ -3261,6 +3338,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         deleteInvestment,
         familyMembers,
         inviteFamilyMember,
+        resendFamilyInvite,
         updateFamilyMember,
         removeFamilyMember,
         notifications,

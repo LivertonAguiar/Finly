@@ -1229,6 +1229,120 @@ app.post('/api/reset-password', passwordResetLimiter, async (req, res) => {
   return res.json({ success: true, message: 'Sua senha foi redefinida com sucesso no Supabase Auth!' });
 });
 
+// 6. FAMILY INVITATION: POST /api/family/invite
+const familyInviteLimiter = createRateLimiter({
+  prefix: 'family-invite',
+  windowMs: 60 * 60 * 1000,
+  max: 15,
+  message: 'Limite de convites atingido. Aguarde alguns minutos antes de reenviar.',
+});
+
+app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (req, res) => {
+  const memberName = String(req.body?.memberName || req.body?.name || '').trim();
+  const rawEmail = String(req.body?.memberEmail || req.body?.email || '').trim();
+  const cleanEmail = normalizeEmail(rawEmail);
+  const relationshipType = req.body?.relationshipType || req.body?.type || 'linked';
+
+  if (!memberName) {
+    return res.status(400).json({ success: false, message: 'Informe o nome do membro convidado.' });
+  }
+
+  if (!isValidEmail(cleanEmail)) {
+    return res.status(400).json({ success: false, message: 'Informe um endereço de e-mail válido para o convite.' });
+  }
+
+  const inviterId = req.user?.userId;
+  const inviterEmail = req.user?.email || 'titular@finly.com';
+  let inviterName = 'O titular da conta';
+
+  // Buscar nome do titular na store local, se disponível
+  try {
+    const storePath = getUserStorePath(inviterId);
+    if (fs.existsSync(storePath)) {
+      const store = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+      if (store?.user?.name) {
+        inviterName = store.user.name.trim();
+      }
+    }
+  } catch (_) {}
+
+  // Carregar e renderizar template de e-mail oficial
+  const templatePath = path.join(__dirname, 'email-templates', 'invite.html');
+  let emailHtml = '';
+
+  const inviteCode = crypto.randomInt(100_000, 1_000_000).toString();
+  const confirmationUrl = `https://finly.lpaguiar.com.br/login?email=${encodeURIComponent(cleanEmail)}&invite=true`;
+
+  if (fs.existsSync(templatePath)) {
+    try {
+      emailHtml = fs.readFileSync(templatePath, 'utf8');
+      emailHtml = emailHtml
+        .replace(/{{\s*\.ConfirmationURL\s*}}/g, confirmationUrl)
+        .replace(/{{\s*\.Token\s*}}/g, inviteCode)
+        .replace(
+          'Você recebeu um convite para acessar a plataforma de gestão financeira inteligente Finly. Clique no botão abaixo para aceitar o convite e criar sua senha de acesso:',
+          `<strong>${inviterName}</strong> convidou você para fazer parte do grupo familiar no Finly (${relationshipType === 'linked' ? 'Conta Vinculada com visão compartilhada' : 'Membro com gestão independente'}). Clique no botão abaixo para acessar o Finly e ativar sua participação:`
+        );
+    } catch (err) {
+      console.warn('[FAMILY-INVITE] Falha ao ler template invite.html, usando fallback:', err.message);
+    }
+  }
+
+  // Fallback caso o arquivo de template não exista ou falhe
+  if (!emailHtml) {
+    emailHtml = `
+      <div style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#14151d;color:#fff;border-radius:16px;">
+        <h2 style="color:#a78bfa;">Convite para a Família Finly 🤝</h2>
+        <p>Olá, <strong>${memberName}</strong>!</p>
+        <p><strong>${inviterName}</strong> (${inviterEmail}) adicionou você ao grupo familiar do Finly.</p>
+        <p><a href="${confirmationUrl}" style="display:inline-block;padding:12px 24px;background:#8b5cf6;color:#fff;text-decoration:none;border-radius:10px;font-weight:bold;">Aceitar Convite e Acessar</a></p>
+        <p style="color:#94a3b8;font-size:12px;">Código de confirmação: <strong>${inviteCode}</strong></p>
+      </div>
+    `;
+  }
+
+  // Tentar notificar o Supabase Auth caso o usuário ainda não exista
+  if (supabaseAdmin) {
+    try {
+      await supabaseAdmin.auth.admin.inviteUserByEmail(cleanEmail, {
+        data: {
+          name: memberName,
+          invited_by: inviterId,
+          invited_by_name: inviterName,
+          relationship_type: relationshipType,
+        },
+      });
+      console.log(`[FAMILY-INVITE] Convite registrado no Supabase Auth para: ${cleanEmail}`);
+    } catch (sbErr) {
+      // Se o usuário já existe no Supabase, apenas prosseguimos com o envio do e-mail informativo
+      console.log(`[FAMILY-INVITE] Usuário já existente ou retorno Supabase: ${sbErr.message}`);
+    }
+  }
+
+  // Enviar e-mail formatado via SMTP
+  try {
+    const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
+    await transporter.sendMail({
+      from: `"Finly" <${senderEmail}>`,
+      to: cleanEmail,
+      subject: `${inviterName} convidou você para a Família Finly! 🤝`,
+      html: emailHtml,
+    });
+    console.log(`✅ [FAMILY-INVITE] E-mail de convite disparado com sucesso para ${cleanEmail} (convidado por ${inviterEmail})`);
+    return res.json({
+      success: true,
+      message: `Convite enviado com sucesso para ${cleanEmail}!`,
+    });
+  } catch (mailError) {
+    console.error('❌ [FAMILY-INVITE] Falha ao enviar e-mail via SMTP:', mailError);
+    return res.status(500).json({
+      success: false,
+      message: 'Não foi possível disparar o e-mail de convite no momento. Verifique as configurações de e-mail.',
+      error: mailError.message,
+    });
+  }
+});
+
 // Serve static frontend in production if dist exists
 const DIST_DIR = path.join(__dirname, '../dist');
 if (fs.existsSync(DIST_DIR)) {
