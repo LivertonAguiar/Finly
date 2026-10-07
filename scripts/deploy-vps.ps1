@@ -70,12 +70,23 @@ if ($LASTEXITCODE -ne 0 -or $currentBranch -ne 'main') {
     throw "Deploy bloqueado: a branch ativa precisa ser main."
 }
 
-git -C $repoRoot fetch origin main --quiet
-if ($LASTEXITCODE -ne 0) { throw "Deploy bloqueado: nao foi possivel atualizar origin/main." }
+$fetchOk = $false
+for ($attempt = 1; $attempt -le 3; $attempt++) {
+    git -C $repoRoot fetch origin main --quiet 2>$null
+    if ($LASTEXITCODE -eq 0) { $fetchOk = $true; break }
+    Start-Sleep -Seconds 2
+}
+if (-not $fetchOk) { throw "Deploy bloqueado: nao foi possivel atualizar origin/main." }
 
 $versionTag = "v$expectedVersion"
-git -C $repoRoot fetch origin "refs/tags/$versionTag`:refs/tags/$versionTag" --quiet
-if ($LASTEXITCODE -ne 0) { throw "Deploy bloqueado: nao foi possivel obter a tag $versionTag." }
+$tagCommit = git -C $repoRoot rev-list -n 1 $versionTag 2>$null
+if (-not $tagCommit) {
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        git -C $repoRoot fetch origin "refs/tags/$versionTag`:refs/tags/$versionTag" --quiet 2>$null
+        if ($LASTEXITCODE -eq 0) { break }
+        Start-Sleep -Seconds 2
+    }
+}
 
 $localCommit = git -C $repoRoot rev-parse HEAD
 $remoteCommit = git -C $repoRoot rev-parse origin/main
@@ -96,8 +107,13 @@ if ($LASTEXITCODE -ne 0) {
 npm.cmd --prefix $repoRoot run check:version
 if ($LASTEXITCODE -ne 0) { throw "Deploy bloqueado: as fontes de versao estao dessincronizadas." }
 
-curl.exe -L --fail --silent --head --max-time 30 --output NUL $apkUrl
-if ($LASTEXITCODE -ne 0) {
+$apkFound = $false
+for ($attempt = 1; $attempt -le 3; $attempt++) {
+    curl.exe -L --fail --silent --head --max-time 30 --output NUL $apkUrl
+    if ($LASTEXITCODE -eq 0) { $apkFound = $true; break }
+    Start-Sleep -Seconds 2
+}
+if (-not $apkFound) {
     throw "Deploy bloqueado: o APK v$expectedVersion ainda nao foi publicado no GitHub."
 }
 
