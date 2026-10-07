@@ -1417,26 +1417,26 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Left 3: Balanço Mensal
   const renderBalancoMensal = () => (
-    <div key="balancoMensal" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="balancoMensal" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço mensal</h3>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{capitalizedMonth}</span>
+        <span className="text-xs text-slate-600 dark:text-slate-300 font-bold bg-slate-100 dark:bg-white/[0.06] px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-white/[0.06]">{capitalizedMonth}</span>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-600 dark:text-slate-400 font-semibold">Receitas</span>
-          <span className="font-black text-[#66bb6a]">{formatCurrency(monthlyIncome, user.currency, !user.showValues)}</span>
+          <span className="text-slate-600 dark:text-slate-300 font-semibold">Receitas</span>
+          <span className="font-black text-[#66bb6a] dark:text-[#34D399]">{formatCurrency(monthlyIncome, user.currency, !user.showValues)}</span>
         </div>
 
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-600 dark:text-slate-400 font-semibold">Despesas</span>
-          <span className="font-black text-[#ef5350]">{formatCurrency(monthlyExpense, user.currency, !user.showValues)}</span>
+          <span className="text-slate-600 dark:text-slate-300 font-semibold">Despesas</span>
+          <span className="font-black text-[#ef5350] dark:text-[#FB7185]">{formatCurrency(monthlyExpense, user.currency, !user.showValues)}</span>
         </div>
 
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+        <div className="pt-2 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between text-xs">
           <span className="text-slate-900 dark:text-white font-black uppercase">Balanço</span>
-          <span className={`font-black text-sm ${monthlyBalance >= 0 ? 'text-[#66bb6a]' : 'text-[#ef5350]'}`}>
+          <span className={`font-black text-sm ${monthlyBalance >= 0 ? 'text-[#66bb6a] dark:text-[#34D399]' : 'text-[#ef5350] dark:text-[#FB7185]'}`}>
             {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
           </span>
         </div>
@@ -1445,9 +1445,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       <div className="pt-2 flex justify-end">
         <button
           onClick={() => setActiveTab('relatorios')}
-          className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+          className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 uppercase tracking-wider cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
         >
-          VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+          <span>VER MAIS</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -2112,13 +2113,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 4: Cartões de Crédito
   const renderCartoes = () => (
-    <div key="cartoes" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+    <div key="cartoes" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-sm dark:shadow-2xl space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black text-slate-900 dark:text-white">Cartões de crédito</h3>
-          <p className="text-[11px] text-slate-400">Faturas, limites e vencimentos</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300 font-medium">Faturas, limites e vencimentos</p>
         </div>
-        <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{capitalizedMonth}</span>
+        <span className="text-xs text-slate-600 dark:text-slate-300 font-bold bg-slate-100 dark:bg-white/[0.06] px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-white/[0.06]">{capitalizedMonth}</span>
       </div>
 
       <div className="space-y-3 max-h-[520px] overflow-y-auto scrollbar-thin pr-1">
@@ -2131,14 +2132,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <div
               key={card.id}
               onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-              className="p-3.5 rounded-2xl bg-slate-50/90 dark:bg-[#1C1C1E] hover:bg-slate-100/90 dark:hover:bg-[#242428] border border-slate-200/90 dark:border-slate-800/80 border-l-4 transition-all duration-150 cursor-pointer group/card space-y-2.5 shadow-2xs"
-              style={{
-                borderLeftColor: cardColor,
-              }}
+              className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] hover:bg-slate-50/90 dark:hover:bg-[#242428] border border-slate-200/90 dark:border-white/[0.08] transition-all duration-150 cursor-pointer group/card space-y-3 shadow-2xs relative overflow-hidden"
               title="Clique para ver extrato e composição da fatura"
             >
+              {/* Filete de identificação visual da cor do cartão sem quebrar o contorno arredondado */}
+              <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
+                style={{ backgroundColor: cardColor }}
+              />
+
               {/* Header do Cartão: 2 linhas no lado esquerdo para nunca cortar a descrição */}
-              <div className="flex items-start justify-between gap-2.5 min-w-0">
+              <div className="flex items-start justify-between gap-2.5 min-w-0 pl-1.5">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center p-1.5 shrink-0 shadow-2xs border"
@@ -2165,7 +2169,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         {card.statusLabel}
                       </span>
                       {getCardBankInfo(card)?.name && (
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold truncate">
                           • {getCardBankInfo(card)?.name}
                         </span>
                       )}
@@ -2178,14 +2182,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   <span className={`text-xs sm:text-sm font-black block tracking-tight ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
                     {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap block">
+                  <span className="text-[11px] text-slate-600 dark:text-slate-300 font-bold whitespace-nowrap block">
                     {card.limitUsedPercent.toFixed(1).replace('.', ',')}% do limite
                   </span>
                 </div>
               </div>
 
               {/* Barra de Progresso do Limite */}
-              <div className="w-full bg-slate-200/80 dark:bg-[#121214] h-2.5 rounded-full overflow-hidden flex shadow-inner">
+              <div className="w-full bg-slate-200/80 dark:bg-white/[0.08] h-2.5 rounded-full overflow-hidden flex shadow-inner ml-1.5 max-w-[calc(100%-0.375rem)]">
                 {card.currentInvoicePercent > 0 && (
                   <div
                     style={{ width: `${Math.min(100, card.currentInvoicePercent)}%`, backgroundColor: cardColor }}
@@ -2202,47 +2206,43 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 )}
               </div>
 
-              {/* Linha de Totais e Disponível com Alto Contraste */}
-              <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-600 dark:text-slate-300 flex-wrap gap-1.5">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
-                    <span className="w-2 h-2 rounded-full shrink-0 shadow-2xs" style={{ backgroundColor: cardColor }} />
-                    <span>Mês: <strong className="font-extrabold text-slate-900 dark:text-white">{formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}</strong></span>
+              {/* Métricas do Cartão em Grid Equilibrado de Alto Contraste (Fatura, Futuras, Disponível) */}
+              <div className="grid grid-cols-3 gap-1.5 pt-0.5 pl-1.5">
+                <div className="px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06]">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold block leading-none">Fatura</span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white block mt-1 truncate">
+                    {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
-                  {card.futureInstallmentsTotal > 0 && (
-                    <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                      <span className="w-2 h-2 rounded-full bg-[#ff8a00] shrink-0 shadow-2xs" />
-                      <span>Futuras: <strong className="font-extrabold">{formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}</strong></span>
-                    </span>
-                  )}
                 </div>
-
-                <div className="text-right">
-                  {card.isOverLimit ? (
-                    <span className="text-rose-600 dark:text-rose-400 font-extrabold">
-                      Excedeu: {formatCurrency(card.overLimitAmount, user.currency, !user.showValues)}
-                    </span>
-                  ) : (
-                    <span className="text-slate-500 dark:text-slate-400">
-                      Disp: <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold">{formatCurrency(card.availableLimit, user.currency, !user.showValues)}</strong>
-                    </span>
-                  )}
+                <div className="px-2.5 py-1.5 rounded-xl bg-amber-500/[0.08] dark:bg-amber-500/[0.10] border border-amber-500/20">
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold block leading-none">Futuras</span>
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 block mt-1 truncate">
+                    {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
+                  </span>
+                </div>
+                <div className="px-2.5 py-1.5 rounded-xl bg-emerald-500/[0.08] dark:bg-emerald-500/[0.10] border border-emerald-500/20 text-right">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block leading-none">Disponível</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 block mt-1 truncate">
+                    {card.isOverLimit 
+                      ? formatCurrency(card.overLimitAmount, user.currency, !user.showValues)
+                      : formatCurrency(card.availableLimit, user.currency, !user.showValues)}
+                  </span>
                 </div>
               </div>
 
-              {/* Ações do Rodapé do Cartão */}
-              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+              {/* Ações do Rodapé do Cartão com Contornos Padronizados */}
+              <div className="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2 pl-1.5" onClick={e => e.stopPropagation()}>
                 <button
                   type="button"
                   onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
-                  className="text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer flex items-center gap-1 active:scale-95"
+                  className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-1 active:scale-95"
                 >
                   <span>Ver Composição</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
 
                 {card.isPaid ? (
-                  <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/40">
+                  <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/10 border border-emerald-500/30 dark:border-emerald-500/40 shadow-xs">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Fatura Paga
                   </span>
                 ) : (
@@ -2256,13 +2256,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         onOpenNewTransaction();
                       }
                     }}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-xs ${
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-xs flex items-center gap-1.5 border ${
                       card.invoiceTotal > 0
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                        ? 'border-emerald-500/40 dark:border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                        : 'border-slate-300 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/70 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    {card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>{card.invoiceTotal > 0 ? 'Pagar Fatura' : 'Adicionar despesa'}</span>
                   </button>
                 )}
               </div>
@@ -2272,19 +2273,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         )}
       </div>
 
-      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+      <div className="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between">
         <div>
-          <span className="text-[11px] text-slate-400 font-bold uppercase block">TOTAL</span>
-          <span className="text-sm font-black text-[#ef5350]">
+          <span className="text-[11px] text-slate-500 dark:text-slate-300 font-bold uppercase block tracking-wider">TOTAL</span>
+          <span className="text-base font-black text-rose-600 dark:text-rose-400">
             {formatCurrency(totalCardInvoicesSum, user.currency, !user.showValues)}
           </span>
         </div>
 
         <button
           onClick={() => setActiveTab('cartoes')}
-          className="text-xs font-black text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-wider cursor-pointer flex items-center gap-1"
+          className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 uppercase tracking-wider cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
         >
-          VER MAIS <ArrowRight className="w-3.5 h-3.5" />
+          <span>VER MAIS</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

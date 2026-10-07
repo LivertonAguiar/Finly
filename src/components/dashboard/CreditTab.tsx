@@ -483,7 +483,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     onClick={async () => {
                       handleOpenPayModal(activeCardDetail);
                     }}
-                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap shrink-0"
+                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-emerald-500/50 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap shrink-0"
                   >
                     Pagar Fatura
                   </button>
@@ -1403,7 +1403,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                         onClick={async () => {
                           handleOpenPayModal(card);
                         }}
-                        className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer hover:scale-105"
+                        className="px-3 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer hover:scale-105"
                       >
                         Pagar Fatura
                       </button>

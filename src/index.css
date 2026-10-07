@@ -141,6 +141,82 @@ html, body, #root {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* ========================================================================= */
+/* GLOBAL HIGH-CONTRAST & TEXT LEGIBILITY SYSTEM (DARK MODE ENHANCEMENT)    */
+/* Melhora imediata da nitidez e leitura de textos em todo o sistema         */
+/* ========================================================================= */
+html.dark {
+  color-scheme: dark;
+}
+
+/* 1. Textos secundários e metadados no modo escuro (eleva para Slate 300 nítido) */
+html.dark .text-slate-400,
+html.dark .dark\:text-slate-400,
+html.dark .text-zinc-400,
+html.dark .dark\:text-zinc-400,
+html.dark .text-gray-400,
+html.dark .dark\:text-gray-400 {
+  color: #CBD5E1 !important;
+}
+
+/* 2. Textos terciários, legendas e rótulos de apoio (nunca abaixo de Slate 400) */
+html.dark .text-slate-500,
+html.dark .dark\:text-slate-500,
+html.dark .text-zinc-500,
+html.dark .dark\:text-zinc-500,
+html.dark .text-gray-500,
+html.dark .dark\:text-gray-500 {
+  color: #94A3B8 !important;
+}
+
+/* 3. Textos escuros (slate/zinc 600) que se perdiam em fundos OLED/escuros */
+html.dark .text-slate-600,
+html.dark .dark\:text-slate-600,
+html.dark .text-zinc-600,
+html.dark .dark\:text-zinc-600 {
+  color: #CBD5E1 !important;
+}
+
+/* 4. Títulos e cabeçalhos principais */
+html.dark .text-slate-900,
+html.dark .text-zinc-900 {
+  color: #FFFFFF !important;
+}
+html.dark .text-slate-800,
+html.dark .text-zinc-800 {
+  color: #F8FAFC !important;
+}
+html.dark .text-slate-700,
+html.dark .text-zinc-700 {
+  color: #E2E8F0 !important;
+}
+
+/* 5. Cores financeiras semânticas de alto contraste no modo escuro */
+html.dark .text-\[\#ef5350\],
+html.dark .text-rose-600 {
+  color: #FB7185 !important; /* Rose 400: despesas e saldos negativos vivos e legíveis */
+}
+
+html.dark .text-\[\#66bb6a\],
+html.dark .text-emerald-600 {
+  color: #34D399 !important; /* Emerald 400: receitas e valores positivos luminosos */
+}
+
+html.dark .text-amber-600 {
+  color: #FBBF24 !important; /* Amber 400: pendências e avisos nítidos */
+}
+
+/* 6. Reforço de espessura de traço para fontes pequenas em telas mobile */
+.text-\[9px\],
+.text-\[9\.5px\],
+.text-\[10px\],
+.text-\[10\.5px\],
+.text-\[11px\],
+.text-xs {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 /* Prevent iOS Safari unwanted auto-zoom on form inputs */
 @media screen and (max-width: 768px) {
   input, select, textarea {
