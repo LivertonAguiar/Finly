@@ -27,7 +27,6 @@ import { validateTransactionComponents } from '../../utils/transactionAnalytics'
 import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
 import { SubcategoryPicker } from '../ui/SubcategoryPicker';
 import { OptionPicker } from '../ui/OptionPicker';
-import { AiScanModal } from './AiScanModal';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -119,73 +118,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [hasSplit, setHasSplit] = useState(false);
   const [splitItems, setSplitItems] = useState<SplitFormItem[]>([]);
   const [error, setError] = useState('');
-  const [isAiScanOpen, setIsAiScanOpen] = useState(false);
-
-  const handleAiApply = (parsed: {
-    amount?: number;
-    type?: TransactionType;
-    description?: string;
-    date?: string;
-    categoryName?: string;
-    categoryId?: string;
-    paymentMethod?: 'account' | 'card';
-    accountOrCardName?: string;
-    accountId?: string;
-    cardId?: string;
-    notes?: string;
-  }) => {
-    if (parsed.type) {
-      setType(parsed.type);
-    }
-    if (parsed.paymentMethod) {
-      setPaymentMethod(parsed.paymentMethod);
-    }
-    if (parsed.amount && parsed.amount > 0) {
-      const cents = Math.round(parsed.amount * 100);
-      setCentsAmount(cents);
-      setAmount((cents / 100).toFixed(2));
-    }
-    if (parsed.description) {
-      setDescription(parsed.description);
-    }
-    if (parsed.date) {
-      setDate(parsed.date);
-    }
-    if (parsed.categoryId) {
-      setCategoryId(parsed.categoryId);
-      setManuallyChangedCategory(true);
-    } else if (parsed.categoryName) {
-      const found = categories.find(c => c.name.toLowerCase().includes(parsed.categoryName!.toLowerCase()));
-      if (found) {
-        setCategoryId(found.id);
-        setManuallyChangedCategory(true);
-      }
-    }
-    if (parsed.cardId) {
-      setCardId(parsed.cardId);
-      setPaymentMethod('card');
-    } else if (parsed.accountId) {
-      setAccountId(parsed.accountId);
-      setPaymentMethod('account');
-    } else if (parsed.accountOrCardName) {
-      const foundAcc = accounts.find(a => a.name.toLowerCase().includes(parsed.accountOrCardName!.toLowerCase()));
-      if (foundAcc) {
-        setAccountId(foundAcc.id);
-        setPaymentMethod('account');
-      } else {
-        const foundCard = cards.find(c => c.name.toLowerCase().includes(parsed.accountOrCardName!.toLowerCase()));
-        if (foundCard) {
-          setCardId(foundCard.id);
-          setPaymentMethod('card');
-        }
-      }
-    }
-    if (parsed.notes) {
-      setNotes(prev => (prev ? `${prev}\n${parsed.notes}` : (parsed.notes || '')));
-      setMoreDetails(true);
-    }
-    setIsAiScanOpen(false);
-  };
 
   // 6D Multidimensional Taxonomy
   const [financialNature, setFinancialNature] = useState<FinancialNature>('expense');
@@ -926,6 +858,43 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const title = editingTransaction ? 'Editar lançamento' : isTransfer
     ? 'Nova transferência' : isCard ? 'Nova despesa de cartão' : type === 'income' ? 'Nova receita' : 'Nova despesa';
 
+  const purposeConfig = useMemo(() => {
+    if (isTransfer) {
+      return {
+        key: 'transfer',
+        colorClass: 'text-sky-600 dark:text-sky-400',
+        activeTabClass: 'bg-sky-600 text-white shadow-sm shadow-sky-600/30',
+        focusBorderClass: 'focus-within:ring-sky-500/25 focus-within:border-sky-500',
+        submitButtonClass: 'bg-sky-600 hover:bg-sky-700 shadow-sky-600/20',
+      };
+    }
+    if (isCard) {
+      return {
+        key: 'card',
+        colorClass: 'text-purple-600 dark:text-purple-400',
+        activeTabClass: 'bg-purple-600 text-white shadow-sm shadow-purple-600/30',
+        focusBorderClass: 'focus-within:ring-purple-500/25 focus-within:border-purple-500',
+        submitButtonClass: 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20',
+      };
+    }
+    if (type === 'income') {
+      return {
+        key: 'income',
+        colorClass: 'text-emerald-600 dark:text-emerald-400',
+        activeTabClass: 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30',
+        focusBorderClass: 'focus-within:ring-emerald-500/25 focus-within:border-emerald-500',
+        submitButtonClass: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
+      };
+    }
+    return {
+      key: 'expense',
+      colorClass: 'text-rose-600 dark:text-rose-400',
+      activeTabClass: 'bg-rose-600 text-white shadow-sm shadow-rose-600/30',
+      focusBorderClass: 'focus-within:ring-rose-500/25 focus-within:border-rose-500',
+      submitButtonClass: 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20',
+    };
+  }, [type, isCard, isTransfer]);
+
   return (
     <>
       <Modal
@@ -935,55 +904,39 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         maxWidth="lg"
         footer={<div className="flex justify-end gap-2 w-full">
           <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300">Cancelar</button>
-          <button type="submit" form="transaction-form-v2" className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-black">
+          <button type="submit" form="transaction-form-v2" className={`px-5 py-2.5 rounded-full text-white text-sm font-black transition-all cursor-pointer shadow-md active:scale-95 ${purposeConfig.submitButtonClass}`}>
             {editingTransaction ? 'Atualizar' : 'Salvar'}
           </button>
         </div>}
       >
         <form id="transaction-form-v2" onSubmit={handleSubmit} className="space-y-4">
           {!editingTransaction && (
-            <div className="flex items-center gap-2">
-              <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 flex-1">
-                {[
-                  { label: 'Despesa', value: 'expense-account' },
-                  { label: 'Receita', value: 'income-account' },
-                  { label: 'Cartão', value: 'expense-card' },
-                  { label: 'Transferir', value: 'transfer-account' },
-                ].map(option => {
-                  const active = `${type}-${paymentMethod}` === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        const [nextType, nextMethod] = option.value.split('-') as [TransactionType, 'account' | 'card'];
-                        setType(nextType);
-                        setPaymentMethod(nextMethod);
-                        if (nextType === 'transfer') setStatus(date > getTodayString() ? 'scheduled' : 'completed');
-                      }}
-                      className={`py-2 rounded-xl text-xs font-black transition-colors ${
-                        active ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsAiScanOpen(true);
-                }}
-                title="Preencher com Inteligência Artificial (Pix / Recibo)"
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-pink-500/10 hover:from-purple-500/20 hover:via-indigo-500/20 hover:to-pink-500/20 border border-purple-200 dark:border-purple-800/80 text-purple-700 dark:text-purple-300 text-xs font-black transition-all active:scale-95 whitespace-nowrap shadow-sm cursor-pointer select-none"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-pulse pointer-events-none" />
-                <span className="hidden sm:inline pointer-events-none">IA Pix</span>
-                <span className="sm:hidden pointer-events-none">IA</span>
-              </button>
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 w-full">
+              {[
+                { label: 'Despesa', value: 'expense-account', activeClass: 'bg-rose-600 text-white shadow-sm shadow-rose-600/30' },
+                { label: 'Receita', value: 'income-account', activeClass: 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30' },
+                { label: 'Cartão', value: 'expense-card', activeClass: 'bg-purple-600 text-white shadow-sm shadow-purple-600/30' },
+                { label: 'Transferir', value: 'transfer-account', activeClass: 'bg-sky-600 text-white shadow-sm shadow-sky-600/30' },
+              ].map(option => {
+                const active = `${type}-${paymentMethod}` === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      const [nextType, nextMethod] = option.value.split('-') as [TransactionType, 'account' | 'card'];
+                      setType(nextType);
+                      setPaymentMethod(nextMethod);
+                      if (nextType === 'transfer') setStatus(date > getTodayString() ? 'scheduled' : 'completed');
+                    }}
+                    className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      active ? option.activeClass : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -992,7 +945,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           role="button"
           tabIndex={-1}
           aria-label="Tocar para digitar o valor"
-          className="rounded-2xl border border-slate-200 dark:border-slate-700 py-4 px-4 text-center bg-slate-50 dark:bg-slate-900/40 cursor-pointer select-none transition-all active:scale-[0.99] focus-within:ring-2 focus-within:ring-purple-500/25 focus-within:border-purple-500 hover:border-slate-300 dark:hover:border-slate-600"
+          className={`rounded-2xl border border-slate-200 dark:border-slate-700 py-4 px-4 text-center bg-slate-50 dark:bg-slate-900/40 cursor-pointer select-none transition-all active:scale-[0.99] focus-within:ring-2 hover:border-slate-300 dark:hover:border-slate-600 ${purposeConfig.focusBorderClass}`}
         >
           <label className={`${labelClass} pointer-events-none select-none mb-1.5`}>VALOR</label>
           <div className="flex items-center justify-center gap-2 select-none">
@@ -1015,7 +968,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 const len = (e.target as HTMLInputElement).value.length;
                 (e.target as HTMLInputElement).setSelectionRange(len, len);
               }}
-              className="borderless-money-input text-center text-5xl sm:text-6xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 text-purple-600 dark:text-purple-400 leading-none"
+              className={`borderless-money-input text-center text-5xl sm:text-6xl font-black bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ring-0 ring-offset-0 shadow-none tracking-tight p-0 leading-none ${purposeConfig.colorClass}`}
               style={{
                 width: `${Math.max(displayAmount.length + 1, 5)}ch`,
                 outline: 'none',
@@ -1752,14 +1705,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         {error && <p role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600">{error}</p>}
       </form>
     </Modal>
-    <AiScanModal
-      isOpen={isAiScanOpen}
-      onClose={() => setIsAiScanOpen(false)}
-      onApply={handleAiApply}
-      categories={categories}
-      accounts={accounts}
-      cards={cards}
-    />
   </>
   );
 };

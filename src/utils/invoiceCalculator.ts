@@ -87,6 +87,20 @@ export function isInvoicePaymentTransaction(tx: Transaction): boolean {
 }
 
 /**
+ * Retorna o mês de competência/fatura ('YYYY-MM') de uma transação de cartão de crédito.
+ * Se tx.invoiceMonth estiver explicitamente preenchido, usa-o diretamente.
+ * Caso contrário, utiliza allocateCardTransaction com base no dia de fechamento do cartão.
+ */
+export function getCardTransactionInvoiceMonth(tx: Transaction, card?: CreditCard): string {
+  if (!tx) return new Date().toISOString().slice(0, 7);
+  if (tx.invoiceMonth) return tx.invoiceMonth;
+  if (card && card.closingDay && card.dueDay) {
+    return allocateCardTransaction(tx.date, card.closingDay, card.dueDay).invoiceMonth;
+  }
+  return tx.date ? tx.date.slice(0, 7) : new Date().toISOString().slice(0, 7);
+}
+
+/**
  * Retorna a data efetiva de uma transacao com base no regime de visualizacao:
  * - 'invoice_month' (Competência / Fatura - Padrão): Para cartão, alinha ao mês da fatura; usa dia da compra.
  * - 'due_date' (Caixa): Se for despesa de cartao, projeta no dia do vencimento da fatura; senao usa tx.dueDate ou tx.date.
@@ -129,7 +143,7 @@ export function doesTransactionBelongToMonth(
 ): boolean {
   if (viewRegime === 'invoice_month') {
     if (tx.cardId && tx.type === 'expense') {
-      const invMonth = tx.invoiceMonth || (card ? allocateCardTransaction(tx.date, card.closingDay, card.dueDay).invoiceMonth : tx.date.slice(0, 7));
+      const invMonth = getCardTransactionInvoiceMonth(tx, card);
       return invMonth === monthPrefix;
     }
     return tx.date.startsWith(monthPrefix);

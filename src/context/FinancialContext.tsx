@@ -40,6 +40,7 @@ import { propagateCategoryChange } from '../utils/seriesCategorySync';
 import { selectSeriesTargets, SeriesMutationScope, SeriesTargetSelection } from '../utils/transactionSeriesScope';
 import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
 import { normalizeUserDebts } from '../data/caixaFinancingContract';
+import { isInvoicePaymentTransaction, getCardTransactionInvoiceMonth } from '../utils/invoiceCalculator';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -564,7 +565,25 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     }
 
-    return Array.from(byId.values()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const result = Array.from(byId.values());
+    const payTxs = result.filter(t => isInvoicePaymentTransaction(t) && t.status === 'completed');
+    if (payTxs.length > 0) {
+      for (const t of result) {
+        if (t.cardId && t.type === 'expense' && t.status !== 'completed') {
+          const card = cardsRef.current.find(c => c.id === t.cardId);
+          const invMonth = getCardTransactionInvoiceMonth(t, card);
+          const isInvoicePaid = payTxs.some(
+            pt => (card && pt.description.includes(card.name)) && pt.description.includes(invMonth)
+          );
+          if (isInvoicePaid) {
+            t.status = 'completed';
+            t.invoiceMonth = invMonth;
+          }
+        }
+      }
+    }
+
+    return result.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   };
 
   const reconcileRemoteSeries = (remoteSeries: TransactionSeries[]): TransactionSeries[] => {
@@ -1777,7 +1796,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const card = cards.find(c => c.id === cardId);
     if (!card || amount <= 0) return;
 
-    const lockKey = `${cardId}_${month}`;
+    const normalizedMonth = month.replace('/', '-');
+    const lockKey = `${cardId}_${normalizedMonth}`;
     const now = Date.now();
     if (payingInvoiceLockRef.current[lockKey] && now - payingInvoiceLockRef.current[lockKey] < 4000) {
       console.warn('⚠️ Pagamento já em processamento para este cartão. Ignorando clique duplicado.');
@@ -1788,36 +1808,36 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Check if there is already an existing payment transaction for this card and month
     const existingPayTx = transactions.find(
       t =>
-        t.tags?.includes('fatura') &&
-        t.tags?.includes('cartao') &&
+        isInvoicePaymentTransaction(t) &&
         t.description.includes(card.name) &&
-        t.description.includes(month)
+        t.description.includes(normalizedMonth)
     );
 
+    markLocalMutation();
+
     if (existingPayTx) {
-      console.warn('⚠️ Fatura já consta como paga. Ignorando pagamento duplicado.');
+      console.warn('⚠️ Fatura já consta como paga. Reconciliando status das transações do cartão.');
+      // Garantir que todas as transações da fatura estejam marcadas como 'completed'
+      setTransactions(prev =>
+        prev.map(t => {
+          if (t.cardId === cardId && t.type === 'expense') {
+            const invMonth = getCardTransactionInvoiceMonth(t, card);
+            if (invMonth === normalizedMonth && t.status !== 'completed') {
+              return { ...t, status: 'completed' as const, invoiceMonth: invMonth };
+            }
+          }
+          return t;
+        })
+      );
       return;
     }
 
     const roundedAmount = round2(amount);
-    markLocalMutation();
-
-    // Balance is auto-recalculated by the derived balance effect via the payment transaction below
-
-    // Mark card transactions of that month as completed/paid
-    setTransactions(prev =>
-      prev.map(t => {
-        if (t.cardId === cardId && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === month.replace('/', '-')) {
-          return { ...t, status: 'completed' };
-        }
-        return t;
-      })
-    );
 
     // Register invoice payment transaction in cash flow
     const payTx: Transaction = {
       id: `tx-pay-${Date.now()}`,
-      description: `Pagamento Fatura ${card.name} (${month})`,
+      description: `Pagamento Fatura ${card.name} (${normalizedMonth})`,
       amount: roundedAmount,
       type: 'expense',
       date: getTodayString(),
@@ -1827,41 +1847,56 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       status: 'completed',
       recurring: false,
       tags: ['fatura', 'cartao'],
-      notes: `Pagamento de fatura referente a ${month}`,
+      notes: `Pagamento de fatura referente a ${normalizedMonth}`,
       createdAt: new Date().toISOString(),
     };
 
-    setTransactions(prev => [payTx, ...prev]);
+    // Mark card transactions of that month as completed/paid AND add payment transaction in single atomic updater
+    setTransactions(prev => {
+      const updated = prev.map(t => {
+        if (t.cardId === cardId && t.type === 'expense') {
+          const invMonth = getCardTransactionInvoiceMonth(t, card);
+          if (invMonth === normalizedMonth) {
+            return { ...t, status: 'completed' as const, invoiceMonth: invMonth };
+          }
+        }
+        return t;
+      });
+      return [payTx, ...updated];
+    });
   };
-
-
 
   const unpayCardInvoice = (cardId: string, month: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
     markLocalMutation();
 
+    const normalizedMonth = month.replace('/', '-');
+
     // Find all payment transactions created for this invoice
     const payTxs = transactions.filter(
       t =>
-        t.tags?.includes('fatura') &&
-        t.tags?.includes('cartao') &&
+        isInvoicePaymentTransaction(t) &&
         t.description.includes(card.name) &&
-        t.description.includes(month)
+        t.description.includes(normalizedMonth)
     );
 
     // Remove payment transactions (balance auto-recalculated by effect)
     const payTxIds = new Set(payTxs.map(t => t.id));
 
     // Set all card expense transactions for this month back to pending and remove payment txs
-    const normalizedMonth = month.replace('/', '-');
     setTransactions(prev =>
-      prev.filter(t => !payTxIds.has(t.id)).map(t => {
-        if (t.cardId === cardId && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === normalizedMonth) {
-          return { ...t, status: 'pending' };
-        }
-        return t;
-      })
+      prev
+        .filter(t => !payTxIds.has(t.id))
+        .map(t => {
+          if (t.cardId === cardId && t.type === 'expense') {
+            const invMonth = getCardTransactionInvoiceMonth(t, card);
+            if (invMonth === normalizedMonth) {
+              return { ...t, status: 'pending' as const };
+            }
+          }
+          return t;
+        })
     );
   };
 

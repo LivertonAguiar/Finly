@@ -37,6 +37,7 @@ import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 import { exportInvoiceCSV, exportInvoicePDF, downloadCSV } from '../../utils/reportExportService';
 import { resolveCategory } from '../../utils/categoryResolver';
+import { getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
 
 interface CreditTabProps {
   onOpenNewCard: () => void;
@@ -107,7 +108,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const cardsData = useMemo(() => {
     return cards.map(card => {
       const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense');
-      const monthTxs = cardTxs.filter(t => (t.invoiceMonth || t.date.slice(0, 7)) === currentMonthPrefix);
+      const monthTxs = cardTxs.filter(t => getCardTransactionInvoiceMonth(t, card) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
       const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
@@ -117,7 +118,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       const currentInvoicePercent = card.limit > 0 ? (currentOpenInvoice / card.limit) * 100 : 0;
 
       // Future unpaid installments in subsequent months
-      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && (t.invoiceMonth || t.date.slice(0, 7)) !== currentMonthPrefix);
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && getCardTransactionInvoiceMonth(t, card) !== currentMonthPrefix);
       const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const futureInstallmentsPercent = card.limit > 0 ? (futureInstallmentsTotal / card.limit) * 100 : 0;
 
@@ -271,7 +272,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const payingCardTxs = useMemo(() => {
     if (!payingCard) return [];
     return transactions
-      .filter(t => t.cardId === payingCard.id && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === currentMonthPrefix)
+      .filter(t => t.cardId === payingCard.id && t.type === 'expense' && getCardTransactionInvoiceMonth(t, payingCard) === currentMonthPrefix)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [payingCard, transactions, currentMonthPrefix]);
 

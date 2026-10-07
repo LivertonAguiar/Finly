@@ -196,23 +196,44 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 
   // Despesas discriminadas: Realizadas, Pendentes e Cartão (sem duplicar pagamento de fatura)
   const expenseSummary = useMemo(() => {
-    let realizedCommon = 0; // Despesas comuns pagas
-    let pendingCommon = 0;  // Despesas comuns pendentes
-    let cardExpenses = 0;   // Compras no cartão
+    let commonRealized = 0; // Despesas comuns pagas
+    let commonPending = 0;  // Despesas comuns pendentes
+    let cardRealized = 0;   // Compras no cartão pagas (fatura paga)
+    let cardPending = 0;    // Compras no cartão pendentes (fatura aberta)
 
     monthTransactions.forEach(t => {
       if (t.type !== 'expense' || t.ignored || isInvoicePaymentTransaction(t)) return;
       if (t.cardId) {
-        cardExpenses += t.amount;
+        if (t.status === 'completed') {
+          cardRealized += t.amount;
+        } else {
+          cardPending += t.amount;
+        }
       } else if (t.status === 'completed') {
-        realizedCommon += t.amount;
+        commonRealized += t.amount;
       } else {
-        pendingCommon += t.amount;
+        commonPending += t.amount;
       }
     });
 
-    const total = Math.round((realizedCommon + pendingCommon + cardExpenses) * 100) / 100;
-    return { realizedCommon, pendingCommon, cardExpenses, total };
+    const card = Math.round((cardRealized + cardPending) * 100) / 100;
+    const realized = Math.round((commonRealized + cardRealized) * 100) / 100;
+    const pending = Math.round((commonPending + cardPending) * 100) / 100;
+    const total = Math.round((realized + pending) * 100) / 100;
+
+    return {
+      commonRealized,
+      commonPending,
+      cardRealized,
+      cardPending,
+      card,
+      realized,
+      pending,
+      total,
+      realizedCommon: realized,
+      pendingCommon: pending,
+      cardExpenses: card,
+    };
   }, [monthTransactions]);
 
   // Receitas discriminadas: Recebidas e A receber
@@ -236,7 +257,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   const monthlyExpense = expenseSummary.total;
   const monthlyIncome = incomeSummary.total;
   const monthlyBalance = Math.round((monthlyIncome - monthlyExpense) * 100) / 100;
-  const realizedBalance = Math.round((incomeSummary.received - expenseSummary.realizedCommon) * 100) / 100;
+  const realizedBalance = Math.round((incomeSummary.received - expenseSummary.realized) * 100) / 100;
 
   const totalCurrentBalance = useMemo(() => {
     return accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -744,11 +765,17 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
               {formatCurrency(monthlyExpense, user.currency, !user.showValues)}
             </p>
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1">
-              <span>Realizadas: <strong className="text-rose-600 dark:text-rose-400 font-bold">{formatCurrency(expenseSummary.realizedCommon, user.currency, !user.showValues)}</strong></span>
+              <span>Realizadas: <strong className="text-rose-600 dark:text-rose-400 font-bold">{formatCurrency(expenseSummary.realized, user.currency, !user.showValues)}</strong></span>
               <span>•</span>
-              <span>Pendentes: <strong className="text-amber-500 font-bold">{formatCurrency(expenseSummary.pendingCommon, user.currency, !user.showValues)}</strong></span>
+              <span>Pendentes: <strong className="text-amber-500 font-bold">{formatCurrency(expenseSummary.pending, user.currency, !user.showValues)}</strong></span>
               <span>•</span>
-              <span>Cartão: <strong className="text-purple-500 font-bold">{formatCurrency(expenseSummary.cardExpenses, user.currency, !user.showValues)}</strong></span>
+              <span>Cartão: <strong className="text-purple-500 font-bold">{formatCurrency(expenseSummary.card, user.currency, !user.showValues)}</strong>
+                {expenseSummary.card > 0 && (
+                  <span className={`ml-0.5 text-[9px] font-bold ${expenseSummary.cardPending === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}`}>
+                    ({expenseSummary.cardPending === 0 ? 'pago' : expenseSummary.cardRealized > 0 ? 'parcial' : 'a pagar'})
+                  </span>
+                )}
+              </span>
             </div>
           </div>
         </button>

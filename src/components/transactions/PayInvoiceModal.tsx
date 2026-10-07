@@ -6,19 +6,25 @@ import { formatCurrency, formatDate, getCurrentMonth, getTodayString } from '../
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { CreditCard as CardIcon, Calendar, CheckCircle2, AlertCircle, Clock, DollarSign, Wallet, Lightbulb, X, Download } from 'lucide-react';
 import { exportInvoiceCSV } from '../../utils/reportExportService';
+import { getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
 
 interface PayInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialCardId?: string;
+  initialMonth?: string;
 }
 
-export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClose, initialCardId }) => {
+export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClose, initialCardId, initialMonth }) => {
   const { cards, accounts, transactions, categories, payCardInvoice, user } = useFinancial();
 
+  const now = new Date();
+  const initY = initialMonth ? initialMonth.slice(0, 4) : String(now.getFullYear());
+  const initM = initialMonth ? initialMonth.slice(5, 7) : String(now.getMonth() + 1).padStart(2, '0');
+
   const [selectedCardId, setSelectedCardId] = useState<string>(cards[0]?.id || '');
-  const [selectedMonth, setSelectedMonth] = useState<string>('08');
-  const [selectedYear, setSelectedYear] = useState<string>('2026');
+  const [selectedMonth, setSelectedMonth] = useState<string>(initM);
+  const [selectedYear, setSelectedYear] = useState<string>(initY);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id || '');
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,6 +33,14 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
 
   useEffect(() => {
     if (isOpen) {
+      if (initialMonth) {
+        setSelectedYear(initialMonth.slice(0, 4));
+        setSelectedMonth(initialMonth.slice(5, 7));
+      } else {
+        const d = new Date();
+        setSelectedYear(String(d.getFullYear()));
+        setSelectedMonth(String(d.getMonth() + 1).padStart(2, '0'));
+      }
       if (initialCardId) {
         setSelectedCardId(initialCardId);
       } else if (cards.length > 0 && !selectedCardId) {
@@ -37,7 +51,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
       }
       setIsSuccess(false);
     }
-  }, [isOpen, initialCardId, cards, accounts]);
+  }, [isOpen, initialCardId, initialMonth, cards, accounts]);
 
   const months = [
     { num: '01', label: 'Janeiro' },
@@ -63,7 +77,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
   const invoiceTransactions = useMemo(() => {
     if (!selectedCard) return [];
     return transactions.filter(
-      t => t.cardId === selectedCard.id && t.type === 'expense' && (t.invoiceMonth || t.date.slice(0, 7)) === targetPrefix
+      t => t.cardId === selectedCard.id && t.type === 'expense' && getCardTransactionInvoiceMonth(t, selectedCard) === targetPrefix
     );
   }, [transactions, selectedCard, targetPrefix]);
 

@@ -14,9 +14,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - OLLAMA_HOST=http://finly-ollama:11434
-    depends_on:
-      - finly-ollama
     volumes:
       - ./server/data:/app/server/data
       - ./server/public/bundles:/app/server/public/bundles
@@ -35,22 +32,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  finly-ollama:
-    image: ollama/ollama:latest
-    container_name: finly-ollama
-    restart: unless-stopped
-    volumes:
-      - ./server/data/ollama:/root/.ollama
-    networks:
-      - proxy
-    expose:
-      - "11434"
     logging:
       driver: json-file
       options:

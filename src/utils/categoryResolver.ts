@@ -70,8 +70,10 @@ const KNOWN_ALIASES: Record<string, { categoryId: string; subcategoryId?: string
   'sub-mor-taxa-extra': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
   'taxa extra de condominio': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
   'taxa extra condominio': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
-  'taxa extra': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-taxa-extra-condominio', name: 'Moradia', icon: '🏠' },
   'sub-mor-reserva-salao': { categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio', name: 'Moradia', icon: '🏠' },
+  'cat-fatura-cartao': { categoryId: 'cat-fatura-cartao', name: 'Pagamento de Fatura', icon: '💳' },
+  'fatura-cartao': { categoryId: 'cat-fatura-cartao', name: 'Pagamento de Fatura', icon: '💳' },
+  'pagamento-fatura': { categoryId: 'cat-fatura-cartao', name: 'Pagamento de Fatura', icon: '💳' },
 };
 
 export function splitEmojiFromName(name: string, fallbackIcon?: string): { name: string; cleanName: string; icon?: string } {

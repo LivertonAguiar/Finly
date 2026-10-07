@@ -60,7 +60,7 @@ import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos'
 import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
-import { isInvoicePaymentTransaction, allocateCardTransaction } from '../../utils/invoiceCalculator';
+import { isInvoicePaymentTransaction, allocateCardTransaction, getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
 import { useTranslation } from '../../utils/i18n';
 import { isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
 
@@ -463,7 +463,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       if (t.type !== 'expense' || t.ignored || isInvoicePaymentTransaction(t)) return false;
       if (t.cardId) {
         const card = cards.find(c => c.id === t.cardId);
-        const invMonth = t.invoiceMonth || (card ? allocateCardTransaction(t.date, card.closingDay, card.dueDay).invoiceMonth : t.date.slice(0, 7));
+        const invMonth = getCardTransactionInvoiceMonth(t, card);
         return invMonth === currentMonthPrefix;
       }
       return t.date.startsWith(currentMonthPrefix);
@@ -480,7 +480,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     return transactions.filter(t => {
       if (t.cardId && t.type === 'expense') {
         const card = cards.find(c => c.id === t.cardId);
-        const invMonth = t.invoiceMonth || (card ? allocateCardTransaction(t.date, card.closingDay, card.dueDay).invoiceMonth : t.date.slice(0, 7));
+        const invMonth = getCardTransactionInvoiceMonth(t, card);
         return invMonth === currentMonthPrefix;
       }
       return t.date.startsWith(currentMonthPrefix);
@@ -489,22 +489,40 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Despesas discriminadas: Realizadas, Pendentes e Cartão
   const expenseBreakdown = useMemo(() => {
-    let realized = 0; // Despesas comuns pagas
-    let pending = 0;  // Despesas comuns pendentes
-    let card = 0;     // Compras no cartão de crédito
+    let commonRealized = 0; // Despesas comuns pagas
+    let commonPending = 0;  // Despesas comuns pendentes
+    let cardRealized = 0;   // Compras no cartão pagas (fatura paga)
+    let cardPending = 0;    // Compras no cartão pendentes (fatura aberta)
 
     monthEconomicExpenseTransactions.forEach(t => {
       if (t.cardId) {
-        card += t.amount;
+        if (t.status === 'completed') {
+          cardRealized += t.amount;
+        } else {
+          cardPending += t.amount;
+        }
       } else if (t.status === 'completed') {
-        realized += t.amount;
+        commonRealized += t.amount;
       } else {
-        pending += t.amount;
+        commonPending += t.amount;
       }
     });
 
-    const total = Math.round((realized + pending + card) * 100) / 100;
-    return { realized, pending, card, total };
+    const card = Math.round((cardRealized + cardPending) * 100) / 100;
+    const realized = Math.round((commonRealized + cardRealized) * 100) / 100;
+    const pending = Math.round((commonPending + cardPending) * 100) / 100;
+    const total = Math.round((realized + pending) * 100) / 100;
+
+    return {
+      commonRealized,
+      commonPending,
+      cardRealized,
+      cardPending,
+      card,
+      realized,
+      pending,
+      total,
+    };
   }, [monthEconomicExpenseTransactions]);
 
   // Receitas discriminadas: Recebidas e A receber
@@ -794,7 +812,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const cardSummaries = useMemo(() => {
     return cards.map(card => {
       const cardTxs = transactions.filter(t => t.cardId === card.id && t.type === 'expense');
-      const monthTxs = cardTxs.filter(t => (t.invoiceMonth || t.date.slice(0, 7)) === currentMonthPrefix);
+      const monthTxs = cardTxs.filter(t => getCardTransactionInvoiceMonth(t, card) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
       const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
@@ -804,7 +822,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       const currentInvoicePercent = card.limit > 0 ? (currentOpenInvoice / card.limit) * 100 : 0;
 
       // Future unpaid installments in subsequent months
-      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && (t.invoiceMonth || t.date.slice(0, 7)) !== currentMonthPrefix);
+      const futureInstallmentsTxs = cardTxs.filter(t => t.status !== 'completed' && getCardTransactionInvoiceMonth(t, card) !== currentMonthPrefix);
       const futureInstallmentsTotal = Math.round(futureInstallmentsTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
       const futureInstallmentsPercent = card.limit > 0 ? (futureInstallmentsTotal / card.limit) * 100 : 0;
 
@@ -2544,7 +2562,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 <span>•</span>
                 <span>Pendentes: <strong className="text-amber-600 dark:text-amber-400 font-bold">{formatCurrency(expenseBreakdown.pending, user.currency, !user.showValues)}</strong></span>
                 <span>•</span>
-                <span>Cartão: <strong className="text-purple-600 dark:text-purple-400 font-bold">{formatCurrency(expenseBreakdown.card, user.currency, !user.showValues)}</strong></span>
+                <span>Cartão: <strong className="text-purple-600 dark:text-purple-400 font-bold">{formatCurrency(expenseBreakdown.card, user.currency, !user.showValues)}</strong>
+                  {expenseBreakdown.card > 0 && (
+                    <span className={`ml-1 text-[9px] font-bold ${expenseBreakdown.cardPending === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}`}>
+                      ({expenseBreakdown.cardPending === 0 ? 'pago' : expenseBreakdown.cardRealized > 0 ? 'parcial' : 'a pagar'})
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
             <div className="w-full h-1 bg-rose-500/10 dark:bg-rose-950/50 rounded-full overflow-hidden">
@@ -2955,6 +2979,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             setSelectedCardForPay(null);
           }}
           initialCardId={selectedCardForPay || undefined}
+          initialMonth={currentMonthPrefix}
         />
       )}
     </div>
