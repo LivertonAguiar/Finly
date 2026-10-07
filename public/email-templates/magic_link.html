@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Acesso Rápido - Finly</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0b0c10;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+    }
+    table {
+      border-spacing: 0;
+    }
+    td {
+      padding: 0;
+    }
+    img {
+      border: 0;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #0b0c10;
+      padding-top: 32px;
+      padding-bottom: 40px;
+    }
+    .main-card {
+      background-color: #14151d;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 540px;
+      border-radius: 24px;
+      border: 1px solid #232533;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+    .btn-gradient {
+      display: inline-block;
+      padding: 16px 36px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+    }
+    .otp-code {
+      font-family: 'SF Mono', Consolas, Monaco, 'Courier New', monospace;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      color: #ffffff;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0b0c10; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <center class="wrapper" style="width: 100%; background-color: #0b0c10; padding: 32px 12px 48px;">
+    <table class="main-card" width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #14151d; border-radius: 24px; border: 1px solid #232533;">
+      <!-- Header -->
+      <tr>
+        <td style="padding: 36px 32px 24px; text-align: center;">
+          <table align="center" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="text-align: center;">
+                <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; background: linear-gradient(135deg, #6366f1, #8b5cf6, #d946ef); border-radius: 16px; color: #ffffff; font-weight: 900; font-size: 26px; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);">
+                  F
+                </div>
+                <div style="margin-top: 12px; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                  Fin<span style="color: #a78bfa;">ly</span>
+                </div>
+                <div style="font-size: 12px; font-weight: 500; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px;">
+                  Acesso Rápido &amp; Seguro
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Body Content -->
+      <tr>
+        <td style="padding: 0 32px 28px; text-align: center;">
+          <h1 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #f8fafc;">
+            Acesse sua conta no Finly ✨
+          </h1>
+          <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #94a3b8;">
+            Clique no botão abaixo para entrar instantaneamente no sistema sem precisar digitar sua senha:
+          </p>
+
+          <!-- Primary Button Link -->
+          <div style="margin: 28px 0;">
+            <a href="{{ .ConfirmationURL }}" class="btn-gradient" target="_blank" style="display: inline-block; padding: 15px 34px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%); color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 700; border-radius: 14px;">
+              ENTRAR NO FINLY AGORA &rarr;
+            </a>
+          </div>
+
+          <!-- Divider -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0 20px;">
+            <tr>
+              <td style="border-bottom: 1px solid #232533; width: 40%;"></td>
+              <td style="text-align: center; font-size: 11px; font-weight: 700; color: #64748b; padding: 0 10px; text-transform: uppercase;">
+                OU USE O CÓDIGO
+              </td>
+              <td style="border-bottom: 1px solid #232533; width: 40%;"></td>
+            </tr>
+          </table>
+
+          <!-- OTP Box -->
+          <div style="background-color: #1a1b26; border: 1px solid #2e3042; border-radius: 18px; padding: 20px 16px; margin: 0 auto; max-width: 420px;">
+            <div style="font-size: 11px; font-weight: 800; color: #c084fc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+              CÓDIGO DE LOGIN TEMPORÁRIO
+            </div>
+            <div class="otp-code" style="font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #ffffff; margin: 6px 0;">
+              {{ .Token }}
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+              Código temporário para autenticação de uso único.
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Security Notice -->
+      <tr>
+        <td style="padding: 0 32px 32px; text-align: center;">
+          <div style="background-color: rgba(30, 41, 59, 0.4); border-radius: 12px; padding: 14px 16px; border: 1px solid #1e293b;">
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+              🔒 <strong>Aviso de segurança:</strong> Se você não solicitou este link de acesso, basta ignorar. Ninguém conseguirá acessar sua conta sem este e-mail.
+            </p>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="background-color: #0e0f15; padding: 20px 32px; text-align: center; border-top: 1px solid #1e202b;">
+          <p style="margin: 0 0 6px; font-size: 12px; color: #64748b;">
+            Finly &copy; 2026 &bull; Plataforma de Gestão Financeira Pessoal &amp; Familiar
+          </p>
+          <a href="https://finly.lpaguiar.com.br" target="_blank" style="font-size: 12px; color: #818cf8; text-decoration: none;">
+            finly.lpaguiar.com.br
+          </a>
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>

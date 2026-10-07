@@ -354,6 +354,14 @@ app.use('/bundles', express.static(BUNDLES_DIR, {
   immutable: true,
 }));
 
+// Serve branded HTML email templates
+app.use('/email-templates', express.static(path.join(__dirname, 'email-templates'), {
+  maxAge: '1h',
+  setHeaders: (res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  },
+}));
+
 
 
 // Market Indicators (BACEN SGS: TR Série 226, IPCA Série 433)
@@ -1066,23 +1074,51 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
       saveVerificationCodes(allCodes);
       const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
       await transporter.sendMail({
-        from: `"Finly - Segurança & Acesso" <${senderEmail}>`,
+        from: `"Finly" <${senderEmail}>`,
         to: cleanEmail,
-        subject: 'Código de verificação Finly',
+        subject: 'Código de verificação - Finly',
         html: `
-          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:36px 28px;background:#121215;border-radius:28px;color:#f8fafc;border:1px solid #27272a">
-            <div style="text-align:center;margin-bottom:28px">
-              <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#7c3aed,#a855f7);color:#fff;width:52px;height:52px;border-radius:18px;font-size:28px;font-weight:900;line-height:52px">F</div>
-              <h2 style="font-size:24px;margin:14px 0 4px">Fin<span style="color:#a78bfa">ly</span></h2>
-              <p style="color:#a1a1aa;font-size:13px;margin:0">Segurança & Gestão Financeira Inteligente</p>
-            </div>
-            <div style="background:rgba(124,58,237,.15);border:1px solid rgba(168,85,247,.35);border-radius:20px;padding:26px 20px;text-align:center">
-              <p style="font-size:11px;color:#c084fc;font-weight:800;margin:0 0 10px">SEU CÓDIGO DE VERIFICAÇÃO</p>
-              <div style="font-size:38px;font-weight:900;letter-spacing:6px;font-family:ui-monospace,monospace">${code}</div>
-              <p style="font-size:11px;color:#71717a;margin:12px 0 0">Válido por 15 minutos</p>
-            </div>
-            <p style="font-size:13px;color:#d4d4d8;line-height:1.6;text-align:center">Digite o código de 6 dígitos no Finly para confirmar sua identidade. Se não solicitou a alteração, ignore esta mensagem.</p>
-          </div>
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head><meta charset="UTF-8"><title>Código de Verificação</title></head>
+          <body style="margin:0;padding:0;background-color:#0b0c10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+            <center style="width:100%;background-color:#0b0c10;padding:32px 12px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;background-color:#14151d;border-radius:24px;border:1px solid #232533;box-shadow:0 16px 40px rgba(0,0,0,0.45);overflow:hidden;">
+                <tr>
+                  <td style="padding:36px 32px 20px;text-align:center;">
+                    <div style="display:inline-block;width:48px;height:48px;line-height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#d946ef);border-radius:16px;color:#ffffff;font-weight:900;font-size:26px;box-shadow:0 8px 20px rgba(139,92,246,0.3);">F</div>
+                    <div style="margin-top:12px;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Fin<span style="color:#a78bfa;">ly</span></div>
+                    <div style="font-size:12px;font-weight:500;color:#94a3b8;letter-spacing:0.5px;text-transform:uppercase;margin-top:2px;">Segurança &amp; Acesso</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 32px 28px;text-align:center;">
+                    <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#f8fafc;">Código de Verificação 🔐</h1>
+                    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#94a3b8;">Utilize o código de segurança de 6 dígitos abaixo para confirmar sua identidade no Finly:</p>
+                    <div style="background-color:#1a1b26;border:1px solid #2e3042;border-radius:18px;padding:22px 16px;margin:0 auto;max-width:420px;">
+                      <div style="font-size:11px;font-weight:800;color:#c084fc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">SEU CÓDIGO DE SEGURANÇA</div>
+                      <div style="font-family:'SF Mono',Consolas,Monaco,monospace;font-size:36px;font-weight:900;letter-spacing:8px;color:#ffffff;margin:6px 0;">${code}</div>
+                      <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Válido por 15 minutos</div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 32px 32px;text-align:center;">
+                    <div style="background-color:rgba(30,41,59,0.4);border-radius:12px;padding:14px 16px;border:1px solid #1e293b;">
+                      <p style="margin:0;font-size:12px;line-height:1.5;color:#64748b;">🔒 Se você não solicitou este código, ignore esta mensagem com segurança. Sua conta permanece protegida.</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background-color:#0e0f15;padding:20px 32px;text-align:center;border-top:1px solid #1e202b;">
+                    <p style="margin:0 0 6px;font-size:12px;color:#64748b;">Finly &copy; 2026 &bull; Plataforma de Gestão Financeira Pessoal &amp; Familiar</p>
+                    <a href="https://finly.lpaguiar.com.br" target="_blank" style="font-size:12px;color:#818cf8;text-decoration:none;">finly.lpaguiar.com.br</a>
+                  </td>
+                </tr>
+              </table>
+            </center>
+          </body>
+          </html>
         `,
       });
     } catch (error) {

@@ -8,6 +8,8 @@ interface ExtendedAuthContextType extends AuthContextType {
   verifyResetCode: (email: string, code: string) => Promise<{ success: boolean; message: string }>;
   resetPassword: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<{ success: boolean; message?: string }>;
+  resendConfirmationEmail: (email: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
@@ -609,6 +611,107 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true, message: 'Sua senha foi alterada com sucesso!' };
   };
 
+  // 5. Verify Email OTP Code (Signup confirmation by 6-digit code)
+  const verifyEmailOtp = async (email: string, token: string): Promise<{ success: boolean; message?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanToken = token.trim().replace(/\D/g, '');
+
+    if (!cleanToken) {
+      return { success: false, message: 'Digite o código de verificação recebido.' };
+    }
+    if (cleanToken.length !== 6) {
+      return { success: false, message: 'O código de verificação deve ter exatamente 6 dígitos.' };
+    }
+
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Serviço de autenticação Supabase não está configurado.' };
+    }
+
+    try {
+      let res = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'signup',
+      });
+
+      if (res.error) {
+        // Fallback para tipo 'email' se 'signup' não for aceito dependendo da versão
+        res = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: cleanToken,
+          type: 'email',
+        });
+      }
+
+      if (res.error) {
+        let msg = res.error.message || 'Código de verificação inválido.';
+        const lower = msg.toLowerCase();
+        if (lower.includes('expired')) {
+          msg = 'O código de verificação expirou. Clique em reenviar para gerar um novo código.';
+        } else if (lower.includes('invalid') || lower.includes('not found')) {
+          msg = 'Código de verificação incorreto. Confira os números e tente novamente.';
+        }
+        return { success: false, message: msg };
+      }
+
+      if (res.data?.user) {
+        if (res.data.session?.access_token) {
+          localStorage.setItem('finly_auth_token', res.data.session.access_token);
+        }
+        const u = res.data.user;
+        const loggedUser: AuthUser = {
+          id: u.id,
+          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
+          email: u.email || '',
+          phone: u.user_metadata?.phone,
+          role: u.user_metadata?.role || 'admin',
+          avatarUrl: u.user_metadata?.avatar_url,
+          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+        setAllUsers(prev => [loggedUser, ...prev.filter(usr => usr.id !== loggedUser.id)]);
+        setCurrentUser(loggedUser);
+        localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
+        return { success: true };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Falha ao validar código de ativação.' };
+    }
+  };
+
+  // 6. Resend Confirmation Email
+  const resendConfirmationEmail = async (email: string): Promise<{ success: boolean; message?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, message: 'Informe um e-mail válido para reenvio.' };
+    }
+
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Serviço de autenticação Supabase não está configurado.' };
+    }
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: cleanEmail,
+      });
+
+      if (error) {
+        let msg = error.message || 'Erro ao reenviar e-mail de ativação.';
+        const lower = msg.toLowerCase();
+        if (lower.includes('rate limit') || lower.includes('too many requests')) {
+          msg = 'Aguarde alguns instantes antes de solicitar um novo e-mail.';
+        }
+        return { success: false, message: msg };
+      }
+
+      return { success: true, message: 'Novo e-mail enviado com sucesso! Verifique sua caixa de entrada.' };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Erro ao reenviar e-mail de ativação.' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -624,6 +727,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         verifyResetCode,
         resetPassword,
         changePassword,
+        verifyEmailOtp,
+        resendConfirmationEmail,
       }}
     >
       {children}

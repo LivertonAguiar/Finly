@@ -13,17 +13,30 @@ import {
   ArrowLeft,
   Send,
   Sparkles,
+  MailCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
 
 export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuccess }) => {
-  const { login, loginAsDemo, register, allUsers, requestPasswordReset, resetPassword } = useAuth();
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify'>(() => {
+  const {
+    login,
+    loginAsDemo,
+    register,
+    allUsers,
+    requestPasswordReset,
+    resetPassword,
+    verifyEmailOtp,
+    resendConfirmationEmail,
+  } = useAuth();
+
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify' | 'confirm-signup'>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.replace(/^\/+/, '').toLowerCase();
       if (p === 'cadastro' || p === 'register' || p === 'signup') return 'register';
       if (p === 'recuperar-senha' || p === 'forgot') return 'forgot';
+      if (p === 'confirmar-conta' || p === 'ativar-conta') return 'confirm-signup';
     }
     return 'login';
   });
@@ -34,6 +47,9 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
+  const [signupCode, setSignupCode] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -45,7 +61,22 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
   const [debugCodeHint, setDebugCodeHint] = useState<string | null>(null);
 
   React.useEffect(() => {
-    const target = mode === 'register' ? '/cadastro' : mode === 'forgot' ? '/recuperar-senha' : '/login';
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setResendCooldown(prev => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  React.useEffect(() => {
+    const target =
+      mode === 'register'
+        ? '/cadastro'
+        : mode === 'forgot'
+        ? '/recuperar-senha'
+        : mode === 'confirm-signup'
+        ? '/confirmar-conta'
+        : '/login';
     if (window.location.pathname !== target) {
       window.history.replaceState({ mode }, '', target);
     }
@@ -84,8 +115,15 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
       setLoading(false);
       if (res.success) {
         if (res.requiresEmailConfirmation) {
-          setSuccessMessage(res.message || 'Cadastro realizado com sucesso! Enviamos um link de confirmação para o seu e-mail. Por favor, confirme para ativar sua conta.');
-          setMode('login');
+          const registeredEmail = email.trim().toLowerCase();
+          setPendingEmail(registeredEmail);
+          setSuccessMessage(
+            res.message ||
+              'Cadastro realizado com sucesso! Enviamos um link de confirmação e um código de 6 dígitos para o seu e-mail.'
+          );
+          setSignupCode('');
+          setResendCooldown(60);
+          setMode('confirm-signup');
         } else {
           setSuccessMessage('Conta criada com sucesso!');
           if (onLoginSuccess) onLoginSuccess();
@@ -147,6 +185,29 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
         setErrorMessage(res.message);
       }
     }
+    // 5. CONFIRM SIGNUP (VERIFY 6-DIGIT OTP)
+    else if (mode === 'confirm-signup') {
+      const cleanCode = signupCode.replace(/\D/g, '').trim();
+      const targetEmail = (pendingEmail || email).trim().toLowerCase();
+      if (!cleanCode) {
+        setErrorMessage('Digite o código de verificação recebido.');
+        return;
+      }
+      if (cleanCode.length !== 6) {
+        setErrorMessage('O código de verificação deve ter exatamente 6 dígitos.');
+        return;
+      }
+
+      setLoading(true);
+      const res = await verifyEmailOtp(targetEmail, cleanCode);
+      setLoading(false);
+      if (res.success) {
+        setSuccessMessage('Conta ativada com sucesso! Entrando no Finly...');
+        if (onLoginSuccess) onLoginSuccess();
+      } else {
+        setErrorMessage(res.message || 'Código de ativação incorreto ou expirado.');
+      }
+    }
   };
 
   return (
@@ -164,6 +225,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
             {mode === 'register' && 'Crie sua conta para começar com seus dados reais'}
             {mode === 'forgot' && 'Recupere sua senha através do seu e-mail cadastrado'}
             {mode === 'verify' && 'Digite o código de 6 dígitos e escolha sua nova senha'}
+            {mode === 'confirm-signup' && 'Ative sua conta com o código de 6 dígitos ou link enviado por e-mail'}
           </p>
         </div>
 
@@ -201,8 +263,8 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
           </div>
         )}
 
-        {/* Back Button on Forgot/Verify */}
-        {(mode === 'forgot' || mode === 'verify') && (
+        {/* Back Button on Forgot/Verify/Confirm-Signup */}
+        {(mode === 'forgot' || mode === 'verify' || mode === 'confirm-signup') && (
           <button
             type="button"
             onClick={() => {
@@ -217,9 +279,25 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
 
         {/* Alerts */}
         {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>{errorMessage}</span>
+          <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs flex flex-col gap-2 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <span>{errorMessage}</span>
+            </div>
+            {(errorMessage.toLowerCase().includes('não confirmado') || errorMessage.toLowerCase().includes('not confirmed')) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingEmail(email.trim().toLowerCase());
+                  setErrorMessage('');
+                  setMode('confirm-signup');
+                }}
+                className="self-start text-[11px] font-bold text-purple-400 hover:text-purple-300 hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <span>Digitar código de 6 dígitos para ativar agora</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
           </div>
         )}
 
@@ -257,7 +335,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
           )}
 
           {/* Email (Login, Register, Forgot) */}
-          {mode !== 'verify' && (
+          {mode !== 'verify' && mode !== 'confirm-signup' && (
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">E-mail Cadastrado *</label>
               <div className="relative">
@@ -327,6 +405,82 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mode: confirm-signup (Email OTP Verification) */}
+          {mode === 'confirm-signup' && (
+            <div className="space-y-4">
+              <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-800/50 text-center space-y-1">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+                  <MailCheck className="w-4 h-4 text-purple-400" />
+                  <span>E-mail de Ativação</span>
+                </div>
+                <div className="text-sm font-bold text-white break-all">
+                  {pendingEmail || email}
+                </div>
+                <p className="text-[11px] text-slate-400 pt-0.5">
+                  Enviamos um link de ativação e um código de 6 dígitos.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-300">
+                    Código de Ativação (6 dígitos)
+                  </label>
+                  <button
+                    type="button"
+                    disabled={loading || resendCooldown > 0}
+                    onClick={async () => {
+                      if (resendCooldown > 0 || loading) return;
+                      setLoading(true);
+                      const targetEmail = (pendingEmail || email).trim().toLowerCase();
+                      const res = await resendConfirmationEmail(targetEmail);
+                      setLoading(false);
+                      if (res.success) {
+                        setSuccessMessage(res.message || 'Novo código enviado por e-mail!');
+                        setErrorMessage('');
+                        setResendCooldown(60);
+                      } else {
+                        setErrorMessage(res.message || 'Erro ao reenviar.');
+                      }
+                    }}
+                    className="text-[11px] font-bold text-purple-400 hover:text-purple-300 hover:underline cursor-pointer transition-colors disabled:opacity-50 disabled:no-underline flex items-center gap-1"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                    <span>
+                      {resendCooldown > 0 ? `Aguarde ${resendCooldown}s` : 'Reenviar código'}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={signupCode}
+                    onChange={e => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setSignupCode(clean);
+                      if (errorMessage) setErrorMessage('');
+                    }}
+                    className="w-full pl-9 pr-3.5 py-3 rounded-xl border border-purple-500/50 bg-slate-800 text-xl font-mono font-black tracking-[0.35em] text-purple-300 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-600 shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-center">
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  💡 <strong className="text-slate-300">Prefere o link?</strong> Basta abrir o e-mail recebido e clicar no botão <span className="text-purple-300 font-semibold">Ativar Minha Conta</span>.
+                </p>
               </div>
             </div>
           )}
@@ -428,7 +582,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
             className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
           >
             {loading ? (
-              <span>Enviando...</span>
+              <span>Processando...</span>
             ) : mode === 'login' ? (
               <>
                 <span>Acessar Painel</span>
@@ -438,6 +592,11 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
               <>
                 <span>Concluir Cadastro</span>
                 <ArrowRight className="w-4 h-4" />
+              </>
+            ) : mode === 'confirm-signup' ? (
+              <>
+                <span>Validar Código e Acessar</span>
+                <CheckCircle2 className="w-4 h-4" />
               </>
             ) : mode === 'forgot' ? (
               <>
