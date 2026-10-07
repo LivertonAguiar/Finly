@@ -378,18 +378,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        let token = data.session?.access_token;
-        if (!token) {
-          try {
-            const loginRes = await supabase.auth.signInWithPassword({
-              email: cleanEmail,
-              password,
-            });
-            if (loginRes.data?.session?.access_token) {
-              token = loginRes.data.session.access_token;
-            }
-          } catch (_) {}
+        const isEmailConfirmed = !!(data.user.email_confirmed_at || data.session?.access_token);
+
+        if (!isEmailConfirmed) {
+          return {
+            success: true,
+            requiresEmailConfirmation: true,
+            message: `Cadastro realizado! Enviamos um link de confirmação para ${cleanEmail}. Por favor, confirme seu e-mail para ativar sua conta antes de fazer login.`,
+          };
         }
+
+        const token = data.session?.access_token;
         if (token) {
           localStorage.setItem('finly_auth_token', token);
         }
@@ -404,7 +403,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
         setCurrentUser(newUser);
         localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
-        return { success: true };
+        return { success: true, requiresEmailConfirmation: false };
       }
 
       return { success: false, message: 'Nenhum usuário retornado pelo serviço de cadastro.' };

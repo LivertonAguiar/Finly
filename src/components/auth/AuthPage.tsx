@@ -83,8 +83,13 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
       const res = await register(name, email, password, phone);
       setLoading(false);
       if (res.success) {
-        setSuccessMessage('Conta criada com sucesso!');
-        if (onLoginSuccess) onLoginSuccess();
+        if (res.requiresEmailConfirmation) {
+          setSuccessMessage(res.message || 'Cadastro realizado com sucesso! Enviamos um link de confirmação para o seu e-mail. Por favor, confirme para ativar sua conta.');
+          setMode('login');
+        } else {
+          setSuccessMessage('Conta criada com sucesso!');
+          if (onLoginSuccess) onLoginSuccess();
+        }
       } else {
         setErrorMessage(res.message || 'Falha ao cadastrar.');
       }

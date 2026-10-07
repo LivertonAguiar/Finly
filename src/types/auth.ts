@@ -13,7 +13,7 @@ export interface AuthContextType {
   allUsers: AuthUser[];
   login: (email: string, password?: string, remember?: boolean) => Promise<{ success: boolean; message?: string }>;
   loginAsDemo: () => void;
-  register: (name: string, email: string, password?: string, phone?: string) => Promise<{ success: boolean; message?: string }>;
+  register: (name: string, email: string, password?: string, phone?: string) => Promise<{ success: boolean; message?: string; requiresEmailConfirmation?: boolean }>;
   logout: () => void;
   updateUserAccount: (data: Partial<AuthUser>) => void;
   deleteUserAccount: (id: string) => void;
