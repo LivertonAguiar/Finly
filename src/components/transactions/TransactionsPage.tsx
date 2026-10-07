@@ -44,6 +44,7 @@ import { SeriesDeleteModal } from './SeriesDeleteModal';
 import { ReimbursementModal } from './ReimbursementModal';
 import { downloadCSV } from '../../utils/reportExportService';
 import { exportTransactionsToExcel } from '../../utils/excelExportService';
+import { getFamilyMemberList, getMemberDisplayNameById } from '../../utils/familyUtils';
 
 export interface TransactionsNavParams {
   monthOffset?: number;
@@ -74,7 +75,10 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
     toggleTransactionStatus,
     reimburseThirdPartyTransaction,
     user,
+    familyMembers,
   } = useFinancial();
+
+  const allFamilyMembers = useMemo(() => getFamilyMemberList(user, familyMembers), [user, familyMembers]);
 
   const [internalMonthOffset, setInternalMonthOffset] = useState<number>(() => {
     if (initialNavParams?.monthOffset !== undefined) return initialNavParams.monthOffset;
@@ -401,7 +405,8 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 
         // User filter
         if (filters.selectedUserIds && filters.selectedUserIds.length > 0) {
-          if ((t as any).userId && !filters.selectedUserIds.includes((t as any).userId)) return false;
+          const mId = t.userId || t.relationships?.personId || 'owner';
+          if (!filters.selectedUserIds.includes(mId)) return false;
         }
 
         // Search filter
@@ -661,9 +666,10 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             categories={categories}
             accounts={accounts}
             cards={cards}
+            users={allFamilyMembers}
             currentUser={user}
             showPeriod={true}
-            showUser={true}
+            showUser={allFamilyMembers.length > 1}
             showAccounts={true}
             showCards={true}
             showCategories={true}
@@ -995,8 +1001,14 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                           </p>
 
                           {/* Secondary Badges: Dedicated line to NEVER squeeze description width */}
-                          {(t.debtId || t.recurring || (t.hasComponents && t.components && t.components.length > 0)) && (
+                          {(t.debtId || t.recurring || (t.hasComponents && t.components && t.components.length > 0) || allFamilyMembers.length > 1) && (
                             <div className="flex flex-wrap items-center gap-1 mt-1">
+                              {allFamilyMembers.length > 1 && (
+                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 text-[10px] font-bold">
+                                  <span>👤</span>
+                                  <span>{getMemberDisplayNameById(t.userId || t.relationships?.personId, allFamilyMembers, user.name)}</span>
+                                </span>
+                              )}
                               {t.hasComponents && t.components && t.components.length > 0 && (
                                 <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
                                   <Layers className="w-2.5 h-2.5" />
@@ -1174,6 +1186,12 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                     <td className="py-3 px-3 text-slate-900 dark:text-white font-bold">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span>{t.description}</span>
+                        {allFamilyMembers.length > 1 && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 text-[9px] font-bold">
+                            <span>👤</span>
+                            <span>{getMemberDisplayNameById(t.userId || t.relationships?.personId, allFamilyMembers, user.name)}</span>
+                          </span>
+                        )}
                         {t.hasComponents && t.components && t.components.length > 0 && (
                           <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-bold">
                             <Layers className="w-2.5 h-2.5" />

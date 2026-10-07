@@ -27,6 +27,7 @@ import { validateTransactionComponents } from '../../utils/transactionAnalytics'
 import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
 import { SubcategoryPicker } from '../ui/SubcategoryPicker';
 import { OptionPicker } from '../ui/OptionPicker';
+import { getFamilyMemberList, formatMemberDisplayName } from '../../utils/familyUtils';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -65,7 +66,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     updateTransaction,
     updateRecurringExpenseAmount,
     user,
+    familyMembers,
   } = useFinancial();
+  const availableFamilyMembers = useMemo(() => getFamilyMemberList(user, familyMembers), [user, familyMembers]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('owner');
   const [predictedInfo, setPredictedInfo] = useState<{
     categoryName: string;
     subcategoryName?: string;
@@ -174,6 +178,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setTargetAccountId(tx?.targetAccountId || accounts.find(acc => acc.id !== (tx?.accountId || initialAccountId || accounts[0]?.id))?.id || '');
     setCardId(tx?.cardId || initialCardId || cards[0]?.id || '');
     setInvoiceMonth(tx?.invoiceMonth || getTodayString().slice(0, 7));
+    setSelectedMemberId(tx?.userId || tx?.relationships?.personId || 'owner');
     const isEditingInstallment = Boolean(tx?.installments && (tx.installments.total > 1 || tx.installments.current > 1));
     setInstallment(isEditingInstallment);
     const count = Math.max(2, tx?.installments?.total || 2);
@@ -600,6 +605,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         status: isReimbursable ? 'pending' : 'none',
       },
     },
+    userId: selectedMemberId,
+    relationships: {
+      ...(editingTransaction?.relationships || {}),
+      personId: selectedMemberId,
+    },
     hasComponents: Boolean(hasSplit && splitItems.length > 0),
     components: hasSplit && splitItems.length > 0
       ? splitItems.map((item, index) => ({
@@ -702,6 +712,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           attachmentUrl, attachmentName, createdAt: new Date().toISOString(),
           hasComponents: txData.hasComponents,
           components: txData.components,
+          userId: selectedMemberId,
+          relationships: {
+            personId: selectedMemberId,
+          },
         });
         addTransactionSeries(built.series, built.transactions);
         const resolved = resolveCategory(categories, categoryId, subcategoryId, 'expense');
@@ -1427,6 +1441,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           )}
         </>}
+
+        {/* Responsável pelo Lançamento (exibido condicionalmente quando houver mais de 1 membro familiar cadastrado) */}
+        {availableFamilyMembers.length > 1 && (
+          <div>
+            <label className={labelClass}>RESPONSÁVEL PELO LANÇAMENTO</label>
+            <OptionPicker
+              title="Responsável pelo Lançamento"
+              placeholder="Selecione o responsável"
+              searchPlaceholder="Buscar membro..."
+              value={selectedMemberId}
+              onChange={val => setSelectedMemberId(String(val))}
+              options={availableFamilyMembers.map(member => ({
+                value: member.id,
+                label: `${formatMemberDisplayName(member.name)}${member.isOwner ? ' (Titular)' : ''}`,
+                sublabel: member.email || (member.isOwner ? 'Conta principal' : undefined),
+                icon: <span className="text-base">👤</span>,
+              }))}
+            />
+          </div>
+        )}
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
         {moreDetails && <div className="space-y-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 p-3">

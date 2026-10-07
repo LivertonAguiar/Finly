@@ -31,6 +31,8 @@ export interface BuildCardInstallmentSeriesInput {
   hasComponents?: boolean;
   components?: Array<Omit<TransactionComponent, 'id' | 'transactionId'> & { id?: string; transactionId?: string }>;
   componentTemplates?: TransactionComponentTemplate[];
+  userId?: string;
+  relationships?: any;
 }
 
 export interface CardInstallmentTimelineItem {
@@ -257,6 +259,8 @@ export const buildCardInstallmentSeries = (
         isThirdParty: input.isThirdParty,
         thirdPartyName: input.isThirdParty ? input.thirdPartyName?.trim() : undefined,
         reimbursed: false,
+        userId: input.userId,
+        relationships: input.relationships,
         createdAt: input.createdAt,
       };
     })

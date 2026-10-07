@@ -50,6 +50,7 @@ import { FilterPopover, FilterState } from '../ui/FilterPopover';
 import { Modal } from '../ui/Modal';
 import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
 import { exportReportExcel } from '../../utils/excelExportService';
+import { getFamilyMemberList, formatMemberDisplayName } from '../../utils/familyUtils';
 import html2canvas from 'html2canvas';
 
 type TabType = 'donut' | 'line' | 'bar';
@@ -95,7 +96,12 @@ export type ReportMainTab = 'overview' | 'comparatives' | 'financing' | 'health_
 export type ReportLayoutMode = 'focused' | 'bento';
 
 export const ReportsPage: React.FC = () => {
-  const { transactions, categories, accounts, cards, user, debts, budgets } = useFinancial();
+  const { transactions, categories, accounts, cards, user, debts, budgets, familyMembers } = useFinancial();
+
+  const allFamilyMembers = useMemo(
+    () => getFamilyMemberList(user, familyMembers).map(m => ({ id: m.id, name: formatMemberDisplayName(m.name), email: m.email })),
+    [user, familyMembers]
+  );
 
   // Módulo Principal de Relatórios
   const [mainTab, setMainTab] = useState<ReportMainTab>('overview');
@@ -253,7 +259,8 @@ export const ReportsPage: React.FC = () => {
 
         // User filter
         if (filters.selectedUserIds && filters.selectedUserIds.length > 0) {
-          if ((t as any).userId && !filters.selectedUserIds.includes((t as any).userId)) return false;
+          const mId = t.userId || (t as any).relationships?.personId || 'owner';
+          if (!filters.selectedUserIds.includes(mId)) return false;
         }
 
         return true;
@@ -985,9 +992,10 @@ export const ReportsPage: React.FC = () => {
             categories={categories}
             accounts={accounts}
             cards={cards}
+            users={allFamilyMembers}
             currentUser={user}
             showPeriod={true}
-            showUser={true}
+            showUser={allFamilyMembers.length > 1}
             showAccounts={true}
             showCards={true}
             showCategories={true}

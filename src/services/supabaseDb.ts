@@ -269,7 +269,8 @@ export class SupabaseDbService {
             subcategoryId: r.subcategory_id,
             financialNature: r.financial_nature || undefined,
             characteristics: r.characteristics || undefined,
-            relationships: r.relationships || undefined,
+            relationships: r.relationships || (r.member_id ? { personId: r.member_id } : undefined),
+            userId: r.member_id || r.relationships?.personId || undefined,
             accountId: r.account_id,
             targetAccountId: r.target_account_id,
             cardId: r.card_id,
@@ -625,6 +626,7 @@ export class SupabaseDbService {
           financial_nature: t.financialNature || null,
           characteristics: t.characteristics || null,
           relationships: t.relationships || null,
+          member_id: t.userId || t.relationships?.personId || null,
           created_at: t.createdAt || new Date().toISOString(),
           debt_id: t.debtId || null,
           debt_installment_number: t.debtInstallmentNumber ?? null,
@@ -785,6 +787,23 @@ export class SupabaseDbService {
         await supabase.from('investments').upsert(rows);
       }
 
+      // 10. Family Members Upsert
+      if (store.familyMembers && store.familyMembers.length > 0) {
+        const rows = store.familyMembers.map(m => ({
+          id: m.id,
+          user_id: targetUserId,
+          name: m.name,
+          email: m.email || '',
+          phone: m.phone || null,
+          role: m.role || 'viewer',
+          status: m.status || 'active',
+          type: m.type || 'linked',
+          is_owner: Boolean(m.isOwner),
+          joined_at: m.joinedAt || new Date().toISOString(),
+        }));
+        await supabase.from('family_members').upsert(rows);
+      }
+
       return true;
     } catch (err) {
       console.error('❌ Supabase saveEntireStore error:', err);
@@ -839,6 +858,7 @@ export class SupabaseDbService {
         financial_nature: t.financialNature || null,
         characteristics: t.characteristics || null,
         relationships: t.relationships || null,
+        member_id: t.userId || t.relationships?.personId || null,
         created_at: t.createdAt || new Date().toISOString(),
       });
 

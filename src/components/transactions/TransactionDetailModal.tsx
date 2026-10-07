@@ -45,6 +45,7 @@ import {
   SCOPE_CONFIG,
   inferSmartTaxonomy,
 } from '../../utils/smartTaxonomy';
+import { getFamilyMemberList, getMemberDisplayNameById } from '../../utils/familyUtils';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -73,7 +74,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     toggleTransactionStatus,
     reimburseThirdPartyTransaction,
     user,
+    familyMembers,
   } = useFinancial();
+  const allFamilyMembers = React.useMemo(() => getFamilyMemberList(user, familyMembers), [user, familyMembers]);
   const { confirm } = useConfirm();
   const [deleteCandidate, setDeleteCandidate] = React.useState<Transaction | null>(null);
   const [reimbursementCandidate, setReimbursementCandidate] = React.useState<Transaction | null>(null);
@@ -619,6 +622,28 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* Responsável pelo Lançamento (exibido quando houver mais de 1 membro familiar cadastrado) */}
+          {allFamilyMembers.length > 1 && (
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800 space-y-1.5 sm:col-span-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Responsável pelo Lançamento
+              </span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center text-sm font-bold shadow-2xs border border-purple-200/60 dark:border-purple-800/60">
+                  👤
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-black text-slate-900 dark:text-white block">
+                    {getMemberDisplayNameById(transaction.userId || transaction.relationships?.personId, allFamilyMembers, user.name)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-semibold block">
+                    {transaction.userId === 'owner' || !transaction.userId ? 'Titular da conta' : 'Membro familiar'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ========================================================================= */}
