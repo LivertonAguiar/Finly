@@ -362,12 +362,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        return { success: false, message: error.message || 'Erro ao realizar cadastro.' };
+        let msg = error.message || 'Erro ao realizar cadastro.';
+        if (msg.includes('User already registered') || msg.includes('already registered')) {
+          msg = 'Este e-mail já está cadastrado. Por favor, faça login ou recupere seu acesso.';
+        } else if (msg.includes('Error sending confirmation email')) {
+          msg = 'Não foi possível enviar o e-mail de confirmação. Tente novamente em instantes.';
+        } else if (msg.includes('Password should be at least')) {
+          msg = 'A senha deve ter no mínimo 6 caracteres.';
+        } else if (msg.includes('invalid format') || msg.includes('Unable to validate email')) {
+          msg = 'O formato do e-mail é inválido.';
+        } else if (msg.includes('rate limit') || msg.includes('too many requests')) {
+          msg = 'Muitas tentativas em pouco tempo. Aguarde alguns instantes.';
+        }
+        return { success: false, message: msg };
       }
 
       if (data.user) {
-        if (data.session?.access_token) {
-          localStorage.setItem('finly_auth_token', data.session.access_token);
+        let token = data.session?.access_token;
+        if (!token) {
+          try {
+            const loginRes = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password,
+            });
+            if (loginRes.data?.session?.access_token) {
+              token = loginRes.data.session.access_token;
+            }
+          } catch (_) {}
+        }
+        if (token) {
+          localStorage.setItem('finly_auth_token', token);
         }
         const newUser: AuthUser = {
           id: data.user.id,
