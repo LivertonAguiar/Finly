@@ -435,27 +435,32 @@ html[data-theme-preset="midnight-oled"].dark .finly-dropdown-solid {
   background-color: #101012 !important;
 }
 
-/* Sidebar Nav Items in Sleek Neo-Glass: No circular contour or outline unless selected */
+/* Sidebar Nav Items: Unified Sleek Modern Selection & Hover Contour */
+aside nav button {
+  border-radius: 12px !important;
+  outline: none !important;
+}
+
+aside nav button.is-active {
+  border: 1px solid var(--finly-accent-border, rgba(0, 229, 255, 0.35)) !important;
+  background-color: var(--finly-active, rgba(0, 229, 255, 0.12)) !important;
+  box-shadow: 0 0 14px -3px var(--finly-accent-glow, rgba(0, 229, 255, 0.25)), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
 aside nav button:not(.is-active) {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-html[data-theme-preset="sleek-neo-glass"] aside nav button:not(.is-active) {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  border-radius: 8px !important;
+  border: 1px solid transparent !important;
   background-color: transparent !important;
+  box-shadow: none !important;
 }
 
-html[data-theme-preset="sleek-neo-glass"] aside nav button:not(.is-active):hover {
+aside nav button:not(.is-active):hover {
   background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-html[data-theme-preset="sleek-neo-glass"] aside nav button.is-active {
-  border-radius: calc(var(--card-radius, 25px) * 0.72) !important;
+html:not(.dark) aside nav button:not(.is-active):hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 html.dark .dark\:bg-slate-950,

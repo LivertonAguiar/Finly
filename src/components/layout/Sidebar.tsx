@@ -101,6 +101,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ? ({
                 '--finly-accent': accentColor,
                 '--finly-active': `${accentColor}1F`,
+                '--finly-accent-border': `${accentColor}4D`,
+                '--finly-accent-glow': `${accentColor}33`,
               } as React.CSSProperties)
             : undefined
         }

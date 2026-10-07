@@ -143,8 +143,8 @@ html.dark {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
-  margin: 0 -8px;
-  padding: 4px 8px;
+  margin: 0;
+  padding: 4px 0;
   scrollbar-width: none;
 }
 
@@ -156,13 +156,15 @@ html.dark {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
-  height: 52px;
+  gap: 14px;
+  height: 44px;
+  flex-shrink: 0;
+  box-sizing: border-box;
   color: var(--finly-soft);
-  transition: color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   background: transparent;
-  border: 0;
+  border: 1px solid transparent;
   padding: 0;
   text-align: left;
   border-radius: 12px;
@@ -187,7 +189,7 @@ html.dark {
 
 .finly-modern-sidebar .nav-item p {
   margin: 0;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -198,49 +200,44 @@ html.dark {
 
 .finly-modern-sidebar:hover .nav-item p {
   opacity: 1;
-  transition: opacity 0.25s 0.1s ease;
+  transition: opacity 0.25s 0.08s ease;
 }
 
-.finly-modern-sidebar .nav-item:hover {
+/* Hover em item inativo */
+.finly-modern-sidebar .nav-item:not(.is-active):hover {
   color: var(--finly-accent);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html:not(.dark) .finly-modern-sidebar .nav-item:not(.is-active):hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 .finly-modern-sidebar .nav-item:hover > .icon {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
-/* Pill Highlight Before pseudo-element */
-.finly-modern-sidebar .nav-item::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s ease, background-color 0.2s ease;
-}
-
-.finly-modern-sidebar:hover .nav-item::before {
-  width: 100%;
-  height: 52px;
-}
-
+/* Item Ativo (Contorno e Destaque Padrão Finly) */
 .finly-modern-sidebar .nav-item.is-active {
   color: var(--finly-accent);
   font-weight: 700;
+  background: var(--finly-active);
+  border: 1px solid var(--finly-accent-border, rgba(0, 229, 255, 0.35));
+  box-shadow: 0 0 14px -3px var(--finly-accent-glow, rgba(0, 229, 255, 0.25)), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.finly-modern-sidebar .nav-item.is-active::before {
-  background: var(--finly-active);
+.finly-modern-sidebar .nav-item.is-active > .icon {
+  color: var(--finly-accent);
 }
 
 /* Badges */
 .finly-modern-sidebar .badge {
   position: absolute;
-  top: 8px;
-  right: -10px;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
   display: grid;
   place-items: center;
   min-width: 20px;
@@ -251,14 +248,8 @@ html.dark {
   color: #ffffff;
   font-size: 10px;
   font-weight: 800;
-  transition: top 0.35s ease, right 0.35s ease, transform 0.35s ease;
+  transition: opacity 0.2s ease;
   z-index: 2;
-}
-
-.finly-modern-sidebar:hover .badge {
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
 }
 
 .finly-modern-sidebar hr {
@@ -338,11 +329,6 @@ html.dark {
   .finly-modern-sidebar .footer-action-btn .btn-label,
   .finly-modern-sidebar .nav-item p {
     opacity: 1 !important;
-  }
-
-  .finly-modern-sidebar .nav-item::before {
-    width: 100% !important;
-    height: 52px !important;
   }
 
   .finly-modern-sidebar .badge {
