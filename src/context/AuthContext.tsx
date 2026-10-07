@@ -439,11 +439,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAllUsers(prev => prev.map(u => (u.id === currentUser.id ? updated : u)));
   };
 
-  const deleteUserAccount = (id: string) => {
-    setAllUsers(prev => prev.filter(u => u.id !== id));
-    localStorage.removeItem(`finly_user_${id}_store`);
-    if (currentUser?.id === id) {
-      logout();
+  const deleteUserAccount = async (id: string): Promise<{ success: boolean; message?: string }> => {
+    if (id === DEFAULT_DEMO_USER.id) {
+      return { success: false, message: 'A conta de demonstração não pode ser excluída.' };
+    }
+
+    try {
+      const sessionRes = await supabase.auth.getSession();
+      const token = sessionRes.data?.session?.access_token || localStorage.getItem('finly_auth_token');
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(getApiUrl('/api/user/delete-account'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ userId: id }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        return {
+          success: false,
+          message: data?.message || 'Não foi possível excluir a conta no servidor.',
+        };
+      }
+
+      // Limpar todos os registros e caches locais deste usuário
+      setAllUsers(prev => prev.filter(u => u.id !== id));
+      localStorage.removeItem(`finly_user_${id}_store`);
+      localStorage.removeItem(`finly_user_${id}_local_state`);
+      localStorage.removeItem(`finly_user_${id}_pending_card_mutations`);
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.includes(id)) {
+          localStorage.removeItem(k);
+        }
+      }
+
+      // Se a conta excluída for a conta atualmente conectada, encerra a sessão
+      if (currentUser?.id === id) {
+        logout();
+      }
+
+      return {
+        success: true,
+        message: data.message || 'Sua conta e dados foram permanentemente excluídos.',
+      };
+    } catch (err: any) {
+      console.error('Erro ao excluir conta:', err);
+      return {
+        success: false,
+        message: err.message || 'Erro de conexão ao tentar excluir a conta.',
+      };
     }
   };
 

@@ -16,5 +16,5 @@ export interface AuthContextType {
   register: (name: string, email: string, password?: string, phone?: string) => Promise<{ success: boolean; message?: string; requiresEmailConfirmation?: boolean }>;
   logout: () => void;
   updateUserAccount: (data: Partial<AuthUser>) => void;
-  deleteUserAccount: (id: string) => void;
+  deleteUserAccount: (id: string) => Promise<{ success: boolean; message?: string }>;
 }

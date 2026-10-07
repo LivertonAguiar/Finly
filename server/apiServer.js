@@ -918,6 +918,131 @@ app.delete('/api/user/store', authenticateToken, async (req, res) => {
   }
 });
 
+// 4.2 PERMANENT ACCOUNT & DATA DELETION (Purge all tables, auth.users and disk store)
+app.post('/api/user/delete-account', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
+  const userEmail = req.user.email;
+
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'Identificador de usuário ausente no token.' });
+  }
+
+  // Proteção: conta demo não pode ser excluída
+  if (userId === 'usr-demo-financeiro' || (userEmail && userEmail.toLowerCase() === 'demo@finly.com')) {
+    return res.status(403).json({
+      success: false,
+      code: 'DEMO_ACCOUNT_PROTECTED',
+      message: 'A conta de demonstração do sistema não pode ser excluída.',
+    });
+  }
+
+  console.log(`⚠️ [DELETE-ACCOUNT] Iniciando exclusão definitiva da conta: ${userId} (${userEmail || 'sem email'})`);
+
+  try {
+    // 1. Excluir dados no Supabase PostgreSQL via Admin SDK (bypasses RLS)
+    if (supabaseAdmin) {
+      try {
+        // Tentar primeiro via RPC se disponível
+        const { error: rpcErr } = await supabaseAdmin.rpc('delete_user_completely', { target_user_id: userId });
+        if (rpcErr) {
+          console.warn(`[DELETE-ACCOUNT] Aviso ao chamar RPC delete_user_completely: ${rpcErr.message}. Executando exclusão direta por tabelas.`);
+        }
+      } catch (rpcEx) {
+        console.warn(`[DELETE-ACCOUNT] RPC indisponível, prosseguindo com exclusão direta:`, rpcEx.message);
+      }
+
+      // Exclusão direta em todas as tabelas em ordem reversa
+      const tables = [
+        'transaction_components',
+        'transactions',
+        'transaction_series',
+        'credit_cards',
+        'budgets',
+        'goals',
+        'debts',
+        'investments',
+        'categories',
+        'family_members',
+        'notifications',
+        'accounts',
+        'profiles',
+      ];
+
+      for (const tbl of tables) {
+        try {
+          const col = (tbl === 'profiles') ? 'id' : 'user_id';
+          await supabaseAdmin.from(tbl).delete().eq(col, userId);
+        } catch (tblErr) {
+          console.warn(`[DELETE-ACCOUNT] Aviso ao limpar tabela ${tbl}:`, tblErr.message);
+        }
+      }
+
+      // 2. Excluir o usuário de auth.users no Supabase Auth
+      try {
+        const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (authErr) {
+          console.error(`❌ [DELETE-ACCOUNT] Erro ao deletar do Supabase Auth:`, authErr.message);
+        } else {
+          console.log(`✅ [DELETE-ACCOUNT] Usuário ${userId} removido com sucesso de auth.users.`);
+        }
+      } catch (authEx) {
+        console.error(`❌ [DELETE-ACCOUNT] Falha ao invocar deleteUser no Supabase Auth:`, authEx.message);
+      }
+    }
+
+    // 3. Excluir arquivo local da store em disco no servidor
+    const storePath = getUserStorePath(userId);
+    const tempPath = `${storePath}.tmp`;
+    try {
+      if (fs.existsSync(storePath)) {
+        fs.unlinkSync(storePath);
+        console.log(`[DELETE-ACCOUNT] Arquivo de store removido: ${storePath}`);
+      }
+      if (fs.existsSync(tempPath)) {
+        fs.unlinkSync(tempPath);
+      }
+    } catch (fErr) {
+      console.warn(`[DELETE-ACCOUNT] Falha ao excluir arquivo em disco:`, fErr.message);
+    }
+
+    // 4. Limpar códigos de verificação pendentes
+    if (userEmail) {
+      try {
+        const cleanEmail = normalizeEmail(userEmail);
+        const allCodes = loadVerificationCodes();
+        if (allCodes[cleanEmail]) {
+          delete allCodes[cleanEmail];
+          saveVerificationCodes(allCodes);
+        }
+      } catch (_) {}
+    }
+
+    // 5. Encerrar conexões SSE ativas desse usuário
+    const canonicalId = getStoreIdentity(userId);
+    const clients = sseClients.get(canonicalId);
+    if (clients) {
+      clients.forEach(clientRes => {
+        try {
+          clientRes.write(`data: ${JSON.stringify({ type: 'ACCOUNT_DELETED' })}\n\n`);
+          clientRes.end();
+        } catch (_) {}
+      });
+      sseClients.delete(canonicalId);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Conta de usuário e todos os dados vinculados foram permanentemente excluídos do banco de dados e do servidor.',
+    });
+  } catch (err) {
+    console.error('❌ [DELETE-ACCOUNT] Erro inesperado ao excluir conta:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Ocorreu um erro no servidor ao tentar excluir os dados da conta.',
+    });
+  }
+});
+
 // 5. PASSWORD RECOVERY (generic response, hashed code, endpoint-specific limits)
 app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   const cleanEmail = normalizeEmail(req.body?.email);
