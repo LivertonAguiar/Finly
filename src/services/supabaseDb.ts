@@ -812,6 +812,27 @@ export class SupabaseDbService {
   }
 
   /**
+   * Delete single family member from Supabase PostgreSQL
+   */
+  public async deleteFamilyMember(userId: string, memberId: string): Promise<boolean> {
+    if (!isSupabaseConfigured() || !userId) return false;
+    try {
+      const { error } = await supabase
+        .from('family_members')
+        .delete()
+        .eq('user_id', userId)
+        .eq('id', memberId);
+      if (error) {
+        console.warn('⚠️ Supabase deleteFamilyMember error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /**
    * Upsert single transaction
    */
   public async upsertTransaction(userId: string, t: Transaction): Promise<boolean> {

@@ -6,6 +6,10 @@ export interface AuthUser {
   role: 'admin' | 'consultor' | 'member';
   avatarUrl?: string;
   createdAt: string;
+  invitedBy?: string;
+  invitedByName?: string;
+  relationshipType?: string;
+  isDependent?: boolean;
 }
 
 export interface AuthContextType {

@@ -237,10 +237,13 @@ export const ProfilePage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{name}</h3>
-            <p className="text-xs text-slate-400">{email}</p>
-            <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400">
-              {currentUser?.role === 'admin' ? 'Titular Administrador' : 'Membro da Família'}
-            </span>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400">
+                {currentUser?.isDependent
+                  ? `Membro da Família • Vinculado a ${currentUser.invitedByName || 'Titular'}`
+                  : (currentUser?.role === 'admin' ? 'Titular Administrador' : 'Membro da Família')}
+              </span>
+            </div>
           </div>
         </div>
 

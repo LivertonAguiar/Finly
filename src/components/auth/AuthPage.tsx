@@ -15,9 +15,11 @@ import {
   Sparkles,
   MailCheck,
   RefreshCw,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
+import { getApiUrl } from '../../services/apiConfig';
 
 export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuccess }) => {
   const {
@@ -31,9 +33,13 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
     resendConfirmationEmail,
   } = useAuth();
 
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify' | 'confirm-signup'>(() => {
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify' | 'confirm-signup' | 'accept-invite'>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.replace(/^\/+/, '').toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('invite') === 'true' || params.get('convite') === 'true' || p === 'convite' || p === 'aceitar-convite') {
+        return 'accept-invite';
+      }
       if (p === 'cadastro' || p === 'register' || p === 'signup') return 'register';
       if (p === 'recuperar-senha' || p === 'forgot') return 'forgot';
       if (p === 'confirmar-conta' || p === 'ativar-conta') return 'confirm-signup';
@@ -41,13 +47,27 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
     return 'login';
   });
   const [email, setEmail] = useState(() => {
-    return (typeof window !== 'undefined' && localStorage.getItem('finly_remembered_email')) || '';
+    if (typeof window !== 'undefined') {
+      const qEmail = new URLSearchParams(window.location.search).get('email');
+      if (qEmail) return qEmail.trim().toLowerCase();
+      return localStorage.getItem('finly_remembered_email') || '';
+    }
+    return '';
   });
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
   const [signupCode, setSignupCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const qCode = new URLSearchParams(window.location.search).get('code') ||
+                    new URLSearchParams(window.location.search).get('token') ||
+                    new URLSearchParams(window.location.search).get('otp');
+      if (qCode) return qCode.trim();
+    }
+    return '';
+  });
   const [pendingEmail, setPendingEmail] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [newPassword, setNewPassword] = useState('');
@@ -59,6 +79,29 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [debugCodeHint, setDebugCodeHint] = useState<string | null>(null);
+  const [detectedInvite, setDetectedInvite] = useState<{ isMember: boolean; ownerName?: string } | null>(null);
+
+  React.useEffect(() => {
+    const clean = email.trim().toLowerCase();
+    if (!clean || !clean.includes('@') || !clean.includes('.') || mode === 'accept-invite') {
+      setDetectedInvite(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(getApiUrl(`/api/family/membership?email=${encodeURIComponent(clean)}`));
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && json?.isMember) {
+            setDetectedInvite(json);
+            return;
+          }
+        }
+      } catch (_) {}
+      setDetectedInvite(null);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [email, mode]);
 
   React.useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -69,6 +112,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
   }, [resendCooldown]);
 
   React.useEffect(() => {
+    if (mode === 'accept-invite') return;
     const target =
       mode === 'register'
         ? '/cadastro'
@@ -208,6 +252,56 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
         setErrorMessage(res.message || 'Código de ativação incorreto ou expirado.');
       }
     }
+    // 6. ACCEPT FAMILY INVITE
+    else if (mode === 'accept-invite') {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail) {
+        setErrorMessage('Informe seu endereço de e-mail.');
+        return;
+      }
+      if (newPassword.length < 6) {
+        setErrorMessage('A senha de acesso deve ter pelo menos 6 caracteres.');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setErrorMessage('As senhas digitadas não coincidem.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await fetch(getApiUrl('/api/family/accept-invite'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: cleanEmail,
+            password: newPassword,
+            name: name.trim() || undefined,
+            code: inviteCode.trim() || undefined,
+          }),
+        });
+        const data = await res.json().catch(() => null);
+
+        if (res.ok && data?.success) {
+          setSuccessMessage('Convite aceito com sucesso! Entrando na Família Finly...');
+          const loginRes = await login(cleanEmail, newPassword, true);
+          setLoading(false);
+          if (loginRes.success) {
+            if (onLoginSuccess) onLoginSuccess();
+          } else {
+            setPassword(newPassword);
+            setMode('login');
+          }
+          return;
+        }
+
+        setLoading(false);
+        setErrorMessage(data?.message || 'Falha ao aceitar o convite familiar. Verifique seus dados.');
+      } catch (err: any) {
+        setLoading(false);
+        setErrorMessage('Erro de conexão ao aceitar o convite.');
+      }
+    }
   };
 
   return (
@@ -226,6 +320,7 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
             {mode === 'forgot' && 'Recupere sua senha através do seu e-mail cadastrado'}
             {mode === 'verify' && 'Digite o código de 6 dígitos e escolha sua nova senha'}
             {mode === 'confirm-signup' && 'Ative sua conta com o código de 6 dígitos ou link enviado por e-mail'}
+            {mode === 'accept-invite' && 'Ative sua participação na Família Finly e defina sua senha'}
           </p>
         </div>
 
@@ -263,8 +358,37 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
           </div>
         )}
 
-        {/* Back Button on Forgot/Verify/Confirm-Signup */}
-        {(mode === 'forgot' || mode === 'verify' || mode === 'confirm-signup') && (
+        {/* Dynamic Detected Family Invite Banner */}
+        {detectedInvite?.isMember && (mode === 'login' || mode === 'register') && (
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/70 to-indigo-950/70 border border-purple-500/40 text-purple-200 text-xs flex flex-col gap-2.5 animate-in fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/40 flex items-center justify-center shrink-0 text-purple-300">
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-white text-xs truncate">Convite Familiar Detectado 🤝</div>
+                <div className="text-[11px] text-purple-300/80 leading-snug">
+                  Você foi convidado por <strong className="text-white">{detectedInvite.ownerName || 'Titular'}</strong> para o Finly Familiar.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('accept-invite');
+                setErrorMessage('');
+                setSuccessMessage('');
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/30 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+            >
+              <span>Ativar meu acesso familiar com senha</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Back Button on Forgot/Verify/Confirm-Signup/Accept-Invite */}
+        {(mode === 'forgot' || mode === 'verify' || mode === 'confirm-signup' || mode === 'accept-invite') && (
           <button
             type="button"
             onClick={() => {
@@ -275,6 +399,19 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Login
           </button>
+        )}
+
+        {/* Family Invite Banner */}
+        {mode === 'accept-invite' && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 to-indigo-950/60 border border-purple-500/30 text-purple-200 text-xs flex items-center gap-3 animate-in fade-in">
+            <div className="w-10 h-10 rounded-xl bg-purple-600/30 border border-purple-500/40 flex items-center justify-center shrink-0 text-purple-300">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-white text-xs">Convite para Grupo Familiar 🤝</div>
+              <div className="text-[11px] text-purple-300/80">Defina sua senha pessoal para ativar o acesso compartilhado às contas, cartões e lançamentos da família.</div>
+            </div>
+          </div>
         )}
 
         {/* Alerts */}
@@ -316,8 +453,8 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Register Name */}
-          {mode === 'register' && (
+          {/* Register or Accept-Invite Name */}
+          {(mode === 'register' || mode === 'accept-invite') && (
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">Nome Completo *</label>
               <div className="relative">
@@ -328,16 +465,18 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                   placeholder="Seu nome"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
           )}
 
-          {/* Email (Login, Register, Forgot) */}
+          {/* Email (Login, Register, Forgot, Accept-Invite) */}
           {mode !== 'verify' && mode !== 'confirm-signup' && (
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">E-mail Cadastrado *</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                {mode === 'accept-invite' ? 'E-mail Convidado *' : 'E-mail Cadastrado *'}
+              </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -346,7 +485,25 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                   placeholder="seu@email.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Accept-Invite Code Field */}
+          {mode === 'accept-invite' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Código de Confirmação (6 dígitos)</label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ex: 849201"
+                  value={inviteCode}
+                  onChange={e => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-mono font-bold text-purple-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
@@ -405,6 +562,48 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Accept-Invite Password Fields */}
+          {mode === 'accept-invite' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Criar Senha de Acesso *</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Mínimo 6 caracteres"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-1 text-slate-400 hover:text-slate-200 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Confirmar Nova Senha *</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Repita a nova senha"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -603,6 +802,11 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
                 <span>Enviar Código por E-mail</span>
                 <Send className="w-4 h-4" />
               </>
+            ) : mode === 'accept-invite' ? (
+              <>
+                <span>Ativar e Ingressar na Família</span>
+                <Users className="w-4 h-4" />
+              </>
             ) : (
               <>
                 <span>Redefinir Senha e Entrar</span>
@@ -611,10 +815,23 @@ export const AuthPage: React.FC<{ onLoginSuccess?: () => void }> = ({ onLoginSuc
             )}
           </button>
 
-          {/* Quick Demo Access on Login */}
+          {/* Quick Demo & Family Link on Login */}
           {mode === 'login' && (
-            <div className="pt-2 text-center">
-              <div className="relative flex py-2 items-center">
+            <div className="pt-2 text-center space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('accept-invite');
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                }}
+                className="text-[11px] text-purple-400 hover:text-purple-300 hover:underline font-bold cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Recebeu um convite para a família? Ative aqui</span>
+              </button>
+
+              <div className="relative flex py-1 items-center">
                 <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                 <span className="flex-shrink mx-3 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">ou</span>
                 <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>

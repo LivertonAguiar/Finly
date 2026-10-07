@@ -305,12 +305,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { showUndo } = useUndoToast();
   const { currentUser } = useAuth();
   const userId = currentUser ? currentUser.id : 'guest';
-  const userStoreKey = `finly_user_${userId}_store`;
-  const pendingCardMutationsKey = `finly_user_${userId}_pending_card_mutations`;
-  const pendingTxDeletesKey = `finly_user_${userId}_pending_tx_deletes`;
+  const effectiveStoreUserId = currentUser?.invitedBy || userId;
+  const userStoreKey = `finly_user_${effectiveStoreUserId}_store`;
+  const pendingCardMutationsKey = `finly_user_${effectiveStoreUserId}_pending_card_mutations`;
+  const pendingTxDeletesKey = `finly_user_${effectiveStoreUserId}_pending_tx_deletes`;
   const pendingTxDeletesRef = useRef<string[]>([]);
-  const appearancePreferenceKey = `finly_user_${userId}_appearance`;
-  const cardMutationMigrationKey = `finly_user_${userId}_card_mutation_migration_v1`;
+  const appearancePreferenceKey = `finly_user_${effectiveStoreUserId}_appearance`;
+  const cardMutationMigrationKey = `finly_user_${effectiveStoreUserId}_card_mutation_migration_v1`;
 
   const isDemoUser = () => (
     currentUser?.id === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com'
@@ -857,7 +858,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 name: parsed.userProfile?.name || currentUser?.name || (isDemo ? 'Conta Demonstração' : 'Usuário'),
                 email: parsed.userProfile?.email || currentUser?.email || (isDemo ? 'demo@finly.com' : ''),
                 currency: parsed.userProfile?.currency || 'BRL',
-                role: parsed.userProfile?.role || 'admin',
+                role: currentUser?.isDependent ? 'member' : (parsed.userProfile?.role || 'admin'),
                 theme: rawTheme,
                 showValues: parsed.userProfile?.showValues !== false,
               };
@@ -922,7 +923,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         name: currentUser?.name || 'Usuário',
         email: currentUser?.email || '',
         currency: 'BRL',
-        role: 'admin',
+        role: currentUser?.isDependent ? 'member' : 'admin',
         theme: localAppearance?.theme || 'dark',
         themePreset: localAppearance?.themePreset || 'sleek-neo-glass',
         accentColor: localAppearance?.accentColor || '#06B6D4',
@@ -932,7 +933,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   };
 
-  const initialStore = useMemo(() => loadUserStore(), [userId]);
+  const initialStore = useMemo(() => loadUserStore(), [userId, effectiveStoreUserId, currentUser?.isDependent]);
 
   // States
   const [user, setUser] = useState<UserProfile>(initialStore.userProfile);
@@ -947,7 +948,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [transactionSeries, setTransactionSeries] = useState<TransactionSeries[]>(initialStore.transactionSeries);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialStore.familyMembers);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialStore.notifications);
-  const [storeOwnerUserId, setStoreOwnerUserId] = useState(userId);
+  const [storeOwnerUserId, setStoreOwnerUserId] = useState(effectiveStoreUserId);
   const userRef = useRef(user);
   userRef.current = user;
   cardsRef.current = cards;
@@ -1025,9 +1026,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactionSeries(store.transactionSeries);
     setFamilyMembers(store.familyMembers);
     setNotifications(store.notifications);
-    setStoreOwnerUserId(userId);
-    isStoreLoadedForUserIdRef.current = userId;
-  }, [userId]);
+    setStoreOwnerUserId(effectiveStoreUserId);
+    isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+  }, [effectiveStoreUserId]);
 
   const [period, setPeriod] = useState<string>('this_month');
   const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string }>({
@@ -1039,7 +1040,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // CONTINUOUS SERVER AUTO-SYNC (SUPABASE & BACKEND)
   useEffect(() => {
     if (!currentUser) return;
-    apiSync.setUserId(currentUser.id);
+    apiSync.setUserId(effectiveStoreUserId);
 
     const isDemo = currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com';
 
@@ -1058,10 +1059,12 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         !isResettingRef.current
       );
 
-      // 1. Primary: Supabase PostgreSQL (Single Source of Truth)
-      if (isSupabaseConfigured()) {
+      // 1. Primary: Supabase PostgreSQL (Single Source of Truth) para titulares
+      // Para dependentes familiares, o Supabase isola as tabelas por auth.uid() via RLS.
+      // O dependente sincroniza diretamente com o servidor Express (/api/user/store) com privilégio admin.
+      if (!currentUser?.isDependent && isSupabaseConfigured()) {
         try {
-          const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          const sbStore = await supabaseDb.fetchUserStore(effectiveStoreUserId);
           if (!canApplySnapshot()) return;
           canWriteFullStoreToSupabaseRef.current = true;
           if (sbStore && sbStore.accounts) {
@@ -1094,7 +1097,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setInvestments(cleanInvestments);
             setTransactions(migratedSeries.transactions);
             setTransactionSeries(migratedSeries.series);
-            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+            if (Array.isArray(sbStore.familyMembers)) {
+              let updatedMembers = sbStore.familyMembers;
+              if (currentUser?.isDependent && currentUser?.email) {
+                updatedMembers = updatedMembers.map(m => (
+                  m.email?.toLowerCase() === currentUser.email?.toLowerCase()
+                    ? { ...m, status: 'active' }
+                    : m
+                ));
+              }
+              setFamilyMembers(updatedMembers);
+            }
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
             }
@@ -1104,8 +1117,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (sbStore.userProfile) setUser(mergedUserProfile);
 
             hasInitialRemoteSyncFinishedRef.current = true;
-            isStoreLoadedForUserIdRef.current = currentUser.id;
-            setStoreOwnerUserId(currentUser.id);
+            isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+            setStoreOwnerUserId(effectiveStoreUserId);
             lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
 
             // Sync server store and local storage to match Supabase truth
@@ -1123,14 +1136,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             };
             try {
               localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
-              if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+              if (effectiveStoreUserId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
                 localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(cleanStore));
               }
             } catch (_) {}
             return;
           }
           // Supabase configured but returned no data — likely expired auth session or first-time user
-          console.warn('[Finly Sync] Supabase retornou store vazio/null para userId:', currentUser.id,
+          console.warn('[Finly Sync] Supabase retornou store vazio/null para userId:', effectiveStoreUserId,
             '— sessão de autenticação pode estar expirada. Tentando fallback para servidor Express.');
         } catch (sbErr) {
           console.warn('Supabase store fetch notice:', sbErr);
@@ -1153,7 +1166,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       // 2. Fallback to Express server store ONLY if Supabase is offline or unconfigured
-      const serverStore = await apiSync.fetchServerStore(currentUser.id);
+      const serverStore = await apiSync.fetchServerStore(effectiveStoreUserId);
       if (serverStore && serverStore.accounts) {
         if (!canApplySnapshot()) return;
         const cleanCards = reconcileRemoteCards(
@@ -1185,13 +1198,31 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setInvestments(cleanInvestments);
         setTransactions(migratedSeries.transactions);
         setTransactionSeries(migratedSeries.series);
-        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+        if (Array.isArray(serverStore.familyMembers)) {
+          let updatedMembers: FamilyMember[] = serverStore.familyMembers;
+          if (currentUser?.isDependent && currentUser?.email) {
+            updatedMembers = updatedMembers.map((m: FamilyMember) => (
+              m.email?.toLowerCase() === currentUser.email?.toLowerCase()
+                ? { ...m, status: 'active' }
+                : m
+            ));
+          }
+          setFamilyMembers(updatedMembers);
+        }
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
+        const baseUserProfile = serverStore.userProfile
+          ? mergeRemoteProfile(serverStore.userProfile, userRef.current)
+          : userRef.current;
+        const dependentProfile: UserProfile = {
+          ...baseUserProfile,
+          role: (currentUser?.isDependent ? 'member' : (baseUserProfile?.role || 'admin')) as UserProfile['role'],
+        };
+        setUser(dependentProfile);
         hasInitialRemoteSyncFinishedRef.current = true;
-        isStoreLoadedForUserIdRef.current = currentUser.id;
-        setStoreOwnerUserId(currentUser.id);
+        isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+        setStoreOwnerUserId(effectiveStoreUserId);
         lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
         try {
           const cleanStore = {
@@ -1206,7 +1237,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             transactionSeries: migratedSeries.series,
           };
           localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
-          if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+          if (effectiveStoreUserId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
             localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(cleanStore));
           }
         } catch (_) {}
@@ -1216,8 +1247,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 3. New User or first-time login: neither Supabase nor server had existing data yet
       if (canApplySnapshot()) {
         hasInitialRemoteSyncFinishedRef.current = true;
-        isStoreLoadedForUserIdRef.current = currentUser.id;
-        setStoreOwnerUserId(currentUser.id);
+        isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+        setStoreOwnerUserId(effectiveStoreUserId);
         lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
       }
     };
@@ -1264,15 +1295,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       apiSync.setUserId(null);
     };
-  }, [currentUser?.id]);
+  }, [effectiveStoreUserId]);
 
   // Automatic Real-Time Persistence (local offline cache + debounced Supabase & server sync)
   useEffect(() => {
     // Only save if the store has actually been loaded from remote for the CURRENT user (prevents wiping or overwriting with stale localStorage)
     if (
       !currentUser ||
-      storeOwnerUserId !== currentUser.id ||
-      isStoreLoadedForUserIdRef.current !== currentUser.id ||
+      storeOwnerUserId !== effectiveStoreUserId ||
+      isStoreLoadedForUserIdRef.current !== effectiveStoreUserId ||
       !hasInitialRemoteSyncFinishedRef.current ||
       isResettingRef.current
     ) return;
@@ -1295,7 +1326,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // 1. Save to local storage as instant offline cache
     try {
       localStorage.setItem(userStoreKey, JSON.stringify(currentStore));
-      if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+      if (effectiveStoreUserId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
         localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(currentStore));
       }
     } catch (e) {
@@ -1314,14 +1345,14 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // 2. Primary: Supabase PostgreSQL Persistence
     if (!isDemo && isSupabaseConfigured() && canWriteFullStoreToSupabaseRef.current) {
-      supabaseDb.saveEntireStore(currentUser.id, currentStore).catch(e => {
+      supabaseDb.saveEntireStore(effectiveStoreUserId, currentStore).catch(e => {
         console.warn('Supabase save error:', e);
       });
     }
 
     // 3. Fallback: Push to backend server
-    apiSync.pushStore(currentUser.id, currentStore);
-  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, transactionSeries, familyMembers, notifications, user, userStoreKey, storeOwnerUserId, currentUser?.id]);
+    apiSync.pushStore(effectiveStoreUserId, currentStore);
+  }, [accounts, cards, categories, budgets, goals, debts, investments, transactions, transactionSeries, familyMembers, notifications, user, userStoreKey, storeOwnerUserId, effectiveStoreUserId]);
 
   // Pull-to-refresh & In-app manual sync handler
   const refreshData = async (): Promise<void> => {
@@ -1356,7 +1387,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 2. Primary: Supabase PostgreSQL
       if (isSupabaseConfigured()) {
         try {
-          const sbStore = await supabaseDb.fetchUserStore(currentUser.id);
+          const sbStore = await supabaseDb.fetchUserStore(effectiveStoreUserId);
           if (!canApplySnapshot()) return;
           canWriteFullStoreToSupabaseRef.current = true;
           if (sbStore && sbStore.accounts) {
@@ -1399,8 +1430,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (sbStore.userProfile) setUser(mergedUserProfile);
 
             hasInitialRemoteSyncFinishedRef.current = true;
-            isStoreLoadedForUserIdRef.current = currentUser.id;
-            setStoreOwnerUserId(currentUser.id);
+            isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+            setStoreOwnerUserId(effectiveStoreUserId);
             lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
 
             // Update server store to match Supabase
@@ -1418,7 +1449,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             };
             try {
               localStorage.setItem(userStoreKey, JSON.stringify(cleanStore));
-              if (currentUser.id === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
+              if (effectiveStoreUserId === 'e2208d7b-f536-4ff8-a0a6-5ed82ebae52b') {
                 localStorage.setItem('finly_user_usr-default-liverton_store', JSON.stringify(cleanStore));
               }
             } catch (_) {}
@@ -1433,7 +1464,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       // 3. Fallback to Express server store ONLY if Supabase is unconfigured or failed
-      const serverStore = await apiSync.fetchServerStore(currentUser.id);
+      const serverStore = await apiSync.fetchServerStore(effectiveStoreUserId);
       if (serverStore && serverStore.accounts) {
         if (!canApplySnapshot()) return;
         const cleanCards = reconcileRemoteCards(
@@ -1474,8 +1505,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
 
         hasInitialRemoteSyncFinishedRef.current = true;
-        isStoreLoadedForUserIdRef.current = currentUser.id;
-        setStoreOwnerUserId(currentUser.id);
+        isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+        setStoreOwnerUserId(effectiveStoreUserId);
         lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
         return;
       } else {
@@ -1494,8 +1525,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setFamilyMembers(store.familyMembers);
         setNotifications(store.notifications);
         hasInitialRemoteSyncFinishedRef.current = true;
-        isStoreLoadedForUserIdRef.current = currentUser.id;
-        setStoreOwnerUserId(currentUser.id);
+        isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
+        setStoreOwnerUserId(effectiveStoreUserId);
         lastSavedMutationRevisionRef.current = localMutationRevisionRef.current;
       }
     } catch (err) {
@@ -2904,6 +2935,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       joinedAt: getTodayString(),
     };
     setFamilyMembers(prev => [...prev, newMember]);
+    markLocalMutation();
 
     try {
       let token = '';
@@ -2982,10 +3014,31 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateFamilyMember = (id: string, data: Partial<FamilyMember>) => {
     setFamilyMembers(prev => prev.map(m => (m.id === id ? { ...m, ...data } : m)));
+    markLocalMutation();
   };
 
   const removeFamilyMember = (id: string) => {
+    const memberToDelete = familyMembers.find(m => m.id === id);
     setFamilyMembers(prev => prev.filter(m => m.id !== id));
+    markLocalMutation();
+
+    if (currentUser && !isDemoUser()) {
+      if (isSupabaseConfigured()) {
+        void supabaseDb.deleteFamilyMember(effectiveStoreUserId, id);
+      }
+
+      // Exclusão definitiva no backend (public.family_members, store em disco e desvinculação em auth.users)
+      try {
+        let token = localStorage.getItem('finly_auth_token') || '';
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const query = memberToDelete?.email ? `?email=${encodeURIComponent(memberToDelete.email)}` : '';
+        fetch(getApiUrl(`/api/family/member/${encodeURIComponent(id)}${query}`), {
+          method: 'DELETE',
+          headers,
+        }).catch(err => console.warn('Aviso ao chamar DELETE /api/family/member:', err));
+      } catch (_) {}
+    }
   };
 
   // Notifications

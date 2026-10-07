@@ -642,26 +642,206 @@ const sanitizeStoreData = (store) => {
   return sanitized;
 };
 
+// 3.0 RESOLVER VÍNCULO FAMILIAR (Dependentes / Membros Vinculados)
+const getEffectiveFamilyOwnerInfo = async (userId, userEmail) => {
+  if (!userId && !userEmail) return { isMember: false };
+  const canonicalId = userId ? getStoreIdentity(userId) : null;
+
+  if (supabaseAdmin) {
+    // 1. Verificar metadata no Supabase Auth se tivermos userId
+    if (userId) {
+      try {
+        const { data: uData } = await supabaseAdmin.auth.admin.getUserById(userId);
+        const meta = uData?.user?.user_metadata;
+        if (meta?.invited_by && isValidUserUuid(meta.invited_by) && meta.invited_by !== userId) {
+          return {
+            isMember: true,
+            ownerId: meta.invited_by,
+            ownerName: meta.invited_by_name || 'Titular',
+            role: meta.role || 'member',
+            relationshipType: meta.relationship_type || 'linked',
+            status: 'active',
+          };
+        }
+      } catch (_) {}
+    }
+
+    // 2. Verificar na tabela public.family_members por e-mail
+    const cleanEmail = normalizeEmail(userEmail);
+    if (cleanEmail) {
+      try {
+        const { data: famRows } = await supabaseAdmin
+          .from('family_members')
+          .select('*')
+          .ilike('email', cleanEmail)
+          .eq('is_owner', false)
+          .limit(1);
+        if (famRows && famRows[0]?.user_id && isValidUserUuid(famRows[0].user_id) && famRows[0].user_id !== userId) {
+          const ownerId = famRows[0].user_id;
+          let ownerName = 'Titular';
+          try {
+            const { data: ownerUser } = await supabaseAdmin.auth.admin.getUserById(ownerId);
+            ownerName = ownerUser?.user?.user_metadata?.name || ownerUser?.user?.email?.split('@')[0] || 'Titular';
+          } catch (_) {}
+          return {
+            isMember: true,
+            ownerId,
+            ownerName,
+            role: famRows[0].role || 'member',
+            relationshipType: famRows[0].type || 'linked',
+            status: famRows[0].status || 'active',
+          };
+        }
+      } catch (_) {}
+    }
+  }
+
+  // 3. Fallback em disco nas stores
+  if (userEmail) {
+    const cleanEmail = normalizeEmail(userEmail);
+    const storesDir = path.join(DATA_DIR, 'stores');
+    if (fs.existsSync(storesDir)) {
+      try {
+        const files = fs.readdirSync(storesDir);
+        for (const file of files) {
+          if (!file.endsWith('.json')) continue;
+          const ownerCandidate = file.replace('.json', '');
+          if (ownerCandidate === userId) continue;
+          try {
+            const content = JSON.parse(fs.readFileSync(path.join(storesDir, file), 'utf8'));
+            if (Array.isArray(content.familyMembers)) {
+              const found = content.familyMembers.find(m => normalizeEmail(m.email) === cleanEmail && !m.isOwner);
+              if (found) {
+                return {
+                  isMember: true,
+                  ownerId: ownerCandidate,
+                  ownerName: content.userProfile?.name || content.user?.name || 'Titular',
+                  role: found.role || 'member',
+                  relationshipType: found.type || 'linked',
+                  status: found.status || 'active',
+                };
+              }
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+  }
+
+  return { isMember: false, ownerId: canonicalId || userId };
+};
+
+// 3.01 ENDPOINT DE CONSULTA DE MEMBRESIA FAMILIAR (Permite com ou sem token para detecção pré-login)
+app.get('/api/family/membership', async (req, res) => {
+  let userId = null;
+  let userEmail = null;
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer '))
+    ? authHeader.slice(7).trim()
+    : req.headers['x-auth-token'];
+
+  if (token) {
+    try {
+      const auth = await authenticateAccessToken(token);
+      if (auth.valid) {
+        userId = auth.user.userId;
+        userEmail = auth.user.email;
+      }
+    } catch (_) {}
+  }
+
+  if (!userEmail && req.query.email) {
+    userEmail = normalizeEmail(req.query.email);
+  }
+
+  if (!userId && !userEmail) {
+    return res.status(400).json({ success: false, message: 'Informe um token de autenticação ou parâmetro email.' });
+  }
+
+  const info = await getEffectiveFamilyOwnerInfo(userId, userEmail);
+
+  // Se for membro e tivermos userId, garantir que o user_metadata no Supabase Auth tenha invited_by sincronizado
+  if (info.isMember && userId && supabaseAdmin && info.ownerId) {
+    try {
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: {
+          invited_by: info.ownerId,
+          invited_by_name: info.ownerName,
+          is_dependent: true,
+          role: 'member',
+          relationship_type: info.relationshipType || 'linked',
+        },
+      });
+    } catch (_) {}
+  }
+
+  return res.json({ success: true, ...info });
+});
+
 // 3. CONTINUOUS AUTO-SYNC: GET USER STORE (PROTECTED AGAINST BOLA / IDOR)
-app.get('/api/user/store', authenticateToken, (req, res) => {
+app.get('/api/user/store', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
+  const userEmail = req.user.email;
   if (!userId) {
     return res.status(400).json({ success: false, message: 'Identificador de usuário ausente no token.' });
   }
 
-  const storePath = getUserStorePath(userId);
+  const familyInfo = await getEffectiveFamilyOwnerInfo(userId, userEmail);
+  const targetUserId = familyInfo.isMember ? familyInfo.ownerId : userId;
+  const storePath = getUserStorePath(targetUserId);
+
   if (!fs.existsSync(storePath)) {
-    return res.json({ success: true, store: null, message: 'Nenhum dado salvo no servidor ainda.' });
+    return res.json({
+      success: true,
+      store: null,
+      message: 'Nenhum dado salvo no servidor ainda.',
+      ...familyInfo,
+    });
   }
 
   try {
     const raw = fs.readFileSync(storePath, 'utf8');
     const store = sanitizeStoreData(JSON.parse(raw));
+
+    // Reconciliar membros da família a partir de public.family_members
+    if (supabaseAdmin) {
+      try {
+        const { data: dbMembers } = await supabaseAdmin
+          .from('family_members')
+          .select('*')
+          .eq('user_id', targetUserId);
+        if (Array.isArray(dbMembers) && dbMembers.length > 0) {
+          if (!Array.isArray(store.familyMembers)) store.familyMembers = [];
+          for (const dm of dbMembers) {
+            const existingIdx = store.familyMembers.findIndex(sm =>
+              (dm.email && sm.email?.toLowerCase() === dm.email.toLowerCase()) || sm.id === dm.id
+            );
+            const memberObj = {
+              id: dm.id,
+              name: dm.name,
+              email: dm.email,
+              role: dm.role || 'member',
+              status: dm.status || 'active',
+              type: dm.type || 'linked',
+              isOwner: dm.is_owner || false,
+              joinedAt: dm.joined_at ? dm.joined_at.split('T')[0] : new Date().toISOString().split('T')[0],
+            };
+            if (existingIdx >= 0) {
+              store.familyMembers[existingIdx] = { ...store.familyMembers[existingIdx], ...memberObj };
+            } else {
+              store.familyMembers.push(memberObj);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     const stat = fs.statSync(storePath);
     return res.json({
       success: true,
       store,
       lastModified: stat.mtimeMs,
+      ...familyInfo,
     });
   } catch (e) {
     return res.status(500).json({ success: false, message: 'Erro ao ler dados do servidor.' });
@@ -682,7 +862,9 @@ app.get('/api/sync/events', async (req, res) => {
   }
 
   const userId = authentication.user.userId;
-  const canonicalId = getStoreIdentity(userId);
+  const userEmail = authentication.user.email;
+  const familyInfo = await getEffectiveFamilyOwnerInfo(userId, userEmail);
+  const canonicalId = familyInfo.isMember ? familyInfo.ownerId : getStoreIdentity(userId);
 
   // Derive CORS origin from whitelist (never wildcard)
   const requestOrigin = req.headers.origin;
@@ -728,15 +910,18 @@ app.get('/api/sync/events', async (req, res) => {
 });
 
 // 4. CONTINUOUS AUTO-SYNC: SAVE / SYNC USER STORE (PROTECTED & ATOMIC)
-app.post('/api/user/store', authenticateToken, (req, res) => {
+app.post('/api/user/store', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
+  const userEmail = req.user.email;
   const { store } = req.body;
 
   if (!userId || !store) {
     return res.status(400).json({ success: false, message: 'Dados da store são obrigatórios.' });
   }
 
-  const storePath = getUserStorePath(userId);
+  const familyInfo = await getEffectiveFamilyOwnerInfo(userId, userEmail);
+  const targetUserId = familyInfo.isMember ? familyInfo.ownerId : userId;
+  const storePath = getUserStorePath(targetUserId);
   const tempPath = `${storePath}.tmp`;
 
   try {
@@ -778,7 +963,7 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
 
     // Direct background sync with Supabase PostgreSQL using Admin SDK (bypasses RLS)
     if (supabaseAdmin) {
-      const postgresUserId = userId;
+      const postgresUserId = targetUserId;
       
       // 1. Sync cards
       if (Array.isArray(sanitizedStore.cards)) {
@@ -829,11 +1014,38 @@ app.post('/api/user/store', authenticateToken, (req, res) => {
           })
           .catch(err => console.warn('⚠️ Falha Supabase account upsert:', err.message));
       }
+
+      // 3. Sync family members: se o titular removeu membros da lista, sincronizar exclusão em public.family_members
+      if (Array.isArray(sanitizedStore.familyMembers)) {
+        try {
+          const currentIds = new Set(sanitizedStore.familyMembers.map(m => m.id).filter(Boolean));
+          const currentEmails = new Set(sanitizedStore.familyMembers.map(m => normalizeEmail(m.email)).filter(Boolean));
+          const { data: existingDbMembers } = await supabaseAdmin
+            .from('family_members')
+            .select('id, email')
+            .eq('user_id', postgresUserId);
+          if (Array.isArray(existingDbMembers)) {
+            for (const em of existingDbMembers) {
+              const emClean = normalizeEmail(em.email);
+              if (!currentIds.has(em.id) && (!emClean || !currentEmails.has(emClean))) {
+                await supabaseAdmin
+                  .from('family_members')
+                  .delete()
+                  .eq('user_id', postgresUserId)
+                  .eq('id', em.id);
+                console.log(`🗑️ [SUPABASE ADMIN] Membro familiar removido do PostgreSQL: ${em.id} (${em.email})`);
+              }
+            }
+          }
+        } catch (fmSyncErr) {
+          console.warn('⚠️ Falha ao reconciliar exclusão de family_members:', fmSyncErr.message);
+        }
+      }
     }
 
     // Instant real-time push broadcast to all other open clients (Web <-> Mobile)
     const originSessionId = req.headers['x-session-id'] || req.body?.sessionId;
-    broadcastStoreUpdate(userId, {
+    broadcastStoreUpdate(targetUserId, {
       type: 'STORE_UPDATED',
       timestamp: payload._serverTimestamp,
       store: sanitizedStore,
@@ -1242,6 +1454,7 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
   const rawEmail = String(req.body?.memberEmail || req.body?.email || '').trim();
   const cleanEmail = normalizeEmail(rawEmail);
   const relationshipType = req.body?.relationshipType || req.body?.type || 'linked';
+  const role = req.body?.role || 'editor';
 
   if (!memberName) {
     return res.status(400).json({ success: false, message: 'Informe o nome do membro convidado.' });
@@ -1260,18 +1473,122 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
     const storePath = getUserStorePath(inviterId);
     if (fs.existsSync(storePath)) {
       const store = JSON.parse(fs.readFileSync(storePath, 'utf8'));
-      if (store?.user?.name) {
+      if (store?.userProfile?.name) {
+        inviterName = store.userProfile.name.trim();
+      } else if (store?.user?.name) {
         inviterName = store.user.name.trim();
       }
     }
   } catch (_) {}
 
-  // Carregar e renderizar template de e-mail oficial
+  // 1. Persistir membro na tabela public.family_members do Supabase imediatamente
+  let familyMemberId = `fam-${Date.now()}`;
+  if (supabaseAdmin) {
+    try {
+      const { data: insertedMember, error: insertErr } = await supabaseAdmin.from('family_members').upsert({
+        id: familyMemberId,
+        user_id: inviterId,
+        name: memberName,
+        email: cleanEmail,
+        role,
+        status: 'pending',
+        type: relationshipType,
+        is_owner: false,
+        joined_at: new Date().toISOString(),
+      }).select().maybeSingle();
+
+      if (insertErr) {
+        console.warn('[FAMILY-INVITE] Aviso ao persistir em public.family_members:', insertErr.message);
+      } else if (insertedMember?.id) {
+        familyMemberId = insertedMember.id;
+        console.log(`[FAMILY-INVITE] Membro persistido em public.family_members com id ${familyMemberId}`);
+      }
+    } catch (dbEx) {
+      console.warn('[FAMILY-INVITE] Exceção em family_members upsert:', dbEx.message);
+    }
+  }
+
+  // 2. Persistir no array familyMembers da store local do Titular
+  try {
+    const titularStorePath = getUserStorePath(inviterId);
+    if (fs.existsSync(titularStorePath)) {
+      const titularStore = JSON.parse(fs.readFileSync(titularStorePath, 'utf8'));
+      if (!Array.isArray(titularStore.familyMembers)) titularStore.familyMembers = [];
+      const existingIdx = titularStore.familyMembers.findIndex(m => m.email?.toLowerCase() === cleanEmail);
+      const memberEntry = {
+        id: familyMemberId,
+        name: memberName,
+        email: cleanEmail,
+        role,
+        status: 'pending',
+        type: relationshipType,
+        isOwner: false,
+        joinedAt: new Date().toISOString(),
+      };
+      if (existingIdx >= 0) {
+        titularStore.familyMembers[existingIdx] = { ...titularStore.familyMembers[existingIdx], ...memberEntry };
+      } else {
+        titularStore.familyMembers.push(memberEntry);
+      }
+      fs.writeFileSync(titularStorePath, JSON.stringify(titularStore, null, 2), 'utf8');
+      console.log(`[FAMILY-INVITE] Membro atualizado na store do Titular: ${cleanEmail}`);
+    }
+  } catch (storeErr) {
+    console.warn('[FAMILY-INVITE] Aviso ao atualizar store local:', storeErr.message);
+  }
+
+  // 3. Gerar link e OTP no Supabase Auth usando generateLink (evita envio duplo)
+  let inviteCode = crypto.randomInt(100_000, 1_000_000).toString();
+  let confirmationUrl = `https://finly.lpaguiar.com.br/login?email=${encodeURIComponent(cleanEmail)}&invite=true&code=${inviteCode}`;
+
+  if (supabaseAdmin) {
+    try {
+      const genRes = await supabaseAdmin.auth.admin.generateLink({
+        type: 'invite',
+        email: cleanEmail,
+        options: {
+          data: {
+            name: memberName,
+            invited_by: inviterId,
+            invited_by_name: inviterName,
+            relationship_type: relationshipType,
+            role: 'member',
+          },
+          redirectTo: 'https://finly.lpaguiar.com.br/dashboard',
+        },
+      });
+
+      if (genRes.data?.properties?.email_otp) {
+        inviteCode = genRes.data.properties.email_otp;
+        confirmationUrl = `https://finly.lpaguiar.com.br/login?email=${encodeURIComponent(cleanEmail)}&invite=true&code=${inviteCode}`;
+        console.log(`[FAMILY-INVITE] Código OTP de convite gerado: ${inviteCode}`);
+      } else if (genRes.error?.code === 'email_exists' || genRes.error?.status === 422) {
+        // Usuário já cadastrado no Auth: atualizar metadata com o vínculo
+        console.log(`[FAMILY-INVITE] Usuário já registrado. Vinculando invited_by...`);
+        const { data: usersList } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = usersList?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+        if (existingUser) {
+          await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+            user_metadata: {
+              ...existingUser.user_metadata,
+              name: memberName || existingUser.user_metadata?.name,
+              invited_by: inviterId,
+              invited_by_name: inviterName,
+              relationship_type: relationshipType,
+              role: 'member',
+              is_dependent: true,
+            },
+          });
+        }
+      }
+    } catch (genErr) {
+      console.warn('[FAMILY-INVITE] generateLink erro/fallback:', genErr.message);
+    }
+  }
+
+  // 4. Carregar e renderizar template de e-mail oficial
   const templatePath = path.join(__dirname, 'email-templates', 'invite.html');
   let emailHtml = '';
-
-  const inviteCode = crypto.randomInt(100_000, 1_000_000).toString();
-  const confirmationUrl = `https://finly.lpaguiar.com.br/login?email=${encodeURIComponent(cleanEmail)}&invite=true`;
 
   if (fs.existsSync(templatePath)) {
     try {
@@ -1288,7 +1605,6 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
     }
   }
 
-  // Fallback caso o arquivo de template não exista ou falhe
   if (!emailHtml) {
     emailHtml = `
       <div style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#14151d;color:#fff;border-radius:16px;">
@@ -1301,31 +1617,17 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
     `;
   }
 
-  // Tentar notificar o Supabase Auth caso o usuário ainda não exista
-  if (supabaseAdmin) {
-    try {
-      await supabaseAdmin.auth.admin.inviteUserByEmail(cleanEmail, {
-        data: {
-          name: memberName,
-          invited_by: inviterId,
-          invited_by_name: inviterName,
-          relationship_type: relationshipType,
-        },
-      });
-      console.log(`[FAMILY-INVITE] Convite registrado no Supabase Auth para: ${cleanEmail}`);
-    } catch (sbErr) {
-      // Se o usuário já existe no Supabase, apenas prosseguimos com o envio do e-mail informativo
-      console.log(`[FAMILY-INVITE] Usuário já existente ou retorno Supabase: ${sbErr.message}`);
-    }
-  }
+  const textBody = `Olá, ${memberName}!\n\n${inviterName} convidou você para fazer parte do grupo familiar no Finly.\n\nPara aceitar o convite e acessar sua conta familiar, acesse:\n${confirmationUrl}\n\nCódigo de confirmação: ${inviteCode}\n\nFinly - Gestão Financeira Pessoal & Familiar\nhttps://finly.lpaguiar.com.br`;
 
-  // Enviar e-mail formatado via SMTP
+  // 5. Enviar e-mail formatado via SMTP com texto puro e html
   try {
     const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
     await transporter.sendMail({
       from: `"Finly" <${senderEmail}>`,
+      replyTo: inviterEmail || senderEmail,
       to: cleanEmail,
       subject: `${inviterName} convidou você para a Família Finly! 🤝`,
+      text: textBody,
       html: emailHtml,
     });
     console.log(`✅ [FAMILY-INVITE] E-mail de convite disparado com sucesso para ${cleanEmail} (convidado por ${inviterEmail})`);
@@ -1341,6 +1643,266 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
       error: mailError.message,
     });
   }
+});
+
+// 6.1 EXCLUSÃO DE MEMBRO FAMILIAR: DELETE /api/family/member/:id
+app.delete('/api/family/member/:id', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
+  const memberId = req.params.id;
+  const memberEmail = req.query.email ? normalizeEmail(req.query.email) : null;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Identificador do titular ausente.' });
+  }
+
+  try {
+    // 1. Remover de public.family_members
+    if (supabaseAdmin) {
+      if (memberId) {
+        await supabaseAdmin
+          .from('family_members')
+          .delete()
+          .eq('user_id', userId)
+          .eq('id', memberId);
+      }
+      if (memberEmail) {
+        await supabaseAdmin
+          .from('family_members')
+          .delete()
+          .eq('user_id', userId)
+          .ilike('email', memberEmail);
+      }
+
+      // Se o membro tiver conta no Supabase Auth vinculada a este titular, desvincular metadados!
+      if (memberEmail) {
+        try {
+          const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+          const targetUser = usersData?.users?.find(u => normalizeEmail(u.email) === memberEmail);
+          if (targetUser && targetUser.user_metadata?.invited_by === userId) {
+            await supabaseAdmin.auth.admin.updateUserById(targetUser.id, {
+              user_metadata: {
+                ...targetUser.user_metadata,
+                invited_by: null,
+                invited_by_name: null,
+                is_dependent: false,
+                role: 'user',
+              },
+            });
+            console.log(`[FAMILY-REMOVE] Usuário Auth ${targetUser.id} (${memberEmail}) desvinculado do titular ${userId}.`);
+          }
+        } catch (authErr) {
+          console.warn('[FAMILY-REMOVE] Aviso ao desvincular usuário do Auth:', authErr.message);
+        }
+      }
+    }
+
+    // 2. Remover da store do titular em disco
+    const titularStorePath = getUserStorePath(userId);
+    if (fs.existsSync(titularStorePath)) {
+      try {
+        const store = JSON.parse(fs.readFileSync(titularStorePath, 'utf8'));
+        if (Array.isArray(store.familyMembers)) {
+          store.familyMembers = store.familyMembers.filter(m => {
+            if (m.id === memberId) return false;
+            if (memberEmail && normalizeEmail(m.email) === memberEmail) return false;
+            return true;
+          });
+          fs.writeFileSync(titularStorePath, JSON.stringify(store, null, 2), 'utf8');
+        }
+      } catch (storeErr) {
+        console.warn('[FAMILY-REMOVE] Aviso ao atualizar store local:', storeErr.message);
+      }
+    }
+
+    // 3. Broadcast real-time update
+    broadcastStoreUpdate(userId, {
+      type: 'FAMILY_MEMBER_REMOVED',
+      memberId,
+      memberEmail,
+      timestamp: new Date().toISOString(),
+    });
+
+    console.log(`✅ [FAMILY-REMOVE] Membro ${memberId} (${memberEmail || ''}) removido da família pelo titular ${userId}.`);
+    return res.json({ success: true, message: 'Membro removido com sucesso do grupo familiar.' });
+  } catch (err) {
+    console.error('❌ [FAMILY-REMOVE] Erro ao remover membro:', err);
+    return res.status(500).json({ success: false, message: 'Erro ao remover membro familiar.' });
+  }
+});
+
+// Endpoint para ativação direta de convite e definição de senha
+app.post('/api/family/accept-invite', async (req, res) => {
+  const email = (req.body?.email || '').trim().toLowerCase();
+  const password = req.body?.password;
+  const name = req.body?.name?.trim();
+  const code = (req.body?.code || '').trim().replace(/\D/g, '');
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: 'Informe um e-mail válido.' });
+  }
+  if (!password || password.length < 6) {
+    return res.status(400).json({ success: false, message: 'A nova senha deve ter no mínimo 6 caracteres.' });
+  }
+
+  // 1. Localizar se o usuário possui convite na tabela public.family_members ou stores
+  let ownerId = null;
+  let ownerName = 'Titular';
+  let relationshipType = 'linked';
+  let memberRole = 'member';
+  let familyMemberRecord = null;
+
+  if (supabaseAdmin) {
+    try {
+      const { data: memberRows } = await supabaseAdmin
+        .from('family_members')
+        .select('*')
+        .ilike('email', email)
+        .order('created_at', { ascending: false });
+
+      if (memberRows && memberRows.length > 0) {
+        familyMemberRecord = memberRows[0];
+        ownerId = familyMemberRecord.user_id;
+        relationshipType = familyMemberRecord.type || 'linked';
+        memberRole = familyMemberRecord.role || 'member';
+      }
+    } catch (e) {
+      console.warn('[ACCEPT-INVITE] Erro ao consultar family_members:', e.message);
+    }
+  }
+
+  // Fallback: procurar nas stores dos usuários
+  if (!ownerId) {
+    const storesDir = path.join(DATA_DIR, 'stores');
+    if (fs.existsSync(storesDir)) {
+      const files = fs.readdirSync(storesDir);
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+        try {
+          const content = JSON.parse(fs.readFileSync(path.join(storesDir, file), 'utf8'));
+          if (Array.isArray(content.familyMembers)) {
+            const found = content.familyMembers.find(m => m.email?.toLowerCase() === email);
+            if (found) {
+              ownerId = file.replace('.json', '');
+              ownerName = content.userProfile?.name || content.user?.name || 'Titular';
+              relationshipType = found.type || 'linked';
+              memberRole = found.role || 'member';
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  if (ownerId && supabaseAdmin) {
+    try {
+      const { data: ownerUser } = await supabaseAdmin.auth.admin.getUserById(ownerId);
+      if (ownerUser?.user?.user_metadata?.name) {
+        ownerName = ownerUser.user.user_metadata.name;
+      }
+    } catch (_) {}
+  }
+
+  if (!ownerId) {
+    return res.status(404).json({
+      success: false,
+      message: 'Nenhum convite familiar ativo encontrado para este e-mail.',
+    });
+  }
+
+  // 2. Criar ou atualizar usuário no Supabase Auth
+  let targetUserId = null;
+  if (supabaseAdmin) {
+    try {
+      const { data: usersList } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = usersList?.users?.find(u => u.email?.toLowerCase() === email);
+
+      const userMetadata = {
+        name: name || existingUser?.user_metadata?.name || email.split('@')[0],
+        role: 'member',
+        invited_by: ownerId,
+        invited_by_name: ownerName,
+        relationship_type: relationshipType,
+        is_dependent: true,
+        email_verified: true,
+      };
+
+      if (existingUser) {
+        targetUserId = existingUser.id;
+        const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+          password,
+          email_confirm: true,
+          user_metadata: userMetadata,
+        });
+        if (updErr) {
+          console.error('[ACCEPT-INVITE] Erro ao atualizar usuário:', updErr.message);
+          return res.status(500).json({ success: false, message: 'Erro ao atualizar dados da conta: ' + updErr.message });
+        }
+      } else {
+        const { data: created, error: crtErr } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: userMetadata,
+        });
+        if (crtErr) {
+          console.error('[ACCEPT-INVITE] Erro ao criar usuário:', crtErr.message);
+          return res.status(500).json({ success: false, message: 'Erro ao criar conta de acesso: ' + crtErr.message });
+        }
+        targetUserId = created?.user?.id;
+      }
+    } catch (authEx) {
+      console.error('[ACCEPT-INVITE] Exceção Auth:', authEx);
+      return res.status(500).json({ success: false, message: 'Erro de comunicação com o serviço de autenticação.' });
+    }
+
+    // 3. Atualizar status na tabela public.family_members para 'active'
+    try {
+      await supabaseAdmin
+        .from('family_members')
+        .update({
+          status: 'active',
+          joined_at: new Date().toISOString(),
+        })
+        .ilike('email', email);
+    } catch (dbErr) {
+      console.warn('[ACCEPT-INVITE] Aviso ao atualizar public.family_members:', dbErr.message);
+    }
+  }
+
+  // 4. Atualizar status na store local do Titular
+  try {
+    const titularStorePath = getUserStorePath(ownerId);
+    if (fs.existsSync(titularStorePath)) {
+      const titularStore = JSON.parse(fs.readFileSync(titularStorePath, 'utf8'));
+      if (!Array.isArray(titularStore.familyMembers)) titularStore.familyMembers = [];
+      let changed = false;
+      titularStore.familyMembers = titularStore.familyMembers.map(m => {
+        if (m.email?.toLowerCase() === email) {
+          changed = true;
+          return {
+            ...m,
+            status: 'active',
+            joinedAt: m.joinedAt || new Date().toISOString().split('T')[0],
+          };
+        }
+        return m;
+      });
+      if (changed) {
+        fs.writeFileSync(titularStorePath, JSON.stringify(titularStore, null, 2), 'utf8');
+      }
+    }
+  } catch (storeEx) {
+    console.warn('[ACCEPT-INVITE] Aviso ao atualizar store titular:', storeEx.message);
+  }
+
+  console.log(`🎉 [ACCEPT-INVITE] Convite aceito por ${email}. Vinculado ao titular ${ownerId} (${ownerName})`);
+  return res.json({
+    success: true,
+    message: 'Convite aceito com sucesso! Bem-vindo à família Finly.',
+    ownerId,
+    ownerName,
+  });
 });
 
 // Serve static frontend in production if dist exists

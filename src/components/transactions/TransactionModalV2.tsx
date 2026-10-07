@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Calendar, ChevronDown, CreditCard, FileText, Layers, Paperclip, Repeat, Sparkles, Tag, Trash2, Upload, Wallet } from 'lucide-react';
+import { Bell, Calendar, ChevronDown, CreditCard, FileText, Layers, Paperclip, Repeat, Sparkles, Tag, Trash2, Upload, Wallet, User } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { DatePicker } from '../ui/DatePicker';
 import { useFinancial } from '../../context/FinancialContext';
+import { useAuth } from '../../context/AuthContext';
 import type {
   FinancialNature,
   RecurringExpenseSeries,
@@ -55,6 +56,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   initialPaymentMethod,
   editingTransaction = null,
 }) => {
+  const { currentUser } = useAuth();
   const {
     categories,
     accounts,
@@ -178,7 +180,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setTargetAccountId(tx?.targetAccountId || accounts.find(acc => acc.id !== (tx?.accountId || initialAccountId || accounts[0]?.id))?.id || '');
     setCardId(tx?.cardId || initialCardId || cards[0]?.id || '');
     setInvoiceMonth(tx?.invoiceMonth || getTodayString().slice(0, 7));
-    setSelectedMemberId(tx?.userId || tx?.relationships?.personId || 'owner');
+    if (tx) {
+      setSelectedMemberId(tx.userId || tx.relationships?.personId || 'owner');
+    } else {
+      const currentEmail = currentUser?.email?.toLowerCase();
+      const currentUid = currentUser?.id;
+      const matched = availableFamilyMembers.find(m =>
+        (currentEmail && m.email?.toLowerCase() === currentEmail) ||
+        (currentUid && m.id === currentUid)
+      );
+      setSelectedMemberId(matched ? matched.id : 'owner');
+    }
     const isEditingInstallment = Boolean(tx?.installments && (tx.installments.total > 1 || tx.installments.current > 1));
     setInstallment(isEditingInstallment);
     const count = Math.max(2, tx?.installments?.total || 2);
@@ -1038,9 +1050,43 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
           <div><label className={labelClass}>DATA</label><DatePicker value={date} onChange={value => { setDate(value); setStatus(value > getTodayString() ? 'scheduled' : 'completed'); }} variant="modal" /></div>
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={event => setDescription(event.target.value)} placeholder="Ex: Reserva mensal" /></div>
+          {availableFamilyMembers.length > 1 && (
+            <div>
+              <label className={labelClass}>RESPONSÁVEL PELA TRANSFERÊNCIA</label>
+              <OptionPicker
+                title="Selecionar Membro Responsável"
+                placeholder="Selecione o membro"
+                searchPlaceholder="Buscar membro..."
+                value={selectedMemberId}
+                onChange={val => setSelectedMemberId(String(val))}
+                options={availableFamilyMembers.map(m => ({
+                  value: m.id,
+                  label: formatMemberDisplayName(m.name),
+                  icon: <User className="w-4 h-4 text-purple-500" />,
+                }))}
+              />
+            </div>
+          )}
         </> : <>
           <div><label className={labelClass}>{dateLabel}</label><DatePicker value={date} onChange={handleDateChange} variant="modal" /></div>
           <div><label className={labelClass}>DESCRIÇÃO</label><input className={fieldClass} value={description} onChange={handleDescriptionChange} required /></div>
+          {availableFamilyMembers.length > 1 && (
+            <div>
+              <label className={labelClass}>RESPONSÁVEL PELO LANÇAMENTO</label>
+              <OptionPicker
+                title="Selecionar Membro Responsável"
+                placeholder="Selecione o membro"
+                searchPlaceholder="Buscar membro da família..."
+                value={selectedMemberId}
+                onChange={val => setSelectedMemberId(String(val))}
+                options={availableFamilyMembers.map(m => ({
+                  value: m.id,
+                  label: formatMemberDisplayName(m.name),
+                  icon: <User className="w-4 h-4 text-purple-500" />,
+                }))}
+              />
+            </div>
+          )}
           {predictedInfo && (
             <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/50 text-purple-700 dark:text-purple-300 text-xs font-semibold animate-in fade-in">
               <span className="flex items-center gap-1.5 truncate">
@@ -1441,26 +1487,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           )}
         </>}
-
-        {/* Responsável pelo Lançamento (exibido condicionalmente quando houver mais de 1 membro familiar cadastrado) */}
-        {availableFamilyMembers.length > 1 && (
-          <div>
-            <label className={labelClass}>RESPONSÁVEL PELO LANÇAMENTO</label>
-            <OptionPicker
-              title="Responsável pelo Lançamento"
-              placeholder="Selecione o responsável"
-              searchPlaceholder="Buscar membro..."
-              value={selectedMemberId}
-              onChange={val => setSelectedMemberId(String(val))}
-              options={availableFamilyMembers.map(member => ({
-                value: member.id,
-                label: `${formatMemberDisplayName(member.name)}${member.isOwner ? ' (Titular)' : ''}`,
-                sublabel: member.email || (member.isOwner ? 'Conta principal' : undefined),
-                icon: <span className="text-base">👤</span>,
-              }))}
-            />
-          </div>
-        )}
 
         <button type="button" onClick={() => setMoreDetails(value => !value)} className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-black"><span>Mais detalhes</span><ChevronDown className={`w-4 h-4 transition-transform ${moreDetails ? 'rotate-180' : ''}`} /></button>
         {moreDetails && <div className="space-y-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 p-3">

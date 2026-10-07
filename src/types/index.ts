@@ -379,7 +379,7 @@ export interface UserProfile {
   whatsappPhone?: string;
   avatarUrl?: string;
   currency: string;
-  role: 'user' | 'consultor' | 'admin';
+  role: 'user' | 'consultor' | 'admin' | 'member';
   theme: 'light' | 'dark' | 'system';
   showValues: boolean;
 }

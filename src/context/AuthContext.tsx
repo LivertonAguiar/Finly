@@ -54,7 +54,54 @@ const sanitizeUsersList = (users: any[]): AuthUser[] => {
     role: u.role || 'member',
     avatarUrl: u.avatarUrl,
     createdAt: u.createdAt || new Date().toISOString().split('T')[0],
+    isDependent: Boolean(u.isDependent),
+    invitedBy: u.invitedBy || undefined,
+    invitedByName: u.invitedByName || undefined,
+    relationshipType: u.relationshipType || undefined,
   }));
+};
+
+const mapSupabaseUserToAuthUser = (u: any): AuthUser => {
+  const meta = u.user_metadata || {};
+  const isDependent = Boolean((meta.invited_by && meta.invited_by !== u.id) || meta.is_dependent === true);
+  return {
+    id: u.id,
+    name: meta.name || u.email?.split('@')[0] || 'Usuário',
+    email: u.email || '',
+    phone: meta.phone,
+    role: isDependent ? 'member' : (meta.role || 'admin'),
+    avatarUrl: meta.avatar_url,
+    createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    invitedBy: meta.invited_by || undefined,
+    invitedByName: meta.invited_by_name || undefined,
+    relationshipType: meta.relationship_type || (isDependent ? 'linked' : undefined),
+    isDependent,
+  };
+};
+
+const enrichUserWithFamilyMembership = async (user: AuthUser, token?: string): Promise<AuthUser> => {
+  if (!user || user.id === DEFAULT_DEMO_USER.id) return user;
+  try {
+    const headers: Record<string, string> = {};
+    const authToken = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('finly_auth_token') : '');
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const targetEmail = encodeURIComponent(user.email || '');
+    const res = await fetch(getApiUrl(`/api/family/membership?email=${targetEmail}`), { headers });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && data?.isMember && data?.ownerId && data.ownerId !== user.id) {
+        return {
+          ...user,
+          role: 'member',
+          invitedBy: data.ownerId,
+          invitedByName: data.ownerName || user.invitedByName || 'Titular',
+          relationshipType: data.relationshipType || user.relationshipType || 'linked',
+          isDependent: true,
+        };
+      }
+    }
+  } catch (_) {}
+  return user;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -95,6 +142,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
 
+  const commitUserSession = (user: AuthUser, remember = true) => {
+    setCurrentUser(user);
+    setAllUsers(prev => [user, ...prev.filter(u => u.id !== user.id)]);
+    if (remember) {
+      localStorage.setItem(ACTIVE_SESSION_KEY, user.id);
+    } else {
+      sessionStorage.setItem(ACTIVE_SESSION_KEY, user.id);
+    }
+  };
+
   // Listen to Supabase Auth state changes
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -116,18 +173,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (refreshData?.session?.user && !refreshError) {
               const rs = refreshData.session;
               localStorage.setItem('finly_auth_token', rs.access_token);
-              const u = rs.user;
-              const recoveredUser: AuthUser = {
-                id: u.id,
-                name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-                email: u.email || '',
-                phone: u.user_metadata?.phone,
-                role: u.user_metadata?.role || 'admin',
-                avatarUrl: u.user_metadata?.avatar_url,
-                createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-              };
-              setCurrentUser(recoveredUser);
-              localStorage.setItem(ACTIVE_SESSION_KEY, recoveredUser.id);
+              const baseUser = mapSupabaseUserToAuthUser(rs.user);
+              commitUserSession(baseUser, true);
+              enrichUserWithFamilyMembership(baseUser, rs.access_token).then(enriched => {
+                if (enriched.isDependent) commitUserSession(enriched, true);
+              });
               console.info('[Finly Auth] Sessão Supabase restaurada com sucesso via refresh token.');
               return;
             }
@@ -149,18 +199,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // Token is 100% valid and verified by Gotrue
           localStorage.setItem('finly_auth_token', session.access_token);
-          const u = userData.user;
-          const mappedUser: AuthUser = {
-            id: u.id,
-            name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-            email: u.email || '',
-            phone: u.user_metadata?.phone,
-            role: u.user_metadata?.role || 'admin',
-            avatarUrl: u.user_metadata?.avatar_url,
-            createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-          };
-          setCurrentUser(mappedUser);
-          localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
+          const mappedUser = mapSupabaseUserToAuthUser(userData.user);
+          let finalUser = mappedUser;
+          try {
+            finalUser = await enrichUserWithFamilyMembership(mappedUser, session.access_token);
+          } catch (_) {}
+          commitUserSession(finalUser, true);
         } catch (err) {
           console.warn('[Finly Auth] Erro inesperado ao verificar sessão:', err);
         }
@@ -180,18 +224,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session.access_token) {
           localStorage.setItem('finly_auth_token', session.access_token);
         }
-        const u = session.user;
-        const mappedUser: AuthUser = {
-          id: u.id,
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-          email: u.email || '',
-          phone: u.user_metadata?.phone,
-          role: u.user_metadata?.role || 'admin',
-          avatarUrl: u.user_metadata?.avatar_url,
-          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-        };
-        setCurrentUser(mappedUser);
-        localStorage.setItem(ACTIVE_SESSION_KEY, mappedUser.id);
+        const mappedUser = mapSupabaseUserToAuthUser(session.user);
+        commitUserSession(mappedUser, true);
+        enrichUserWithFamilyMembership(mappedUser, session.access_token).then(enriched => {
+          if (enriched.isDependent) commitUserSession(enriched, true);
+        });
       } else if (event === 'SIGNED_OUT') {
         const activeId = localStorage.getItem(ACTIVE_SESSION_KEY);
         if (activeId !== DEFAULT_DEMO_USER.id) {
@@ -276,22 +313,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('finly_auth_token', data.session.access_token);
         }
         const u = data.user;
-        const loggedUser: AuthUser = {
-          id: u.id,
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-          email: u.email || '',
-          phone: u.user_metadata?.phone,
-          role: u.user_metadata?.role || 'admin',
-          avatarUrl: u.user_metadata?.avatar_url,
-          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-        };
-        setAllUsers(prev => [loggedUser, ...prev.filter(usr => usr.id !== loggedUser.id)]);
-        setCurrentUser(loggedUser);
-        if (remember) {
-          localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
-        } else {
-          sessionStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
-        }
+        const loggedUser = mapSupabaseUserToAuthUser(u);
+        let finalUser = loggedUser;
+        try {
+          finalUser = await enrichUserWithFamilyMembership(loggedUser, data.session?.access_token);
+        } catch (_) {}
+        commitUserSession(finalUser, remember);
         return { success: true };
       }
 
@@ -349,17 +376,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: 'Serviço de autenticação Supabase não está configurado.' };
     }
 
+    // Verificar se o e-mail possui convite familiar pendente para vincular automaticamente
+    let familyInviteData: any = null;
+    try {
+      const memRes = await fetch(getApiUrl(`/api/family/membership?email=${encodeURIComponent(cleanEmail)}`));
+      if (memRes.ok) {
+        const memJson = await memRes.json();
+        if (memJson?.success && memJson?.isMember && memJson?.ownerId) {
+          familyInviteData = memJson;
+        }
+      }
+    } catch (_) {}
+
+    const isDependent = Boolean(familyInviteData?.ownerId);
+    const metadata: Record<string, any> = {
+      name: name.trim(),
+      phone: phone ? phone.trim() : undefined,
+      role: isDependent ? 'member' : 'admin',
+      is_dependent: isDependent,
+    };
+    if (isDependent) {
+      metadata.invited_by = familyInviteData.ownerId;
+      metadata.invited_by_name = familyInviteData.ownerName || 'Titular';
+      metadata.relationship_type = familyInviteData.relationshipType || 'linked';
+    }
+
     // Supabase Auth: Single Source of Truth
     try {
       const { data, error } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
-          data: {
-            name: name.trim(),
-            phone: phone ? phone.trim() : undefined,
-            role: 'admin',
-          },
+          data: metadata,
         },
       });
 
@@ -399,12 +447,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: name.trim(),
           email: cleanEmail,
           phone: phone ? phone.trim() : undefined,
-          role: 'admin',
+          role: isDependent ? 'member' : 'admin',
           createdAt: new Date().toISOString().split('T')[0],
+          isDependent,
+          invitedBy: familyInviteData?.ownerId || undefined,
+          invitedByName: familyInviteData?.ownerName || undefined,
+          relationshipType: familyInviteData?.relationshipType || (isDependent ? 'linked' : undefined),
         };
-        setAllUsers(prev => [...prev.filter(u => u.id !== newUser.id), newUser]);
-        setCurrentUser(newUser);
-        localStorage.setItem(ACTIVE_SESSION_KEY, newUser.id);
+        commitUserSession(newUser, true);
         return { success: true, requiresEmailConfirmation: false };
       }
 
@@ -659,18 +709,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('finly_auth_token', res.data.session.access_token);
         }
         const u = res.data.user;
-        const loggedUser: AuthUser = {
-          id: u.id,
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Usuário',
-          email: u.email || '',
-          phone: u.user_metadata?.phone,
-          role: u.user_metadata?.role || 'admin',
-          avatarUrl: u.user_metadata?.avatar_url,
-          createdAt: u.created_at ? u.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-        };
-        setAllUsers(prev => [loggedUser, ...prev.filter(usr => usr.id !== loggedUser.id)]);
-        setCurrentUser(loggedUser);
-        localStorage.setItem(ACTIVE_SESSION_KEY, loggedUser.id);
+        const loggedUser = mapSupabaseUserToAuthUser(u);
+        let finalUser = loggedUser;
+        try {
+          finalUser = await enrichUserWithFamilyMembership(loggedUser, res.data.session?.access_token);
+        } catch (_) {}
+        commitUserSession(finalUser, true);
         return { success: true };
       }
 
