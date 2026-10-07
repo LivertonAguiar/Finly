@@ -844,7 +844,7 @@ export const DebtsPage: React.FC = () => {
               </label>
               <input
                 type="text"
-                placeholder="Ex: 878772194236-2"
+                placeholder="000000000000-0"
                 value={contractNumber}
                 onChange={e => setContractNumber(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white"

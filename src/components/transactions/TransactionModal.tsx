@@ -903,7 +903,7 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
                   <input
                     type="text"
                     required={isThirdParty}
-                    placeholder="Ex: Carlos (Amigo), Mãe, João..."
+                    placeholder="Nome da pessoa ou contato"
                     value={thirdPartyName}
                     onChange={e => setThirdPartyName(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-purple-300 dark:border-purple-800 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs"

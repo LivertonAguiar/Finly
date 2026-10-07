@@ -29,9 +29,9 @@ export const FamilyPage: React.FC = () => {
   const allMembers: FamilyMember[] = familyMembers.length > 0 ? familyMembers : [
     {
       id: 'mem-owner',
-      name: user.name || 'Liverton da Ponte Aguiar',
-      email: user.email || 'liverton.aguiar@hotmail.com',
-      phone: '85985949115',
+      name: user.name || 'Titular',
+      email: user.email || '',
+      phone: user.phone || '',
       role: 'admin',
       status: 'active',
       isOwner: true,
@@ -324,7 +324,7 @@ export const FamilyPage: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Ex: Mariane Farias"
+              placeholder="Nome completo do membro"
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"
@@ -338,7 +338,7 @@ export const FamilyPage: React.FC = () => {
             <input
               type="email"
               required
-              placeholder="Ex: mary@gmail.com"
+              placeholder="email@exemplo.com"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"
@@ -351,7 +351,7 @@ export const FamilyPage: React.FC = () => {
             </label>
             <input
               type="text"
-              placeholder="Ex: (85) 98594-9115"
+              placeholder="(00) 00000-0000"
               value={formPhone}
               onChange={(e) => setFormPhone(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-purple-600"

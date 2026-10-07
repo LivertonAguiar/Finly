@@ -358,7 +358,7 @@ export const FinlyAndroidMockup: React.FC<FinlyAndroidMockupProps> = ({
               <div className="flex items-center justify-between text-[9px] text-slate-400">
                 <div>
                   <div className="text-[7px]">TITULAR</div>
-                  <div className="font-bold text-slate-200">LIVERTON AGUIAR</div>
+                  <div className="font-bold text-slate-200">SEU NOME AQUI</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[7px]">MELHOR DIA</div>
