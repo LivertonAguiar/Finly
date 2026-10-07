@@ -83,7 +83,49 @@ export function isInvoicePaymentTransaction(tx: Transaction): boolean {
   if (tx.categoryId === 'cat-fatura-cartao') return true;
   if (tx.tags && tx.tags.includes('fatura') && (tx.tags.includes('cartao') || (tx.description && tx.description.toLowerCase().includes('pagamento fatura')))) return true;
   if (String(tx.id || '').startsWith('tx-pay-')) return true;
+  const desc = (tx.description || '').toLowerCase();
+  if (desc.includes('pagamento fatura') || desc.includes('pagamento de fatura') || desc.includes('pagto fatura')) return true;
   return false;
+}
+
+/**
+ * Determina com precisão se a fatura de um determinado cartão para um mês ('YYYY-MM') foi efetivamente paga.
+ * Uma fatura só é considerada paga se houver uma transação de liquidação/pagamento de fatura
+ * (isInvoicePaymentTransaction) com status 'completed' associada a este cartão e a este mês de referência.
+ */
+export function isCardInvoicePaid(
+  card: CreditCard,
+  monthPrefix: string,
+  transactions: Transaction[]
+): boolean {
+  if (!card || !monthPrefix || !Array.isArray(transactions) || transactions.length === 0) return false;
+
+  const normalizedMonth = monthPrefix.replace('/', '-');
+  const cardNameNormalized = (card.name || '').trim().toLowerCase();
+
+  return transactions.some(t => {
+    if (!t || t.status !== 'completed') return false;
+    if (!isInvoicePaymentTransaction(t)) return false;
+
+    const descLower = (t.description || '').toLowerCase();
+    const notesLower = (t.notes || '').toLowerCase();
+
+    // 1. Identificar se refere-se a este cartão
+    const matchesCard =
+      (t.cardId && t.cardId === card.id) ||
+      (cardNameNormalized.length > 0 && (descLower.includes(cardNameNormalized) || notesLower.includes(cardNameNormalized)));
+
+    if (!matchesCard) return false;
+
+    // 2. Identificar se refere-se a este mês de competência da fatura
+    const matchesMonth =
+      t.invoiceMonth === normalizedMonth ||
+      descLower.includes(normalizedMonth) ||
+      notesLower.includes(normalizedMonth) ||
+      (t.date && t.date.slice(0, 7) === normalizedMonth);
+
+    return matchesMonth;
+  });
 }
 
 /**

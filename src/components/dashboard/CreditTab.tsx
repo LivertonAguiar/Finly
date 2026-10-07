@@ -37,7 +37,7 @@ import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 import { exportInvoiceCSV, exportInvoicePDF, downloadCSV } from '../../utils/reportExportService';
 import { resolveCategory } from '../../utils/categoryResolver';
-import { getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
+import { getCardTransactionInvoiceMonth, isCardInvoicePaid } from '../../utils/invoiceCalculator';
 
 interface CreditTabProps {
   onOpenNewCard: () => void;
@@ -111,7 +111,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       const monthTxs = cardTxs.filter(t => getCardTransactionInvoiceMonth(t, card) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
-      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
+      const isPaid = isCardInvoicePaid(card, currentMonthPrefix, transactions);
       
       // Open current month invoice amount
       const currentOpenInvoice = isPaid ? 0 : invoiceTotal;

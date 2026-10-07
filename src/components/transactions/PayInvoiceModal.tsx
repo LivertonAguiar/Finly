@@ -6,7 +6,7 @@ import { formatCurrency, formatDate, getCurrentMonth, getTodayString } from '../
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { CreditCard as CardIcon, Calendar, CheckCircle2, AlertCircle, Clock, DollarSign, Wallet, Lightbulb, X, Download } from 'lucide-react';
 import { exportInvoiceCSV } from '../../utils/reportExportService';
-import { getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
+import { getCardTransactionInvoiceMonth, isCardInvoicePaid } from '../../utils/invoiceCalculator';
 
 interface PayInvoiceModalProps {
   isOpen: boolean;
@@ -84,8 +84,8 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
   
   const isInvoiceAlreadyPaid = useMemo(() => {
     if (!selectedCard || invoiceTransactions.length === 0) return false;
-    return invoiceTransactions.every(t => t.status === 'completed');
-  }, [selectedCard, invoiceTransactions]);
+    return isCardInvoicePaid(selectedCard, targetPrefix, transactions);
+  }, [selectedCard, targetPrefix, transactions, invoiceTransactions.length]);
 
   const totalInvoice = useMemo(() => {
     return invoiceTransactions.reduce((sum, t) => sum + t.amount, 0);

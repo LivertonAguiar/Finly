@@ -4,6 +4,7 @@
  */
 import { LocalNotifications } from '@capacitor/local-notifications';
 import type { CreditCard, Transaction } from '../types';
+import { isCardInvoicePaid } from './invoiceCalculator';
 
 export interface FinancialNotificationCandidate {
   key: string;
@@ -523,7 +524,7 @@ export function checkAndTriggerScheduledAlerts(data: {
         (t: any) => t.cardId === card.id && t.type === 'expense' && !t.ignored && t.date?.startsWith(currentMonthPrefix)
       );
       const invoiceTotal = cardExpenses.reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
-      const isPaid = cardExpenses.length > 0 && cardExpenses.every((t: any) => t.status === 'completed');
+      const isPaid = isCardInvoicePaid(card, currentMonthPrefix, data.transactions || []);
 
       // CRITICAL: Do NOT notify if there is no invoice to pay (zero expenses or already paid)
       if (invoiceTotal <= 0 || isPaid) return;

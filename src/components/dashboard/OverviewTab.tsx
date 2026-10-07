@@ -60,7 +60,7 @@ import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos'
 import { MonthPickerPopover } from '../ui/MonthPickerPopover';
 import { PayInvoiceModal } from '../transactions/PayInvoiceModal';
 import { Modal } from '../ui/Modal';
-import { isInvoicePaymentTransaction, allocateCardTransaction, getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
+import { isInvoicePaymentTransaction, isCardInvoicePaid, allocateCardTransaction, getCardTransactionInvoiceMonth } from '../../utils/invoiceCalculator';
 import { useTranslation } from '../../utils/i18n';
 import { isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
 
@@ -815,7 +815,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       const monthTxs = cardTxs.filter(t => getCardTransactionInvoiceMonth(t, card) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
-      const isPaid = monthTxs.length > 0 && monthTxs.every(t => t.status === 'completed');
+      const isPaid = isCardInvoicePaid(card, currentMonthPrefix, transactions);
 
       // Open current month invoice amount
       const currentOpenInvoice = isPaid ? 0 : invoiceTotal;

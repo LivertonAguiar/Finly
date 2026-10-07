@@ -4,6 +4,7 @@ import {
   doesTransactionBelongToMonth,
   getEffectiveTransactionDate,
   isInvoicePaymentTransaction,
+  isCardInvoicePaid,
   ViewRegime,
 } from '../src/utils/invoiceCalculator';
 import { Transaction, CreditCard } from '../src/types';
@@ -132,5 +133,68 @@ assert.equal(totalDespesas, 1550, 'Total de despesas econômicas deve ser 1550')
 // Categorias originais do cartão preservadas
 const supermercado = outEconomicExpenses.find(t => t.id === 'tx-card-1');
 assert.equal(supermercado?.categoryId, 'cat-alimentacao', 'Categoria original da compra de cartão deve ser preservada');
+
+// 4. Validação de status de pagamento de fatura (isCardInvoicePaid)
+// Cenário A: Compras normais de cartão com status 'completed' SEM transação de pagamento de fatura -> NÃO deve ser considerada paga!
+const txCardCompletedSemPagamento: Transaction = {
+  id: 'tx-card-completed',
+  userId: 'user-1',
+  type: 'expense',
+  amount: 3402.59,
+  date: '2026-10-02',
+  cardId: 'card-1',
+  invoiceMonth: '2026-10',
+  description: 'Compra no Cartão Nubank',
+  categoryId: 'cat-alimentacao',
+  status: 'completed',
+  createdAt: '2026-10-02T10:00:00.000Z',
+};
+
+assert.equal(
+  isCardInvoicePaid(mockCard, '2026-10', [txCardCompletedSemPagamento]),
+  false,
+  'Fatura com despesas completed NÃO deve ser marcada como paga sem lançamento de pagamento de fatura'
+);
+
+// Cenário B: Fatura com pagamento efetivo de fatura registrado para Outubro/2026 -> DEVE ser considerada paga!
+const txPagamentoEfetivoFatura: Transaction = {
+  id: 'tx-pay-123456',
+  userId: 'user-1',
+  type: 'expense',
+  amount: 3402.59,
+  date: '2026-10-07',
+  accountId: 'acc-1',
+  description: 'Pagamento Fatura Nubank Black (2026-10)',
+  categoryId: 'cat-fatura-cartao',
+  tags: ['fatura', 'cartao'],
+  status: 'completed',
+  notes: 'Pagamento de fatura referente a 2026-10',
+  createdAt: '2026-10-07T12:00:00.000Z',
+};
+
+assert.equal(
+  isCardInvoicePaid(mockCard, '2026-10', [txCardCompletedSemPagamento, txPagamentoEfetivoFatura]),
+  true,
+  'Fatura com lançamento de pagamento deve ser considerada PAGA'
+);
+
+// Cenário C: Pagamento registrado para outro mês (Novembro) não deve marcar Outubro como pago
+assert.equal(
+  isCardInvoicePaid(mockCard, '2026-11', [txCardCompletedSemPagamento]),
+  false,
+  'Fatura de Novembro sem pagamento não deve constar como paga'
+);
+
+// Cenário D: Pagamento de outro cartão não deve marcar o Nubank como pago
+const mockOutroCartao: CreditCard = {
+  ...mockCard,
+  id: 'card-2',
+  name: 'Itaú Personalité',
+};
+assert.equal(
+  isCardInvoicePaid(mockOutroCartao, '2026-10', [txPagamentoEfetivoFatura]),
+  false,
+  'Pagamento de um cartão não deve pagar outro cartão'
+);
 
 console.log('✅ Todos os testes de regimes de competência, vencimento, compras de cartão e faturas passaram com 100% de sucesso!');
