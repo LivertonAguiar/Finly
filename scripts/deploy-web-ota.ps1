@@ -105,7 +105,7 @@ Remove-Item -LiteralPath $distTar -Force -ErrorAction SilentlyContinue
 
 # 7. Validate endpoints on VPS
 Write-Host "Validando manifesto e download do bundle na VPS..." -ForegroundColor Yellow
-$manifestCheck = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsS http://127.0.0.1:3000/api/app/manifest"
+$manifestCheck = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsS https://finly.lpaguiar.com.br/api/app/manifest"
 if ($LASTEXITCODE -ne 0 -or -not $manifestCheck) {
     throw "Falha ao validar endpoint /api/app/manifest na VPS."
 }

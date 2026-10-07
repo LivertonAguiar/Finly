@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.78",
+    "version": "1.1.79",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.78/finly-v1.1.78.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.78.21",
+    "version": "1.1.79.3",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.78.21.zip",
-    "sha256": "74033c26f5ffd6525396528eabc26bb93fb7fcf855ee339d7f0fc910f6d12c71",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.3.zip",
+    "sha256": "f6a5d08a6d06232b07c03cdd25f6b9c73b3f1bfa699316ac1b3eb30f6682f459",
     "mandatory": true,
     "releaseDate": "2026-10-07",
-    "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável."
+    "notes": "Exibição limpa do responsável apenas com nome, sem e-mail, e correções na gestão familiar."
   }
 }
