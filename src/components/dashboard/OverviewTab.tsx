@@ -2207,22 +2207,22 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </div>
 
               {/* Métricas do Cartão em Grid Equilibrado de Alto Contraste (Fatura, Futuras, Disponível) */}
-              <div className="grid grid-cols-3 gap-1.5 pt-0.5 pl-1.5">
-                <div className="px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06]">
-                  <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold block leading-none">Fatura</span>
-                  <span className="text-xs font-black text-slate-900 dark:text-white block mt-1 truncate">
+              <div className="grid grid-cols-3 gap-2 pt-0.5 pl-1.5">
+                <div className="px-2.5 py-2 rounded-xl bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-300 font-bold block leading-none uppercase tracking-wider text-center">Fatura</span>
+                  <span className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white block mt-1 truncate w-full text-center">
                     {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                   </span>
                 </div>
-                <div className="px-2.5 py-1.5 rounded-xl bg-amber-500/[0.08] dark:bg-amber-500/[0.10] border border-amber-500/20">
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold block leading-none">Futuras</span>
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 block mt-1 truncate">
+                <div className="px-2.5 py-2 rounded-xl bg-amber-500/[0.08] dark:bg-amber-500/[0.12] border border-amber-500/25 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-400 font-bold block leading-none uppercase tracking-wider text-center">Futuras</span>
+                  <span className="text-xs sm:text-[13px] font-black text-amber-600 dark:text-amber-400 block mt-1 truncate w-full text-center">
                     {formatCurrency(card.futureInstallmentsTotal, user.currency, !user.showValues)}
                   </span>
                 </div>
-                <div className="px-2.5 py-1.5 rounded-xl bg-emerald-500/[0.08] dark:bg-emerald-500/[0.10] border border-emerald-500/20 text-right">
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block leading-none">Disponível</span>
-                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 block mt-1 truncate">
+                <div className="px-2.5 py-2 rounded-xl bg-emerald-500/[0.08] dark:bg-emerald-500/[0.12] border border-emerald-500/25 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block leading-none uppercase tracking-wider text-center">Disponível</span>
+                  <span className="text-xs sm:text-[13px] font-black text-emerald-600 dark:text-emerald-400 block mt-1 truncate w-full text-center">
                     {card.isOverLimit 
                       ? formatCurrency(card.overLimitAmount, user.currency, !user.showValues)
                       : formatCurrency(card.availableLimit, user.currency, !user.showValues)}

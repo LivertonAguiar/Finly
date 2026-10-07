@@ -272,7 +272,7 @@ export const ProfilePage: React.FC = () => {
             type="text"
             value={phone}
             onChange={e => setPhone(e.target.value)}
-            placeholder="(00) 00000-0000"
+            placeholder="(85) 98594-9115"
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100"
           />
         </div>
