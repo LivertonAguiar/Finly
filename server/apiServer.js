@@ -813,8 +813,9 @@ app.get('/api/user/store', authenticateToken, async (req, res) => {
         if (Array.isArray(dbMembers) && dbMembers.length > 0) {
           if (!Array.isArray(store.familyMembers)) store.familyMembers = [];
           for (const dm of dbMembers) {
+            const cleanDmEmail = normalizeEmail(dm.email);
             const existingIdx = store.familyMembers.findIndex(sm =>
-              (dm.email && sm.email?.toLowerCase() === dm.email.toLowerCase()) || sm.id === dm.id
+              sm.id === dm.id || (cleanDmEmail && normalizeEmail(sm.email) === cleanDmEmail)
             );
             const memberObj = {
               id: dm.id,
@@ -834,6 +835,21 @@ app.get('/api/user/store', authenticateToken, async (req, res) => {
           }
         }
       } catch (_) {}
+    }
+
+    // Deduplicação defensiva estrita em store.familyMembers antes do envio
+    if (Array.isArray(store.familyMembers)) {
+      const seenFmIds = new Set();
+      const seenFmEmails = new Set();
+      store.familyMembers = store.familyMembers.filter(m => {
+        if (!m || !m.id) return false;
+        const cleanEmail = normalizeEmail(m.email);
+        if (seenFmIds.has(m.id)) return false;
+        if (cleanEmail && seenFmEmails.has(cleanEmail)) return false;
+        seenFmIds.add(m.id);
+        if (cleanEmail) seenFmEmails.add(cleanEmail);
+        return true;
+      });
     }
 
     const stat = fs.statSync(storePath);
@@ -1482,9 +1498,31 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
   } catch (_) {}
 
   // 1. Persistir membro na tabela public.family_members do Supabase imediatamente
-  let familyMemberId = `fam-${Date.now()}`;
+  let familyMemberId = req.body.memberId || `fam-${Date.now()}`;
   if (supabaseAdmin) {
     try {
+      // Checar se já existe registro com este e-mail para este titular
+      const { data: existingRows } = await supabaseAdmin
+        .from('family_members')
+        .select('id')
+        .eq('user_id', inviterId)
+        .ilike('email', cleanEmail);
+
+      if (Array.isArray(existingRows) && existingRows.length > 0) {
+        // Reutiliza o ID pré-existente para não gerar linha órfã ou duplicada
+        familyMemberId = existingRows[0].id;
+        // Expurgar duplicatas antigas adicionais com o mesmo email
+        if (existingRows.length > 1) {
+          for (let i = 1; i < existingRows.length; i++) {
+            await supabaseAdmin
+              .from('family_members')
+              .delete()
+              .eq('user_id', inviterId)
+              .eq('id', existingRows[i].id);
+          }
+        }
+      }
+
       const { data: insertedMember, error: insertErr } = await supabaseAdmin.from('family_members').upsert({
         id: familyMemberId,
         user_id: inviterId,
@@ -1514,7 +1552,12 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
     if (fs.existsSync(titularStorePath)) {
       const titularStore = JSON.parse(fs.readFileSync(titularStorePath, 'utf8'));
       if (!Array.isArray(titularStore.familyMembers)) titularStore.familyMembers = [];
-      const existingIdx = titularStore.familyMembers.findIndex(m => m.email?.toLowerCase() === cleanEmail);
+
+      // Remover duplicatas prévias pelo ID ou e-mail
+      titularStore.familyMembers = titularStore.familyMembers.filter(m =>
+        m.id !== familyMemberId && normalizeEmail(m.email) !== cleanEmail
+      );
+
       const memberEntry = {
         id: familyMemberId,
         name: memberName,
@@ -1523,13 +1566,9 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
         status: 'pending',
         type: relationshipType,
         isOwner: false,
-        joinedAt: new Date().toISOString(),
+        joinedAt: new Date().toISOString().split('T')[0],
       };
-      if (existingIdx >= 0) {
-        titularStore.familyMembers[existingIdx] = { ...titularStore.familyMembers[existingIdx], ...memberEntry };
-      } else {
-        titularStore.familyMembers.push(memberEntry);
-      }
+      titularStore.familyMembers.push(memberEntry);
       fs.writeFileSync(titularStorePath, JSON.stringify(titularStore, null, 2), 'utf8');
       console.log(`[FAMILY-INVITE] Membro atualizado na store do Titular: ${cleanEmail}`);
     }
@@ -1633,6 +1672,7 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
     console.log(`✅ [FAMILY-INVITE] E-mail de convite disparado com sucesso para ${cleanEmail} (convidado por ${inviterEmail})`);
     return res.json({
       success: true,
+      memberId: familyMemberId,
       message: `Convite enviado com sucesso para ${cleanEmail}!`,
     });
   } catch (mailError) {
@@ -1649,10 +1689,32 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
 app.delete('/api/family/member/:id', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const memberId = req.params.id;
-  const memberEmail = req.query.email ? normalizeEmail(req.query.email) : null;
+  let memberEmail = req.query.email ? normalizeEmail(req.query.email) : null;
 
   if (!userId) {
     return res.status(401).json({ success: false, message: 'Identificador do titular ausente.' });
+  }
+
+  const titularStorePath = getUserStorePath(userId);
+
+  // Se o e-mail não veio na query, busca no banco ou na store local
+  if (!memberEmail && supabaseAdmin && memberId) {
+    try {
+      const { data: dbMem } = await supabaseAdmin
+        .from('family_members')
+        .select('email')
+        .eq('user_id', userId)
+        .eq('id', memberId)
+        .maybeSingle();
+      if (dbMem?.email) memberEmail = normalizeEmail(dbMem.email);
+    } catch (_) {}
+  }
+  if (!memberEmail && fs.existsSync(titularStorePath)) {
+    try {
+      const store = JSON.parse(fs.readFileSync(titularStorePath, 'utf8'));
+      const found = (store.familyMembers || []).find(m => m.id === memberId);
+      if (found?.email) memberEmail = normalizeEmail(found.email);
+    } catch (_) {}
   }
 
   try {

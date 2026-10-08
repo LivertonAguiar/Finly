@@ -99,10 +99,20 @@ export const FamilyPage: React.FC = () => {
       return;
     }
 
-    // Verificar duplicação de e-mail no grupo
-    const duplicate = allMembers.find(m => (!editingMember || m.id !== editingMember.id) && m.email?.trim().toLowerCase() === cleanEmail);
-    if (duplicate) {
+    // Verificar duplicação de e-mail ou nome no grupo
+    const duplicateEmail = allMembers.find(
+      m => (!editingMember || m.id !== editingMember.id) && m.email?.trim().toLowerCase() === cleanEmail
+    );
+    if (duplicateEmail) {
       setFormError('Já existe um membro ou titular cadastrado com este e-mail.');
+      return;
+    }
+
+    const duplicateName = allMembers.find(
+      m => (!editingMember || m.id !== editingMember.id) && m.name?.trim().toLowerCase() === cleanName
+    );
+    if (duplicateName) {
+      setFormError(`Já existe um membro ou dependente cadastrado com o nome "${cleanName}".`);
       return;
     }
 
@@ -131,11 +141,15 @@ export const FamilyPage: React.FC = () => {
           type: formType,
         });
 
-        setIsAddModalOpen(false);
-        setFeedbackBanner({
-          type: 'success',
-          message: res.message || `Convite enviado com sucesso para ${cleanEmail}! O membro consta como pendente de aceite até confirmar o acesso.`,
-        });
+        if (res.success) {
+          setIsAddModalOpen(false);
+          setFeedbackBanner({
+            type: 'success',
+            message: res.message || `Convite enviado com sucesso para ${cleanEmail}!`,
+          });
+        } else {
+          setFormError(res.message || 'Não foi possível cadastrar o membro no momento.');
+        }
       } catch (err: any) {
         setFormError(err?.message || 'Ocorreu um erro ao enviar o convite.');
       } finally {

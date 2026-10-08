@@ -42,6 +42,7 @@ import { selectSeriesTargets, SeriesMutationScope, SeriesTargetSelection } from 
 import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
 import { normalizeUserDebts } from '../data/caixaFinancingContract';
 import { isInvoicePaymentTransaction, getCardTransactionInvoiceMonth } from '../utils/invoiceCalculator';
+import { deduplicateFamilyMembers } from '../utils/familyUtils';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -1106,7 +1107,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                     : m
                 ));
               }
-              setFamilyMembers(updatedMembers);
+              setFamilyMembers(deduplicateFamilyMembers(updatedMembers, currentUser?.email));
             }
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
@@ -1207,7 +1208,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 : m
             ));
           }
-          setFamilyMembers(updatedMembers);
+          setFamilyMembers(deduplicateFamilyMembers(updatedMembers, currentUser?.email));
         }
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
@@ -1371,7 +1372,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setInvestments(store.investments);
         setTransactions(store.transactions);
         setTransactionSeries(store.transactionSeries);
-        setFamilyMembers(store.familyMembers);
+        setFamilyMembers(deduplicateFamilyMembers(store.familyMembers, currentUser?.email));
         setNotifications(store.notifications);
         return;
       }
@@ -1420,7 +1421,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setInvestments(cleanInvestments);
             setTransactions(migratedSeries.transactions);
             setTransactionSeries(migratedSeries.series);
-            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(sbStore.familyMembers);
+            if (Array.isArray(sbStore.familyMembers)) setFamilyMembers(deduplicateFamilyMembers(sbStore.familyMembers, currentUser?.email));
             if (Array.isArray(sbStore.notifications) && sbStore.notifications.length > 0) {
               setNotifications(sbStore.notifications);
             }
@@ -1496,7 +1497,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setInvestments(cleanInvestments);
         setTransactions(migratedSeries.transactions);
         setTransactionSeries(migratedSeries.series);
-        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(serverStore.familyMembers);
+        if (Array.isArray(serverStore.familyMembers)) setFamilyMembers(deduplicateFamilyMembers(serverStore.familyMembers, currentUser?.email));
         if (Array.isArray(serverStore.notifications) && serverStore.notifications.length > 0) {
           setNotifications(serverStore.notifications);
         }
@@ -1522,7 +1523,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setInvestments(store.investments);
         setTransactions(store.transactions);
         setTransactionSeries(store.transactionSeries);
-        setFamilyMembers(store.familyMembers);
+        setFamilyMembers(deduplicateFamilyMembers(store.familyMembers, currentUser?.email));
         setNotifications(store.notifications);
         hasInitialRemoteSyncFinishedRef.current = true;
         isStoreLoadedForUserIdRef.current = effectiveStoreUserId;
@@ -2928,30 +2929,41 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Family Members
   const inviteFamilyMember = async (member: Omit<FamilyMember, 'id' | 'joinedAt'>): Promise<{ success: boolean; message?: string }> => {
+    const cleanEmail = member.email?.trim().toLowerCase();
+    const cleanName = member.name?.trim().toLowerCase();
+
+    // 1. Prevenir duplicatas antes de inserir
+    const existing = familyMembers.find(m => {
+      if (cleanEmail && m.email?.trim().toLowerCase() === cleanEmail) return true;
+      if (!cleanEmail && cleanName && m.name?.trim().toLowerCase() === cleanName) return true;
+      return false;
+    });
+
+    if (existing) {
+      return { success: false, message: 'Já existe um membro ou dependente com estes dados no grupo familiar.' };
+    }
+
+    const generatedMemberId = `fam-${Date.now()}`;
     const newMember: FamilyMember = {
       ...member,
-      id: `fam-${Date.now()}`,
+      id: generatedMemberId,
       status: 'pending',
       joinedAt: getTodayString(),
     };
-    setFamilyMembers(prev => [...prev, newMember]);
+
+    setFamilyMembers(prev => deduplicateFamilyMembers([...prev, newMember], currentUser?.email));
     markLocalMutation();
 
     try {
-      let token = '';
-      if (typeof localStorage !== 'undefined') {
-        token = localStorage.getItem('finly_auth_token') || '';
-      }
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      if (userId && userId !== 'guest') headers['x-user-id'] = userId;
-
+      const authHeaders = apiSync.getAuthHeaders(effectiveStoreUserId);
       const res = await fetch(getApiUrl('/api/family/invite'), {
         method: 'POST',
-        headers,
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
+          memberId: generatedMemberId,
           memberName: newMember.name,
           memberEmail: newMember.email,
           relationshipType: newMember.type,
@@ -2961,6 +2973,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       const data = await res.json().catch(() => null);
       if (res.ok && data?.success) {
+        if (data.memberId && data.memberId !== generatedMemberId) {
+          // Se o servidor reutilizou um ID existente do banco, sincronizar no estado local
+          setFamilyMembers(prev => prev.map(m => m.id === generatedMemberId ? { ...m, id: data.memberId } : m));
+        }
         addNotification({
           title: 'Convite Enviado',
           message: `E-mail de convite enviado para ${newMember.email}`,
@@ -2976,20 +2992,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const resendFamilyInvite = async (member: FamilyMember): Promise<{ success: boolean; message?: string }> => {
     try {
-      let token = '';
-      if (typeof localStorage !== 'undefined') {
-        token = localStorage.getItem('finly_auth_token') || '';
-      }
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      if (userId && userId !== 'guest') headers['x-user-id'] = userId;
-
+      const authHeaders = apiSync.getAuthHeaders(effectiveStoreUserId);
       const res = await fetch(getApiUrl('/api/family/invite'), {
         method: 'POST',
-        headers,
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
+          memberId: member.id,
           memberName: member.name,
           memberEmail: member.email,
           relationshipType: member.type,
@@ -3019,23 +3030,31 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const removeFamilyMember = (id: string) => {
     const memberToDelete = familyMembers.find(m => m.id === id);
-    setFamilyMembers(prev => prev.filter(m => m.id !== id));
+    const targetEmail = memberToDelete?.email?.trim().toLowerCase();
+    const targetName = memberToDelete?.name?.trim().toLowerCase();
+
+    // 1. Remove do estado local todas as ocorrências correspondentes (por ID, e-mail ou nome)
+    setFamilyMembers(prev => prev.filter(m => {
+      if (m.id === id) return false;
+      if (targetEmail && m.email?.trim().toLowerCase() === targetEmail) return false;
+      if (!targetEmail && targetName && m.name?.trim().toLowerCase() === targetName) return false;
+      return true;
+    }));
     markLocalMutation();
 
     if (currentUser && !isDemoUser()) {
+      // 2. Remove do Supabase por ID e também por e-mail (garante limpeza de eventuais duplicatas históricas)
       if (isSupabaseConfigured()) {
-        void supabaseDb.deleteFamilyMember(effectiveStoreUserId, id);
+        void supabaseDb.deleteFamilyMember(effectiveStoreUserId, id, targetEmail);
       }
 
-      // Exclusão definitiva no backend (public.family_members, store em disco e desvinculação em auth.users)
+      // 3. Exclusão definitiva no backend (public.family_members, store em disco e desvinculação em auth.users)
       try {
-        let token = localStorage.getItem('finly_auth_token') || '';
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const query = memberToDelete?.email ? `?email=${encodeURIComponent(memberToDelete.email)}` : '';
+        const authHeaders = apiSync.getAuthHeaders(effectiveStoreUserId);
+        const query = targetEmail ? `?email=${encodeURIComponent(targetEmail)}` : '';
         fetch(getApiUrl(`/api/family/member/${encodeURIComponent(id)}${query}`), {
           method: 'DELETE',
-          headers,
+          headers: authHeaders,
         }).catch(err => console.warn('Aviso ao chamar DELETE /api/family/member:', err));
       } catch (_) {}
     }

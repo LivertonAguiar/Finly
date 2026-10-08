@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { normalizeUserDebts } from '../data/caixaFinancingContract';
+import { deduplicateFamilyMembers } from '../utils/familyUtils';
 import {
   Account,
   CreditCard,
@@ -387,7 +388,7 @@ export class SupabaseDbService {
         updatedAt: r.updated_at,
       }));
 
-      const familyMembers: FamilyMember[] = (familyRes.data || []).map(r => ({
+      const rawFamilyMembers: FamilyMember[] = (familyRes.data || []).map(r => ({
         id: r.id,
         name: r.name,
         email: r.email,
@@ -398,6 +399,7 @@ export class SupabaseDbService {
         isOwner: Boolean(r.is_owner),
         joinedAt: r.joined_at,
       }));
+      const familyMembers: FamilyMember[] = deduplicateFamilyMembers(rawFamilyMembers, userProfile?.email);
 
       const notifications: NotificationItem[] = (notificationsRes.data || []).map(r => ({
         id: r.id,
@@ -787,9 +789,10 @@ export class SupabaseDbService {
         await supabase.from('investments').upsert(rows);
       }
 
-      // 10. Family Members Upsert
-      if (store.familyMembers && store.familyMembers.length > 0) {
-        const rows = store.familyMembers.map(m => ({
+      // 10. Family Members Upsert & Reconciliação de Exclusão
+      const cleanFamilyMembers = deduplicateFamilyMembers(store.familyMembers || [], store.userProfile?.email);
+      if (cleanFamilyMembers.length > 0) {
+        const rows = cleanFamilyMembers.map(m => ({
           id: m.id,
           user_id: targetUserId,
           name: m.name,
@@ -804,6 +807,37 @@ export class SupabaseDbService {
         await supabase.from('family_members').upsert(rows);
       }
 
+      // Reconciliar e deletar do PostgreSQL membros que foram removidos do store
+      try {
+        const { data: currentDbMembers } = await supabase
+          .from('family_members')
+          .select('id, email')
+          .eq('user_id', targetUserId);
+
+        if (Array.isArray(currentDbMembers) && currentDbMembers.length > 0) {
+          const activeIds = new Set(cleanFamilyMembers.map(m => m.id).filter(Boolean));
+          const activeEmails = new Set(
+            cleanFamilyMembers
+              .map(m => m.email?.trim().toLowerCase())
+              .filter(Boolean)
+          );
+
+          for (const dbMem of currentDbMembers) {
+            const dbEmail = dbMem.email?.trim().toLowerCase() || '';
+            // Se o ID não está ativo E o email (se existir) não está ativo, remove do Supabase
+            if (!activeIds.has(dbMem.id) && (!dbEmail || !activeEmails.has(dbEmail))) {
+              await supabase
+                .from('family_members')
+                .delete()
+                .eq('user_id', targetUserId)
+                .eq('id', dbMem.id);
+            }
+          }
+        }
+      } catch (fmReconcileErr) {
+        console.warn('⚠️ Supabase saveEntireStore family_members reconcile warning:', fmReconcileErr);
+      }
+
       return true;
     } catch (err) {
       console.error('❌ Supabase saveEntireStore error:', err);
@@ -812,20 +846,34 @@ export class SupabaseDbService {
   }
 
   /**
-   * Delete single family member from Supabase PostgreSQL
+   * Delete single family member from Supabase PostgreSQL (by ID and optionally by email)
    */
-  public async deleteFamilyMember(userId: string, memberId: string): Promise<boolean> {
+  public async deleteFamilyMember(userId: string, memberId: string, memberEmail?: string): Promise<boolean> {
     if (!isSupabaseConfigured() || !userId) return false;
     try {
-      const { error } = await supabase
-        .from('family_members')
-        .delete()
-        .eq('user_id', userId)
-        .eq('id', memberId);
-      if (error) {
-        console.warn('⚠️ Supabase deleteFamilyMember error:', error.message);
-        return false;
+      if (memberId) {
+        const { error } = await supabase
+          .from('family_members')
+          .delete()
+          .eq('user_id', userId)
+          .eq('id', memberId);
+        if (error) {
+          console.warn('⚠️ Supabase deleteFamilyMember by ID error:', error.message);
+        }
       }
+
+      const cleanEmail = memberEmail?.trim().toLowerCase();
+      if (cleanEmail) {
+        const { error: emailErr } = await supabase
+          .from('family_members')
+          .delete()
+          .eq('user_id', userId)
+          .ilike('email', cleanEmail);
+        if (emailErr) {
+          console.warn('⚠️ Supabase deleteFamilyMember by email error:', emailErr.message);
+        }
+      }
+
       return true;
     } catch (_) {
       return false;

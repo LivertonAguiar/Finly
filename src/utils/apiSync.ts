@@ -140,7 +140,7 @@ class ApiSyncService {
     this.statusListeners.forEach(l => l(status));
   }
 
-  private getAuthHeaders(userId: string | null = this.currentUserId): Record<string, string> {
+  public getAuthHeaders(userId: string | null = this.currentUserId): Record<string, string> {
     const headers: Record<string, string> = {};
     if (typeof window !== 'undefined') {
       let token = '';
