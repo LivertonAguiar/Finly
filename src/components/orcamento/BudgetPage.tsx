@@ -600,49 +600,49 @@ export const BudgetPage: React.FC = () => {
         /* MATRIZ ANUAL (JAN A DEZ) - MGO STYLE FULL YEAR ORÇAMENTO / REALIZADO / DIF */
         /* ========================================================================= */
         <div className="space-y-4">
-          <div className="p-6 rounded-[28px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 overflow-hidden">
+          <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[28px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4 overflow-hidden">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <span>📊</span> Matriz Anual de Orçamento ({selectedMatrixYear})
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-[11px] sm:text-xs text-slate-400">
                   Comparativo de Planejado (PLAN.), Realizado (REAL.) e Diferença (DIF.) mês a mês
                 </p>
               </div>
             </div>
 
             {/* Matrix Data Table */}
-            <div className="overflow-x-auto scrollbar-thin pb-3 -mx-6 px-6">
-              <table className="w-full border-collapse text-xs select-none">
+            <div className="overflow-x-auto scrollbar-thin pb-2 -mx-4 sm:-mx-6 border-t border-slate-200/80 dark:border-slate-800/80">
+              <table className="w-full border-separate border-spacing-0 text-xs select-none">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#1E1E22]">
-                    <th className="sticky left-0 z-30 bg-slate-100 dark:bg-[#1E1E22] p-3 text-left font-black text-slate-800 dark:text-slate-200 min-w-[240px] max-w-[280px] border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
-                      Categoria / Subcategoria
+                  <tr className="bg-slate-50 dark:bg-[#1E1E22]">
+                    <th className="sticky left-0 z-30 bg-slate-100 dark:bg-[#1E1E22] p-2.5 sm:p-3 text-left font-black text-slate-800 dark:text-slate-200 w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px] border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
+                      <div className="truncate">Categoria / Subcategoria</div>
                     </th>
                     {matrixMonths.map(m => (
                       <th
                         key={m.prefix}
                         colSpan={3}
-                        className="p-2.5 text-center font-black text-slate-700 dark:text-slate-300 border-l border-slate-200 dark:border-slate-800 min-w-[270px] whitespace-nowrap"
+                        className="p-2 sm:p-2.5 text-center font-black text-slate-700 dark:text-slate-300 border-b border-l border-slate-200 dark:border-slate-800 min-w-[225px] sm:min-w-[270px] whitespace-nowrap bg-slate-50 dark:bg-[#1E1E22]"
                       >
                         {m.name}
                       </th>
                     ))}
                   </tr>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-[#18181C]">
-                    <th className="sticky left-0 z-30 bg-slate-200/90 dark:bg-[#18181C] p-2 text-left font-extrabold text-slate-500 dark:text-slate-400 border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
-                      Detalhamento
+                  <tr className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-[#18181C]">
+                    <th className="sticky left-0 z-30 bg-slate-200 dark:bg-[#18181C] p-2 text-left font-extrabold text-slate-600 dark:text-slate-400 w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px] border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
+                      <div className="truncate">Detalhamento</div>
                     </th>
                     {matrixMonths.map(m => (
                       <React.Fragment key={`sub-${m.prefix}`}>
-                        <th className="p-1.5 text-right font-bold text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-800 min-w-[90px] whitespace-nowrap">
+                        <th className="p-1.5 text-right font-bold text-slate-500 dark:text-slate-400 border-b border-l border-slate-200 dark:border-slate-800 min-w-[75px] sm:min-w-[90px] whitespace-nowrap bg-slate-100 dark:bg-[#18181C]">
                           Plan.
                         </th>
-                        <th className="p-1.5 text-right font-bold text-slate-500 dark:text-slate-400 min-w-[90px] whitespace-nowrap">
+                        <th className="p-1.5 text-right font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 min-w-[75px] sm:min-w-[90px] whitespace-nowrap bg-slate-100 dark:bg-[#18181C]">
                           Real.
                         </th>
-                        <th className="p-1.5 text-right font-bold text-slate-500 dark:text-slate-400 min-w-[90px] whitespace-nowrap">
+                        <th className="p-1.5 text-right font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 min-w-[75px] sm:min-w-[90px] whitespace-nowrap bg-slate-100 dark:bg-[#18181C]">
                           Dif.
                         </th>
                       </React.Fragment>
@@ -650,7 +650,7 @@ export const BudgetPage: React.FC = () => {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <tbody>
                   {/* ======================================= */}
                   {/* SEÇÃO 1: ENTRADAS / RECEITAS            */}
                   {/* ======================================= */}
@@ -658,19 +658,21 @@ export const BudgetPage: React.FC = () => {
                     onClick={() => setShowIncomesInMatrix(prev => !prev)}
                     className="bg-[#E8F8F0] dark:bg-[#132A1E] font-black cursor-pointer hover:bg-emerald-100/80 dark:hover:bg-[#183425] transition-colors"
                   >
-                    <td className="sticky left-0 z-20 bg-[#E8F8F0] dark:bg-[#132A1E] p-3 text-emerald-800 dark:text-emerald-400 flex items-center gap-2 border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                      {showIncomesInMatrix ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                      <span className="truncate">💰 ENTRADAS (RECEITAS)</span>
+                    <td className="sticky left-0 z-20 bg-[#E8F8F0] dark:bg-[#132A1E] p-2.5 sm:p-3 text-emerald-800 dark:text-emerald-400 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                      <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+                        {showIncomesInMatrix ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+                        <span className="truncate">💰 ENTRADAS</span>
+                      </div>
                     </td>
                     {matrixData.totalIncomes.map((tot, idx) => (
                       <React.Fragment key={`tot-inc-${idx}`}>
-                        <td className="p-2.5 text-right text-slate-600 dark:text-slate-400 font-bold border-l border-emerald-200/60 dark:border-emerald-900/40 min-w-[90px] whitespace-nowrap tabular-nums">
+                        <td className="p-2 sm:p-2.5 text-right text-slate-600 dark:text-slate-400 font-bold border-b border-l border-emerald-200/60 dark:border-emerald-900/40 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                           {formatCurrency(tot.plan, user.currency, !user.showValues)}
                         </td>
-                        <td className="p-2.5 text-right text-emerald-600 dark:text-emerald-400 font-black min-w-[90px] whitespace-nowrap tabular-nums">
+                        <td className="p-2 sm:p-2.5 text-right text-emerald-600 dark:text-emerald-400 font-black border-b border-emerald-200/40 dark:border-emerald-900/20 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                           {formatCurrency(tot.real, user.currency, !user.showValues)}
                         </td>
-                        <td className={`p-2.5 text-right font-black min-w-[90px] whitespace-nowrap tabular-nums ${tot.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className={`p-2 sm:p-2.5 text-right font-black border-b border-emerald-200/40 dark:border-emerald-900/20 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums ${tot.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {formatCurrency(tot.dif, user.currency, !user.showValues)}
                         </td>
                       </React.Fragment>
@@ -685,47 +687,49 @@ export const BudgetPage: React.FC = () => {
                       return (
                         <React.Fragment key={cat.id}>
                           <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="sticky left-0 z-20 bg-white dark:bg-[#18181B] p-2.5 flex items-center justify-between border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                              <div className="flex items-center gap-2 truncate min-w-0">
-                                <span className="shrink-0">{cat.icon}</span>
-                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{cat.name}</span>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0 ml-1">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedCatId(cat.id);
-                                    const currentPlan = getCategoryPlanned(cat.id, `${selectedMatrixYear}-01`, 'income');
-                                    setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
-                                    setIsCategoryModalOpen(true);
-                                  }}
-                                  className="p-1 text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                                  title={`Editar Planejado (${cat.name})`}
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                {hasSubs && (
+                            <td className="sticky left-0 z-20 bg-white dark:bg-[#18181B] p-2 sm:p-2.5 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                              <div className="flex items-center justify-between gap-1 w-full">
+                                <div className="flex items-center gap-1.5 truncate min-w-0">
+                                  <span className="shrink-0 text-sm">{cat.icon}</span>
+                                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate text-[11px] sm:text-xs">{cat.name}</span>
+                                </div>
+                                <div className="flex items-center gap-0.5 shrink-0">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      toggleCategoryExpand(cat.id);
+                                      setSelectedCatId(cat.id);
+                                      const currentPlan = getCategoryPlanned(cat.id, `${selectedMatrixYear}-01`, 'income');
+                                      setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
+                                      setIsCategoryModalOpen(true);
                                     }}
-                                    className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                                    className="p-1 text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                    title={`Editar Planejado (${cat.name})`}
                                   >
-                                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                )}
+                                  {hasSubs && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleCategoryExpand(cat.id);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                                    >
+                                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             {cat.monthlyValues.map((v, idx) => (
                               <React.Fragment key={`inc-${cat.id}-${idx}`}>
-                                <td className="p-2 text-right text-slate-500 dark:text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums font-semibold">
+                                <td className="p-2 text-right text-slate-500 dark:text-slate-400 border-b border-l border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums font-semibold">
                                   {formatCurrency(v.plan, user.currency, !user.showValues)}
                                 </td>
-                                <td className="p-2 text-right text-slate-800 dark:text-slate-200 font-black min-w-[90px] whitespace-nowrap tabular-nums">
+                                <td className="p-2 text-right text-slate-800 dark:text-slate-200 font-black border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                   {formatCurrency(v.real, user.currency, !user.showValues)}
                                 </td>
-                                <td className={`p-2 text-right font-bold min-w-[90px] whitespace-nowrap tabular-nums ${v.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                                <td className={`p-2 text-right font-bold border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums ${v.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
                                   {formatCurrency(v.dif, user.currency, !user.showValues)}
                                 </td>
                               </React.Fragment>
@@ -736,18 +740,20 @@ export const BudgetPage: React.FC = () => {
                           {isExpanded &&
                             cat.subcategories.map(sub => (
                               <tr key={sub.id} className="bg-slate-50/60 dark:bg-[#1C1C20] text-[11px]">
-                                <td className="sticky left-0 z-20 bg-slate-50 dark:bg-[#1C1C20] pl-8 p-2 text-slate-500 dark:text-slate-400 truncate border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                                  ↳ {sub.name}
+                                <td className="sticky left-0 z-20 bg-slate-50 dark:bg-[#1C1C20] pl-5 sm:pl-8 p-1.5 sm:p-2 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                                  <div className="truncate text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px]">
+                                    ↳ {sub.name}
+                                  </div>
                                 </td>
                                 {sub.monthlyValues.map((sv, sIdx) => (
                                   <React.Fragment key={`sub-val-${sub.id}-${sIdx}`}>
-                                    <td className="p-1.5 text-right text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums">
+                                    <td className="p-1.5 text-right text-slate-400 border-b border-l border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                       {sv.plan > 0 ? formatCurrency(sv.plan, user.currency, !user.showValues) : '-'}
                                     </td>
-                                    <td className="p-1.5 text-right text-slate-600 dark:text-slate-300 font-bold min-w-[90px] whitespace-nowrap tabular-nums">
+                                    <td className="p-1.5 text-right text-slate-600 dark:text-slate-300 font-bold border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                       {formatCurrency(sv.real, user.currency, !user.showValues)}
                                     </td>
-                                    <td className="p-1.5 text-right text-slate-400 min-w-[90px] whitespace-nowrap tabular-nums">
+                                    <td className="p-1.5 text-right text-slate-400 border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                       {sv.plan > 0 ? formatCurrency(sv.dif, user.currency, !user.showValues) : '-'}
                                     </td>
                                   </React.Fragment>
@@ -765,19 +771,21 @@ export const BudgetPage: React.FC = () => {
                     onClick={() => setShowExpensesInMatrix(prev => !prev)}
                     className="bg-[#FDECEE] dark:bg-[#2B1418] font-black cursor-pointer hover:bg-rose-100/80 dark:hover:bg-[#34181D] transition-colors"
                   >
-                    <td className="sticky left-0 z-20 bg-[#FDECEE] dark:bg-[#2B1418] p-3 text-rose-800 dark:text-rose-400 flex items-center gap-2 border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                      {showExpensesInMatrix ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                      <span className="truncate">💸 SAÍDAS (DESPESAS)</span>
+                    <td className="sticky left-0 z-20 bg-[#FDECEE] dark:bg-[#2B1418] p-2.5 sm:p-3 text-rose-800 dark:text-rose-400 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                      <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+                        {showExpensesInMatrix ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+                        <span className="truncate">💸 SAÍDAS</span>
+                      </div>
                     </td>
                     {matrixData.totalExpenses.map((tot, idx) => (
                       <React.Fragment key={`tot-exp-${idx}`}>
-                        <td className="p-2.5 text-right text-slate-600 dark:text-slate-400 font-bold border-l border-rose-200/60 dark:border-rose-900/40 min-w-[90px] whitespace-nowrap tabular-nums">
+                        <td className="p-2 sm:p-2.5 text-right text-slate-600 dark:text-slate-400 font-bold border-b border-l border-rose-200/60 dark:border-rose-900/40 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                           {formatCurrency(tot.plan, user.currency, !user.showValues)}
                         </td>
-                        <td className="p-2.5 text-right text-[#ef5350] font-black min-w-[90px] whitespace-nowrap tabular-nums">
+                        <td className="p-2 sm:p-2.5 text-right text-[#ef5350] font-black border-b border-rose-200/40 dark:border-rose-900/20 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                           {formatCurrency(tot.real, user.currency, !user.showValues)}
                         </td>
-                        <td className={`p-2.5 text-right font-black min-w-[90px] whitespace-nowrap tabular-nums ${tot.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className={`p-2 sm:p-2.5 text-right font-black border-b border-rose-200/40 dark:border-rose-900/20 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums ${tot.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {formatCurrency(tot.dif, user.currency, !user.showValues)}
                         </td>
                       </React.Fragment>
@@ -792,47 +800,49 @@ export const BudgetPage: React.FC = () => {
                       return (
                         <React.Fragment key={cat.id}>
                           <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="sticky left-0 z-20 bg-white dark:bg-[#18181B] p-2.5 flex items-center justify-between border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                              <div className="flex items-center gap-2 truncate min-w-0">
-                                <span className="shrink-0">{cat.icon}</span>
-                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{cat.name}</span>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0 ml-1">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedCatId(cat.id);
-                                    const currentPlan = getCategoryPlanned(cat.id, `${selectedMatrixYear}-01`, 'expense');
-                                    setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
-                                    setIsCategoryModalOpen(true);
-                                  }}
-                                  className="p-1 text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                                  title={`Editar Teto (${cat.name})`}
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                {hasSubs && (
+                            <td className="sticky left-0 z-20 bg-white dark:bg-[#18181B] p-2 sm:p-2.5 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                              <div className="flex items-center justify-between gap-1 w-full">
+                                <div className="flex items-center gap-1.5 truncate min-w-0">
+                                  <span className="shrink-0 text-sm">{cat.icon}</span>
+                                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate text-[11px] sm:text-xs">{cat.name}</span>
+                                </div>
+                                <div className="flex items-center gap-0.5 shrink-0">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      toggleCategoryExpand(cat.id);
+                                      setSelectedCatId(cat.id);
+                                      const currentPlan = getCategoryPlanned(cat.id, `${selectedMatrixYear}-01`, 'expense');
+                                      setCategoryBudgetLimit(currentPlan > 0 ? currentPlan.toString() : '');
+                                      setIsCategoryModalOpen(true);
                                     }}
-                                    className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                                    className="p-1 text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                    title={`Editar Teto (${cat.name})`}
                                   >
-                                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                )}
+                                  {hasSubs && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleCategoryExpand(cat.id);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-purple-600 cursor-pointer"
+                                    >
+                                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             {cat.monthlyValues.map((v, idx) => (
                               <React.Fragment key={`exp-${cat.id}-${idx}`}>
-                                <td className="p-2 text-right text-slate-500 dark:text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums font-semibold">
+                                <td className="p-2 text-right text-slate-500 dark:text-slate-400 border-b border-l border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums font-semibold">
                                   {formatCurrency(v.plan, user.currency, !user.showValues)}
                                 </td>
-                                <td className="p-2 text-right text-slate-800 dark:text-slate-200 font-black min-w-[90px] whitespace-nowrap tabular-nums">
+                                <td className="p-2 text-right text-slate-800 dark:text-slate-200 font-black border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                   {formatCurrency(v.real, user.currency, !user.showValues)}
                                 </td>
-                                <td className={`p-2 text-right font-bold min-w-[90px] whitespace-nowrap tabular-nums ${v.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                <td className={`p-2 text-right font-bold border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums ${v.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                   {formatCurrency(v.dif, user.currency, !user.showValues)}
                                 </td>
                               </React.Fragment>
@@ -843,18 +853,20 @@ export const BudgetPage: React.FC = () => {
                           {isExpanded &&
                             cat.subcategories.map(sub => (
                               <tr key={sub.id} className="bg-slate-50/60 dark:bg-[#1C1C20] text-[11px]">
-                                <td className="sticky left-0 z-20 bg-slate-50 dark:bg-[#1C1C20] pl-8 p-2 text-slate-500 dark:text-slate-400 truncate border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                                  ↳ {sub.name}
+                                <td className="sticky left-0 z-20 bg-slate-50 dark:bg-[#1C1C20] pl-5 sm:pl-8 p-1.5 sm:p-2 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                                  <div className="truncate text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px]">
+                                    ↳ {sub.name}
+                                  </div>
                                 </td>
                                 {sub.monthlyValues.map((sv, sIdx) => (
                                   <React.Fragment key={`sub-val-exp-${sub.id}-${sIdx}`}>
-                                    <td className="p-1.5 text-right text-slate-400 border-l border-slate-100 dark:border-slate-800/60 min-w-[90px] whitespace-nowrap tabular-nums">
+                                    <td className="p-1.5 text-right text-slate-400 border-b border-l border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                       {sv.plan > 0 ? formatCurrency(sv.plan, user.currency, !user.showValues) : '-'}
                                     </td>
-                                    <td className="p-1.5 text-right text-slate-600 dark:text-slate-300 font-bold min-w-[90px] whitespace-nowrap tabular-nums">
+                                    <td className="p-1.5 text-right text-slate-600 dark:text-slate-300 font-bold border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                       {formatCurrency(sv.real, user.currency, !user.showValues)}
                                     </td>
-                                    <td className="p-1.5 text-right text-slate-400 min-w-[90px] whitespace-nowrap tabular-nums">
+                                    <td className="p-1.5 text-right text-slate-400 border-b border-slate-100 dark:border-slate-800/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                                       {sv.plan > 0 ? formatCurrency(sv.dif, user.currency, !user.showValues) : '-'}
                                     </td>
                                   </React.Fragment>
@@ -868,19 +880,19 @@ export const BudgetPage: React.FC = () => {
                   {/* ======================================= */}
                   {/* SEÇÃO 3: RESULTADO LÍQUIDO DO MÊS       */}
                   {/* ======================================= */}
-                  <tr className="bg-[#F3E8FF] dark:bg-[#241333] font-black text-xs border-t-2 border-purple-300 dark:border-purple-800">
-                    <td className="sticky left-0 z-20 bg-[#F3E8FF] dark:bg-[#241333] p-3 text-purple-900 dark:text-purple-300 border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[280px]">
-                      🎯 RESULTADO LÍQUIDO
+                  <tr className="bg-[#F3E8FF] dark:bg-[#241333] font-black text-xs">
+                    <td className="sticky left-0 z-20 bg-[#F3E8FF] dark:bg-[#241333] p-2.5 sm:p-3 text-purple-900 dark:text-purple-300 border-b border-r-2 border-slate-200 dark:border-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)] w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[160px] sm:max-w-[280px]">
+                      <div className="truncate font-black">🎯 RESULTADO LÍQUIDO</div>
                     </td>
                     {matrixData.netBalance.map((net, idx) => (
                       <React.Fragment key={`net-${idx}`}>
-                        <td className="p-2.5 text-right text-slate-700 dark:text-slate-300 font-black border-l border-purple-200 dark:border-purple-900 min-w-[90px] whitespace-nowrap tabular-nums">
+                        <td className="p-2 sm:p-2.5 text-right text-slate-700 dark:text-slate-300 font-black border-b border-l border-purple-200 dark:border-purple-900 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums">
                           {formatCurrency(net.plan, user.currency, !user.showValues)}
                         </td>
-                        <td className={`p-2.5 text-right font-black min-w-[90px] whitespace-nowrap tabular-nums ${net.real >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className={`p-2 sm:p-2.5 text-right font-black border-b border-purple-200/60 dark:border-purple-900/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums ${net.real >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {formatCurrency(net.real, user.currency, !user.showValues)}
                         </td>
-                        <td className={`p-2.5 text-right font-black min-w-[90px] whitespace-nowrap tabular-nums ${net.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className={`p-2 sm:p-2.5 text-right font-black border-b border-purple-200/60 dark:border-purple-900/60 min-w-[75px] sm:min-w-[90px] whitespace-nowrap tabular-nums ${net.dif >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {formatCurrency(net.dif, user.currency, !user.showValues)}
                         </td>
                       </React.Fragment>
@@ -890,6 +902,7 @@ export const BudgetPage: React.FC = () => {
               </table>
             </div>
           </div>
+
         </div>
       ) : (
         /* ========================================================================= */

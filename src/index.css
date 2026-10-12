@@ -66,6 +66,16 @@ html.dark input.borderless-stepper-input:focus-visible {
   -webkit-focus-ring-color: transparent !important;
 }
 
+/* Recharts: Remove default solid grey/white cursor rectangle on BarCharts (dark and light themes) */
+.recharts-rectangle.recharts-tooltip-cursor,
+.recharts-tooltip-cursor {
+  display: none !important;
+  fill: transparent !important;
+  stroke: transparent !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 :root {
   --app-bg: #121214;
   --app-card-bg: #18181B;

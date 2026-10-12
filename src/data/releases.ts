@@ -36,11 +36,33 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-09-30';
+export const CURRENT_BUILD_DATE = '2026-10-12';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-10-12',
+    summary: 'Ajustes visuais no Dashboard e Matriz Orçamentária no mobile, além de blindagem de SMTP contra e-mails para domínios fictícios.',
+    highlights: [
+      {
+        title: 'Matriz Orçamentária Mobile',
+        description: 'Tabela anual com alinhamento sticky sólido, sem sobreposição de colunas ou transparência indesejada em telas menores.',
+        type: 'visual',
+      },
+      {
+        title: 'Refinamento do Dashboard',
+        description: 'Removida régua vertical cinza no gráfico de fluxo de caixa, ajustada margem monetária do eixo Y e aplicado realce do dia selecionado.',
+        type: 'visual',
+      },
+      {
+        title: 'Segurança e Integridade SMTP',
+        description: 'Bloqueio estrito no backend contra disparo de e-mails para domínios inexistentes ou de teste no servidor Gmail pessoal.',
+        type: 'fix',
+      },
+    ],
+  },
+  {
+    version: '1.1.78',
     releaseDate: '2026-09-30',
     summary: 'Segurança reforçada, assistente com confirmação explícita, carregamento inicial mais leve e operação da VPS com backup restaurável.',
     highlights: [

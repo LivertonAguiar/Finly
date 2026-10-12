@@ -478,6 +478,37 @@ const GENERIC_RECOVERY_MESSAGE = 'Se existir uma conta para este e-mail, enviare
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email);
 
+const BLOCKED_FICTIONAL_DOMAINS = [
+  'finly.com',
+  'finly.com.br',
+  'finly.local',
+  'example.com',
+  'example.org',
+  'test.com',
+  'mailinator.com',
+  'localhost',
+  'domain.com',
+];
+
+const isBlacklistedOrTestDomain = (email) => {
+  if (!email || typeof email !== 'string') return true;
+  const lower = email.trim().toLowerCase();
+  const domain = lower.split('@')[1];
+  if (!domain) return true;
+  if (BLOCKED_FICTIONAL_DOMAINS.includes(domain)) return true;
+  if (
+    lower.startsWith('test_') ||
+    lower.startsWith('test-') ||
+    lower.includes('port465') ||
+    lower.includes('confirm_smtp') ||
+    lower.includes('noreply@') ||
+    lower.includes('no-reply@')
+  ) {
+    return true;
+  }
+  return false;
+};
+
 const createRecoveryCode = () => crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
 
 const hashRecoveryCode = (code) => {
@@ -1282,7 +1313,7 @@ app.post('/api/user/delete-account', authenticateToken, async (req, res) => {
 // 5. PASSWORD RECOVERY (generic response, hashed code, endpoint-specific limits)
 app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
   const cleanEmail = normalizeEmail(req.body?.email);
-  if (!isValidEmail(cleanEmail)) {
+  if (!isValidEmail(cleanEmail) || isBlacklistedOrTestDomain(cleanEmail)) {
     return res.status(400).json({ success: false, message: 'Informe um e-mail válido.' });
   }
 
@@ -1300,9 +1331,14 @@ app.post('/api/send-recovery-code', recoveryLimiter, async (req, res) => {
 
     try {
       saveVerificationCodes(allCodes);
-      const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
+      const senderEmail = process.env.SMTP_USER;
+      if (!senderEmail) {
+        console.warn('⚠️ [SMTP] SMTP_USER não configurado. Disparo abortado para evitar falhas.');
+        return res.status(500).json({ success: false, message: 'Serviço de e-mail não configurado.' });
+      }
       await transporter.sendMail({
         from: `"Finly" <${senderEmail}>`,
+        replyTo: senderEmail,
         to: cleanEmail,
         subject: 'Código de verificação - Finly',
         html: `
@@ -1476,12 +1512,12 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
     return res.status(400).json({ success: false, message: 'Informe o nome do membro convidado.' });
   }
 
-  if (!isValidEmail(cleanEmail)) {
+  if (!isValidEmail(cleanEmail) || isBlacklistedOrTestDomain(cleanEmail)) {
     return res.status(400).json({ success: false, message: 'Informe um endereço de e-mail válido para o convite.' });
   }
 
   const inviterId = req.user?.userId;
-  const inviterEmail = req.user?.email || 'titular@finly.com';
+  const inviterEmail = req.user?.email || process.env.SMTP_USER || '';
   let inviterName = 'O titular da conta';
 
   // Buscar nome do titular na store local, se disponível
@@ -1660,7 +1696,11 @@ app.post('/api/family/invite', authenticateToken, familyInviteLimiter, async (re
 
   // 5. Enviar e-mail formatado via SMTP com texto puro e html
   try {
-    const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
+    const senderEmail = process.env.SMTP_USER;
+    if (!senderEmail) {
+      console.warn('⚠️ [FAMILY-INVITE] SMTP_USER não configurado. Disparo abortado.');
+      return res.status(500).json({ success: false, message: 'Serviço de e-mail não configurado.' });
+    }
     await transporter.sendMail({
       from: `"Finly" <${senderEmail}>`,
       replyTo: inviterEmail || senderEmail,

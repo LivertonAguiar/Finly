@@ -24,29 +24,38 @@ if (fs.existsSync(envPath)) {
 }
 
 async function testSMTP() {
+  const smtpUser = process.env.SMTP_USER;
+  if (!smtpUser) {
+    console.error('❌ SMTP_USER não configurado no .env!');
+    process.exit(1);
+  }
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '465', 10),
     secure: process.env.SMTP_SECURE === 'true' || true,
     auth: {
-      user: process.env.SMTP_USER || '',
+      user: smtpUser,
       pass: process.env.SMTP_PASS || '',
     },
   });
 
   try {
-    console.log('Verificando conexão SMTP...');
+    console.log(`Verificando conexão e credenciais SMTP para ${smtpUser}...`);
     await transporter.verify();
-    console.log('✅ Conexão SMTP autenticada com sucesso!');
+    console.log('✅ Conexão SMTP autenticada com sucesso! Nenhuma mensagem de teste enviada (prevenção de spam/bounce).');
 
-    const senderEmail = process.env.SMTP_USER || 'suporte@finly.com';
-    const info = await transporter.sendMail({
-      from: `"Finly - Suporte & Segurança" <${senderEmail}>`,
-      to: senderEmail,
-      subject: 'Teste de Disparo de E-mail Finly',
-      text: 'Se você recebeu este e-mail, o envio via SMTP está funcionando 100%!',
-    });
-    console.log('✅ E-mail de teste disparado com sucesso! ID:', info.messageId);
+    // Disparo real somente sob demanda explícita com flag --send e exclusivamente para o próprio remetente
+    if (process.argv.includes('--send')) {
+      console.log(`Disparando e-mail de teste seguro exclusivamente para a própria conta: ${smtpUser}...`);
+      const info = await transporter.sendMail({
+        from: `"Finly" <${smtpUser}>`,
+        to: smtpUser,
+        subject: 'Teste Seguro de SMTP - Finly',
+        text: 'Se você recebeu este e-mail, o envio via SMTP está funcionando 100%!',
+      });
+      console.log('✅ E-mail de teste disparado com sucesso! ID:', info.messageId);
+    }
   } catch (error) {
     console.error('❌ Erro no teste SMTP:', error);
   }

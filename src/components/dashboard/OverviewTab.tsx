@@ -248,6 +248,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
   const { lang, t, translateCategory } = useTranslation();
   const isApp = isNativeCapacitor() || isMobileDevice();
+  const isDark = typeof document !== 'undefined'
+    ? document.documentElement.classList.contains('dark')
+    : user?.theme === 'dark';
 
   const [internalMonthOffset, setInternalMonthOffset] = useState<number>(controlledMonthOffset ?? 0);
   const selectedMonthOffset = controlledMonthOffset !== undefined ? controlledMonthOffset : internalMonthOffset;
@@ -1353,7 +1356,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={dailyFrequencyData}
-              margin={{ top: 10, right: 0, left: -25, bottom: 0 }}
+              margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
               onClick={(state) => {
                 if (state && state.activePayload && state.activePayload.length > 0) {
                   const dayNum = state.activePayload[0].payload.dayNum;
@@ -1362,13 +1365,34 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               }}
             >
               <XAxis dataKey="dayNum" stroke="#64748b" fontSize={9} tickLine={false} interval={3} />
-              <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+              <YAxis width={46} stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
               <Tooltip
+                cursor={false}
                 formatter={(val: any) => [formatCurrency(Number(val) || 0, user.currency), 'Gasto']}
                 labelFormatter={label => `Dia ${label}`}
-                contentStyle={{ backgroundColor: '#18181B', borderColor: '#334155', borderRadius: '12px', fontSize: '11px', color: '#fff' }}
+                contentStyle={{
+                  backgroundColor: isDark ? '#18181B' : '#ffffff',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  color: isDark ? '#fff' : '#0f172a',
+                  boxShadow: isDark ? '0 10px 25px -5px rgba(0, 0, 0, 0.5)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                }}
+                itemStyle={{ color: isDark ? '#c084fc' : '#7c4dff', fontWeight: 600 }}
+                labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '2px' }}
               />
-              <Bar dataKey="amount" fill="#7c4dff" radius={[4, 4, 0, 0]} className="cursor-pointer" />
+              <Bar dataKey="amount" radius={[4, 4, 0, 0]} className="cursor-pointer">
+                {dailyFrequencyData.map((entry) => {
+                  const isSelected = selectedFrequencyDay === entry.dayNum;
+                  return (
+                    <Cell
+                      key={`day-${entry.dayNum}`}
+                      fill={isSelected ? '#a855f7' : '#7c4dff'}
+                      fillOpacity={selectedFrequencyDay ? (isSelected ? 1 : 0.35) : 1}
+                    />
+                  );
+                })}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -1381,7 +1405,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </span>
               <button
                 onClick={() => setSelectedFrequencyDay(null)}
-                className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+                className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
               >
                 Fechar
               </button>
@@ -1845,23 +1869,25 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               strokeWidth="10"
               fill="transparent"
             />
-            <circle
-              cx="50"
-              cy="50"
-              r="40"
-              className={`stroke-current transition-all duration-1000 ease-out ${
-                runwayData.status === 'safe'
-                  ? 'text-emerald-500'
-                  : runwayData.status === 'warning'
-                  ? 'text-amber-500'
-                  : 'text-rose-500'
-              }`}
-              strokeWidth="10"
-              strokeDasharray="251.2"
-              strokeDashoffset={251.2 - (251.2 * Math.min(100, (runwayData.daysLeft / 180) * 100)) / 100}
-              strokeLinecap="round"
-              fill="transparent"
-            />
+            {runwayData.daysLeft > 0 && (
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                className={`stroke-current transition-all duration-1000 ease-out ${
+                  runwayData.status === 'safe'
+                    ? 'text-emerald-500'
+                    : runwayData.status === 'warning'
+                    ? 'text-amber-500'
+                    : 'text-rose-500'
+                }`}
+                strokeWidth="10"
+                strokeDasharray="251.2"
+                strokeDashoffset={251.2 - (251.2 * Math.min(100, Math.max(0, (runwayData.daysLeft / 180) * 100))) / 100}
+                strokeLinecap="round"
+                fill="transparent"
+              />
+            )}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -1875,7 +1901,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
         <p className="text-xs text-center text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
           {runwayData.dailyBurn > 0 ? (
-            <>Se nada mudar, sua reserva em contas dura até <strong className="text-slate-900 dark:text-white">{runwayData.depletionDateStr}</strong>.</>
+            runwayData.totalLiquidBalance <= 0 ? (
+              <>Sua reserva em contas está esgotada ou negativa.</>
+            ) : (
+              <>Se nada mudar, sua reserva em contas dura até <strong className="text-slate-900 dark:text-white">{runwayData.depletionDateStr}</strong>.</>
+            )
           ) : (
             <>Sem despesas registradas para calcular a taxa de queima.</>
           )}
@@ -1891,7 +1921,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#202024] border border-slate-100 dark:border-slate-800/60 text-center">
           <span className="text-[10px] text-slate-400 font-semibold block">Saldo em Contas</span>
-          <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+          <span className={`text-xs font-black ${runwayData.totalLiquidBalance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
             {formatCurrency(runwayData.totalLiquidBalance, user.currency, !user.showValues)}
           </span>
         </div>
@@ -2058,12 +2088,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
       <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={semestralData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+          <BarChart data={semestralData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <XAxis dataKey="month" stroke="#64748b" fontSize={9} tickLine={false} />
-            <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+            <YAxis width={46} stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
             <Tooltip
+              cursor={false}
               formatter={(val: any, name: any) => [formatCurrency(Number(val) || 0, user.currency), name === 'receitas' ? 'Receitas' : 'Despesas']}
-              contentStyle={{ backgroundColor: '#141418', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '11px', color: '#fff', backdropFilter: 'blur(12px)' }}
+              contentStyle={{
+                backgroundColor: isDark ? '#141418' : '#ffffff',
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                borderRadius: '16px',
+                fontSize: '11px',
+                color: isDark ? '#fff' : '#0f172a',
+                boxShadow: isDark ? '0 10px 25px -5px rgba(0,0,0,0.5)' : '0 10px 25px -5px rgba(0,0,0,0.1)',
+                backdropFilter: 'blur(12px)',
+              }}
             />
             <Bar dataKey="receitas" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
             <Bar dataKey="despesas" fill="#fb7185" radius={[4, 4, 0, 0]} />
@@ -2091,12 +2130,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
       <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={trimestralData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+          <BarChart data={trimestralData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <XAxis dataKey="month" stroke="#64748b" fontSize={10} tickLine={false} />
-            <YAxis stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+            <YAxis width={46} stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
             <Tooltip
+              cursor={false}
               formatter={(val: any, name: any) => [formatCurrency(Number(val) || 0, user.currency), name === 'receitas' ? 'Receitas' : 'Despesas']}
-              contentStyle={{ backgroundColor: '#141418', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '11px', color: '#fff', backdropFilter: 'blur(12px)' }}
+              contentStyle={{
+                backgroundColor: isDark ? '#141418' : '#ffffff',
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                borderRadius: '16px',
+                fontSize: '11px',
+                color: isDark ? '#fff' : '#0f172a',
+                boxShadow: isDark ? '0 10px 25px -5px rgba(0,0,0,0.5)' : '0 10px 25px -5px rgba(0,0,0,0.1)',
+                backdropFilter: 'blur(12px)',
+              }}
             />
             <Bar dataKey="receitas" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
             <Bar dataKey="despesas" fill="#fb7185" radius={[4, 4, 0, 0]} />

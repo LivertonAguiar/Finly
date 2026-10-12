@@ -103,6 +103,18 @@ scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $distTar "$($server):$re
 ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "mkdir -p $remoteDir/dist_tmp && tar -xzf $remoteDir/dist-update.tar.gz -C $remoteDir/dist_tmp && docker cp $remoteDir/dist_tmp/. finly-app:/app/dist/ && rm -rf $remoteDir/dist_tmp $remoteDir/dist-update.tar.gz"
 Remove-Item -LiteralPath $distTar -Force -ErrorAction SilentlyContinue
 
+# 6.2 Update backend server files and restart container if server changed
+Write-Host "Atualizando backend server no host e no container..." -ForegroundColor Yellow
+scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new "$repoRoot/server/apiServer.js" "$($server):$remoteDir/server/apiServer.js"
+if ($LASTEXITCODE -ne 0) { throw "Falha ao enviar apiServer.js para a VPS." }
+scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new "$repoRoot/server/test_smtp.js" "$($server):$remoteDir/server/test_smtp.js"
+if ($LASTEXITCODE -ne 0) { throw "Falha ao enviar test_smtp.js para a VPS." }
+ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "docker cp $remoteDir/server/apiServer.js finly-app:/app/server/apiServer.js && docker cp $remoteDir/server/test_smtp.js finly-app:/app/server/test_smtp.js && docker restart finly-app"
+if ($LASTEXITCODE -ne 0) { throw "Falha ao reiniciar o container finly-app na VPS." }
+
+Write-Host "Aguardando reinicializacao do backend (5s)..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+
 # 7. Validate endpoints on VPS
 Write-Host "Validando manifesto e download do bundle na VPS..." -ForegroundColor Yellow
 $manifestCheck = ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server "curl -fsS https://finly.lpaguiar.com.br/api/app/manifest"

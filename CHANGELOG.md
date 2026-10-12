@@ -3,6 +3,15 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.79] - 2026-10-12
+
+### Visual, Mobile e Proteção de E-mail
+- **Dashboard e Matriz Orçamentária**:
+  - Correção de sobreposição, transparência e alinhamento sticky da matriz anual em dispositivos móveis.
+  - Correção da régua vertical do gráfico de fluxo de caixa, margens do eixo Y e realce dinâmico do dia selecionado.
+- **Segurança de E-mail e SMTP**:
+  - Bloqueio definitivo de envio para domínios fictícios no servidor SMTP pessoal e eliminação de bounces.
+
 ## [1.1.78] - 2026-09-30
 
 ### Segurança, assistente confirmável e operação resiliente

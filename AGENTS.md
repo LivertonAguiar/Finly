@@ -355,3 +355,21 @@ Não simule suporte inexistente.
   - **Pasta Local**: `c:\Users\Suporte\Documents\Finly\planner-financeiro`
   - **Deploy**: `powershell -ExecutionPolicy Bypass -File .\scripts\deploy-vps.ps1`
 
+---
+
+# 17. Política Estrita de SMTP e Disparo de E-mails (Gmail Pessoal)
+
+- **Natureza do Servidor SMTP**: O servidor SMTP do projeto utiliza uma **conta pessoal comum do Gmail** (`liverton.aguiar.sup@gmail.com`), configurada via App Password. **NÃO É** uma conta Google Workspace corporativa nem possui domínio próprio de correio.
+- **Inexistência de Domínios de Correio Próprios**:
+  - O projeto **NÃO possui** e-mails sob `@finly.com`, `@finly.com.br`, `noreply@...`, `no-reply@...` ou similares. O domínio público da aplicação (`finly.lpaguiar.com.br`) não possui servidor de correio (registro MX).
+- **PROIBIÇÃO ABSOLUTA de Testes com Domínios Fictícios**:
+  - É **terminantemente proibido** qualquer script, agente ou fluxo disparar e-mails para endereços fictícios (tais como `test_port465_check@finly.com`, `test_confirm_smtp@finly.com`, `qualquer@finly.com`, `teste@finly.com.br` ou `@example.com`).
+  - Como o SMTP é o Gmail real do usuário, o Google aceita a conexão autenticada e tenta entregar a mensagem na internet aos servidores de destino. Quando o domínio não existe ou não tem MX, o Gmail tenta reenviar continuamente por 48 a 72 horas e depois inunda a caixa de entrada pessoal do usuário com mensagens de falha ("Entrega incompleta", "Mensagem não entregue - Mail Delivery Subsystem / DNS Error NXDOMAIN").
+- **Testes de Autenticação / Supabase Auth**:
+  - **PROIBIDO** criar ou registrar contas de teste no Supabase Auth usando e-mails fictícios com confirmação ativada (`ENABLE_EMAIL_AUTOCONFIRM=false`), pois isso dispara o envio de e-mails de ativação pelo Gmail pessoal para a internet.
+  - Testes de conexão SMTP devem rodar apenas `transporter.verify()` (validação de credenciais e porta TLS/SSL sem disparo de mensagens).
+  - Caso haja necessidade estrita de testar entrega pontual autorizada pelo usuário, o destino DEVE ser única e exclusivamente o próprio endereço configurado em `SMTP_USER` (self-test).
+- **Identidade do Remetente (`From` e `Reply-To`)**:
+  - O remetente de qualquer e-mail do sistema deve ser formatado obrigatoriamente como: `"Finly" <${process.env.SMTP_USER}>` (o próprio Gmail pessoal).
+  - **NUNCA** utilizar fallbacks como `suporte@finly.com`, `titular@finly.com`, `admin@finly.com` ou qualquer endereço inexistente.
+
