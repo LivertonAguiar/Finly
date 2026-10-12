@@ -5,10 +5,10 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.8",
+    "version": "1.1.79.9",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.8.zip",
-    "sha256": "1104f4f817bc4cbcae840d2688301071367f1e7ab1f3e2cf36c309e6070bea5c",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.9.zip",
+    "sha256": "5b56713b3b8f28126a111b20866962f147e78af705529bb8b0b20cb2e203b6c4",
     "mandatory": true,
     "releaseDate": "2026-10-12",
     "notes": "Novo modo de amortizacao efetiva, juros pro-rata e calculo contratual Caixa"
