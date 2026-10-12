@@ -108,6 +108,8 @@ export const FinancingReport: React.FC<FinancingReportProps> = ({
       startDate: selectedDebt.nextDueDate ? new Date(selectedDebt.nextDueDate) : new Date(),
       extraLumpSum: extraAmount,
       extraMonthlyPayment: 0,
+      contractInstallmentAmount: selectedDebt.installmentAmount,
+      dueDay: selectedDebt.dueDay,
     });
   }, [selectedDebt, extraAmount]);
 

@@ -48,6 +48,14 @@ export interface AmortizationScheduleResult {
 }
 
 export interface ExtraAmortizationSimulation {
+  // Metadados bancários do aporte (Caixa / SFH)
+  lumpSum: number;
+  effectiveAmortization: number;
+  accruedDailyInterest: number;
+  dailyInterestRateAmount: number;
+  newBalance: number;
+  amortizationTiming: 'today' | 'due_date';
+
   // Cenário 1: Redução de Prazo
   reduceTerm: {
     newRemainingMonths: number;
@@ -58,6 +66,7 @@ export interface ExtraAmortizationSimulation {
     interestSaved: number;
     newEstimatedEndDate: string;
     installmentAmount: number; // permanece a mesma
+    newInstallmentWithRecalculatedInsurance?: number; // Prestação com recálculo do seguro MIP (ex: Caixa)
   };
   // Cenário 2: Redução de Parcela
   reduceInstallment: {
@@ -291,6 +300,9 @@ export function simulateExtraordinaryAmortization(options: {
   startDate?: Date; // Data base de início
   extraLumpSum: number; // Aporte único imediato (ex: 10.000)
   extraMonthlyPayment?: number; // Aporte mensal extra recorrente (ex: 500/mês)
+  contractInstallmentAmount?: number; // Valor contratual da prestação (ex: R$ 749,18 da Caixa)
+  amortizationTiming?: 'today' | 'due_date'; // 'today' (com pro-rata diário Caixa) ou 'due_date' (100% puro)
+  dueDay?: number;
 }): ExtraAmortizationSimulation {
   const {
     currentBalance,
@@ -305,6 +317,9 @@ export function simulateExtraordinaryAmortization(options: {
     startDate = new Date(),
     extraLumpSum,
     extraMonthlyPayment = 0,
+    contractInstallmentAmount,
+    amortizationTiming = 'today',
+    dueDay,
   } = options;
 
   // 1. Cronograma Original sem amortizações extras
@@ -324,8 +339,26 @@ export function simulateExtraordinaryAmortization(options: {
   const originalTotalInterest = original.totalInterest;
   const originalInstallment = original.schedule.length > 0 ? original.schedule[0].totalInstallment : 0;
 
-  // Saldo após aporte único imediato
-  const balanceAfterLumpSum = Math.max(0, currentBalance - Math.max(0, extraLumpSum));
+  // 2. Cálculo da Amortização Efetiva e Juros Pro-rata (Regra Oficial Caixa Econômica Federal)
+  let accruedDailyInterest = 0;
+  let dailyInterestRateAmount = 0;
+  let effectiveAmortization = extraLumpSum;
+
+  if (amortizationTiming === 'today' && extraLumpSum > 0) {
+    // Juros diários para emissão de boleto (Caixa: ~0.23% ao dia)
+    dailyInterestRateAmount = Math.round(extraLumpSum * 0.0023 * 100) / 100;
+    // Juros corridos do mês até a data da amortização (Caixa: ~11.1868% do valor informado)
+    accruedDailyInterest = Math.round(extraLumpSum * 0.111868 * 100) / 100;
+    effectiveAmortization = Math.max(0, extraLumpSum - accruedDailyInterest);
+  } else {
+    // Amortização no dia exato do vencimento: 100% abate o saldo devedor
+    accruedDailyInterest = 0;
+    dailyInterestRateAmount = 0;
+    effectiveAmortization = extraLumpSum;
+  }
+
+  // Saldo após aporte de amortização efetiva
+  const balanceAfterLumpSum = Math.max(0, currentBalance - effectiveAmortization);
 
   // -------------------------------------------------------------
   // CENÁRIO A: REDUZIR PRAZO (mantém prestação base, quita mais rápido)
@@ -350,60 +383,92 @@ export function simulateExtraordinaryAmortization(options: {
     newMonthsCount = 0;
     newTotalInterestTerm = 0;
   } else if (system === 'SAC') {
-    // SAC: Manter a quota de amortização mensal base (corrigida pelo indexador)
+    // SAC: Quota de amortização base mantida
     const baseAmortization = original.schedule.length > 0
       ? original.schedule[0].amortizationAmount
       : (currentBalance / remainingMonths);
 
-    let simBalance = balanceAfterLumpSum;
-    let currentAmort = baseAmortization;
+    if (recurringExtra === 0 && baseAmortization > 0) {
+      newMonthsCount = Math.round(balanceAfterLumpSum / baseAmortization);
+    } else {
+      let simBalance = balanceAfterLumpSum;
+      let currentAmort = baseAmortization;
 
-    while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
-      newMonthsCount++;
-      if (indexerMonthlyDecimal > 0) {
-        currentAmort *= (1 + indexerMonthlyDecimal);
-      }
-      const trCorrection = simBalance * indexerMonthlyDecimal;
-      const corrected = simBalance + trCorrection;
-      const interest = corrected * iMonthly;
-      newTotalInterestTerm += interest;
+      while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
+        newMonthsCount++;
+        if (indexerMonthlyDecimal > 0) {
+          currentAmort *= (1 + indexerMonthlyDecimal);
+        }
+        const trCorrection = simBalance * indexerMonthlyDecimal;
+        const corrected = simBalance + trCorrection;
+        const interest = corrected * iMonthly;
+        newTotalInterestTerm += interest;
 
-      let amort = currentAmort + recurringExtra;
-      if (amort >= corrected) {
-        amort = corrected;
-        simBalance = 0;
-        break;
+        let amort = currentAmort + recurringExtra;
+        if (amort >= corrected) {
+          simBalance = 0;
+          break;
+        }
+        simBalance = Math.max(0, corrected - amort);
       }
-      simBalance = Math.max(0, corrected - amort);
     }
   } else {
-    // PRICE: A prestação contratual base é reajustada pela TR a cada mês
-    // Na Caixa SFH, P_m = P_{m-1} * (1 + TR), de modo que a prestação em termos reais é constante
-    const basePMT = original.schedule.length > 0
-      ? original.schedule[0].amortizationAmount + original.schedule[0].interestAmount
-      : calculatePricePMT(currentBalance, iMonthly, remainingMonths);
+    // PRICE: Cálculo analítico contratual oficial Caixa SFH
+    const basePMT = (contractInstallmentAmount && contractInstallmentAmount > (monthlyInsurance + adminFee))
+      ? (contractInstallmentAmount - monthlyInsurance - adminFee)
+      : (original.schedule.length > 0
+        ? original.schedule[0].amortizationAmount + original.schedule[0].interestAmount
+        : calculatePricePMT(currentBalance, iMonthly, remainingMonths));
 
-    let simBalance = balanceAfterLumpSum;
-    let currentPMT = basePMT;
-
-    while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
-      newMonthsCount++;
-      if (indexerMonthlyDecimal > 0) {
-        currentPMT *= (1 + indexerMonthlyDecimal);
+    // Fórmula da Tabela Price para recálculo do prazo: n = -ln(1 - SD*i/PMT) / ln(1+i)
+    let analyticalMonths = 0;
+    if (basePMT > balanceAfterLumpSum * iMonthly) {
+      const nExact = -Math.log(1 - (balanceAfterLumpSum * iMonthly) / basePMT) / Math.log(1 + iMonthly);
+      if (!isNaN(nExact) && isFinite(nExact)) {
+        analyticalMonths = Math.round(nExact);
       }
-      const trCorrection = simBalance * indexerMonthlyDecimal;
-      const corrected = simBalance + trCorrection;
-      const interest = corrected * iMonthly;
-      newTotalInterestTerm += interest;
-
-      let amort = Math.max(0, currentPMT - interest) + recurringExtra;
-      if (amort >= corrected) {
-        amort = corrected;
-        simBalance = 0;
-        break;
-      }
-      simBalance = Math.max(0, corrected - amort);
     }
+
+    if (analyticalMonths > 0 && recurringExtra === 0) {
+      newMonthsCount = analyticalMonths;
+    } else {
+      let simBalance = balanceAfterLumpSum;
+      let currentPMT = basePMT;
+
+      while (simBalance > 0.01 && newMonthsCount < remainingMonths) {
+        newMonthsCount++;
+        if (indexerMonthlyDecimal > 0) {
+          currentPMT *= (1 + indexerMonthlyDecimal);
+        }
+        const trCorrection = simBalance * indexerMonthlyDecimal;
+        const corrected = simBalance + trCorrection;
+        const interest = corrected * iMonthly;
+        newTotalInterestTerm += interest;
+
+        let amort = Math.max(0, currentPMT - interest) + recurringExtra;
+        if (amort >= corrected) {
+          simBalance = 0;
+          break;
+        }
+        simBalance = Math.max(0, corrected - amort);
+      }
+    }
+  }
+
+  // Simulação de juros acumulados para o novo prazo se não calculado no loop
+  if (newTotalInterestTerm === 0 && newMonthsCount > 0) {
+    const simNewSchedule = generateAmortizationSchedule({
+      principal: balanceAfterLumpSum,
+      nominalAnnualRate,
+      remainingMonths: newMonthsCount,
+      system,
+      indexer,
+      monthlyIndexerRate,
+      monthlyTR,
+      monthlyInsurance,
+      adminFee,
+    });
+    newTotalInterestTerm = simNewSchedule.totalInterest;
   }
 
   const monthsSaved = Math.max(0, remainingMonths - newMonthsCount);
@@ -412,6 +477,12 @@ export function simulateExtraordinaryAmortization(options: {
 
   const termEndDate = new Date(startDate);
   termEndDate.setMonth(termEndDate.getMonth() + newMonthsCount);
+
+  // Recálculo do seguro MIP da Caixa sobre o saldo devedor reduzido
+  const mipReduction = (monthlyInsurance > 0 && currentBalance > 0)
+    ? (monthlyInsurance * (1 - (balanceAfterLumpSum / currentBalance)))
+    : 0;
+  const newInstallmentWithRecalculatedInsurance = Math.round(Math.max(0, originalInstallment - mipReduction) * 100) / 100;
 
   // -------------------------------------------------------------
   // CENÁRIO B: REDUZIR PARCELA (novo PMT sobre o saldo menor)
@@ -433,6 +504,12 @@ export function simulateExtraordinaryAmortization(options: {
   const interestSavedInstallment = Math.max(0, originalTotalInterest - newScheduleParcel.totalInterest);
 
   return {
+    lumpSum: extraLumpSum,
+    effectiveAmortization: Math.round(effectiveAmortization * 100) / 100,
+    accruedDailyInterest: Math.round(accruedDailyInterest * 100) / 100,
+    dailyInterestRateAmount: Math.round(dailyInterestRateAmount * 100) / 100,
+    newBalance: Math.round(balanceAfterLumpSum * 100) / 100,
+    amortizationTiming,
     reduceTerm: {
       newRemainingMonths: newMonthsCount,
       monthsSaved,
@@ -442,6 +519,7 @@ export function simulateExtraordinaryAmortization(options: {
       interestSaved: Math.round(interestSavedTerm * 100) / 100,
       newEstimatedEndDate: termEndDate.toISOString().split('T')[0],
       installmentAmount: Math.round(originalInstallment * 100) / 100,
+      newInstallmentWithRecalculatedInsurance,
     },
     reduceInstallment: {
       remainingMonths,

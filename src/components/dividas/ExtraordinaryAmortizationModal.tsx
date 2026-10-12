@@ -8,6 +8,10 @@ import {
   ShieldCheck,
   Zap,
   HelpCircle,
+  Calendar,
+  AlertCircle,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Debt } from '../../types';
@@ -29,6 +33,7 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
 }) => {
   const [lumpSumStr, setLumpSumStr] = useState('5000');
   const [monthlyExtraStr, setMonthlyExtraStr] = useState('0');
+  const [timing, setTiming] = useState<'today' | 'due_date'>('today');
 
   const lumpSum = parseFloat(lumpSumStr) || 0;
   const monthlyExtra = parseFloat(monthlyExtraStr) || 0;
@@ -48,8 +53,11 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
       adminFee: debt.adminFeeMonthly || 0,
       extraLumpSum: lumpSum,
       extraMonthlyPayment: monthlyExtra,
+      contractInstallmentAmount: debt.installmentAmount,
+      amortizationTiming: timing,
+      dueDay: debt.dueDay,
     });
-  }, [debt, lumpSum, monthlyExtra]);
+  }, [debt, lumpSum, monthlyExtra, timing]);
 
   return (
     <Modal
@@ -69,18 +77,18 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
               Acelere a quitação do seu financiamento ({debt.title})
             </span>
             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-              No crédito imobiliário (Caixa SFH/Price), cada real amortizado abate diretamente do saldo devedor,
-              eliminando os juros compostos que incidiriam sobre ele pelos próximos 35 anos.
+              No crédito imobiliário bancário (Caixa SFH/Price), cada real de amortização efetiva abate diretamente do saldo devedor,
+              eliminando os juros compostos que incidiriam sobre ele ao longo do contrato.
             </p>
           </div>
         </div>
 
         {/* Inputs Bento Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Aporte Único (FGTS / 13º / Economias) */}
+          {/* Aporte Único */}
           <div className="p-4 rounded-[22px] bg-slate-50 dark:bg-[#18181C] border border-slate-200/80 dark:border-white/[0.08] space-y-2">
             <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
-              Aporte Único Imediato (R$)
+              Valor a Amortizar (R$)
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
@@ -98,14 +106,14 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
             </div>
             {/* Quick Chips */}
             <div className="flex gap-1.5 pt-1">
-              {[2000, 5000, 10000, 20000].map(val => (
+              {[1000, 2000, 5000, 10000, 20000].map(val => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => setLumpSumStr(String(val))}
                   className="px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-[#222228] text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:bg-purple-500/20 hover:text-purple-400 transition-colors cursor-pointer"
                 >
-                  +{val / 1000}k
+                  +{val >= 1000 ? `${val / 1000}k` : val}
                 </button>
               ))}
             </div>
@@ -146,7 +154,114 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
           </div>
         </div>
 
-        {/* COMPARATIVO LADO A LADO */}
+        {/* MODO DA AMORTIZAÇÃO (NOVO RECURSO: PRO-RATA BANCÁRIO / CAIXA) */}
+        <div className="p-4 rounded-[22px] bg-slate-50 dark:bg-[#18181C] border border-slate-200/80 dark:border-white/[0.08] space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+                Momento do Pagamento da Amortização
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                O aplicativo do banco ajusta o abatimento com base no dia em que o boleto é pago
+              </span>
+            </div>
+
+            {/* Alternador de Modo de Timing */}
+            <div className="p-1 rounded-full bg-white dark:bg-[#222228] border border-slate-200 dark:border-white/[0.1] flex items-center text-xs font-bold shadow-xs">
+              <button
+                type="button"
+                onClick={() => setTiming('today')}
+                className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                  timing === 'today'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>⚡ Amortizar Hoje</span>
+                <span className="text-[10px] opacity-80">(com Pro-rata Caixa)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTiming('due_date')}
+                className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                  timing === 'due_date'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>🎯 No Vencimento</span>
+                <span className="text-[10px] opacity-80">(100% Efetivo)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* DETALHES DA AMORTIZAÇÃO EFETIVA (ESPELHO DO APP DA CAIXA) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-white dark:bg-[#121216] border border-slate-200/70 dark:border-white/[0.06]">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block font-bold">
+                Amortização Efetiva
+              </span>
+              <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 mono-metric">
+                {formatCurrency(simulation.effectiveAmortization, currency)}
+              </span>
+              <span className="text-[10px] text-slate-400 block">
+                abate direto do saldo
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white dark:bg-[#121216] border border-slate-200/70 dark:border-white/[0.06]">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block font-bold">
+                Juros Diários / Corridos
+              </span>
+              <span className="text-sm sm:text-base font-black text-rose-500 mono-metric">
+                {formatCurrency(simulation.accruedDailyInterest, currency)}
+              </span>
+              <span className="text-[10px] text-slate-400 block">
+                {simulation.dailyInterestRateAmount > 0
+                  ? `~${formatCurrency(simulation.dailyInterestRateAmount, currency)}/dia`
+                  : 'R$ 0,00 no vencimento'}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white dark:bg-[#121216] border border-slate-200/70 dark:border-white/[0.06]">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block font-bold">
+                Novo Saldo Devedor
+              </span>
+              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white mono-metric">
+                {formatCurrency(simulation.newBalance, currency)}
+              </span>
+              <span className="text-[10px] text-slate-400 block">
+                saldo contratual pós-pagamento
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white dark:bg-[#121216] border border-slate-200/70 dark:border-white/[0.06]">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block font-bold">
+                Novo Prazo Restante
+              </span>
+              <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 mono-metric">
+                {simulation.reduceTerm.newRemainingMonths} MESES
+              </span>
+              <span className="text-[10px] text-emerald-500 font-bold block">
+                -{simulation.reduceTerm.monthsSaved} meses eliminados
+              </span>
+            </div>
+          </div>
+
+          {/* Dica de Ouro Bancária */}
+          {timing === 'today' && simulation.accruedDailyInterest > 0 && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-2">
+              <Info className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>
+                <strong>Dica Finly:</strong> Se você pagar a amortização no <strong>dia do vencimento da sua parcela</strong>,
+                o banco zera os juros diários e todos os <strong>{formatCurrency(lumpSum, currency)}</strong> viram amortização pura do saldo devedor!
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* COMPARATIVO LADO A LADO: REDUZIR PRAZO VS REDUZIR PARCELA */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           {/* 1. OPÇÃO A: REDUZIR PRAZO (RECOMENDADO) */}
           <div className="p-5 rounded-[26px] bg-gradient-to-b from-emerald-500/[0.08] to-emerald-500/[0.02] border-2 border-emerald-500/30 space-y-4 relative overflow-hidden">
@@ -191,6 +306,15 @@ export const ExtraordinaryAmortizationModal: React.FC<ExtraordinaryAmortizationM
                 <span className="text-slate-400">Novo Prazo Restante:</span>
                 <span className="font-bold text-slate-900 dark:text-white">
                   {simulation.reduceTerm.newRemainingMonths} meses
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-emerald-500/10">
+                <span className="text-slate-400">Novo Valor Prestação:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {formatCurrency(
+                    simulation.reduceTerm.newInstallmentWithRecalculatedInsurance || simulation.reduceTerm.installmentAmount,
+                    currency
+                  )}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1">
