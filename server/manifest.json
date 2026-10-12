@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.6",
+    "version": "1.1.79.7",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.6.zip",
-    "sha256": "ba6dfebaff5b76a861192c5d86d9dfbe897595bb244f9a98e2fab358629d7eec",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.7.zip",
+    "sha256": "f6d1be797726cece1dc52ddab805291d2a76a80859fd64fca9ef28dba824ce98",
     "mandatory": true,
     "releaseDate": "2026-10-12",
-    "notes": "Redirecionamento da aba de relatorios com 7 novos dashboards analiticos"
+    "notes": "Redirecionamento da aba de relatorios com 7 dashboards analiticos"
   }
 }
