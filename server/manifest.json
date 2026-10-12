@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.4",
+    "version": "1.1.79.5",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.4.zip",
-    "sha256": "618544faf38fa281ab3c72a756dde7cf59d63ba6149150b71770b8f5a1e0af94",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.5.zip",
+    "sha256": "54be5304e2b5a41393bf982fe1b80447af92dbea529d86ba469e48b5cfbe77b8",
     "mandatory": true,
     "releaseDate": "2026-10-12",
-    "notes": "Ajustes visuais no Dashboard e Matriz Orçamentária no mobile, além de blindagem de SMTP contra e-mails para domínios fictícios."
+    "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável."
   }
 }
