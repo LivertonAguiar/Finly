@@ -13,33 +13,25 @@ import {
   Check,
   FileText,
   FileSpreadsheet,
-  LayoutGrid,
-  Maximize2,
   Building,
   HeartPulse,
   GitCompare,
+  CreditCard,
+  Tag,
+  Sparkles,
+  Scale,
+  Layers,
 } from 'lucide-react';
 import { ComparativeReport } from './ComparativeReport';
 import { FinancingReport } from './FinancingReport';
 import { Health503020Report } from './Health503020Report';
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Sector,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from 'recharts';
+import { ExecutiveDashboard } from './dashboards/ExecutiveDashboard';
+import { CashFlowDashboard } from './dashboards/CashFlowDashboard';
+import { CategoriesDashboard } from './dashboards/CategoriesDashboard';
+import { PaymentMethodsDashboard } from './dashboards/PaymentMethodsDashboard';
 import { useFinancial } from '../../context/FinancialContext';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
-import { getAnalyticalEntries } from '../../utils/transactionAnalytics';
 import {
   getEffectiveTransactionDate,
   doesTransactionBelongToMonth,
@@ -47,53 +39,19 @@ import {
   ViewRegime,
 } from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
-import { Modal } from '../ui/Modal';
 import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
 import { exportReportExcel } from '../../utils/excelExportService';
 import { getFamilyMemberList, formatMemberDisplayName } from '../../utils/familyUtils';
 import html2canvas from 'html2canvas';
 
-type TabType = 'donut' | 'line' | 'bar';
-
-type DonutSubtype =
-  | 'despesas_categoria'
-  | 'despesas_subcategoria'
-  | 'despesas_contas'
-  | 'receitas_categoria'
-  | 'receitas_subcategoria'
-  | 'receitas_contas'
-  | 'saldos_contas';
-
-type LineSubtype =
-  | 'despesas_mes'
-  | 'despesas_semana'
-  | 'despesas_ano';
-
-type BarSubtype =
-  | 'balanco_mensal'
-  | 'fluxo_caixa_anual'
-  | 'despesas_dia_semana';
-
-const renderActiveDonutShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius - 3}
-        outerRadius={outerRadius + 6}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        cornerRadius={8}
-      />
-    </g>
-  );
-};
-
-export type ReportMainTab = 'overview' | 'comparatives' | 'financing' | 'health_50_30_20';
-export type ReportLayoutMode = 'focused' | 'bento';
+export type ReportMainTab =
+  | 'overview'
+  | 'cashflow'
+  | 'categories'
+  | 'payment_methods'
+  | 'comparatives'
+  | 'health_50_30_20'
+  | 'financing';
 
 export const ReportsPage: React.FC = () => {
   const { transactions, categories, accounts, cards, user, debts, budgets, familyMembers } = useFinancial();
@@ -103,44 +61,19 @@ export const ReportsPage: React.FC = () => {
     [user, familyMembers]
   );
 
-  // Módulo Principal de Relatórios
+  // Módulo Principal Selecionado
   const [mainTab, setMainTab] = useState<ReportMainTab>('overview');
+  const [drillDownCategoryId, setDrillDownCategoryId] = useState<string | null>(null);
 
-  // Alternador de visualização: Grade Bento vs Modo Focado
-  const [layoutMode, setLayoutMode] = useState<ReportLayoutMode>(() => {
-    try {
-      return (localStorage.getItem('finly_reports_layout_mode') as ReportLayoutMode) || 'focused';
-    } catch (e) {
-      return 'focused';
-    }
-  });
+  // Month navigation
+  const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-  const handleToggleLayout = () => {
-    const nextMode = layoutMode === 'focused' ? 'bento' : 'focused';
-    setLayoutMode(nextMode);
-    try {
-      localStorage.setItem('finly_reports_layout_mode', nextMode);
-    } catch (e) {}
-  };
-
-  // Tab State da Visão Geral: 'donut' | 'line' | 'bar'
-  const [activeTab, setActiveTab] = useState<TabType>('donut');
-
-  // Subtypes for each tab
-  const [donutSubtype, setDonutSubtype] = useState<DonutSubtype>('despesas_categoria');
-  const [selectedParentCategoryFilter, setSelectedParentCategoryFilter] = useState<string | null>(null);
-  const [lineSubtype, setLineSubtype] = useState<LineSubtype>('despesas_mes');
-  const [barSubtype, setBarSubtype] = useState<BarSubtype>('balanco_mensal');
-  const [hoveredDonutItem, setHoveredDonutItem] = useState<any>(null);
-
-  // Dropdown open state
-  const [isSubtypeDropdownOpen, setIsSubtypeDropdownOpen] = useState(false);
-
-  // Export report dropdown state
+  // Export dropdown state
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const chartCardRef = useRef<HTMLDivElement>(null);
+  const reportContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -151,10 +84,6 @@ export const ReportsPage: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Month navigation
-  const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
-  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   // Unified Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -183,7 +112,7 @@ export const ReportsPage: React.FC = () => {
 
   const [viewRegime, setViewRegime] = useState<ViewRegime>('invoice_month');
 
-  // Filtered Transactions
+  // Transações Filtradas com aplicação do regime contábil e filtros
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     const todayStr = getTodayString();
@@ -195,10 +124,7 @@ export const ReportsPage: React.FC = () => {
         return effectiveDate === t.date ? t : { ...t, date: effectiveDate };
       })
       .filter(t => {
-        // Exclude ignored / third-party transactions from personal spending reports
         if (t.ignored) return false;
-
-        // Excluir pagamento/liquidação de fatura de cartão em despesas para não duplicar com as compras individuais
         if (t.type === 'expense' && isInvoicePaymentTransaction(t)) return false;
 
         const card = cards.find(c => c.id === t.cardId);
@@ -282,33 +208,39 @@ export const ReportsPage: React.FC = () => {
     };
   }, [filteredTransactions]);
 
+  // Atalhos rápidos de período
+  const handleQuickPeriodSelect = (periodType: 'current_month' | 'prev_month' | 'last_90_days' | 'current_year') => {
+    if (periodType === 'current_month') {
+      setSelectedMonthOffset(0);
+      setFilters(prev => ({ ...prev, period: 'current_month' }));
+    } else if (periodType === 'prev_month') {
+      setSelectedMonthOffset(-1);
+      setFilters(prev => ({ ...prev, period: 'current_month' }));
+    } else if (periodType === 'last_90_days') {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 90);
+      setFilters(prev => ({
+        ...prev,
+        period: 'custom',
+        customStartDate: start.toISOString().substring(0, 10),
+        customEndDate: end.toISOString().substring(0, 10),
+      }));
+    } else if (periodType === 'current_year') {
+      setFilters(prev => ({ ...prev, period: 'current_year' }));
+    }
+  };
+
+  // Export handlers
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
       let activeChartImage: string | undefined = undefined;
-      const activeChartTitle =
-        activeTab === 'donut'
-          ? (donutSubtype === 'despesas_categoria'
-              ? 'Despesas por categorias'
-              : donutSubtype === 'despesas_subcategoria'
-              ? (selectedParentCategoryFilter ? `Despesas por subcategorias (${categories.find(c => c.id === selectedParentCategoryFilter)?.name || ''})` : 'Despesas por subcategorias')
-              : donutSubtype === 'despesas_contas'
-              ? 'Despesas por contas'
-              : donutSubtype === 'receitas_categoria'
-              ? 'Receitas por categorias'
-              : donutSubtype === 'receitas_subcategoria'
-              ? (selectedParentCategoryFilter ? `Receitas por subcategorias (${categories.find(c => c.id === selectedParentCategoryFilter)?.name || ''})` : 'Receitas por subcategorias')
-              : donutSubtype === 'receitas_contas'
-              ? 'Receitas por contas'
-              : 'Saldos por conta')
-          : activeTab === 'line'
-          ? (lineSubtype === 'despesas_mes' ? 'Despesas do mês (diário)' : lineSubtype === 'despesas_semana' ? 'Despesas da semana' : 'Despesas por ano (mensal)')
-          : (barSubtype === 'balanco_mensal' ? 'Balanço mensal (6 meses)' : barSubtype === 'fluxo_caixa_anual' ? 'Fluxo de caixa anual' : 'Despesas x dia da semana');
 
-      if (chartCardRef.current) {
+      if (reportContainerRef.current) {
         try {
-          const canvas = await html2canvas(chartCardRef.current, {
-            scale: 2,
+          const canvas = await html2canvas(reportContainerRef.current, {
+            scale: 1.5,
             backgroundColor: '#ffffff',
             logging: false,
             useCORS: true,
@@ -333,7 +265,7 @@ export const ReportsPage: React.FC = () => {
         currency: user?.currency || 'BRL',
         userEmail: user?.email,
         activeChartImage,
-        activeChartTitle,
+        activeChartTitle: `Relatório Executivo - ${capitalizedMonth} ${yearNum}`,
       });
     } catch (e) {
       console.error('Erro ao gerar relatório PDF:', e);
@@ -393,599 +325,33 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  // Palette of colors
-  const palette = [
-    '#0099CC', '#9933CC', '#FF8A00', '#FF9494', '#439996',
-    '#EB5757', '#00E676', '#7C4DFF', '#3B82F6', '#EC4899',
-    '#F59E0B', '#10B981', '#6366F1', '#06B6D4'
-  ];
-
-  // -----------------------------------------------------------------------------------
-  // 1. DATA FOR DONUT TAB
-  // -----------------------------------------------------------------------------------
-  const donutData = useMemo(() => {
-    const monthTxs = filteredTransactions.filter(t => t.date.startsWith(currentMonthPrefix));
-
-    if (donutSubtype === 'despesas_categoria' || donutSubtype === 'receitas_categoria') {
-      const isExpense = donutSubtype === 'despesas_categoria';
-      const targetType = isExpense ? 'expense' : 'income';
-      const map: Record<string, { id: string; name: string; icon: string; amount: number; color?: string }> = {};
-
-      monthTxs.filter(t => t.type === targetType).forEach(t => {
-        const entries = getAnalyticalEntries(t);
-        entries.forEach(entry => {
-          if (entry.includeInReports === false) return;
-          const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, targetType);
-          const id = resolved.id;
-          const name = resolved.name.toUpperCase();
-          const icon = resolved.icon;
-          const color = resolved.color;
-
-          if (!map[id]) map[id] = { id, name, icon, amount: 0, color };
-          map[id].amount += entry.amount;
-        });
-      });
-
-      const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
-      const items = Object.values(map)
-        .map((i, idx) => ({
-          ...i,
-          percentage: total > 0 ? (i.amount / total) * 100 : 0,
-          color: i.color || palette[idx % palette.length],
-        }))
-        .sort((a, b) => b.amount - a.amount);
-
-      return { items, total, isExpense };
-    }
-
-    if (donutSubtype === 'despesas_subcategoria' || donutSubtype === 'receitas_subcategoria') {
-      const isExpense = donutSubtype === 'despesas_subcategoria';
-      const targetType = isExpense ? 'expense' : 'income';
-      const map: Record<
-        string,
-        {
-          id: string;
-          name: string;
-          icon: string;
-          amount: number;
-          color?: string;
-          parentCategoryId: string;
-          parentCategoryName: string;
-          parentCategoryIcon: string;
-        }
-      > = {};
-
-      monthTxs.filter(t => t.type === targetType).forEach(t => {
-        const entries = getAnalyticalEntries(t);
-        entries.forEach(entry => {
-          if (entry.includeInReports === false) return;
-          const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, targetType);
-          const parentId = resolved.id;
-          const parentName = resolved.name;
-          const parentIcon = resolved.icon;
-
-          // Filtro opcional por categoria pai específica
-          if (selectedParentCategoryFilter && parentId !== selectedParentCategoryFilter) {
-            return;
-          }
-
-          let subId = resolved.subId || entry.subcategoryId;
-          let subName = resolved.subName;
-          let subIcon = resolved.subIcon || resolved.icon || '🏷️';
-
-          if (!subId || !subName) {
-            subId = `geral_${parentId}`;
-            subName = `${parentName} (Geral)`;
-            subIcon = parentIcon;
-          }
-
-          const uniqueKey = `${parentId}__${subId}`;
-
-          if (!map[uniqueKey]) {
-            map[uniqueKey] = {
-              id: uniqueKey,
-              name: subName.toUpperCase(),
-              icon: subIcon,
-              amount: 0,
-              parentCategoryId: parentId,
-              parentCategoryName: parentName,
-              parentCategoryIcon: parentIcon,
-            };
-          }
-          map[uniqueKey].amount += entry.amount;
-        });
-      });
-
-      const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
-      const items = Object.values(map)
-        .map((i, idx) => ({
-          ...i,
-          percentage: total > 0 ? (i.amount / total) * 100 : 0,
-          color: palette[idx % palette.length],
-        }))
-        .sort((a, b) => b.amount - a.amount);
-
-      return { items, total, isExpense };
-    }
-
-    if (donutSubtype === 'despesas_contas' || donutSubtype === 'receitas_contas') {
-      const isExpense = donutSubtype === 'despesas_contas';
-      const targetType = isExpense ? 'expense' : 'income';
-      const map: Record<string, { id: string; name: string; icon: string; amount: number }> = {};
-
-      monthTxs.filter(t => t.type === targetType).forEach(t => {
-        let name = 'CARTEIRA / DINHEIRO';
-        let icon = '💵';
-        let id = 'wallet';
-
-        if (t.cardId) {
-          const card = cards.find(c => c.id === t.cardId);
-          name = card ? `CARTÃO ${card.name.toUpperCase()}` : 'CARTÃO DE CRÉDITO';
-          icon = '💳';
-          id = t.cardId;
-        } else if (t.accountId) {
-          const acc = accounts.find(a => a.id === t.accountId);
-          name = acc ? acc.name.toUpperCase() : 'CONTA BANCÁRIA';
-          icon = '🏦';
-          id = t.accountId;
-        }
-
-        if (!map[id]) map[id] = { id, name, icon, amount: 0 };
-        map[id].amount += t.amount;
-      });
-
-      const total = Object.values(map).reduce((sum, i) => sum + i.amount, 0);
-      const items = Object.values(map)
-        .map((i, idx) => ({
-          ...i,
-          percentage: total > 0 ? (i.amount / total) * 100 : 0,
-          color: palette[idx % palette.length],
-        }))
-        .sort((a, b) => b.amount - a.amount);
-
-      return { items, total, isExpense };
-    }
-
-    // saldos_contas
-    const total = accounts.reduce((sum, a) => sum + a.balance, 0);
-    const items = accounts.map((a, idx) => ({
-      id: a.id,
-      name: a.name.toUpperCase(),
-      icon: '🏦',
-      amount: a.balance,
-      percentage: total > 0 ? (Math.max(0, a.balance) / total) * 100 : 0,
-      color: a.color || palette[idx % palette.length],
-    })).sort((a, b) => b.amount - a.amount);
-
-    return { items, total, isExpense: false };
-  }, [donutSubtype, selectedParentCategoryFilter, filteredTransactions, currentMonthPrefix, categories, accounts, cards]);
-
-  // Lista de categorias-mãe disponíveis com despesas ou receitas no período para filtragem rápida
-  const availableParentCategoriesForSubtype = useMemo(() => {
-    if (donutSubtype !== 'despesas_subcategoria' && donutSubtype !== 'receitas_subcategoria') return [];
-    const isExpense = donutSubtype === 'despesas_subcategoria';
-    const targetType = isExpense ? 'expense' : 'income';
-    const monthTxs = filteredTransactions.filter(t => t.date.startsWith(currentMonthPrefix) && t.type === targetType);
-
-    const catMap = new Map<string, { id: string; name: string; icon: string; total: number; count: number }>();
-    monthTxs.forEach(t => {
-      const entries = getAnalyticalEntries(t);
-      entries.forEach(entry => {
-        if (entry.includeInReports === false) return;
-        const resolved = resolveCategory(categories, entry.categoryId, entry.subcategoryId, targetType);
-        const existing = catMap.get(resolved.id) || {
-          id: resolved.id,
-          name: resolved.name,
-          icon: resolved.icon,
-          total: 0,
-          count: 0,
-        };
-        existing.total += entry.amount;
-        existing.count += 1;
-        catMap.set(resolved.id, existing);
-      });
-    });
-
-    return Array.from(catMap.values()).sort((a, b) => b.total - a.total);
-  }, [donutSubtype, filteredTransactions, currentMonthPrefix, categories]);
-
-  // -----------------------------------------------------------------------------------
-  // 2. DATA FOR LINE TAB
-  // -----------------------------------------------------------------------------------
-  const lineData = useMemo(() => {
-    if (lineSubtype === 'despesas_mes') {
-      const daysInMonth = new Date(yearNum, viewDate.getMonth() + 1, 0).getDate();
-      const items = Array.from({ length: daysInMonth }, (_, i) => {
-        const dayNum = String(i + 1).padStart(2, '0');
-        const dateStr = `${currentMonthPrefix}-${dayNum}`;
-        const dayAmount = filteredTransactions
-          .filter(t => t.date === dateStr && t.type === 'expense')
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        return {
-          key: dateStr,
-          label: dayNum,
-          displayLabel: `${dayNum} ${capitalizedMonth}`,
-          amount: dayAmount,
-        };
-      });
-
-      const total = items.reduce((sum, i) => sum + i.amount, 0);
-      return { items, total, xKey: 'label' };
-    }
-
-    if (lineSubtype === 'despesas_semana') {
-      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const items = days.map((dayName, idx) => {
-        const dayAmount = filteredTransactions
-          .filter(t => {
-            if (t.type !== 'expense' || !t.date.startsWith(currentMonthPrefix)) return false;
-            const d = new Date(t.date + 'T12:00:00');
-            return d.getDay() === idx;
-          })
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        return {
-          key: dayName,
-          label: dayName,
-          displayLabel: dayName,
-          amount: dayAmount,
-        };
-      });
-
-      const total = items.reduce((sum, i) => sum + i.amount, 0);
-      return { items, total, xKey: 'label' };
-    }
-
-    // despesas_ano
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const items = months.map((m, idx) => {
-      const mStr = `${yearNum}-${String(idx + 1).padStart(2, '0')}`;
-      const monthAmount = filteredTransactions
-        .filter(t => t.date.startsWith(mStr) && t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      return {
-        key: mStr,
-        label: m,
-        displayLabel: `${m} ${yearNum}`,
-        amount: monthAmount,
-      };
-    });
-
-    const total = items.reduce((sum, i) => sum + i.amount, 0);
-    return { items, total, xKey: 'label' };
-  }, [lineSubtype, filteredTransactions, currentMonthPrefix, yearNum, viewDate, capitalizedMonth]);
-
-  // -----------------------------------------------------------------------------------
-  // 3. DATA FOR BAR TAB
-  // -----------------------------------------------------------------------------------
-  const barData = useMemo(() => {
-    if (barSubtype === 'balanco_mensal') {
-      // Last 6 months
-      const offsets = [-5, -4, -3, -2, -1, 0];
-      const items = offsets.map(offset => {
-        const d = new Date(viewDate);
-        d.setMonth(d.getMonth() + offset);
-        const mStr = d.toISOString().substring(0, 7);
-        const label = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase().replace('.', '');
-
-        const rec = filteredTransactions
-          .filter(t => t.date.startsWith(mStr) && t.type === 'income')
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        const desp = filteredTransactions
-          .filter(t => t.date.startsWith(mStr) && t.type === 'expense')
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        return {
-          key: mStr,
-          label,
-          displayLabel: `${label} ${d.getFullYear()}`,
-          Receita: rec,
-          Despesa: desp,
-          saldo: rec - desp,
-        };
-      });
-
-      return { items, type: 'dual' as const };
-    }
-
-    if (barSubtype === 'fluxo_caixa_anual') {
-      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const items = months.map((m, idx) => {
-        const mStr = `${yearNum}-${String(idx + 1).padStart(2, '0')}`;
-        const rec = filteredTransactions
-          .filter(t => t.date.startsWith(mStr) && t.type === 'income')
-          .reduce((sum, t) => sum + t.amount, 0);
-        const desp = filteredTransactions
-          .filter(t => t.date.startsWith(mStr) && t.type === 'expense')
-          .reduce((sum, t) => sum + t.amount, 0);
-        const saldo = rec - desp;
-
-        return {
-          key: mStr,
-          label: m,
-          displayLabel: `${m} ${yearNum}`,
-          Balanco: saldo,
-          Receita: rec,
-          Despesa: desp,
-        };
-      });
-
-      return { items, type: 'single' as const };
-    }
-
-    // despesas_dia_semana
-    const days = [
-      { name: 'Dom', full: 'Domingo' },
-      { name: 'Seg', full: 'Segunda-feira' },
-      { name: 'Ter', full: 'Terça-feira' },
-      { name: 'Qua', full: 'Quarta-feira' },
-      { name: 'Qui', full: 'Quinta-feira' },
-      { name: 'Sex', full: 'Sexta-feira' },
-      { name: 'Sáb', full: 'Sábado' },
-    ];
-
-    const items = days.map((day, idx) => {
-      const dayAmount = filteredTransactions
-        .filter(t => {
-          if (t.type !== 'expense' || !t.date.startsWith(currentMonthPrefix)) return false;
-          const d = new Date(t.date + 'T12:00:00');
-          return d.getDay() === idx;
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      return {
-        key: day.name,
-        label: day.name,
-        displayLabel: day.full,
-        Despesa: dayAmount,
-      };
-    });
-
-    return { items, type: 'weekday' as const };
-  }, [barSubtype, filteredTransactions, viewDate, currentMonthPrefix, yearNum]);
-
-  // Labels mappings
-  const donutSubtypeLabels: Record<DonutSubtype, string> = {
-    despesas_categoria: 'Despesas por Categorias',
-    despesas_subcategoria: 'Despesas por Subcategorias',
-    despesas_contas: 'Despesas por Contas',
-    receitas_categoria: 'Receitas por Categorias',
-    receitas_subcategoria: 'Receitas por Subcategorias',
-    receitas_contas: 'Receitas por Contas',
-    saldos_contas: 'Saldos por Conta',
+  // Navegação para categoria em drill-down a partir da visão geral
+  const handleNavigateToCategoryDrillDown = (catId: string) => {
+    setDrillDownCategoryId(catId);
+    setMainTab('categories');
   };
-
-  const lineSubtypeLabels: Record<LineSubtype, string> = {
-    despesas_mes: 'Despesas do mês (diário)',
-    despesas_semana: 'Despesas da semana',
-    despesas_ano: 'Despesas por ano (mensal)',
-  };
-
-  const barSubtypeLabels: Record<BarSubtype, string> = {
-    balanco_mensal: 'Balanço mensal (6 meses)',
-    fluxo_caixa_anual: 'Fluxo de caixa anual',
-    despesas_dia_semana: 'Despesas x dia da semana',
-  };
-
-  const currentDropdownLabel =
-    activeTab === 'donut'
-      ? donutSubtypeLabels[donutSubtype]
-      : activeTab === 'line'
-      ? lineSubtypeLabels[lineSubtype]
-      : barSubtypeLabels[barSubtype];
 
   const monthsShort = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in pb-16">
-      {/* 0. CABEÇALHO GLOBAL & SELETOR DE LAYOUT (FOCADO VS GRADE BENTO) */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in pb-16">
+      {/* 0. CABEÇALHO GLOBAL DE RELATÓRIOS & AÇÕES DE EXPORTAÇÃO */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Relatórios & Análises
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <span>Relatórios & Inteligência Financeira</span>
+            <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800">
+              Finly Analytics
+            </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Inteligência financeira, comparações e projeções patrimoniais
+            Painéis executivos, diagnósticos orçamentários, fluxo de caixa e projeções
           </p>
         </div>
 
-        {/* Botão de Alternância de Layout: Modo Focado vs Grade Bento */}
-        <button
-          onClick={handleToggleLayout}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 shadow-xs active:scale-95 transition-all cursor-pointer"
-          title={layoutMode === 'bento' ? 'Mudar para Modo Focado' : 'Mudar para Modo Grade Bento'}
-        >
-          {layoutMode === 'bento' ? (
-            <>
-              <LayoutGrid className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              <span>Grade Bento</span>
-            </>
-          ) : (
-            <>
-              <Maximize2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              <span>Modo Focado</span>
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* NAVEGAÇÃO ENTRE OS 4 MÓDULOS DE RELATÓRIO */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-none">
-        <button
-          onClick={() => setMainTab('overview')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-            mainTab === 'overview'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <PieIcon className="w-3.5 h-3.5" />
-          <span>Visão Geral</span>
-        </button>
-
-        <button
-          onClick={() => setMainTab('comparatives')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-            mainTab === 'comparatives'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <GitCompare className="w-3.5 h-3.5" />
-          <span>Comparativos MoM</span>
-        </button>
-
-        <button
-          onClick={() => setMainTab('financing')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-            mainTab === 'financing'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <Building className="w-3.5 h-3.5" />
-          <span>Financiamentos & Dívidas</span>
-        </button>
-
-        <button
-          onClick={() => setMainTab('health_50_30_20')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-            mainTab === 'health_50_30_20'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <HeartPulse className="w-3.5 h-3.5" />
-          <span>Regra 50/30/20</span>
-        </button>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 1. MÓDULO VISÃO GERAL */}
-      {/* ========================================================================= */}
-      {mainTab === 'overview' && (
-        <div className="space-y-6 animate-in fade-in">
-          {/* 1. TOP HEADER (FINLY REPORTS SPEC: SUBTYPE DROPDOWN + FILTER + EXPORT) */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Exibição da Visão Geral:
-              </span>
-            </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* 3 Tabs Segmented Control Pill */}
-          <div className="p-1 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 flex items-center shadow-xs">
-            <button
-              onClick={() => setActiveTab('donut')}
-              title="Gráfico Donut / Pizza"
-              className={`p-2 rounded-full transition-all cursor-pointer ${
-                activeTab === 'donut'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
-              }`}
-            >
-              <PieIcon className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => setActiveTab('line')}
-              title="Gráfico de Linha / Evolução"
-              className={`p-2 rounded-full transition-all cursor-pointer ${
-                activeTab === 'line'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => setActiveTab('bar')}
-              title="Gráfico de Barras / Comparativo"
-              className={`p-2 rounded-full transition-all cursor-pointer ${
-                activeTab === 'bar'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Subtype Dropdown Pill */}
-          <div className="relative">
-            <button
-              onClick={() => setIsSubtypeDropdownOpen(!isSubtypeDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-white hover:border-purple-500 shadow-xs cursor-pointer"
-            >
-              <span>{currentDropdownLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
-
-            {isSubtypeDropdownOpen && (
-              <div className="absolute right-0 mt-1.5 w-60 bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-1.5 z-40 animate-in fade-in divide-y divide-slate-100 dark:divide-slate-800/60">
-                {activeTab === 'donut' &&
-                  Object.entries(donutSubtypeLabels).map(([k, label]) => (
-                    <button
-                      key={k}
-                      onClick={() => {
-                        setDonutSubtype(k as DonutSubtype);
-                        setIsSubtypeDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                        donutSubtype === k
-                          ? 'bg-purple-50 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-
-                {activeTab === 'line' &&
-                  Object.entries(lineSubtypeLabels).map(([k, label]) => (
-                    <button
-                      key={k}
-                      onClick={() => {
-                        setLineSubtype(k as LineSubtype);
-                        setIsSubtypeDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                        lineSubtype === k
-                          ? 'bg-purple-50 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-
-                {activeTab === 'bar' &&
-                  Object.entries(barSubtypeLabels).map(([k, label]) => (
-                    <button
-                      key={k}
-                      onClick={() => {
-                        setBarSubtype(k as BarSubtype);
-                        setIsSubtypeDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                        barSubtype === k
-                          ? 'bg-purple-50 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-              </div>
-            )}
-          </div>
-
-          {/* Unified Filter Popover */}
+        {/* Botão de Exportação e Filtro Popover */}
+        <div className="flex items-center gap-2">
+          {/* Filtro Avançado Popover */}
           <FilterPopover
             filters={filters}
             onFilterChange={setFilters}
@@ -1003,15 +369,15 @@ export const ReportsPage: React.FC = () => {
             customPeriodLabel={capitalizedMonth + ' ' + yearNum}
           />
 
-          {/* Export Report Dropdown (PDF & CSV) */}
+          {/* Export Dropdown */}
           <div className="relative" ref={exportDropdownRef}>
             <button
               onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 shadow-xs cursor-pointer active:scale-95 transition-all"
-              title="Exportar Relatório em PDF ou CSV"
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-white dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 shadow-xs cursor-pointer active:scale-95 transition-all"
+              title="Exportar Relatório em PDF, Excel ou CSV"
             >
               <Download className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              <span className="hidden sm:inline">Exportar</span>
+              <span>Exportar</span>
               <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
 
@@ -1047,9 +413,11 @@ export const ReportsPage: React.FC = () => {
                   <div>
                     <div className="font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                       <span>Planilha Excel (.xlsx)</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">Oficial</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
+                        Oficial
+                      </span>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-normal">Múltiplas abas formatadas e fórmulas</div>
+                    <div className="text-[10px] text-slate-400 font-normal">Múltiplas abas formatadas</div>
                   </div>
                 </button>
 
@@ -1073,10 +441,133 @@ export const ReportsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. EXPANDABLE PERIOD SELECTOR PILL & REGIME TOGGLE */}
-      <div className="flex flex-col items-center justify-center gap-3">
-        {/* Regime Toggle */}
-        <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 text-[11px] font-bold shadow-xs">
+      {/* 1. NAVEGAÇÃO ENTRE OS DASHBOARDS ANALÍTICOS (7 MÓDULOS) */}
+      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-none shadow-xs">
+        <button
+          onClick={() => setMainTab('overview')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'overview'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Visão Geral 360°</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('cashflow')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'cashflow'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>Fluxo de Caixa</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('categories')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'categories'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <Tag className="w-3.5 h-3.5" />
+          <span>Categorias & Centros de Custo</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('payment_methods')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'payment_methods'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Meios de Pagamento</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('comparatives')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'comparatives'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <GitCompare className="w-3.5 h-3.5" />
+          <span>Comparativos MoM</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('health_50_30_20')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'health_50_30_20'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <HeartPulse className="w-3.5 h-3.5" />
+          <span>Regra 50/30/20</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('financing')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            mainTab === 'financing'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:white'
+          }`}
+        >
+          <Building className="w-3.5 h-3.5" />
+          <span>Financiamentos & Dívidas</span>
+        </button>
+      </div>
+
+      {/* 2. BARRA DE CONTROLE UNIFICADA DE PERÍODO & REGIME CONTÁBIL */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-3xl bg-white dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 shadow-xs">
+        {/* Navegador de Mês */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedMonthOffset(prev => prev - 1)}
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Mês Anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setShowMonthPicker(!showMonthPicker)}
+            className="px-4 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
+          >
+            {capitalizedMonth} {yearNum}
+          </button>
+
+          <button
+            onClick={() => setSelectedMonthOffset(prev => prev + 1)}
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Próximo Mês"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+          {/* Atalho Mês Atual */}
+          {selectedMonthOffset !== 0 && (
+            <button
+              onClick={() => setSelectedMonthOffset(0)}
+              className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline px-2 cursor-pointer"
+            >
+              Hoje
+            </button>
+          )}
+        </div>
+
+        {/* Regime Contábil Toggle */}
+        <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 text-[11px] font-bold shadow-xs">
           <button
             type="button"
             onClick={() => setViewRegime('invoice_month')}
@@ -1087,7 +578,7 @@ export const ReportsPage: React.FC = () => {
             }`}
             title="Relatórios por competência da fatura do cartão (Padrão contábil)"
           >
-            <span>Por Competência / Fatura</span>
+            <span>Competência / Fatura</span>
           </button>
           <button
             type="button"
@@ -1099,7 +590,7 @@ export const ReportsPage: React.FC = () => {
             }`}
             title="Relatórios por data em que a compra ocorreu"
           >
-            <span>Por Data da Compra</span>
+            <span>Data da Compra</span>
           </button>
           <button
             type="button"
@@ -1109,660 +600,170 @@ export const ReportsPage: React.FC = () => {
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Relatórios por data de vencimento da fatura (Fluxo de Caixa)"
+            title="Relatórios por data de vencimento da fatura"
           >
-            <span>Por Vencimento</span>
+            <span>Vencimento</span>
           </button>
         </div>
+      </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      {/* Popover Inline Matrix Month Picker */}
+      {showMonthPicker && (
+        <div className="p-4 rounded-3xl bg-white dark:bg-[#1E222D] border border-slate-200 dark:border-slate-800 shadow-xl space-y-3 animate-in fade-in max-w-sm mx-auto">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-white px-2">
+            <button
+              onClick={() => setSelectedMonthOffset(prev => prev - 12)}
+              className="p-1 hover:text-purple-600 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span>{yearNum}</span>
+            <button
+              onClick={() => setSelectedMonthOffset(prev => prev + 12)}
+              className="p-1 hover:text-purple-600 cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
-          <button
-            onClick={() => setShowMonthPicker(!showMonthPicker)}
-            className="px-5 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
-          >
-            {capitalizedMonth} {yearNum}
-          </button>
+          <div className="grid grid-cols-4 gap-2">
+            {monthsShort.map((m, idx) => {
+              const currentMonthIndex = viewDate.getMonth();
+              const isSelected = currentMonthIndex === idx;
 
-          <button
-            onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+              return (
+                <button
+                  key={m}
+                  onClick={() => {
+                    const diff = idx - currentMonthIndex;
+                    setSelectedMonthOffset(prev => prev + diff);
+                    setShowMonthPicker(false);
+                  }}
+                  className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
         </div>
+      )}
 
-        {/* Inline Month Picker Matrix */}
-        {showMonthPicker && (
-          <div className="p-4 rounded-3xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-800 shadow-xl space-y-3 animate-in fade-in max-w-sm w-full">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-white px-2">
-              <button
-                onClick={() => setSelectedMonthOffset(prev => prev - 12)}
-                className="p-1 hover:text-purple-600"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span>{yearNum}</span>
-              <button
-                onClick={() => setSelectedMonthOffset(prev => prev + 12)}
-                className="p-1 hover:text-purple-600"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {monthsShort.map((m, idx) => {
-                const isSelected = viewDate.getMonth() === idx;
-                return (
-                  <button
-                    key={m}
-                    onClick={() => {
-                      const now = new Date();
-                      const currentYear = now.getFullYear();
-                      const currentMonth = now.getMonth();
-                      const targetOffset = (yearNum - currentYear) * 12 + (idx - currentMonth);
-                      setSelectedMonthOffset(targetOffset);
-                      setShowMonthPicker(false);
-                    }}
-                    className={`py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-purple-600 text-white shadow-md'
-                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-900/30'
-                    }`}
-                  >
-                    {m}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 3. MAIN CARD CONTAINER (2-COLUMN RESPONSIVE LAYOUT) */}
-      <div
-        ref={chartCardRef}
-        className="p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl"
-      >
+      {/* 3. CONTEÚDO DINÂMICO DOS DASHBOARDS */}
+      <div ref={reportContainerRef} className="space-y-6">
         {/* ========================================================================= */}
-        {/* TAB 1: DONUT / PIE VIEW */}
+        {/* 1. VISÃO GERAL 360° (DASHBOARD EXECUTIVO) */}
         {/* ========================================================================= */}
-        {activeTab === 'donut' && (
-          <div className="space-y-4">
-            {/* Banner e Barra de Chips de Categorias para Subcategorias */}
-            {donutSubtype.includes('subcategoria') && (
-              <div className="space-y-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/60">
-                {selectedParentCategoryFilter && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/80 shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">
-                        {availableParentCategoriesForSubtype.find(c => c.id === selectedParentCategoryFilter)?.icon || '📁'}
-                      </span>
-                      <span className="text-xs font-black text-purple-900 dark:text-purple-200">
-                        Filtrando subcategorias de: {availableParentCategoriesForSubtype.find(c => c.id === selectedParentCategoryFilter)?.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setSelectedParentCategoryFilter(null)}
-                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors cursor-pointer"
-                      >
-                        Ver todas as subcategorias
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedParentCategoryFilter(null);
-                          setDonutSubtype(donutSubtype === 'despesas_subcategoria' ? 'despesas_categoria' : 'receitas_categoria');
-                        }}
-                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-                      >
-                        ← Voltar a Categorias
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Chips de Categorias disponíveis */}
-                {availableParentCategoriesForSubtype.length > 0 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                    <button
-                      onClick={() => setSelectedParentCategoryFilter(null)}
-                      className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
-                        !selectedParentCategoryFilter
-                          ? 'bg-purple-600 text-white shadow-xs'
-                          : 'bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      Todas as Categorias ({availableParentCategoriesForSubtype.length})
-                    </button>
-                    {availableParentCategoriesForSubtype.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedParentCategoryFilter(cat.id === selectedParentCategoryFilter ? null : cat.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                          selectedParentCategoryFilter === cat.id
-                            ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-400/50'
-                            : 'bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <span>{cat.icon}</span>
-                        <span>{cat.name}</span>
-                        <span className="text-[10px] opacity-75 font-semibold">({formatCurrency(cat.total, user.currency)})</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Left Column: Donut Chart with Centered Total */}
-              <div className="lg:col-span-5 flex flex-col items-center justify-center">
-                {donutData.items.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 text-xs">
-                    Nenhuma transação encontrada no período.
-                  </div>
-                ) : (
-                  <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={donutData.items}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={68}
-                          outerRadius={94}
-                          paddingAngle={donutData.items.length > 1 ? 4 : 0}
-                          cornerRadius={6}
-                          dataKey="amount"
-                          stroke="transparent"
-                          activeIndex={hoveredDonutItem ? donutData.items.findIndex(item => item.id === hoveredDonutItem.id) : undefined}
-                          activeShape={renderActiveDonutShape}
-                          onMouseEnter={(_, index) => setHoveredDonutItem(donutData.items[index])}
-                          onMouseLeave={() => setHoveredDonutItem(null)}
-                        >
-                          {donutData.items.map((entry, index) => (
-                            <Cell
-                              key={`cell-donut-${entry.id || index}`}
-                              fill={entry.color || '#7c4dff'}
-                              className="cursor-pointer transition-opacity hover:opacity-90"
-                            />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-
-                    {/* Interactive Center */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-                      {hoveredDonutItem ? (
-                        <div className="animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center max-w-[135px] text-center px-1 select-none">
-                          <div
-                            className="w-8 h-8 rounded-xl flex items-center justify-center text-base mb-1 shadow-2xs"
-                            style={{ backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}25` }}
-                          >
-                            {hoveredDonutItem.icon || '🏷️'}
-                          </div>
-                          {hoveredDonutItem.parentCategoryName && (
-                            <span className="text-[9px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider line-clamp-1 mb-0.5">
-                              {hoveredDonutItem.parentCategoryIcon} {hoveredDonutItem.parentCategoryName}
-                            </span>
-                          )}
-                          <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
-                            {hoveredDonutItem.name}
-                          </span>
-                          <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 tracking-tight mt-0.5 whitespace-nowrap">
-                            {formatCurrency(hoveredDonutItem.amount, user.currency, !user.showValues)}
-                          </span>
-                          <span
-                            className="text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-1 border shadow-2xs"
-                            style={{
-                              backgroundColor: `${hoveredDonutItem.color || '#7c4dff'}15`,
-                              borderColor: `${hoveredDonutItem.color || '#7c4dff'}35`,
-                              color: hoveredDonutItem.color || '#7c4dff',
-                            }}
-                          >
-                            {hoveredDonutItem.percentage.toFixed(1)}% do total
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center max-w-[140px] text-center px-1 select-none">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">
-                            Total do Período
-                          </span>
-                          <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                            {formatCurrency(donutData.total, user.currency, !user.showValues)}
-                          </strong>
-                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full mt-1.5 border border-slate-200/60 dark:border-slate-700/60">
-                            {donutData.items.length}{' '}
-                            {donutSubtype.includes('subcategoria')
-                              ? 'subcategorias'
-                              : donutSubtype.includes('categoria')
-                              ? 'categorias'
-                              : 'contas'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Ranked Breakdown List (ALL CAPS, ICON, PERCENT, VALUE) */}
-              <div className="lg:col-span-7 space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    {donutSubtypeLabels[donutSubtype]}
-                    {selectedParentCategoryFilter && (
-                      <span className="text-purple-600 dark:text-purple-400 font-extrabold ml-1">
-                        • {availableParentCategoriesForSubtype.find(c => c.id === selectedParentCategoryFilter)?.name}
-                      </span>
-                    )}
-                  </h3>
-
-                  {donutSubtype.includes('subcategoria') ? (
-                    <button
-                      onClick={() => {
-                        setSelectedParentCategoryFilter(null);
-                        setDonutSubtype(donutSubtype === 'despesas_subcategoria' ? 'despesas_categoria' : 'receitas_categoria');
-                      }}
-                      className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
-                    >
-                      <span>Ver por categorias</span>
-                    </button>
-                  ) : (
-                    (donutSubtype === 'despesas_categoria' || donutSubtype === 'receitas_categoria') && (
-                      <button
-                        onClick={() => {
-                          setSelectedParentCategoryFilter(null);
-                          setDonutSubtype(donutSubtype === 'despesas_categoria' ? 'despesas_subcategoria' : 'receitas_subcategoria');
-                        }}
-                        className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <span>Ver todas subcategorias</span>
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
-                    )
-                  )}
-                </div>
-
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[380px] overflow-y-auto scrollbar-thin pr-1">
-                  {donutData.items.length === 0 ? (
-                    <p className="p-6 text-center text-xs text-slate-400">Nenhum dado para exibir.</p>
-                  ) : (
-                    donutData.items.map((item: any, idx) => (
-                      <div
-                        key={item.id || idx}
-                        className="py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 px-2 rounded-xl transition-colors cursor-pointer group"
-                        onMouseEnter={() => setHoveredDonutItem(item)}
-                        onMouseLeave={() => setHoveredDonutItem(null)}
-                      >
-                        {/* Left: Round Colored Icon + ALL CAPS Title + Parent Category / Porcentagem */}
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white shadow-xs transition-transform group-hover:scale-105"
-                            style={{ backgroundColor: item.color }}
-                          >
-                            {item.icon}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight truncate">
-                              {item.name}
-                            </p>
-                            {item.parentCategoryName ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded-md mt-0.5">
-                                <span>{item.parentCategoryIcon}</span>
-                                <span>{item.parentCategoryName}</span>
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
-                                Porcentagem
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Right: Drilldown button (if in category view) + Amount + Formatted % */}
-                        <div className="flex items-center gap-2.5 shrink-0">
-                          {(donutSubtype === 'despesas_categoria' || donutSubtype === 'receitas_categoria') && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedParentCategoryFilter(item.id);
-                                setDonutSubtype(donutSubtype === 'despesas_categoria' ? 'despesas_subcategoria' : 'receitas_subcategoria');
-                              }}
-                              className="opacity-80 group-hover:opacity-100 px-2 py-1 rounded-lg text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all flex items-center gap-0.5 cursor-pointer shadow-2xs"
-                              title={`Ver gráfico Donut das subcategorias de ${item.name}`}
-                            >
-                              <span>Subcategorias</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          )}
-
-                          <div className="text-right shrink-0">
-                            <p
-                              className={`text-xs font-black ${
-                                donutData.isExpense ? 'text-rose-600 dark:text-[#FF5252]' : 'text-emerald-600 dark:text-[#00E676]'
-                              }`}
-                            >
-                              {formatCurrency(item.amount, user.currency, !user.showValues)}
-                            </p>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold block">
-                              {item.percentage.toFixed(2).replace('.', ',')}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+        {mainTab === 'overview' && (
+          <div className="animate-in fade-in">
+            <ExecutiveDashboard
+              transactions={filteredTransactions}
+              categories={categories}
+              accounts={accounts}
+              cards={cards}
+              user={user}
+              currentMonthPrefix={currentMonthPrefix}
+              monthName={capitalizedMonth}
+              yearNum={yearNum}
+              onNavigateToCategory={handleNavigateToCategoryDrillDown}
+            />
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 2: LINE / EVOLUTION VIEW */}
+        {/* 2. FLUXO DE CAIXA TEMPORAL & PROJEÇÃO */}
         {/* ========================================================================= */}
-        {activeTab === 'line' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Smooth Line Chart */}
-            <div className="lg:col-span-7 h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lineData.items} margin={{ top: 15, right: 20, left: -10, bottom: 0 }}>
-                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
-                      borderRadius: '12px',
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                    }}
-                    formatter={(val: number) => [formatCurrency(val, user.currency), 'Gasto']}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#EB5757"
-                    strokeWidth={2.5}
-                    dot={{ r: 4, fill: '#EB5757' }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Right Column: Chronological List of Days/Months */}
-            <div className="lg:col-span-5 space-y-3">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
-                Detalhamento Cronológico
-              </h3>
-
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
-                {lineData.items.map((i, idx) => (
-                  <div key={idx} className="py-2.5 flex items-center justify-between text-xs px-2">
-                    <span className="text-slate-700 dark:text-slate-300 font-semibold">{i.displayLabel}</span>
-                    <span className={`font-black ${i.amount > 0 ? 'text-rose-600 dark:text-[#FF5252]' : 'text-slate-400'}`}>
-                      {formatCurrency(i.amount, user.currency, !user.showValues)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Total Footer */}
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-black px-2">
-                <span className="text-slate-900 dark:text-white uppercase">Total</span>
-                <span className="text-rose-600 dark:text-[#FF5252]">
-                  {formatCurrency(lineData.total, user.currency, !user.showValues)}
-                </span>
-              </div>
-            </div>
+        {mainTab === 'cashflow' && (
+          <div className="animate-in fade-in">
+            <CashFlowDashboard
+              transactions={filteredTransactions}
+              user={user}
+              currentMonthPrefix={currentMonthPrefix}
+              yearNum={yearNum}
+            />
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: BAR / COMPARATIVE VIEW */}
+        {/* 3. CATEGORIAS & CENTROS DE CUSTO COM DRILL-DOWN */}
         {/* ========================================================================= */}
-        {activeTab === 'bar' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Bar Chart */}
-            <div className="lg:col-span-7 h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                {barData.type === 'dual' ? (
-                  <BarChart data={barData.items} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                      }}
-                      formatter={(val: number) => formatCurrency(val, user.currency)}
-                    />
-                    <Bar dataKey="Receita" fill="#00E676" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="Despesa" fill="#EB5757" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                ) : barData.type === 'single' ? (
-                  <BarChart data={barData.items} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                      }}
-                      formatter={(val: number) => formatCurrency(val, user.currency)}
-                    />
-                    <Bar dataKey="Balanco" fill="#7C4DFF" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                ) : (
-                  <BarChart data={barData.items} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={v => `R$${v}`} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                      }}
-                      formatter={(val: number) => formatCurrency(val, user.currency)}
-                    />
-                    <Bar dataKey="Despesa" fill="#EB5757" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                )}
-              </ResponsiveContainer>
+        {mainTab === 'categories' && (
+          <div className="animate-in fade-in">
+            <CategoriesDashboard
+              transactions={filteredTransactions}
+              categories={categories}
+              budgets={budgets}
+              user={user}
+              currentMonthPrefix={currentMonthPrefix}
+              initialSelectedCategoryId={drillDownCategoryId}
+            />
+          </div>
+        )}
 
-              {/* Legend */}
-              <div className="flex items-center justify-center gap-6 pt-3 text-[11px] font-bold">
-                {barData.type === 'dual' ? (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full bg-[#00E676]" />
-                      <span className="text-slate-600 dark:text-slate-300">Receita</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full bg-[#EB5757]" />
-                      <span className="text-slate-600 dark:text-slate-300">Despesa</span>
-                    </div>
-                  </>
-                ) : barData.type === 'single' ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
-                    <span className="text-slate-600 dark:text-slate-300">Balanço Líquido</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-[#EB5757]" />
-                    <span className="text-slate-600 dark:text-slate-300">Despesas</span>
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* 4. MEIOS DE PAGAMENTO & CARTÕES */}
+        {/* ========================================================================= */}
+        {mainTab === 'payment_methods' && (
+          <div className="animate-in fade-in">
+            <PaymentMethodsDashboard
+              transactions={filteredTransactions}
+              accounts={accounts}
+              cards={cards}
+              user={user}
+              currentMonthPrefix={currentMonthPrefix}
+            />
+          </div>
+        )}
 
-            {/* Right Column: Breakdown List */}
-            <div className="lg:col-span-5 space-y-3">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
-                Detalhamento dos Valores
-              </h3>
+        {/* ========================================================================= */}
+        {/* 5. MÓDULO COMPARATIVOS (MOM & ORÇADO VS REALIZADO) */}
+        {/* ========================================================================= */}
+        {mainTab === 'comparatives' && (
+          <div className="animate-in fade-in">
+            <ComparativeReport
+              transactions={filteredTransactions}
+              categories={categories}
+              budgets={budgets}
+              cards={cards}
+              viewRegime={viewRegime}
+              currentMonth={currentMonthPrefix}
+              currency={user.currency}
+            />
+          </div>
+        )}
 
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
-                {barData.items.map((i: any, idx) => (
-                  <div key={idx} className="py-2.5 px-2 space-y-1">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                      <span>{i.displayLabel}</span>
-                      {i.saldo !== undefined && (
-                        <span className={`${i.saldo >= 0 ? 'text-emerald-600 dark:text-[#00E676]' : 'text-rose-600 dark:text-[#EB5757]'}`}>
-                          {formatCurrency(i.saldo, user.currency, !user.showValues)}
-                        </span>
-                      )}
-                      {i.Balanco !== undefined && (
-                        <span className={`${i.Balanco >= 0 ? 'text-emerald-600 dark:text-[#00E676]' : 'text-rose-600 dark:text-[#EB5757]'}`}>
-                          {formatCurrency(i.Balanco, user.currency, !user.showValues)}
-                        </span>
-                      )}
-                      {i.Despesa !== undefined && i.saldo === undefined && (
-                        <span className="text-rose-600 dark:text-[#EB5757]">
-                          {formatCurrency(i.Despesa, user.currency, !user.showValues)}
-                        </span>
-                      )}
-                    </div>
+        {/* ========================================================================= */}
+        {/* 6. MÓDULO REGRA 50/30/20 & DIAGNÓSTICO */}
+        {/* ========================================================================= */}
+        {mainTab === 'health_50_30_20' && (
+          <div className="animate-in fade-in">
+            <Health503020Report
+              transactions={filteredTransactions}
+              categories={categories}
+              cards={cards}
+              viewRegime={viewRegime}
+              currentMonth={currentMonthPrefix}
+              currency={user.currency}
+            />
+          </div>
+        )}
 
-                    {i.Receita !== undefined && (
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Rec: {formatCurrency(i.Receita, user.currency)}</span>
-                        <span>Desp: {formatCurrency(i.Despesa, user.currency)}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* 7. MÓDULO FINANCIAMENTOS & DÍVIDAS */}
+        {/* ========================================================================= */}
+        {mainTab === 'financing' && (
+          <div className="animate-in fade-in">
+            <FinancingReport
+              debts={debts}
+              currency={user.currency}
+            />
           </div>
         )}
       </div>
-    </div>
-  )}
-
-  {/* ========================================================================= */}
-  {/* 2. MÓDULO COMPARATIVOS (MOM & ORÇADO VS REALIZADO) */}
-  {/* ========================================================================= */}
-  {mainTab === 'comparatives' && (
-    <div className="space-y-6 animate-in fade-in">
-      {/* Seletor de Mês */}
-      <div className="flex items-center justify-center gap-3">
-        <button
-          onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-          title="Mês Anterior"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={() => setShowMonthPicker(!showMonthPicker)}
-          className="px-5 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
-        >
-          {capitalizedMonth} {yearNum}
-        </button>
-
-        <button
-          onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-          title="Próximo Mês"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
-
-      <ComparativeReport
-        transactions={filteredTransactions}
-        categories={categories}
-        budgets={budgets}
-        cards={cards}
-        viewRegime={viewRegime}
-        currentMonth={currentMonthPrefix}
-        currency={user.currency}
-        isBento={layoutMode === 'bento'}
-      />
-    </div>
-  )}
-
-  {/* ========================================================================= */}
-  {/* 3. MÓDULO FINANCIAMENTOS & DÍVIDAS */}
-  {/* ========================================================================= */}
-  {mainTab === 'financing' && (
-    <div className="animate-in fade-in">
-      <FinancingReport
-        debts={debts}
-        currency={user.currency}
-        isBento={layoutMode === 'bento'}
-      />
-    </div>
-  )}
-
-  {/* ========================================================================= */}
-  {/* 4. MÓDULO REGRA 50/30/20 & DIAGNÓSTICO */}
-  {/* ========================================================================= */}
-  {mainTab === 'health_50_30_20' && (
-    <div className="space-y-6 animate-in fade-in">
-      {/* Seletor de Mês */}
-      <div className="flex items-center justify-center gap-3">
-        <button
-          onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-          title="Mês Anterior"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={() => setShowMonthPicker(!showMonthPicker)}
-          className="px-5 py-1.5 rounded-full border border-purple-500/50 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-xs font-extrabold uppercase tracking-widest cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-xs"
-        >
-          {capitalizedMonth} {yearNum}
-        </button>
-
-        <button
-          onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-          title="Próximo Mês"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
-
-      <Health503020Report
-        transactions={filteredTransactions}
-        categories={categories}
-        cards={cards}
-        viewRegime={viewRegime}
-        currentMonth={currentMonthPrefix}
-        currency={user.currency}
-        isBento={layoutMode === 'bento'}
-      />
-    </div>
-  )}
     </div>
   );
 };
