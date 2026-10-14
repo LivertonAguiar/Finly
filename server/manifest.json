@@ -5,10 +5,10 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.10",
+    "version": "1.1.79.11",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.10.zip",
-    "sha256": "a067ed01962b743ebc8c2c76faf0125c908397bcd6975a09929ee4c5c0e88e37",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.11.zip",
+    "sha256": "3d3ee74e6a12f2b25f5a2f85860a2b0b62c650231a4dc9aeed43ea3fc6eabd7d",
     "mandatory": true,
     "releaseDate": "2026-10-14",
     "notes": "Sugestoes dinamicas de tags alinhadas a categoria e descricao, autocomplete no modal e gestao de tags em cadastros"
