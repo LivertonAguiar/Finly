@@ -27,6 +27,8 @@ import { EmojiPicker } from '../ui/EmojiPicker';
 import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import { Modal } from '../ui/Modal';
 import { Account, CreditCard, Category } from '../../types';
+import { getConsolidatedTags } from '../../utils/tagManager';
+import { normalizeTag } from '../../utils/smartCategorizer';
 
 export const CadastrosPage: React.FC = () => {
   const { confirm } = useConfirm();
@@ -43,11 +45,20 @@ export const CadastrosPage: React.FC = () => {
     resetCategoriesToDefault,
     metrics,
     user,
+    transactions,
+    customTags,
+    addCustomTag,
+    removeCustomTag,
+    renameCustomTag,
   } = useFinancial();
 
-  const [activeTab, setActiveTab] = useState<'resumo' | 'contas' | 'cartoes' | 'categorias'>('resumo');
+  const [activeTab, setActiveTab] = useState<'resumo' | 'contas' | 'cartoes' | 'categorias' | 'tags'>('resumo');
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
   const [categorySearch, setCategorySearch] = useState('');
+  const [tagSearch, setTagSearch] = useState('');
+  const [newTagInput, setNewTagInput] = useState('');
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [renameTagInput, setRenameTagInput] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     'cat-desp-alimentacao': true,
     'cat-desp-moradia': true,
@@ -152,27 +163,80 @@ export const CadastrosPage: React.FC = () => {
     return auto;
   }, [categorySearch, expandedCategories, filteredCategories]);
 
+  const consolidatedTags = React.useMemo(() => {
+    return getConsolidatedTags(transactions, customTags);
+  }, [transactions, customTags]);
+
+  const filteredTags = React.useMemo(() => {
+    if (!tagSearch.trim()) return consolidatedTags;
+    const q = tagSearch.toLowerCase().trim();
+    return consolidatedTags.filter(item => item.tag.toLowerCase().includes(q));
+  }, [tagSearch, consolidatedTags]);
+
+  const handleCreateTagSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTagInput.trim()) return;
+    const clean = normalizeTag(newTagInput);
+    if (clean) {
+      addCustomTag(clean);
+      setNewTagInput('');
+    }
+  };
+
+  const handleOpenRenameTag = (tag: string) => {
+    setEditingTag(tag);
+    setRenameTagInput(tag);
+  };
+
+  const handleSaveRenameTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTag || !renameTagInput.trim()) return;
+    const cleanNew = normalizeTag(renameTagInput);
+    if (cleanNew && cleanNew !== editingTag) {
+      renameCustomTag(editingTag, cleanNew);
+    }
+    setEditingTag(null);
+    setRenameTagInput('');
+  };
+
+  const handleDeleteTag = async (tag: string, count: number) => {
+    const isConfirmed = await confirm({
+      title: `Excluir tag #${tag}?`,
+      message: count > 0
+        ? `Esta tag está presente em ${count} lançamento(s). Ela será desvinculada de todas as transações e removida do seu cadastro.`
+        : `Deseja realmente remover a tag #${tag}?`,
+      confirmText: 'Excluir Tag',
+      cancelText: 'Cancelar',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
+      removeCustomTag(tag, true);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Title & Sub-tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black text-slate-800 dark:text-slate-100">Cadastro</h2>
-          <p className="text-xs text-slate-400">Configure suas contas bancárias, cartões de crédito e categorias</p>
+          <p className="text-xs text-slate-400">Configure suas contas bancárias, cartões de crédito, categorias e tags</p>
         </div>
 
-        {/* 4 Tabs: Resumo, Contas, Cartões, Categorias */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl self-start">
+        {/* 5 Tabs: Resumo, Contas, Cartões, Categorias, Tags */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl self-start flex-wrap">
           {[
             { id: 'resumo', label: 'Resumo' },
             { id: 'contas', label: `Contas (${accounts.length})` },
             { id: 'cartoes', label: `Cartões (${cards.length})` },
             { id: 'categorias', label: 'Categorias' },
+            { id: 'tags', label: `Tags (${consolidatedTags.length})` },
           ].map(t => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === t.id
                   ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -187,7 +251,7 @@ export const CadastrosPage: React.FC = () => {
       {/* 1. RESUMO TAB */}
       {activeTab === 'resumo' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
               <span className="text-xs font-semibold text-slate-500">Saldo Total em Contas</span>
               <p className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
@@ -211,6 +275,24 @@ export const CadastrosPage: React.FC = () => {
               </p>
               <span className="text-[11px] text-slate-400 mt-1 block">
                 {categories.reduce((sum, c) => sum + (c.subcategories?.length || 0), 0)} subcategorias
+              </span>
+            </div>
+
+            <div
+              className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+              onClick={() => setActiveTab('tags')}
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-semibold text-slate-500">Tags Cadastradas</span>
+                <span className="p-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                  <Tag className="w-3.5 h-3.5" />
+                </span>
+              </div>
+              <p className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
+                {consolidatedTags.length}
+              </p>
+              <span className="text-[11px] text-purple-600 dark:text-purple-400 font-bold mt-1 block">
+                Gerenciar tags →
               </span>
             </div>
           </div>
@@ -674,6 +756,133 @@ export const CadastrosPage: React.FC = () => {
         </div>
       )}
 
+      {/* 5. TAGS TAB */}
+      {activeTab === 'tags' && (
+        <div className="space-y-6">
+          {/* Header & Controls */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                <Tag className="w-6 h-6" />
+              </span>
+              <div>
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
+                  Gerenciamento de Tags
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Cadastre palavras-chave personalizadas para sugestões automáticas e filtros rápidos
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Add Form */}
+            <form onSubmit={handleCreateTagSubmit} className="flex items-center gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <input
+                  type="text"
+                  placeholder="Nova tag (ex: viagens, reforma, pet)..."
+                  value={newTagInput}
+                  onChange={e => setNewTagInput(e.target.value)}
+                  className="w-full pl-3 pr-3 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!newTagInput.trim()}
+                className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar Tag
+              </button>
+            </form>
+          </div>
+
+          {/* Search bar & Tag Stats */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar tag..."
+                value={tagSearch}
+                onChange={e => setTagSearch(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+              />
+              {tagSearch && (
+                <button
+                  type="button"
+                  onClick={() => setTagSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="text-xs font-medium text-slate-500">
+              Total: <span className="font-bold text-slate-700 dark:text-slate-200">{filteredTags.length}</span> tags cadastradas
+            </div>
+          </div>
+
+          {/* Tag Grid / List */}
+          {filteredTags.length === 0 ? (
+            <div className="p-12 text-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+              <Tag className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" />
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                {tagSearch ? 'Nenhuma tag encontrada para sua busca' : 'Nenhuma tag cadastrada ainda'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                {tagSearch
+                  ? 'Tente buscar por outro termo ou cadastre uma nova tag acima.'
+                  : 'Digite um nome no campo acima para criar sua primeira tag personalizada.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {filteredTags.map(item => (
+                <div
+                  key={item.tag}
+                  className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:border-purple-200 dark:hover:border-purple-900/60 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black text-xs shrink-0">
+                      #
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                        {item.tag}
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {item.count === 1 ? '1 lançamento' : `${item.count} lançamentos`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRenameTag(item.tag)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors cursor-pointer"
+                      title="Renomear tag"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTag(item.tag, item.count)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                      title="Excluir tag"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Modals */}
       <AccountModal
         isOpen={isAccountModalOpen}
@@ -736,6 +945,57 @@ export const CadastrosPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEditingSubcategory(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 rounded-xl shadow-xs cursor-pointer"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal de Renomear Tag */}
+      {editingTag && (
+        <Modal
+          isOpen={Boolean(editingTag)}
+          onClose={() => {
+            setEditingTag(null);
+            setRenameTagInput('');
+          }}
+          title="Renomear Tag"
+          maxWidth="sm"
+        >
+          <form onSubmit={handleSaveRenameTag} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Nome da Tag *
+              </label>
+              <input
+                type="text"
+                required
+                value={renameTagInput}
+                onChange={e => setRenameTagInput(e.target.value)}
+                placeholder="Novo nome da tag..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Ao alterar, todas as transações que utilizam #{editingTag} passarão a usar o novo nome automaticamente.
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingTag(null);
+                  setRenameTagInput('');
+                }}
                 className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
               >
                 Cancelar

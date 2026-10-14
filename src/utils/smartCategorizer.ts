@@ -641,18 +641,86 @@ export interface SuggestTagsParams {
   type?: TransactionType;
   isCard?: boolean;
   isThirdParty?: boolean;
+  categories?: Category[];
   historicalTransactions?: Transaction[];
   currentTags?: string[];
+  customTags?: string[];
   limit?: number;
 }
 
+const PT_STOPWORDS = new Set([
+  'de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas',
+  'por', 'pela', 'pelo', 'pelas', 'pelos', 'para', 'pra', 'pro',
+  'com', 'sem', 'sob', 'sobre', 'que', 'uma', 'umas', 'uns', 'mais',
+  'como', 'este', 'esta', 'esse', 'essa', 'aquele', 'aquela', 'isso',
+  'isto', 'aquilo', 'meu', 'minha', 'meus', 'minhas', 'seu', 'sua',
+  'seus', 'suas', 'nosso', 'nossa', 'nossos', 'nossas', 'muito',
+  'muita', 'pouco', 'pouca', 'pago', 'paga', 'pagamento', 'compra',
+  'valor', 'reais', 'pix', 'ted', 'doc', 'transferencia', 'debito',
+  'credito', 'via', 'mes', 'dia', 'ano'
+]);
+
+/**
+ * Extracts meaningful keyword tokens from a description
+ */
+export function extractKeywordsFromDescription(description: string): string[] {
+  const norm = normalizeText(description);
+  if (!norm) return [];
+  return norm
+    .split(/\s+/)
+    .map(tok => tok.replace(/[^a-z0-9]/g, ''))
+    .filter(tok => tok.length >= 3 && !PT_STOPWORDS.has(tok) && !/^\d+$/.test(tok));
+}
+
+// Mapeamento direto de afinidade semântica por palavras-chave de categoria
+export const CATEGORY_TAG_AFFINITY: Record<string, string[]> = {
+  alimentacao: ['mercado', 'restaurante', 'delivery', 'ifood', 'lanche', 'almoco', 'jantar', 'feira', 'padaria', 'cafe'],
+  transporte: ['combustivel', 'uber', 'estacionamento', 'pedagio', 'manutencao', 'ipva', 'oficina', 'lavagem', 'gasolina'],
+  moradia: ['aluguel', 'condominio', 'energia', 'agua', 'internet', 'gas', 'limpeza', 'reforma', 'utilidades', 'moveis'],
+  saude: ['farmacia', 'medicamentos', 'consulta', 'exames', 'dentista', 'plano-saude', 'terapia', 'otica', 'remedios'],
+  educacao: ['cursos', 'faculdade', 'livros', 'mensalidade', 'escola', 'idiomas', 'certificacao', 'material-escolar'],
+  lazer: ['viagem', 'streaming', 'cinema', 'jogos', 'ingressos', 'hotel', 'passeio', 'ferias', 'shows'],
+  academia: ['academia', 'treino', 'suplementos', 'fitness', 'personal', 'natacao', 'crossfit'],
+  compras: ['roupas', 'calcados', 'eletronicos', 'presente', 'cosmeticos', 'acessorios', 'perfume', 'pessoal'],
+  filhos: ['escola', 'fraldas', 'brinquedos', 'pediatra', 'filhos', 'mensalidade', 'material-escolar'],
+  pets: ['petshop', 'racao', 'veterinario', 'banho-tosa', 'vacinas', 'gato', 'cachorro'],
+  trabalho: ['salario', 'freelance', 'bonus', 'cliente', 'extra', 'reembolso', 'pro-labore'],
+  investimentos: ['dividendos', 'renda-passiva', 'cdb', 'acoes', 'cripto', 'fundos', 'aporte'],
+  impostos: ['imposto-de-renda', 'iptu', 'ipva', 'tributos', 'taxa', 'darf'],
+  igreja: ['dizimo', 'oferta', 'doacao', 'contribuicao'],
+};
+
+// Mapeamento direto de afinidade semântica por palavras-chave de subcategoria
+export const SUBCATEGORY_TAG_AFFINITY: Record<string, string[]> = {
+  uber: ['uber', 'corrida', 'transporte', 'mobilidade'],
+  combustivel: ['combustivel', 'gasolina', 'etanol', 'posto', 'carro'],
+  estacionamento: ['estacionamento', 'carro', 'garagem', 'zona-azul'],
+  pedagio: ['pedagio', 'estrada', 'viagem'],
+  mercado: ['mercado', 'compras', 'casa', 'essencial', 'supermercado'],
+  delivery: ['delivery', 'ifood', 'lanche', 'refeicao'],
+  restaurante: ['restaurante', 'almoco', 'jantar', 'lazer'],
+  farmacia: ['farmacia', 'medicamentos', 'saude', 'remedios'],
+  streaming: ['streaming', 'assinatura', 'recorrente', 'lazer'],
+  viagens: ['viagem', 'ferias', 'hotel', 'passagem', 'turismo'],
+  cursos: ['cursos', 'estudos', 'capacitacao', 'educacao'],
+  limpeza: ['limpeza', 'casa', 'utilidades', 'diarista'],
+  energia: ['energia', 'luz', 'fixo', 'contas'],
+  agua: ['agua', 'saneamento', 'fixo', 'contas'],
+  internet: ['internet', 'fibra', 'wifi', 'fixo'],
+  aluguel: ['aluguel', 'moradia', 'imovel', 'fixo'],
+  condominio: ['condominio', 'moradia', 'fixo'],
+  salario: ['salario', 'trabalho', 'fixo', 'mensal'],
+  dividendos: ['dividendos', 'renda-passiva', 'investimentos'],
+};
+
 /**
  * Generates dynamic, ranked tag suggestions based on:
- * 1. Historical co-occurrence with description keywords (highest score)
- * 2. Historical affinity with the selected subcategory & category
+ * 1. Keywords extracted directly from the typed description (highest score)
+ * 2. Semantic affinity with the selected subcategory & category
  * 3. Contextual tags from built-in rules (e.g. 'uber', 'limpeza', 'mercado')
- * 4. Transaction operational context ('terceiros', 'parcelado', 'fixo')
- * 5. General most frequent tags from the user's past transactions
+ * 4. User's manually registered custom tags matching current context
+ * 5. Context-filtered historical transactions (same category/desc)
+ * 6. Operational flags ('terceiros', 'cartao')
  */
 export function suggestDynamicTags({
   description = '',
@@ -661,12 +729,14 @@ export function suggestDynamicTags({
   type = 'expense',
   isCard = false,
   isThirdParty = false,
+  categories = [],
   historicalTransactions = [],
   currentTags = [],
-  limit = 6,
+  customTags = [],
+  limit = 8,
 }: SuggestTagsParams): string[] {
   const normDesc = normalizeText(description);
-  const descTokens = normDesc.split(/\s+/).filter(t => t.length >= 3);
+  const descTokens = extractKeywordsFromDescription(description);
   const normalizedCurrent = new Set((currentTags || []).map(normalizeTag).filter(Boolean));
 
   // Score accumulator: tag -> score
@@ -678,26 +748,92 @@ export function suggestDynamicTags({
     scores.set(clean, (scores.get(clean) || 0) + points);
   };
 
-  // 1. Contextual flags
+  // 1. Contextual operational flags
   if (isThirdParty) {
-    addScore('terceiros', 25);
+    addScore('terceiros', 30);
+    addScore('reembolso', 20);
   }
   if (isCard) {
-    addScore('cartao', 5);
+    addScore('cartao', 6);
   }
 
-  // 2. Match with Built-in Dictionary Rules
+  // 2. Direct tokens extracted from typed description (alta relevância imediata)
+  for (const token of descTokens) {
+    addScore(token, 35);
+  }
+
+  // 3. Match with Built-in Dictionary Rules from description
   if (normDesc.length >= 2) {
     for (const rule of BUILT_IN_RULES) {
       if (rule.keywords.some(kw => containsWholePhrase(normDesc, kw))) {
-        rule.defaultTags?.forEach(t => addScore(t, 12));
+        rule.defaultTags?.forEach(t => addScore(t, 25));
       }
     }
   }
 
-  // 3. Scan Historical Transactions
+  // 4. Resolve Category and Subcategory Names from categories list
+  let resolvedCatName = '';
+  let resolvedSubName = '';
+
+  if (categories && categories.length > 0) {
+    if (categoryId) {
+      const foundCat = categories.find(c => c.id === categoryId);
+      if (foundCat) {
+        resolvedCatName = normalizeText(foundCat.name);
+        if (subcategoryId && foundCat.subcategories) {
+          const foundSub = foundCat.subcategories.find(s => s.id === subcategoryId);
+          if (foundSub) {
+            resolvedSubName = normalizeText(foundSub.name);
+          }
+        }
+      }
+    }
+  }
+
+  // Fallback to ID string if category object not found
+  if (!resolvedCatName && categoryId) {
+    resolvedCatName = normalizeText(categoryId.replace(/^cat-(desp|rec|mov)-/, ''));
+  }
+  if (!resolvedSubName && subcategoryId) {
+    resolvedSubName = normalizeText(subcategoryId.replace(/^sub-[a-z]+-/, ''));
+  }
+
+  // 5. Semantic affinity matching with Category
+  if (resolvedCatName) {
+    for (const [key, affinityTags] of Object.entries(CATEGORY_TAG_AFFINITY)) {
+      if (resolvedCatName.includes(key) || key.includes(resolvedCatName)) {
+        affinityTags.forEach(t => addScore(t, 18));
+      }
+    }
+  }
+
+  // 6. Semantic affinity matching with Subcategory
+  if (resolvedSubName) {
+    for (const [key, affinityTags] of Object.entries(SUBCATEGORY_TAG_AFFINITY)) {
+      if (resolvedSubName.includes(key) || key.includes(resolvedSubName)) {
+        affinityTags.forEach(t => addScore(t, 24));
+      }
+    }
+  }
+
+  // 7. Custom Tags Matching: boost custom tags that match description or category
+  if (customTags && customTags.length > 0) {
+    for (const ct of customTags) {
+      const cleanCt = normalizeTag(ct);
+      if (!cleanCt || normalizedCurrent.has(cleanCt)) continue;
+
+      if (descTokens.includes(cleanCt) || (normDesc && normDesc.includes(cleanCt))) {
+        addScore(cleanCt, 30);
+      } else if (resolvedCatName && (resolvedCatName.includes(cleanCt) || cleanCt.includes(resolvedCatName))) {
+        addScore(cleanCt, 20);
+      } else if (resolvedSubName && (resolvedSubName.includes(cleanCt) || cleanCt.includes(resolvedSubName))) {
+        addScore(cleanCt, 22);
+      }
+    }
+  }
+
+  // 8. Scan Historical Transactions (apenas com filtro contextual estrito, sem viés cego)
   if (historicalTransactions && historicalTransactions.length > 0) {
-    // We only inspect up to the last 200 relevant transactions for high speed
     const recentTxs = historicalTransactions.slice(0, 250);
 
     for (const tx of recentTxs) {
@@ -708,7 +844,6 @@ export function suggestDynamicTags({
         containsWholePhrase(txNormDesc, normDesc) || containsWholePhrase(normDesc, txNormDesc)
       );
 
-      // Token overlap count
       let tokenMatches = 0;
       if (descTokens.length > 0) {
         for (const tok of descTokens) {
@@ -719,34 +854,46 @@ export function suggestDynamicTags({
       const isSubMatch = Boolean(subcategoryId && tx.subcategoryId === subcategoryId);
       const isCatMatch = Boolean(categoryId && tx.categoryId === categoryId);
 
-      for (const t of tx.tags) {
-        // High boost for description match
-        if (isDescMatch) {
-          addScore(t, 20);
-        } else if (tokenMatches > 0) {
-          addScore(t, 8 * tokenMatches);
+      // Only give points if there is a real semantic or contextual match
+      if (isDescMatch || tokenMatches > 0 || isSubMatch || isCatMatch) {
+        for (const t of tx.tags) {
+          if (isDescMatch) {
+            addScore(t, 20);
+          } else if (tokenMatches > 0) {
+            addScore(t, 10 * tokenMatches);
+          }
+          if (isSubMatch) {
+            addScore(t, 12);
+          }
+          if (isCatMatch) {
+            addScore(t, 6);
+          }
         }
-
-        // Subcategory match
-        if (isSubMatch) {
-          addScore(t, 10);
-        }
-
-        // Category match
-        if (isCatMatch) {
-          addScore(t, 4);
-        }
-
-        // General recency / frequency base point
-        addScore(t, 1);
       }
     }
   }
 
-  // Fallback defaults if few or no tags were scored
+  // 9. Dynamic fallback if few or no tags were scored
   if (scores.size < limit) {
-    const fallbackList = ['fixo', 'casa', 'trabalho', 'refeicao', 'mercado', 'viagem', 'lazer', 'saude'];
-    fallbackList.forEach(fb => addScore(fb, 0.5));
+    // First fallback: tags from category affinity
+    if (resolvedCatName) {
+      for (const [key, affinityTags] of Object.entries(CATEGORY_TAG_AFFINITY)) {
+        if (resolvedCatName.includes(key) || key.includes(resolvedCatName)) {
+          affinityTags.forEach(t => addScore(t, 3));
+        }
+      }
+    }
+
+    // Second fallback: custom tags from Cadastros
+    if (scores.size < limit && customTags && customTags.length > 0) {
+      customTags.slice(0, 6).forEach(ct => addScore(ct, 2));
+    }
+
+    // Final neutral fallback only if still empty
+    if (scores.size === 0) {
+      const neutralFallback = ['fixo', 'variavel', 'essencial', 'pessoal', 'planejado'];
+      neutralFallback.forEach(fb => addScore(fb, 1));
+    }
   }
 
   // Sort by score descending
@@ -756,3 +903,4 @@ export function suggestDynamicTags({
 
   return sorted.slice(0, limit);
 }
+

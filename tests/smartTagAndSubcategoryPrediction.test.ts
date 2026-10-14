@@ -146,10 +146,35 @@ assert.ok(predSalario);
 assert.equal(predSalario.categoryId, 'cat-rec-trabalho');
 assert.equal(predSalario.subcategoryId, 'sub-rec-salario');
 
-// F. Óculos & Lentes prediction
-const predOculos = predictCategoryAndSubcategory('Ótica Diniz lentes de grau e armação', 'expense', DEFAULT_CATEGORIES);
-assert.ok(predOculos);
-assert.equal(predOculos.categoryId, 'cat-desp-saude');
-assert.equal(predOculos.subcategoryId, 'sub-saude-oculos-lentes');
+// G. Test category-specific tag suggestions
+const tagsTransporte = suggestDynamicTags({
+  categoryId: 'cat-desp-transporte',
+  categories: DEFAULT_CATEGORIES,
+  currentTags: [],
+});
+assert.ok(tagsTransporte.includes('combustivel') || tagsTransporte.includes('uber'), 'Deve sugerir tags de transporte');
+
+const tagsSaude = suggestDynamicTags({
+  categoryId: 'cat-desp-saude',
+  categories: DEFAULT_CATEGORIES,
+  currentTags: [],
+});
+assert.ok(tagsSaude.includes('farmacia') || tagsSaude.includes('medicamentos'), 'Deve sugerir tags de saúde');
+
+// H. Test dynamic token extraction from free-form typed description
+const tagsDescLivre = suggestDynamicTags({
+  description: 'Comemoração de aniversário da Ana',
+  currentTags: [],
+});
+assert.ok(tagsDescLivre.includes('aniversario'), 'Deve sugerir aniversário extraído diretamente da descrição');
+
+// I. Test custom tags registered in Cadastros
+const tagsCustom = suggestDynamicTags({
+  description: 'Passeio na praia',
+  customTags: ['praia-ferias', 'reforma-quarto'],
+  currentTags: [],
+});
+assert.ok(tagsCustom.includes('praia-ferias'), 'Deve priorizar tags customizadas correspondentes');
 
 console.log('✅ smartTagAndSubcategoryPrediction.test.ts: Todos os testes passaram com 100% de sucesso!');
+

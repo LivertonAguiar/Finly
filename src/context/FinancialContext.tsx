@@ -43,6 +43,8 @@ import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
 import { normalizeUserDebts } from '../data/caixaFinancingContract';
 import { isInvoicePaymentTransaction, getCardTransactionInvoiceMonth } from '../utils/invoiceCalculator';
 import { deduplicateFamilyMembers } from '../utils/familyUtils';
+import { getStoredCustomTags, saveCustomTags } from '../utils/tagManager';
+import { normalizeTag } from '../utils/smartCategorizer';
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -242,6 +244,12 @@ interface FinancialContextType {
     totalCreditAvailable: number;
     filteredTransactions: Transaction[];
   };
+
+  // Tags
+  customTags: string[];
+  addCustomTag: (tag: string) => void;
+  removeCustomTag: (tag: string, removeFromTransactions?: boolean) => void;
+  renameCustomTag: (oldTag: string, newTag: string) => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -949,6 +957,85 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [transactionSeries, setTransactionSeries] = useState<TransactionSeries[]>(initialStore.transactionSeries);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialStore.familyMembers);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialStore.notifications);
+  const [customTags, setCustomTags] = useState<string[]>(() => getStoredCustomTags());
+
+  const addCustomTag = (rawTag: string) => {
+    const clean = normalizeTag(rawTag);
+    if (!clean) return;
+    setCustomTags(prev => {
+      if (prev.some(t => normalizeTag(t) === clean)) return prev;
+      const updated = [...prev, clean];
+      saveCustomTags(updated);
+      return updated;
+    });
+    markLocalMutation();
+  };
+
+  const removeCustomTag = (rawTag: string, removeFromTransactions = true) => {
+    const clean = normalizeTag(rawTag);
+    if (!clean) return;
+    setCustomTags(prev => {
+      const updated = prev.filter(t => normalizeTag(t) !== clean);
+      saveCustomTags(updated);
+      return updated;
+    });
+
+    if (removeFromTransactions) {
+      setTransactions(prev => {
+        return prev.map(tx => {
+          if (!tx.tags || !tx.tags.some(t => normalizeTag(t) === clean)) return tx;
+          return {
+            ...tx,
+            tags: tx.tags.filter(t => normalizeTag(t) !== clean),
+          };
+        });
+      });
+      setTransactionSeries(prev => {
+        return prev.map(s => {
+          if (s.kind !== 'recurring_expense' || !Array.isArray(s.tags) || !s.tags.some((t: string) => normalizeTag(t) === clean)) return s;
+          return {
+            ...s,
+            tags: s.tags.filter((t: string) => normalizeTag(t) !== clean),
+          };
+        });
+      });
+    }
+    markLocalMutation();
+  };
+
+  const renameCustomTag = (oldRawTag: string, newRawTag: string) => {
+    const cleanOld = normalizeTag(oldRawTag);
+    const cleanNew = normalizeTag(newRawTag);
+    if (!cleanOld || !cleanNew || cleanOld === cleanNew) return;
+
+    setCustomTags(prev => {
+      const updated = Array.from(new Set(prev.map(t => (normalizeTag(t) === cleanOld ? cleanNew : t))));
+      saveCustomTags(updated);
+      return updated;
+    });
+
+    setTransactions(prev => {
+      return prev.map(tx => {
+        if (!tx.tags || !tx.tags.some(t => normalizeTag(t) === cleanOld)) return tx;
+        return {
+          ...tx,
+          tags: Array.from(new Set(tx.tags.map(t => (normalizeTag(t) === cleanOld ? cleanNew : t)))),
+        };
+      });
+    });
+
+    setTransactionSeries(prev => {
+      return prev.map(s => {
+        if (s.kind !== 'recurring_expense' || !Array.isArray(s.tags) || !s.tags.some((t: string) => normalizeTag(t) === cleanOld)) return s;
+        return {
+          ...s,
+          tags: Array.from(new Set(s.tags.map((t: string) => (normalizeTag(t) === cleanOld ? cleanNew : t)))),
+        };
+      });
+    });
+    markLocalMutation();
+  };
+
   const [storeOwnerUserId, setStoreOwnerUserId] = useState(effectiveStoreUserId);
   const userRef = useRef(user);
   userRef.current = user;
@@ -3427,6 +3514,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         resetToCleanState,
         loadDemoData,
         metrics,
+        customTags,
+        addCustomTag,
+        removeCustomTag,
+        renameCustomTag,
       }}
     >
       {children}

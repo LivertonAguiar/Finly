@@ -59,6 +59,11 @@ export const RELEASES: ReleaseInfo[] = [
         description: 'Bloqueio estrito no backend contra disparo de e-mails para domínios inexistentes ou de teste no servidor Gmail pessoal.',
         type: 'fix',
       },
+      {
+        title: 'Sugestões Contextuais e Gestão de Tags',
+        description: 'Sugestões dinâmicas de tags alinhadas à categoria e descrição digitada, com autocomplete rápido e nova gestão de tags na aba Cadastros.',
+        type: 'improvement',
+      },
     ],
   },
   {
