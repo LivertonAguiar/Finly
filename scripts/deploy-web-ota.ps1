@@ -36,7 +36,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # 2. Package Web Bundle
 Write-Host "Empacotando bundle web e gerando SHA-256..." -ForegroundColor Yellow
-$pkgArgs = @("scripts/package-web-bundle.mjs")
+$pkgArgs = @((Join-Path $repoRoot "scripts/package-web-bundle.mjs"))
 if ($WebVersion) {
     $pkgArgs += @("--version", $WebVersion)
 }
