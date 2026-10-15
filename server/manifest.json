@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.11",
+    "version": "1.1.79.12",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.11.zip",
-    "sha256": "3d3ee74e6a12f2b25f5a2f85860a2b0b62c650231a4dc9aeed43ea3fc6eabd7d",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.12.zip",
+    "sha256": "acca13f0506236753c758cbe3c190d732625cec361ca7d544f9a8b22866be079",
     "mandatory": true,
-    "releaseDate": "2026-10-14",
-    "notes": "Sugestoes dinamicas de tags alinhadas a categoria e descricao, autocomplete no modal e gestao de tags em cadastros"
+    "releaseDate": "2026-10-15",
+    "notes": "Data de quitacao de fatura personalizada, badges de quitacao em cartoes, galeria visual e tags dinamicas"
   }
 }

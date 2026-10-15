@@ -128,6 +128,63 @@ export function isCardInvoicePaid(
   });
 }
 
+export interface CardInvoicePaymentDetails {
+  isPaid: boolean;
+  paymentDate?: string;
+  paymentAccountId?: string;
+  paymentAmount?: number;
+}
+
+/**
+ * Retorna os detalhes de quitação de uma fatura de cartão:
+ * status pago, data de pagamento, conta debitada e valor.
+ */
+export function getCardInvoicePaymentDetails(
+  card: CreditCard,
+  monthPrefix: string,
+  transactions: Transaction[]
+): CardInvoicePaymentDetails {
+  if (!card || !monthPrefix || !Array.isArray(transactions) || transactions.length === 0) {
+    return { isPaid: false };
+  }
+
+  const normalizedMonth = monthPrefix.replace('/', '-');
+  const cardNameNormalized = (card.name || '').trim().toLowerCase();
+
+  const payTx = transactions.find(t => {
+    if (!t || t.status !== 'completed') return false;
+    if (!isInvoicePaymentTransaction(t)) return false;
+
+    const descLower = (t.description || '').toLowerCase();
+    const notesLower = (t.notes || '').toLowerCase();
+
+    const matchesCard =
+      (t.cardId && t.cardId === card.id) ||
+      (cardNameNormalized.length > 0 && (descLower.includes(cardNameNormalized) || notesLower.includes(cardNameNormalized)));
+
+    if (!matchesCard) return false;
+
+    const matchesMonth =
+      t.invoiceMonth === normalizedMonth ||
+      descLower.includes(normalizedMonth) ||
+      notesLower.includes(normalizedMonth) ||
+      (t.date && t.date.slice(0, 7) === normalizedMonth);
+
+    return matchesMonth;
+  });
+
+  if (payTx) {
+    return {
+      isPaid: true,
+      paymentDate: payTx.paidAt || payTx.date,
+      paymentAccountId: payTx.accountId,
+      paymentAmount: payTx.amount,
+    };
+  }
+
+  return { isPaid: false };
+}
+
 /**
  * Retorna o mês de competência/fatura ('YYYY-MM') de uma transação de cartão de crédito.
  * Se tx.invoiceMonth estiver explicitamente preenchido, usa-o diretamente.

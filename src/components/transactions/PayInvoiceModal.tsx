@@ -6,7 +6,7 @@ import { formatCurrency, formatDate, getCurrentMonth, getTodayString } from '../
 import { BankLogo, CardBrandLogo } from '../../utils/bankLogos';
 import { CreditCard as CardIcon, Calendar, CheckCircle2, AlertCircle, Clock, DollarSign, Wallet, Lightbulb, X, Download } from 'lucide-react';
 import { exportInvoiceCSV } from '../../utils/reportExportService';
-import { getCardTransactionInvoiceMonth, isCardInvoicePaid } from '../../utils/invoiceCalculator';
+import { getCardTransactionInvoiceMonth, isCardInvoicePaid, getCardInvoicePaymentDetails } from '../../utils/invoiceCalculator';
 
 interface PayInvoiceModalProps {
   isOpen: boolean;
@@ -50,6 +50,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
         setSelectedAccountId(accounts[0].id);
       }
       setIsSuccess(false);
+      setPayDate(getTodayString());
     }
   }, [isOpen, initialCardId, initialMonth, cards, accounts]);
 
@@ -81,11 +82,16 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
     );
   }, [transactions, selectedCard, targetPrefix]);
 
-  
-  const isInvoiceAlreadyPaid = useMemo(() => {
-    if (!selectedCard || invoiceTransactions.length === 0) return false;
-    return isCardInvoicePaid(selectedCard, targetPrefix, transactions);
+  const paymentDetails = useMemo(() => {
+    if (!selectedCard || invoiceTransactions.length === 0) return { isPaid: false };
+    return getCardInvoicePaymentDetails(selectedCard, targetPrefix, transactions);
   }, [selectedCard, targetPrefix, transactions, invoiceTransactions.length]);
+
+  const isInvoiceAlreadyPaid = paymentDetails.isPaid;
+  const paidAccount = useMemo(() => {
+    if (!paymentDetails.paymentAccountId) return null;
+    return accounts.find(a => a.id === paymentDetails.paymentAccountId);
+  }, [accounts, paymentDetails.paymentAccountId]);
 
   const totalInvoice = useMemo(() => {
     return invoiceTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -96,7 +102,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
     if (isSubmitting || !selectedCard || !selectedAccount || totalInvoice <= 0) return;
 
     setIsSubmitting(true);
-    payCardInvoice(selectedCard.id, selectedAccount.id, totalInvoice, `${selectedYear}-${selectedMonth}`);
+    payCardInvoice(selectedCard.id, selectedAccount.id, totalInvoice, `${selectedYear}-${selectedMonth}`, payDate);
     setIsSuccess(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -279,7 +285,14 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({ isOpen, onClos
         {isInvoiceAlreadyPaid && (
           <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>Esta fatura já consta como PAGA neste mês. Nenhuma cobrança pendente.</span>
+            <div className="flex-1">
+              <span>Esta fatura já consta como PAGA neste mês. Nenhuma cobrança pendente.</span>
+              {paymentDetails.paymentDate && (
+                <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  ✓ Quitada em {formatDate(paymentDetails.paymentDate)}{paidAccount ? ` via ${paidAccount.name}` : ''}
+                </p>
+              )}
+            </div>
           </div>
         )}
 

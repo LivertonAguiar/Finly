@@ -240,6 +240,7 @@ export interface Transaction {
   invoiceMonth?: string; // e.g. "2026-08"
   dueDate?: string; // Data de vencimento da fatura (Regime de Caixa)
   purchaseDate?: string; // Data em que a compra ocorreu (Regime de Competência)
+  paidAt?: string; // Data em que a fatura ou transação foi efetivamente quitada/paga
   ignored?: boolean; // Ignora transação em relatórios, orçamentos e despesas pessoais
   isThirdParty?: boolean; // Compra feita para terceiro / cartão emprestado
   thirdPartyName?: string; // Nome da pessoa para quem comprou (ex: "Carlos", "Mãe")

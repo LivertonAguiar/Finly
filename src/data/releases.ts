@@ -64,6 +64,11 @@ export const RELEASES: ReleaseInfo[] = [
         description: 'Sugestões dinâmicas de tags alinhadas à categoria e descrição digitada, com autocomplete rápido e nova gestão de tags na aba Cadastros.',
         type: 'improvement',
       },
+      {
+        title: 'Data de Quitação de Faturas',
+        description: 'Possibilidade de definir a data exata ao quitar faturas de cartão (hoje, retroativo ou adiantado) com conciliação bancária e badge visual de quitação.',
+        type: 'feature',
+      },
     ],
   },
   {

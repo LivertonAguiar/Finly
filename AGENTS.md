@@ -15,7 +15,16 @@ Este documento estabelece as diretrizes obrigatórias de governança de código,
 
 ---
 
-### 📌 Regra 2: Cadência de Ciclos (A Cada 4 Mudanças / Tarefas ou Pedido Explícito de Deploy/Release)
+### 📌 Regra 2: Sincronização Obrigatória de Documentação e Capturas de Tela (Screenshots)
+- **Gatilho**: Sempre que novas funcionalidades, módulos, telas, opções ou melhorias de fluxo forem implementadas.
+- **Ação Obrigatória**:
+  1. **README.md do Repositório**: Manter o `README.md` sempre atualizado com a descrição das funcionalidades e galeria visual com capturas de tela atualizadas (Web e Mobile em `docs/screenshots/`).
+  2. **Changelog & Releases**: Registrar as novidades e melhorias em `CHANGELOG.md` e em `src/data/releases.ts`.
+  3. **Preservação dos Ativos Visuais**: Manter os scripts de captura (`scripts/capture-screenshots.mjs`) operacionais para regenerar os prints quando a interface evoluir.
+
+---
+
+### 📌 Regra 3: Cadência de Ciclos (A Cada 4 Mudanças / Tarefas ou Pedido Explícito de Deploy/Release)
 - **Gatilho**: Ao acumular **4 alterações/funcionalidades/correções concluídas** no projeto ou quando o usuário solicitar *"Realizar Commit, Deploy e Apk Atualizar"*.
 - **Ações Obrigatórias do Ciclo (Ordem Rigorosa)**:
   1. **Incremento e Sincronização de Versão**:

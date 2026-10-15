@@ -17,7 +17,7 @@ import {
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { splitEmojiFromName, resolveCategory } from '../utils/categoryResolver';
-import { getCurrentMonth, getTodayString, round2, sortCardsByDueDay } from '../utils/formatters';
+import { getCurrentMonth, getTodayString, round2, sortCardsByDueDay, formatDate } from '../utils/formatters';
 import { useAuth } from './AuthContext';
 import { apiSync } from '../utils/apiSync';
 import { getApiUrl } from '../services/apiConfig';
@@ -129,7 +129,7 @@ interface FinancialContextType {
   addCard: (card: Omit<CreditCard, 'id'>) => void;
   updateCard: (id: string, data: Partial<CreditCard>) => void;
   deleteCard: (id: string) => void;
-  payCardInvoice: (cardId: string, accountId: string, amount: number, month: string) => void;
+  payCardInvoice: (cardId: string, accountId: string, amount: number, month: string, paymentDate?: string) => void;
   unpayCardInvoice: (cardId: string, month: string) => void;
 
   // Categories
@@ -1913,7 +1913,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
-  const payCardInvoice = (cardId: string, accountId: string, amount: number, month: string) => {
+  const payCardInvoice = (cardId: string, accountId: string, amount: number, month: string, paymentDate?: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || amount <= 0) return;
 
@@ -1936,6 +1936,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     markLocalMutation();
 
+    const finalPayDate = paymentDate || getTodayString();
+
     if (existingPayTx) {
       console.warn('⚠️ Fatura já consta como paga. Reconciliando status das transações do cartão.');
       // Garantir que todas as transações da fatura estejam marcadas como 'completed'
@@ -1943,8 +1945,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         prev.map(t => {
           if (t.cardId === cardId && t.type === 'expense') {
             const invMonth = getCardTransactionInvoiceMonth(t, card);
-            if (invMonth === normalizedMonth && t.status !== 'completed') {
-              return { ...t, status: 'completed' as const, invoiceMonth: invMonth };
+            if (invMonth === normalizedMonth && (t.status !== 'completed' || !t.paidAt)) {
+              return { ...t, status: 'completed' as const, invoiceMonth: invMonth, paidAt: t.paidAt || finalPayDate };
             }
           }
           return t;
@@ -1961,14 +1963,15 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       description: `Pagamento Fatura ${card.name} (${normalizedMonth})`,
       amount: roundedAmount,
       type: 'expense',
-      date: getTodayString(),
+      date: finalPayDate,
+      paidAt: finalPayDate,
       categoryId: 'cat-fatura-cartao',
       subcategoryId: undefined,
       accountId,
       status: 'completed',
       recurring: false,
       tags: ['fatura', 'cartao'],
-      notes: `Pagamento de fatura referente a ${normalizedMonth}`,
+      notes: `Pagamento de fatura referente a ${normalizedMonth} em ${formatDate(finalPayDate)}`,
       createdAt: new Date().toISOString(),
     };
 
@@ -1978,7 +1981,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (t.cardId === cardId && t.type === 'expense') {
           const invMonth = getCardTransactionInvoiceMonth(t, card);
           if (invMonth === normalizedMonth) {
-            return { ...t, status: 'completed' as const, invoiceMonth: invMonth };
+            return { ...t, status: 'completed' as const, invoiceMonth: invMonth, paidAt: finalPayDate };
           }
         }
         return t;

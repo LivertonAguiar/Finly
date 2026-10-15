@@ -11,10 +11,11 @@
 ## 📑 Sumário
 
 - [Visão Geral](#-visão-geral)
+- [Galeria Visual (Web & Mobile)](#-galeria-visual-web--mobile)
 - [Stack Tecnológica](#-stack-tecnológica)
 - [Estrutura de Pastas e Arquitetura](#-estrutura-de-pastas-e-arquitetura)
 - [Rotas & Mapa do Aplicativo](#-rotas--mapa-do-aplicativo)
-- [Funcionalidades Principais](#-funcionalidades-principais)
+- [Recursos Recentes e Destaques](#-recursos-recentes-e-destaques)
 - [Personalização Visual & Theme Engine](#-personalização-visual--theme-engine)
 - [Motor de Internacionalização (i18n)](#-motor-de-internacionalização-i18n)
 - [Instalação, Execução e Build](#-instalação-execução-e-build)
@@ -27,6 +28,20 @@
 ## 🌟 Visão Geral
 
 O **Finly** é um sistema financeiro moderno construído para alta performance e responsividade tanto na Web quanto no aplicativo nativo Android. Ele combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito, central de ajuda com simulador interativo Android e persistência segura em nuvem.
+
+---
+
+## 📸 Galeria Visual (Web & Mobile)
+
+O Finly foi concebido com foco total em **UX/UI premium**, alta densidade de informação e paridade completa entre a experiência Desktop (Web) e Mobile (Android).
+
+| Tela / Módulo | Visão Desktop (Web) | Visão Mobile (Android) |
+| :--- | :--- | :--- |
+| **Dashboard Financeiro** | ![Dashboard Web](docs/screenshots/web-dashboard.png) | ![Dashboard Mobile](docs/screenshots/mobile-dashboard.png) |
+| **Cartões & Faturas** | ![Cartões Web](docs/screenshots/web-cartoes.png) | ![Cartões Mobile](docs/screenshots/mobile-cartoes.png) |
+| **Extrato & Lançamentos** | ![Extrato Web](docs/screenshots/web-transacoes.png) | ![Extrato Mobile](docs/screenshots/mobile-transacoes.png) |
+| **Planejamento Orçamentário & Ações Rápidas** | ![Planejamento Web](docs/screenshots/web-planejamento.png) | ![Ações Rápidas Mobile](docs/screenshots/mobile-acoes-rapidas.png) |
+| **Cadastros de Tags & Modal Transacional** | ![Cadastros e Tags Web](docs/screenshots/web-cadastros-tags.png) | ![Modal Mobile](docs/screenshots/mobile-modal-transacao.png) |
 
 ---
 
@@ -130,6 +145,19 @@ finly/
 | `/investimentos` | `InvestmentsTab` | Consolidação patrimonial por classe de ativos e rendimento mensal. |
 | `/whatsapp` | `WhatsAppPage` | Integração de assistente virtual para lançamentos via chat. |
 | `/familia` | `FamilyPage` | Controle financeiro compartilhado multi-usuário com permissões. |
+
+---
+
+## ✨ Recursos Recentes e Destaques
+
+### 💳 Gestão Inteligente e Quitação de Faturas de Cartão
+- **Seleção da Data Exata do Pagamento**: Permite definir livremente a data de quitação (na data de hoje, no vencimento exato ou em datas passadas/retroativas para manter o histórico financeiro fidedigno).
+- **Rastreabilidade Transacional (`paidAt`)**: Ao registrar o pagamento da fatura, as despesas do período são marcadas como `completed` com a respectiva data de liquidação e o débito é lançado atômica e confiavelmente na conta bancária selecionada.
+- **Transparência e Badges Visuais**: Exibição imediata na fatura e no detalhe dos cartões: `✓ Quitada em DD/MM/AAAA via [Conta]`, além da opção segura de estorno/reabertura quando necessário.
+
+### 🏷️ Sugestões Dinâmicas de Tags & Gestão Centralizada em Cadastros
+- **Inteligência Contextual**: Sugestões automáticas e preditivas de tags durante o preenchimento de transações, correlacionadas com a categoria e palavras-chave da descrição.
+- **Painel de Gestão de Tags**: Seção dedicada na página de Cadastros para visualização em grade, contagem de transações atreladas, renomeação rápida e exclusão em lote.
 
 ---
 

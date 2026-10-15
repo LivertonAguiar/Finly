@@ -37,7 +37,7 @@ import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 import { exportInvoiceCSV, exportInvoicePDF, downloadCSV } from '../../utils/reportExportService';
 import { resolveCategory } from '../../utils/categoryResolver';
-import { getCardTransactionInvoiceMonth, isCardInvoicePaid } from '../../utils/invoiceCalculator';
+import { getCardTransactionInvoiceMonth, isCardInvoicePaid, getCardInvoicePaymentDetails } from '../../utils/invoiceCalculator';
 
 interface CreditTabProps {
   onOpenNewCard: () => void;
@@ -81,6 +81,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const [payingCard, setPayingCard] = useState<CreditCardType | null>(null);
   const [payAccountId, setPayAccountId] = useState(accounts[0]?.id || '');
   const [payAmount, setPayAmount] = useState('');
+  const [payDate, setPayDate] = useState(getTodayString());
 
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
   const [editingInvoiceTx, setEditingInvoiceTx] = useState<Transaction | null>(null);
@@ -111,7 +112,8 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       const monthTxs = cardTxs.filter(t => getCardTransactionInvoiceMonth(t, card) === currentMonthPrefix);
       const invoiceTotal = Math.round(monthTxs.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
-      const isPaid = isCardInvoicePaid(card, currentMonthPrefix, transactions);
+      const paymentDetails = getCardInvoicePaymentDetails(card, currentMonthPrefix, transactions);
+      const isPaid = paymentDetails.isPaid;
       
       // Open current month invoice amount
       const currentOpenInvoice = isPaid ? 0 : invoiceTotal;
@@ -153,6 +155,9 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
         statusLabel,
         statusColor,
         isPaid,
+        paymentDate: paymentDetails.paymentDate,
+        paymentAccountId: paymentDetails.paymentAccountId,
+        paymentAmount: paymentDetails.paymentAmount,
       };
     });
   }, [cards, transactions, currentMonthPrefix, selectedMonthOffset, viewDate]);
@@ -265,6 +270,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
     const cardData = cardsData.find(c => c.id === cardToPay.id);
     const invoiceAmt = cardData ? cardData.invoiceTotal : 0;
     setPayAmount(invoiceAmt > 0 ? invoiceAmt.toFixed(2) : '');
+    setPayDate(getTodayString());
     setIsPayModalOpen(true);
   };
 
@@ -283,7 +289,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
     if (amt <= 0 || !payAccountId) return;
 
     setIsPayingInvoice(true);
-    payCardInvoice(payingCard.id, payAccountId, amt, currentMonthPrefix);
+    payCardInvoice(payingCard.id, payAccountId, amt, currentMonthPrefix, payDate);
 
     setIsPayModalOpen(false);
     setPayingCard(null);
@@ -518,6 +524,24 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 )}
               </div>
             </div>
+
+            {/* Informação de Fatura Paga com Data de Quitação */}
+            {activeCardDetail.isPaid && (
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
+                <div className="flex-1">
+                  <span>Esta fatura já consta como PAGA neste mês. Nenhuma cobrança pendente.</span>
+                  {activeCardDetail.paymentDate && (
+                    <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      ✓ Quitada em {formatDate(activeCardDetail.paymentDate)}
+                      {activeCardDetail.paymentAccountId && accounts.find(a => a.id === activeCardDetail.paymentAccountId)
+                        ? ` via ${accounts.find(a => a.id === activeCardDetail.paymentAccountId)?.name}`
+                        : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Sub-info: Closing & Due dates + Dynamic Limit Progress Bar */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
@@ -1558,7 +1582,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
             </div>
 
             {/* Seleção do Cartão & Conta para Débito */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Cartão Selecionado
@@ -1597,6 +1621,19 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Data do Pagamento *
+                </label>
+                <input
+                  type="date"
+                  value={payDate}
+                  onChange={e => setPayDate(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+                />
               </div>
             </div>
 
