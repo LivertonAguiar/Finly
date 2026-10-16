@@ -195,6 +195,12 @@ O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o
 * **Moderno**: `16px`
 * **Reto**: `8px`
 
+### 4. Tipografia de Alta Precisão & Nitidez WCAG
+* **Fontes Oficiais**: `Plus Jakarta Sans` e `Inter` nativamente integradas com suporte a dígitos tabulares (`tnum`).
+* **Contraste no Modo Claro**: Textos secundários e terciários elevados para Slate 700 (`#334155`) e Slate 800 (`#1E293B`) com contraste 8.5:1.
+* **Contraste nos 9 Modos Escuros**: Textos secundários em Slate 200 (`#E2E8F0`) e terciários em Slate 300 (`#CBD5E1`), com gráficos e eixos SVG 100% legíveis.
+* **Tracking Positivo**: Fontes compactas (9px a 11px) com tracking balanceado para leitura limpa em qualquer resolução de display.
+
 ---
 
 ## 🌍 Motor de Internacionalização (i18n)

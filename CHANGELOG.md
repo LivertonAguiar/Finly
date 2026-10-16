@@ -28,6 +28,12 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
   - Inclusão direta da **Central de Ajuda** na aba Geral de Mais Opções para acesso rápido a tutoriais e FAQs.
   - Nova **Busca Rápida de Módulos e Ferramentas**, facilitando a localização de qualquer funcionalidade.
   - Correção de acessibilidade em dispositivos móveis: usuários mobile agora acessam todos os módulos no "Mais", sem que itens fixados na barra lateral desktop fiquem ocultos no celular.
+- **Tipografia de Alta Precisão e Nitidez de Texto em Todos os Temas**:
+  - Adoção das fontes Google Fonts **Plus Jakarta Sans** e **Inter** com suporte a números tabulares (`font-feature-settings: "tnum"`), eliminando a fonte display arredondada que causava sensação de desfoque/embaçamento em valores e tabelas.
+  - Correção de espaçamento de fontes pequenas (`letter-spacing: 0.015em`), impedindo que caracteres de 9px a 11px fiquem aglomerados ou colados.
+  - Blindagem de contraste no Modo Claro (`clean-light`): elevação de textos secundários para Slate 700 (`#334155`, contraste 8.5:1) e terciários para Slate 800 (`#1E293B`), eliminando cinzas apagados contra fundo branco.
+  - Blindagem de contraste nos 9 temas escuros: elevação de textos secundários para Slate 200 (`#E2E8F0`) e terciários para Slate 300 (`#CBD5E1`), com remoção de opacidades excessivamente baixas (`text-white/40` e `text-white/50`).
+  - Padronização de nitidez nos gráficos Recharts (eixos X/Y, legendas e rótulos de dados) e nos tokens de texto da barra lateral flutuante (`ModernSidebar`).
 
 ## [1.1.78] - 2026-09-30
 

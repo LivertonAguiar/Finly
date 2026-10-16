@@ -104,6 +104,11 @@ export const RELEASES: ReleaseInfo[] = [
         description: 'Filtro inteligente de busca rápida em Configurações e Mais Opções, acesso direto à Central de Ajuda e garantia de acessibilidade irrestrita em mobile.',
         type: 'improvement',
       },
+      {
+        title: 'Tipografia de Alta Precisão e Nitidez em Todos os Temas',
+        description: 'Adoção das fontes Plus Jakarta Sans e Inter com números tabulares, eliminação de caracteres embaçados e contraste otimizado (Slate 200/300 no modo escuro e Slate 700/800 no modo claro) em todos os 10 presets visuais e gráficos Recharts.',
+        type: 'visual',
+      },
     ],
   },
   {

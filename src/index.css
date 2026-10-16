@@ -135,12 +135,13 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   touch-action: manipulation;
 }
 
-/* Base Body Styles (Samsung Browser, Chrome, iOS Safari) */
+/* Base Body Styles (Plus Jakarta Sans, Inter & Native Fallbacks) */
 html, body, #root {
-  font-family: 'Noto Sans', 'Maven Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
   min-height: 100dvh;
@@ -159,24 +160,24 @@ html.dark {
   color-scheme: dark;
 }
 
-/* 1. Textos secundários e metadados no modo escuro (eleva para Slate 300 nítido) */
+/* 1. Textos secundários e metadados no modo escuro (eleva para Slate 200 nítido) */
 html.dark .text-slate-400,
 html.dark .dark\:text-slate-400,
 html.dark .text-zinc-400,
 html.dark .dark\:text-zinc-400,
 html.dark .text-gray-400,
 html.dark .dark\:text-gray-400 {
-  color: #CBD5E1 !important;
+  color: #E2E8F0 !important;
 }
 
-/* 2. Textos terciários, legendas e rótulos de apoio (nunca abaixo de Slate 400) */
+/* 2. Textos terciários, legendas e rótulos de apoio (eleva para Slate 300) */
 html.dark .text-slate-500,
 html.dark .dark\:text-slate-500,
 html.dark .text-zinc-500,
 html.dark .dark\:text-zinc-500,
 html.dark .text-gray-500,
 html.dark .dark\:text-gray-500 {
-  color: #94A3B8 !important;
+  color: #CBD5E1 !important;
 }
 
 /* 3. Textos escuros (slate/zinc 600) que se perdiam em fundos OLED/escuros */
@@ -184,39 +185,60 @@ html.dark .text-slate-600,
 html.dark .dark\:text-slate-600,
 html.dark .text-zinc-600,
 html.dark .dark\:text-zinc-600 {
-  color: #CBD5E1 !important;
+  color: #E2E8F0 !important;
 }
 
-/* 4. Títulos e cabeçalhos principais */
+/* 4. Textos com opacidade reduzida no modo escuro (elimina textos apagados) */
+html.dark .text-white\/30,
+html.dark .text-white\/40 {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+html.dark .text-white\/50,
+html.dark .text-white\/60 {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+html.dark .text-white\/70 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 5. Títulos e cabeçalhos principais */
 html.dark .text-slate-900,
 html.dark .text-zinc-900 {
   color: #FFFFFF !important;
 }
 html.dark .text-slate-800,
 html.dark .text-zinc-800 {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 html.dark .text-slate-700,
 html.dark .text-zinc-700 {
-  color: #E2E8F0 !important;
+  color: #F8FAFC !important;
 }
 
-/* 5. Cores financeiras semânticas de alto contraste no modo escuro */
+/* 6. Cores financeiras semânticas de alto contraste no modo escuro */
 html.dark .text-\[\#ef5350\],
+html.dark .text-rose-500,
 html.dark .text-rose-600 {
   color: #FB7185 !important; /* Rose 400: despesas e saldos negativos vivos e legíveis */
 }
 
 html.dark .text-\[\#66bb6a\],
+html.dark .text-emerald-500,
 html.dark .text-emerald-600 {
   color: #34D399 !important; /* Emerald 400: receitas e valores positivos luminosos */
 }
 
+html.dark .text-amber-500,
 html.dark .text-amber-600 {
   color: #FBBF24 !important; /* Amber 400: pendências e avisos nítidos */
 }
 
-/* 6. Reforço de espessura de traço para fontes pequenas em telas mobile */
+html.dark .text-sky-500,
+html.dark .text-blue-500 {
+  color: #38BDF8 !important; /* Sky 400: transferências e dados bancários vivos */
+}
+
+/* 7. Reforço de espessura de traço e tracking positivo para fontes pequenas */
 .text-\[9px\],
 .text-\[9\.5px\],
 .text-\[10px\],
@@ -224,7 +246,7 @@ html.dark .text-amber-600 {
 .text-\[11px\],
 .text-xs {
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.015em;
 }
 
 /* Prevent iOS Safari unwanted auto-zoom on form inputs */
@@ -329,6 +351,85 @@ html:not(.dark) [role="dialog"],
 html:not(.dark) .shadow-2xl:not([class*="bg-black"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not(.border-transparent),
 html:not(.dark) .shadow-xl:not([class*="bg-black"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not(.border-transparent) {
   border-color: #CBD5E1 !important;
+}
+
+/* ========================================================================= */
+/* LIGHT MODE: HIGH CONTRAST & RAZOR-SHARP TEXT (CLEAN-LIGHT & LIGHT MODE)   */
+/* Elimina textos desbotados e cinzas fracos em fundos claros                */
+/* ========================================================================= */
+
+/* Textos secundários no modo claro (Slate 700: contraste 8.5:1 contra branco) */
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-zinc-400,
+html:not(.dark) .text-gray-400 {
+  color: #334155 !important;
+}
+
+/* Textos terciários, legendas e badges no modo claro (Slate 800) */
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-gray-500 {
+  color: #1E293B !important;
+}
+
+/* Textos escuros no modo claro */
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-zinc-600 {
+  color: #0F172A !important;
+}
+
+/* Textos com opacidade preta no modo claro */
+html:not(.dark) .text-black\/30,
+html:not(.dark) .text-black\/40 {
+  color: rgba(15, 23, 42, 0.72) !important;
+}
+html:not(.dark) .text-black\/50,
+html:not(.dark) .text-black\/60 {
+  color: rgba(15, 23, 42, 0.85) !important;
+}
+html:not(.dark) .text-black\/70 {
+  color: rgba(15, 23, 42, 0.95) !important;
+}
+
+/* Placeholders de inputs no modo claro com contraste WCAG garantido */
+html:not(.dark) ::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+/* Inputs, selects e textareas em modo claro */
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  color: #0F172A !important;
+  font-weight: 500;
+}
+
+/* ========================================================================= */
+/* RECHARTS & GRÁFICOS SVG: NITIDEZ E CONTRASTE ABSOLUTO EM TODOS OS TEMAS   */
+/* ========================================================================= */
+.recharts-cartesian-axis-tick text,
+.recharts-text,
+.recharts-legend-item-text {
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+}
+
+html.dark .recharts-cartesian-axis-tick text,
+html.dark .recharts-text,
+html.dark .recharts-legend-item-text {
+  fill: #CBD5E1 !important;
+}
+
+html:not(.dark) .recharts-cartesian-axis-tick text,
+html:not(.dark) .recharts-text,
+html:not(.dark) .recharts-legend-item-text {
+  fill: #334155 !important;
+}
+
+.recharts-cartesian-grid line {
+  stroke-opacity: 0.25 !important;
 }
 
 /* ========================================================================= */

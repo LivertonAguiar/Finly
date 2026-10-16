@@ -5,24 +5,24 @@
 :root {
   --finly-page: #e8ecf1;
   --finly-surface: #ffffff;
-  --finly-text: #3d434b;
-  --finly-soft: #6e747d;
-  --finly-muted: #a8adb5;
-  --finly-border: #eef0f3;
-  --finly-chip: #f4f5f7;
+  --finly-text: #0f172a;
+  --finly-soft: #334155;
+  --finly-muted: #475569;
+  --finly-border: #cbd5e1;
+  --finly-chip: #f1f5f9;
   --finly-accent: #7c4dff;
   --finly-active: rgba(124, 77, 255, 0.12);
   --finly-sheen: rgba(255, 255, 255, 0.45);
-  --finly-shadow: 0 24px 60px rgba(31, 41, 55, 0.12);
+  --finly-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
 }
 
 html.dark {
   --finly-page: #0d0f14;
   --finly-surface: #18181b;
-  --finly-text: #f1f5f9;
-  --finly-soft: #94a3b8;
-  --finly-muted: #64748b;
-  --finly-border: #27272a;
+  --finly-text: #ffffff;
+  --finly-soft: #e2e8f0;
+  --finly-muted: #cbd5e1;
+  --finly-border: rgba(255, 255, 255, 0.08);
   --finly-chip: #202024;
   --finly-active: rgba(124, 77, 255, 0.2);
   --finly-sheen: rgba(255, 255, 255, 0.08);

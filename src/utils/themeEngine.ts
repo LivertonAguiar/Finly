@@ -200,16 +200,16 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     root.style.setProperty('--app-bg', darkBg);
     root.style.setProperty('--app-card-bg', darkCardBg);
     root.style.setProperty('--text-primary', '#FFFFFF');
-    root.style.setProperty('--text-secondary', '#CBD5E1');
-    root.style.setProperty('--text-muted', '#94A3B8');
+    root.style.setProperty('--text-secondary', '#E2E8F0');
+    root.style.setProperty('--text-muted', '#CBD5E1');
     document.body.style.backgroundColor = darkBg;
     document.body.style.color = '#FFFFFF';
   } else {
     root.style.setProperty('--app-bg', lightBg);
     root.style.setProperty('--app-card-bg', lightCardBg);
     root.style.setProperty('--text-primary', '#0F172A');
-    root.style.setProperty('--text-secondary', '#475569');
-    root.style.setProperty('--text-muted', '#64748B');
+    root.style.setProperty('--text-secondary', '#334155');
+    root.style.setProperty('--text-muted', '#475569');
     document.body.style.backgroundColor = lightBg;
     document.body.style.color = '#0F172A';
   }
@@ -234,8 +234,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       --finly-page: ${darkBg} !important;
       --finly-surface: ${darkCardBg} !important;
       --text-primary: #FFFFFF !important;
-      --text-secondary: #CBD5E1 !important;
-      --text-muted: #94A3B8 !important;
+      --text-secondary: #E2E8F0 !important;
+      --text-muted: #CBD5E1 !important;
     }
     html:not(.dark), :root:not(.dark) {
       --app-bg: ${lightBg} !important;
@@ -243,8 +243,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       --finly-page: ${lightBg} !important;
       --finly-surface: ${lightCardBg} !important;
       --text-primary: #0F172A !important;
-      --text-secondary: #475569 !important;
-      --text-muted: #64748B !important;
+      --text-secondary: #334155 !important;
+      --text-muted: #475569 !important;
     }
     ${isDark ? `
       html.dark body {

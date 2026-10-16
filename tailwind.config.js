@@ -57,9 +57,9 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Maven Pro"', '"Noto Sans"', '"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-        heading: ['"Maven Pro"', 'sans-serif'],
-        body: ['"Noto Sans"', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', '"Noto Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        heading: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        body: ['"Plus Jakarta Sans"', 'Inter', '"Noto Sans"', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

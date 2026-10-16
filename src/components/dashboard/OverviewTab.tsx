@@ -1418,8 +1418,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 }
               }}
             >
-              <XAxis dataKey="dayNum" stroke="#64748b" fontSize={9} tickLine={false} interval={3} />
-              <YAxis width={46} stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+              <XAxis dataKey="dayNum" stroke={isDark ? '#CBD5E1' : '#475569'} fontSize={10} tickLine={false} interval={3} />
+              <YAxis width={46} stroke={isDark ? '#CBD5E1' : '#475569'} fontSize={10} tickLine={false} tickFormatter={v => `R$${v}`} />
               <Tooltip
                 cursor={false}
                 formatter={(val: any) => [formatCurrency(Number(val) || 0, user.currency), 'Gasto']}
@@ -2143,8 +2143,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={semestralData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-            <XAxis dataKey="month" stroke="#64748b" fontSize={9} tickLine={false} />
-            <YAxis width={46} stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+            <XAxis dataKey="month" stroke={isDark ? '#CBD5E1' : '#475569'} fontSize={10} tickLine={false} />
+            <YAxis width={46} stroke={isDark ? '#CBD5E1' : '#475569'} fontSize={10} tickLine={false} tickFormatter={v => `R$${v}`} />
             <Tooltip
               cursor={false}
               formatter={(val: any, name: any) => [formatCurrency(Number(val) || 0, user.currency), name === 'receitas' ? 'Receitas' : 'Despesas']}
@@ -2185,8 +2185,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={trimestralData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-            <XAxis dataKey="month" stroke="#64748b" fontSize={10} tickLine={false} />
-            <YAxis width={46} stroke="#64748b" fontSize={9} tickLine={false} tickFormatter={v => `R$${v}`} />
+            <XAxis dataKey="month" stroke={isDark ? '#CBD5E1' : '#475569'} fontSize={10} tickLine={false} />
+            <YAxis width={46} stroke={isDark ? '#CBD5E1' : '#475569'} fontSize={10} tickLine={false} tickFormatter={v => `R$${v}`} />
             <Tooltip
               cursor={false}
               formatter={(val: any, name: any) => [formatCurrency(Number(val) || 0, user.currency), name === 'receitas' ? 'Receitas' : 'Despesas']}
