@@ -317,7 +317,7 @@ html:not(.dark) .finly-modern-sidebar .nav-item:not(.is-active):hover {
     left: 0;
     bottom: 0;
     border-radius: 0 24px 24px 0;
-    width: 280px !important;
+    width: min(280px, calc(100vw - 36px)) !important;
     height: 100dvh;
     padding-top: max(20px, env(safe-area-inset-top, 20px));
     padding-bottom: max(32px, calc(env(safe-area-inset-bottom, 0px) + 24px));

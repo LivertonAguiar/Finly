@@ -34,6 +34,17 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
   - Blindagem de contraste no Modo Claro (`clean-light`): elevação de textos secundários para Slate 700 (`#334155`, contraste 8.5:1) e terciários para Slate 800 (`#1E293B`), eliminando cinzas apagados contra fundo branco.
   - Blindagem de contraste nos 9 temas escuros: elevação de textos secundários para Slate 200 (`#E2E8F0`) e terciários para Slate 300 (`#CBD5E1`), com remoção de opacidades excessivamente baixas (`text-white/40` e `text-white/50`).
   - Padronização de nitidez nos gráficos Recharts (eixos X/Y, legendas e rótulos de dados) e nos tokens de texto da barra lateral flutuante (`ModernSidebar`).
+- **Otimização Global de Responsividade e Layout Compacto**:
+  - **Cards do Dashboard no Mobile**: Redução do padding nos 13 cards do Dashboard de 24px (`p-6`) para 16px (`p-4 sm:p-6`) em telas `<640px` com bordas adaptativas (`rounded-[22px] sm:rounded-[25px]`), liberando 16px de largura útil por card para gráficos e métricas.
+  - **Grid do Dashboard**: Redução do espaçamento vertical entre cards (`gap`) de 24px para 16px no mobile, compactando o layout e diminuindo a rolagem vertical em smartphones.
+  - **Hero Balance Bento Card**: Tipografia responsiva com quebra segura de valores (`text-2xl min-[360px]:text-3xl sm:text-4xl break-words`) e padding ajustado (`p-4 sm:p-6 lg:p-7`), impedindo corte de saldos em viewports de 320px–360px.
+  - **Saudação do Cabeçalho**: Quebra fluida flex-wrap para acomodar nomes extensos e cumprimentos contextuais sem truncamento forçado no celular.
+  - **Gráficos Donut**: Dimensões responsivas fluidas (`w-56 h-56 min-[380px]:w-64 min-[380px]:h-64 sm:w-72 sm:h-72`) nos gráficos de despesas e receitas por categoria, garantindo ajuste perfeito no raio central e legendas.
+  - **Abas do Modal de Transações**: Ajuste tipográfico e de preenchimento (`px-1 text-[11px] min-[360px]:text-xs truncate text-center`) nas 4 abas (Despesa, Receita, Cartão, Transferir), eliminando quebra visual em telas estreitas.
+  - **Busca de Lançamentos Flexível**: Campo de busca com largura fluida (`w-32 min-[400px]:w-44 sm:w-52`) para não empurrar os botões de ação e filtros para fora do viewport.
+  - **Menu de Usuário e Drawer Lateral**: Prevenção de overflow horizontal no dropdown do usuário (`max-w-[calc(100vw-2rem)]`) e garantia de margem externa visível no menu lateral móvel (`width: min(280px, calc(100vw - 36px))`).
+  - **Preservação de Inputs Heróicos**: Regra de zoom mobile ajustada para manter o tamanho visual de destaque em inputs monetários (`.borderless-money-input`) e controles numéricos.
+  - **Aceleração por Hardware de Rolagem**: Aplicação de `-webkit-overflow-scrolling: touch` para carrosséis horizontais suaves em iOS e Android.
 
 ## [1.1.78] - 2026-09-30
 

@@ -641,7 +641,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 autoFocus
-                className="pl-8 pr-3.5 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#2C2C2E] text-xs text-slate-900 dark:text-white w-48 shadow-xs"
+                className="pl-8 pr-3.5 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#2C2C2E] text-xs text-slate-900 dark:text-white w-32 min-[400px]:w-44 sm:w-52 shadow-xs transition-all"
               />
             </div>
           )}

@@ -995,7 +995,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       : filteredCategoryAdherenceList;
 
     return (
-      <div key="despesasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+      <div key="despesasCategoria" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
         {/* Header: 🍩 DESPESAS POR CATEGORIA ⓘ + [Todas | Fixas | Variáveis] + Mês */}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
@@ -1075,7 +1075,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
               isFullWidth ? "dashboard-category-card-chart my-auto" : "w-full"
             }`}>
-              <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none" style={{ WebkitTapHighlightColor: 'transparent', outline: 'none' }}>
+              <div className="relative w-56 h-56 min-[380px]:w-64 min-[380px]:h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none" style={{ WebkitTapHighlightColor: 'transparent', outline: 'none' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart style={{ outline: 'none' }}>
                     <Pie
@@ -1394,7 +1394,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       : [];
 
     return (
-      <div key="frequenciaGastos" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div key="frequenciaGastos" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-base">📊</span>
@@ -1495,7 +1495,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Left 3: Balanço Mensal
   const renderBalancoMensal = () => (
-    <div key="balancoMensal" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-sm dark:shadow-2xl space-y-4">
+    <div key="balancoMensal" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-slate-900 dark:text-white">Balanço mensal</h3>
         <span className="text-xs text-slate-600 dark:text-slate-300 font-bold bg-slate-100 dark:bg-white/[0.06] px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-white/[0.06]">{capitalizedMonth}</span>
@@ -1534,7 +1534,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Left 4: Transações Pendentes
   const renderTransacoesPendentes = () => (
-    <div key="transacoesPendentes" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="transacoesPendentes" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-500" />
@@ -1596,7 +1596,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     });
 
     return (
-      <div key="planejamento" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div key="planejamento" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">Resumo do orçamento</h3>
@@ -1684,7 +1684,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Left 6: Transações Favoritas
   const renderTransacoesFavoritas = () => (
-    <div key="transacoesFavoritas" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="transacoesFavoritas" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -1727,7 +1727,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       : [];
 
     return (
-      <div key="calendarioMovimentacoes" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div key="calendarioMovimentacoes" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CalendarDays className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -1822,7 +1822,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Left 8: Minhas Contas (Finly Style)
   const renderContas = () => (
-    <div key="contas" className="p-6 rounded-[28px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="contas" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[28px] bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-black text-slate-900 dark:text-white">Contas</h3>
         <button
@@ -1889,7 +1889,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 0: Autonomia Financeira (Runway / Burn Rate - MGO Inspired)
   const renderAutonomiaReserva = () => (
-    <div key="autonomiaReserva" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="autonomiaReserva" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm font-bold">
@@ -1985,7 +1985,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 1: Receitas por Categoria
   const renderReceitasCategoria = (isFullWidth: boolean = false) => (
-    <div key="receitasCategoria" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
+    <div key="receitasCategoria" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black text-slate-900 dark:text-white">Receitas por categoria</h3>
@@ -2003,7 +2003,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <div className={`relative flex flex-col items-center justify-center shrink-0 mx-auto ${
             isFullWidth ? "dashboard-category-card-chart my-auto" : "w-full"
           }`}>
-            <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
+            <div className="relative w-56 h-56 min-[380px]:w-64 min-[380px]:h-64 sm:w-72 sm:h-72 flex items-center justify-center select-none">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -2215,7 +2215,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 4: Cartões de Crédito
   const renderCartoes = () => (
-    <div key="cartoes" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-sm dark:shadow-2xl space-y-5">
+    <div key="cartoes" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-sm dark:shadow-2xl space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black text-slate-900 dark:text-white">Cartões de crédito</h3>
@@ -2396,7 +2396,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 5: Seus Objetivos
   const renderObjetivos = () => (
-    <div key="objetivos" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="objetivos" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -2453,7 +2453,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 6: Economia no Mês Atual (Meu Desempenho)
   const renderEconomiaMes = () => (
-    <div key="economiaMes" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="economiaMes" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-slate-900 dark:text-white">Economia no mês atual</h3>
         <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-extrabold">
@@ -2488,7 +2488,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Right 7: Informações de Perfil
   const renderPerfil = () => (
-    <div key="perfil" className="p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+    <div key="perfil" className="p-4 sm:p-6 rounded-[22px] sm:rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-slate-900 dark:text-white">Informações de perfil</h3>
         <button
@@ -2528,7 +2528,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <greetingData.icon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl lg:text-[25px] font-black tracking-tight text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+            <h1 className="text-lg min-[360px]:text-xl sm:text-2xl lg:text-[25px] font-black tracking-tight text-slate-900 dark:text-white flex flex-wrap items-center gap-1.5">
               <span>{t(greetingData.key, greetingData.fallback)},</span>
               <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 dark:from-purple-400 dark:via-indigo-300 dark:to-cyan-400 bg-clip-text text-transparent">{firstName}</span>
               <span className="inline-block hover:animate-waving-hand cursor-default select-none">👋</span>
@@ -2562,7 +2562,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       </div>
 
       {/* 2. HERO BALANCE BENTO CARD (FIKRI STUDIO SIGNATURE) */}
-      <div className="bento-card ambient-glow-purple p-6 sm:p-7 space-y-5 text-left relative overflow-hidden">
+      <div className="bento-card ambient-glow-purple p-4 sm:p-6 lg:p-7 space-y-4 sm:space-y-5 text-left relative overflow-hidden">
         {/* Top Meta Bar */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="space-y-0.5">
@@ -2570,7 +2570,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               {t('common.total_balance', 'Saldo em contas')}
             </span>
             <div className="flex items-center gap-2 pt-0.5">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white mono-metric">
+              <h1 className="text-2xl min-[360px]:text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white mono-metric break-words">
                 {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
               </h1>
               <button

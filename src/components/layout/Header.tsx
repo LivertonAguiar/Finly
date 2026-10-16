@@ -422,7 +422,7 @@ export const Header: React.FC<HeaderProps> = ({
               />
 
               <div
-                className="finly-dropdown-solid absolute right-0 mt-2 w-64 rounded-2xl shadow-2xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1"
+                className="finly-dropdown-solid absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 space-y-1"
               >
                 <div className="p-2.5 border-b border-slate-100 dark:border-slate-800">
                 <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">

@@ -249,9 +249,9 @@ html.dark .text-blue-500 {
   letter-spacing: 0.015em;
 }
 
-/* Prevent iOS Safari unwanted auto-zoom on form inputs */
+/* Prevent iOS Safari unwanted auto-zoom on form inputs without affecting hero money inputs */
 @media screen and (max-width: 768px) {
-  input, select, textarea {
+  input:not(.borderless-money-input):not(.borderless-stepper-input), select, textarea {
     font-size: 16px !important;
   }
 
@@ -769,6 +769,11 @@ html.dark ::-webkit-scrollbar-thumb {
   background: #475569;
 }
 
+/* Rolagem suave nativa com toque para carrosséis e tabelas */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Dashboard cards respond to the space left by the sidebar, not the viewport. */
 .dashboard-overview {
   container: dashboard / inline-size;
@@ -777,7 +782,7 @@ html.dark ::-webkit-scrollbar-thumb {
 .dashboard-card-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: start;
 }
 

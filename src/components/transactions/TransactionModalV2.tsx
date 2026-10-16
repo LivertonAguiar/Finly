@@ -983,7 +983,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       setPaymentMethod(nextMethod);
                       if (nextType === 'transfer') setStatus(date > getTodayString() ? 'scheduled' : 'completed');
                     }}
-                    className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                    className={`py-2 px-1 rounded-xl text-[11px] min-[360px]:text-xs font-black transition-all cursor-pointer truncate text-center ${
                       active ? option.activeClass : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
                     }`}
                   >

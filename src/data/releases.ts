@@ -41,9 +41,24 @@ export const CURRENT_BUILD_DATE = '2026-10-12';
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
-    releaseDate: '2026-10-12',
-    summary: 'Ajustes visuais no Dashboard e Matriz Orçamentária no mobile, além de blindagem de SMTP contra e-mails para domínios fictícios.',
+    releaseDate: '2026-10-16',
+    summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
+      {
+        title: 'Otimização de Layout e Responsividade Mobile',
+        description: 'Padding compacto (16px) nos 13 cards do Dashboard, grid vertical mais densa, dimensões fluidas de gráficos Donut e abas do modal perfeitamente alinhadas em celulares estreitos.',
+        type: 'improvement',
+      },
+      {
+        title: 'Hero Balance Card e Busca Flexíveis',
+        description: 'Quebra inteligente de valores monetários altos no saldo geral, barra de pesquisa com largura fluida e eliminação de overflow horizontal em menus flutuantes.',
+        type: 'visual',
+      },
+      {
+        title: 'Tipografia de Alta Precisão (Plus Jakarta Sans & Inter)',
+        description: 'Substituição das fontes arredondadas por fontes geométricas ultra nítidas com números tabulares e contraste elevado em todos os 10 temas claros e escuros.',
+        type: 'visual',
+      },
       {
         title: 'Boas-Vindas Personalizada no Dashboard',
         description: 'Saudação inteligente (Bom dia, Boa tarde ou Boa noite) contextualizada com a hora local, primeiro nome do usuário e data por extenso, harmonizada com o seletor de mês.',
