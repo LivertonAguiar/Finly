@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.12",
+    "version": "1.1.79.13",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.12.zip",
-    "sha256": "d911331ff70360d06baea85e8fd664dbac3cd09c5db13bea87555fa806c805ee",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.13.zip",
+    "sha256": "9da86bef4a1a0202a6f364ffe99d53a2917516c061a111dee26cecfe0ecb2fb7",
     "mandatory": true,
-    "releaseDate": "2026-10-15",
-    "notes": "Data de quitacao de fatura personalizada, badges de quitacao em cartoes, galeria visual e tags dinamicas"
+    "releaseDate": "2026-10-16",
+    "notes": "Tipografia de alta precisao Plus Jakarta Sans, nitidez e contraste aprimorado em todos os temas"
   }
 }
