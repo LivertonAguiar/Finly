@@ -37,6 +37,9 @@ import {
   Minimize2,
   Move,
   Info,
+  Sun,
+  Moon,
+  CloudSun,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -53,7 +56,8 @@ import {
   Area,
 } from 'recharts';
 import { useFinancial } from '../../context/FinancialContext';
-import { formatCurrency, formatDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
+import { formatCurrency, formatDate, formatFullDate, getTodayString, calculateCardInvoiceStatus } from '../../utils/formatters';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { getAnalyticalEntries } from '../../utils/transactionAnalytics';
 import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
@@ -246,7 +250,51 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onNavigateToTransactions,
 }) => {
   const { user, metrics, categories, accounts, cards, transactions, goals, budgets, toggleTransactionStatus, toggleHideValues } = useFinancial();
+  const { currentUser } = useAuth();
   const { lang, t, translateCategory } = useTranslation();
+
+  // User First Name extraction
+  const firstName = useMemo(() => {
+    const rawName = currentUser?.name || user?.name || '';
+    const clean = rawName.trim().split(/\s+/)[0];
+    if (clean) {
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+    }
+    return lang === 'en-US' ? 'User' : lang === 'es-ES' ? 'Usuario' : 'Usuário';
+  }, [currentUser?.name, user?.name, lang]);
+
+  // Greeting period calculation based on local time
+  const greetingData = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      return {
+        key: 'greeting.morning',
+        fallback: 'Bom dia',
+        icon: Sun,
+        iconBg: 'bg-amber-500/10 dark:bg-amber-400/15 text-amber-500 dark:text-amber-400 border-amber-500/20 dark:border-amber-400/30',
+      };
+    } else if (hour >= 12 && hour < 18) {
+      return {
+        key: 'greeting.afternoon',
+        fallback: 'Boa tarde',
+        icon: CloudSun,
+        iconBg: 'bg-orange-500/10 dark:bg-orange-400/15 text-orange-500 dark:text-orange-400 border-orange-500/20 dark:border-orange-400/30',
+      };
+    } else {
+      return {
+        key: 'greeting.evening',
+        fallback: 'Boa noite',
+        icon: Moon,
+        iconBg: 'bg-indigo-500/10 dark:bg-purple-400/15 text-indigo-500 dark:text-purple-300 border-indigo-500/20 dark:border-purple-400/30',
+      };
+    }
+  }, []);
+
+  // Current formatted date (e.g. "Quinta-feira, 15 de outubro")
+  const todayFormatted = useMemo(() => {
+    return formatFullDate(new Date(), lang === 'en-US' ? 'en-US' : lang === 'es-ES' ? 'es-ES' : 'pt-BR');
+  }, [lang]);
+
   const isApp = isNativeCapacitor() || isMobileDevice();
   const isDark = typeof document !== 'undefined'
     ? document.documentElement.classList.contains('dark')
@@ -272,6 +320,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Manage Home Screen Modal State
   const [isManageWidgetsOpen, setIsManageWidgetsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenCustomizer = () => setIsManageWidgetsOpen(true);
+    window.addEventListener('finly_open_dashboard_customizer', handleOpenCustomizer);
+    return () => window.removeEventListener('finly_open_dashboard_customizer', handleOpenCustomizer);
+  }, []);
   const [cardsState, setCardsState] = useState<DashboardCardsState>(() => {
     try {
       const saved = localStorage.getItem(CARDS_STORAGE_KEY);
@@ -2466,26 +2520,43 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   return (
     <div className="dashboard-overview w-full space-y-6 animate-in fade-in pb-16">
-      {/* 1. TOPBAR HEADER (CENTERED MONTH PICKER + CUSTOMIZE ACTION) */}
-      <div className="relative flex items-center justify-center px-1 py-1">
-        {/* Centered Month Picker Popover */}
-        <MonthPickerPopover
-          selectedDate={viewDate}
-          onChangeMonth={(newDate) => {
-            const now = new Date();
-            const diffMonths = (newDate.getFullYear() - now.getFullYear()) * 12 + (newDate.getMonth() - now.getMonth());
-            setSelectedMonthOffset(diffMonths);
-          }}
-        />
+      {/* 1. TOPBAR HEADER (PERSONALIZED GREETING + MONTH PICKER + CUSTOMIZE) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 px-1 py-1">
+        {/* Left: Dynamic Greeting with Icon, User Name and Date */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center border shadow-xs shrink-0 transition-transform hover:scale-105 ${greetingData.iconBg}`}>
+            <greetingData.icon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-[25px] font-black tracking-tight text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+              <span>{t(greetingData.key, greetingData.fallback)},</span>
+              <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 dark:from-purple-400 dark:via-indigo-300 dark:to-cyan-400 bg-clip-text text-transparent">{firstName}</span>
+              <span className="inline-block hover:animate-waving-hand cursor-default select-none">👋</span>
+            </h1>
+            <p className="text-[11.5px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 truncate mt-0.5">
+              <span>{todayFormatted}</span>
+            </p>
+          </div>
+        </div>
 
-        {/* Right Action: Personalizar Widgets */}
-        <div className="absolute right-1 flex items-center gap-2">
+        {/* Right: Centered/Aligned Month Picker Popover + Personalizar Action */}
+        <div className="flex items-center justify-between md:justify-end gap-2.5 shrink-0 w-full md:w-auto pt-1 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-white/5">
+          <MonthPickerPopover
+            selectedDate={viewDate}
+            onChangeMonth={(newDate) => {
+              const now = new Date();
+              const diffMonths = (newDate.getFullYear() - now.getFullYear()) * 12 + (newDate.getMonth() - now.getMonth());
+              setSelectedMonthOffset(diffMonths);
+            }}
+          />
+
           <button
             onClick={() => setIsManageWidgetsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-400 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-white/[0.06] hover:dark:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:text-purple-500 dark:hover:text-purple-300 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
+            title="Personalizar cards do dashboard"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span className="hidden sm:inline">Personalizar</span>
+            <span className="hidden sm:inline">{t('dash.manage_widgets', 'Personalizar')}</span>
           </button>
         </div>
       </div>

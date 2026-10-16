@@ -137,9 +137,9 @@ finly/
 | `/planejamento` | `BudgetPage` | Wizard de 3 etapas (`criarNovoPlanejamento`), teto de gastos por categoria e comparativos. |
 | `/relatorios` | `ReportsPage` | BI visual com Donut/Pizza interativo, filtros por período e exportação. |
 | `/calendario` | `CalendarPage` | Grade mensal com lançamentos diários e painel lateral de detalhes ao clicar no dia. |
-| `/settings` | `SettingsPage` | Abas de personalização: Preferências, Aparência, Dashboard, Alertas, Segurança e Sobre. |
+| `/settings` | `SettingsPage` | Configurações gerais: Perfil, Aparência (10 presets de tema e cores de acento), Notificações, Segurança e Gestão de Dados (backup e zona de perigo protegida). |
 | `/ajuda` | `HelpPage` | Central de Ajuda interativa com simulador visual fiel do app Android. |
-| `/mais` | `MorePage` | Hub de ferramentas adicionais exclusivas (sem duplicatas da barra lateral). |
+| `/mais` | `MorePage` | Hub de ferramentas adicionais exclusivas (sem duplicatas da barra lateral) e download de APK. |
 | `/metas` | `GoalsPage` | Objetivos financeiros com barras de progresso, aportes e comemoração visual. |
 | `/dividas` | `DebtsPage` | Controle de dívidas e financiamentos, cronograma Price/SAC, amortização e integração com o Extrato. |
 | `/investimentos` | `InvestmentsTab` | Consolidação patrimonial por classe de ativos e rendimento mensal. |
@@ -149,6 +149,11 @@ finly/
 ---
 
 ## ✨ Recursos Recentes e Destaques
+
+### 🌅 Saudação Personalizada & Header Adaptativo
+- **Boas-Vindas Contextuais**: Mensagem inteligente no topo do Dashboard ("Bom dia", "Boa tarde", "Boa noite") acompanhada pelo primeiro nome do usuário em gradiente da marca, data por extenso formatada e animação sutil de aceno (`wave-hand`).
+- **Cabeçalho com Blending Dinâmico**: Transparência fluida com `backdrop-filter: blur(20px)` adaptada a qualquer um dos 10 presets de tema, eliminando faixas rígidas em temas escuros alternativos.
+- **Blindagem e Proteção de Dados (Conta Demo)**: Proteção em nível de contexto contra limpeza destrutiva no Supabase/servidor em sessões de demonstração, além de confirmação obrigatória por digitação (`LIMPAR`) e oferta de exportação prévia de backup.
 
 ### 💳 Gestão Inteligente e Quitação de Faturas de Cartão
 - **Seleção da Data Exata do Pagamento**: Permite definir livremente a data de quitação (na data de hoje, no vencimento exato ou em datas passadas/retroativas para manter o histórico financeiro fidedigno).
@@ -165,12 +170,17 @@ finly/
 
 O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o DOM instantaneamente:
 
-### 1. Presets de Temas
-* **`finly-dark`**: Fundo `#1C1C1E` com cartões em `#2C2C2E` (Oficial).
-* **`finly-deep-dark`**: Modo escuro profundo refinado com alto contraste.
-* **`midnight-oled`**: Preto absoluto `#000000` com cartões `#121212`.
-* **`emerald-slate`**: Azul petróleo marinho `#0F172A`.
-* **`clean-light`**: Branco minimalista `#F8FAFC`.
+### 1. Presets de Temas (10 Presets Integrados)
+* **`sleek-obsidian`**: Fundo `#07080A` com cartões em `#14151B` e acento Âmbar Solar.
+* **`sleek-neo-glass`**: Fundo translúcido `#080B14` com cartões `#121826` e Ciano Neon.
+* **`tech-green`**: Fundo terminal `#0A0D0C` com cartões `#121714` e Verde Matrix.
+* **`swiss-navy`**: Fundo nobre `#071026` com cartões `#0D1B3E` e Dourado Champanhe.
+* **`linear-mono`**: Monocromático de alto contraste puro em preto absoluto `#000000`.
+* **`finly-dark`**: Fundo `#121214` com cartões em `#18181B` e Púrpura Finly Oficial.
+* **`finly-deep-dark`**: Fundo `#121214` com contraste profundo e cartões `#18181B`.
+* **`midnight-oled`**: Preto absoluto `#000000` com cartões `#101012` para economia máxima em OLED.
+* **`emerald-slate`**: Azul petróleo marinho `#0F172A` com cartões `#1E293B` e Verde Esmeralda.
+* **`clean-light`**: Branco puro minimalista `#F8FAFC` com cartões `#FFFFFF` e Azul Celeste.
 
 ### 2. Paleta de Cores de Acento (`--primary-accent`)
 * 🟣 **Púrpura / Indigo** (`#7C4DFF`)

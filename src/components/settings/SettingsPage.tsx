@@ -31,23 +31,12 @@ import {
   RefreshCw,
   Fingerprint,
   Trash2,
+  Search,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
-import { PinSetupModal } from '../common/PinSetupModal';
-import {
-  isSecurityLockEnabled,
-  isPinConfigured,
-  setSecurityLockEnabled,
-  removePinCode,
-  isBiometricSupported,
-  isBiometricEnabled,
-  setBiometricEnabled,
-  getLockTimeoutMinutes,
-  setLockTimeoutMinutes,
-  authenticateWithBiometrics,
-  getBiometricStatus,
-  BiometricStatusInfo,
-} from '../../utils/securityManager';
+import { SecuritySettingsSection } from './SecuritySettingsSection';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -63,12 +52,27 @@ import {
 } from '../../utils/notificationEngine';
 
 export const SettingsPage: React.FC = () => {
-  const { user, updateUser, exportBackupJSON, importBackupJSON, resetToCleanState, clearAppCache, resetAllUserData } = useFinancial();
-  const { currentUser, updateUserAccount, deleteUserAccount, logout, changePassword } = useAuth();
+  const {
+    user,
+    updateUser,
+    exportBackupJSON,
+    importBackupJSON,
+    rollbackLastBackup,
+    hasRollbackSnapshot,
+    resetToCleanState,
+    clearAppCache,
+    resetAllUserData,
+    toggleHideValues,
+  } = useFinancial();
+  const { currentUser, updateUserAccount, deleteUserAccount, logout } = useAuth();
   const { confirm } = useConfirm();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hasRollback, setHasRollback] = useState(false);
 
   const [successMsg, setSuccessMsg] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+  const [resetConfirmationInput, setResetConfirmationInput] = useState('');
   const [cacheClearedSuccess, setCacheClearedSuccess] = useState(false);
   const [isResettingData, setIsResettingData] = useState(false);
   const [resetSuccessAlert, setResetSuccessAlert] = useState(false);
@@ -111,11 +115,13 @@ export const SettingsPage: React.FC = () => {
     try {
       await resetAllUserData();
       setShowResetConfirmModal(false);
+      setResetConfirmationInput('');
       setResetSuccessAlert(true);
       setTimeout(() => setResetSuccessAlert(false), 5000);
     } catch (err) {
       console.error('Erro ao resetar dados:', err);
       setShowResetConfirmModal(false);
+      setResetConfirmationInput('');
     } finally {
       setIsResettingData(false);
     }
@@ -134,111 +140,17 @@ export const SettingsPage: React.FC = () => {
   const [testSending, setTestSending] = useState(false);
   const [testSuccess, setTestSuccess] = useState(false);
 
-  // Dashboard 15 Widgets Switches
-  const [dashLeftWidgets, setDashLeftWidgets] = useState({
-    expensesDonut: true,
-    spendingFrequency: true,
-    monthlyBalance: true,
-    pendingTransactions: true,
-    budgetSummary: true,
-    favoriteTransactions: false,
-    movementCalendar: true,
-    myAccounts: true,
-  });
-
-  const [dashRightWidgets, setDashRightWidgets] = useState({
-    incomesDonut: true,
-    semiannualBalance: true,
-    quarterlyBalance: false,
-    creditCardInfo: true,
-    goalsProgress: true,
-    monthSavings: true,
-    userProfile: true,
-  });
-
   // Account details state
   const [name, setName] = useState(currentUser?.name || user.name || '');
   const [email, setEmail] = useState(currentUser?.email || user.email || '');
   const [phone, setPhone] = useState(currentUser?.phone || user.phone || '');
   const [accountAlert, setAccountAlert] = useState<string | null>(null);
 
-  // Password change states
-  const [currentPass, setCurrentPass] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [confirmPass, setConfirmPass] = useState('');
-  const [passAlert, setPassAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [isChangingPass, setIsChangingPass] = useState(false);
-
   // Backup file ref & message
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupAlert, setBackupAlert] = useState<string | null>(null);
 
-  // Security PIN & Biometrics
-  const [pinEnabled, setPinEnabled] = useState(isSecurityLockEnabled());
-  const [pinConfigured, setPinConfigured] = useState(isPinConfigured());
-  const [biometricEnabled, setBiometricEnabledState] = useState(isBiometricEnabled());
-  const [biometricSupported, setBiometricSupported] = useState(false);
-  const [biometricStatus, setBiometricStatus] = useState<BiometricStatusInfo>({ supported: false, enrolled: false });
-  const [lockTimeout, setLockTimeout] = useState(getLockTimeoutMinutes());
-  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-
-  useEffect(() => {
-    getBiometricStatus().then(status => {
-      setBiometricStatus(status);
-      setBiometricSupported(status.supported && status.enrolled);
-      if (!status.supported || !status.enrolled) {
-        setBiometricEnabledState(false);
-        setBiometricEnabled(false);
-      }
-    });
-  }, []);
-
-  const handleTogglePin = (checked: boolean) => {
-    if (checked) {
-      if (!isPinConfigured()) {
-        setIsPinModalOpen(true);
-      } else {
-        setSecurityLockEnabled(true);
-        setPinEnabled(true);
-      }
-    } else {
-      setSecurityLockEnabled(false);
-      setPinEnabled(false);
-    }
-  };
-
-  const handleToggleBiometric = async (checked: boolean) => {
-    if (checked) {
-      const success = await authenticateWithBiometrics();
-      if (success) {
-        setBiometricEnabled(true);
-        setBiometricEnabledState(true);
-      } else {
-        setBiometricEnabled(false);
-        setBiometricEnabledState(false);
-      }
-    } else {
-      setBiometricEnabled(false);
-      setBiometricEnabledState(false);
-    }
-  };
-
-  const handleChangeTimeout = (mins: number) => {
-    setLockTimeout(mins);
-    setLockTimeoutMinutes(mins);
-  };
-
   // Load saved settings
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('finly_dash_widgets');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.left) setDashLeftWidgets(parsed.left);
-        if (parsed.right) setDashRightWidgets(parsed.right);
-      }
-    } catch (e) {}
-  }, []);
 
   // Sync profile when currentUser loads
   useEffect(() => {
@@ -305,35 +217,8 @@ export const SettingsPage: React.FC = () => {
 
     updateUserAccount({ name, email, phone });
 
-    localStorage.setItem(
-      'finly_dash_widgets',
-      JSON.stringify({ left: dashLeftWidgets, right: dashRightWidgets })
-    );
-
     setSuccessMsg(true);
     setTimeout(() => setSuccessMsg(false), 3000);
-  };
-
-  const handleResetDashboardDefaults = () => {
-    setDashLeftWidgets({
-      expensesDonut: true,
-      spendingFrequency: true,
-      monthlyBalance: true,
-      pendingTransactions: true,
-      budgetSummary: true,
-      favoriteTransactions: false,
-      movementCalendar: true,
-      myAccounts: true,
-    });
-    setDashRightWidgets({
-      incomesDonut: true,
-      semiannualBalance: true,
-      quarterlyBalance: false,
-      creditCardInfo: true,
-      goalsProgress: true,
-      monthSavings: true,
-      userProfile: true,
-    });
   };
 
   const handleSaveAccount = (e: React.FormEvent) => {
@@ -342,42 +227,6 @@ export const SettingsPage: React.FC = () => {
     updateUserAccount({ name, email, phone });
     setAccountAlert('Dados cadastrais atualizados com sucesso!');
     setTimeout(() => setAccountAlert(null), 4000);
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPassAlert(null);
-
-    if (!currentPass) {
-      setPassAlert({ type: 'error', message: 'Informe sua senha atual.' });
-      return;
-    }
-    if (newPass.length < 6) {
-      setPassAlert({ type: 'error', message: 'A nova senha deve ter pelo menos 6 caracteres.' });
-      return;
-    }
-    if (newPass !== confirmPass) {
-      setPassAlert({ type: 'error', message: 'A nova senha e a confirmação não coincidem.' });
-      return;
-    }
-
-    setIsChangingPass(true);
-    try {
-      const res = await changePassword(currentPass, newPass);
-      if (res.success) {
-        setPassAlert({ type: 'success', message: res.message });
-        setCurrentPass('');
-        setNewPass('');
-        setConfirmPass('');
-      } else {
-        setPassAlert({ type: 'error', message: res.message });
-      }
-    } catch (err: any) {
-      setPassAlert({ type: 'error', message: err.message || 'Erro ao alterar senha.' });
-    } finally {
-      setIsChangingPass(false);
-      setTimeout(() => setPassAlert(null), 5000);
-    }
   };
 
   const handleLogout = async () => {
@@ -392,23 +241,48 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    setHasRollback(hasRollbackSnapshot());
+  }, [hasRollbackSnapshot]);
+
   const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          const success = importBackupJSON(event.target.result as string);
-          if (success) {
-            setBackupAlert('Backup restaurado com sucesso! Dados atualizados.');
+          const res = importBackupJSON(event.target.result as string);
+          if (res.success) {
+            const countStr = res.counts?.transactions ? ` (${res.counts.transactions} transações, ${res.counts.accounts || 0} contas)` : '';
+            setBackupAlert(`Backup restaurado com sucesso!${countStr}`);
+            setHasRollback(hasRollbackSnapshot());
           } else {
-            setBackupAlert('Erro: Arquivo de backup inválido.');
+            setBackupAlert(`Erro: ${res.error || 'Arquivo de backup inválido.'}`);
           }
-          setTimeout(() => setBackupAlert(null), 4000);
+          setTimeout(() => setBackupAlert(null), 5000);
         }
       };
       reader.readAsText(file);
     }
+  };
+
+  const handleRollbackBackup = async () => {
+    const ok = await confirm({
+      title: 'Desfazer Última Restauração',
+      message: 'Deseja realmente reverter os dados para o estado imediatamente anterior ao último backup importado?',
+      confirmText: 'Reverter Agora',
+      type: 'warning',
+    });
+    if (!ok) return;
+
+    const res = rollbackLastBackup();
+    if (res.success) {
+      setBackupAlert(res.message || 'Dados restaurados com sucesso para o estado anterior!');
+      setHasRollback(hasRollbackSnapshot());
+    } else {
+      setBackupAlert(`Erro: ${res.message || 'Não foi possível reverter o backup.'}`);
+    }
+    setTimeout(() => setBackupAlert(null), 5000);
   };
 
   const accentOptions = [
@@ -432,6 +306,22 @@ export const SettingsPage: React.FC = () => {
     { id: 'midnight-oled', label: 'Midnight OLED', desc: 'Preto absoluto para economia máxima', bg: 'bg-black' },
     { id: 'clean-light', label: 'Clean Light', desc: 'Branco puro e minimalista', bg: 'bg-slate-100' },
   ];
+
+  const q = searchQuery.toLowerCase().trim();
+  const showLang = !q || 'idioma language moeda currency real dolar euro privacidade privacy ocultar saldos'.includes(q);
+  const showAppearance = !q || 'aparencia appearance tema theme presets cores accent destaque arredondamento radius squircle'.includes(q);
+  const showNotif = !q || 'notificacoes notifications central alertas faturas contas orcamento budget metas digest horario chime som'.includes(q);
+  const showDashboard = !q || 'dashboard painel customizar cards widgets visao geral'.includes(q);
+
+  const showAccount = !q || 'conta account titular nome name email phone telefone dados cadastrais login'.includes(q);
+  const showSecurity = !q || 'segurança security senha password pin biometria fingerprint bloqueio lock inatividade'.includes(q);
+  const showBackup = !q || 'backup restaurar exportar json snapshot reverter desfazer cópia'.includes(q);
+  const showSystem = !q || 'dados data sistema system cache limpar reset apagar excluir conta delete'.includes(q);
+  const showSession = !q || 'sessao session sair logout encerrar'.includes(q);
+
+  const hasAnyMatch = showLang || showAppearance || showNotif || showDashboard || showAccount || showSecurity || showBackup || showSystem || showSession;
+  const showCol1 = showLang || showAppearance || showNotif || showDashboard;
+  const showCol2 = showAccount || showSecurity || showBackup || showSystem || showSession;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-20">
@@ -462,24 +352,63 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* TWO-COLUMN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* ========================================================================= */}
-        {/* COLUNA 1: PREFERÊNCIAS (IDIOMA -> APARÊNCIA -> NOTIFICAÇÕES -> DASHBOARD) */}
-        {/* ========================================================================= */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Preferências
-              </h3>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400">Personalização do Sistema</span>
-          </div>
+      {/* Quick Search Bar (C-02) */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar nas configurações (idioma, moeda, privacidade, temas, notificações, cards, segurança, backup, cache...)"
+          className="w-full pl-11 pr-20 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#2C2C2E] text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 shadow-xs transition-all"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 cursor-pointer"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
 
-          {/* 1. IDIOMA & MOEDA */}
-          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      {!hasAnyMatch ? (
+        <div className="p-8 sm:p-12 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 text-center space-y-3 shadow-xs animate-in fade-in">
+          <Sliders className="w-10 h-10 text-purple-600 dark:text-purple-400 mx-auto" />
+          <h4 className="text-sm font-black text-slate-900 dark:text-white">Nenhuma configuração encontrada</h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Não encontramos resultados para "{searchQuery}". Tente outro termo ou limpe a busca para visualizar todas as opções.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 inline-flex items-center gap-2"
+          >
+            <span>Limpar Busca</span>
+          </button>
+        </div>
+      ) : (
+        /* TWO-COLUMN LAYOUT */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* ========================================================================= */}
+          {/* COLUNA 1: PREFERÊNCIAS (IDIOMA -> APARÊNCIA -> NOTIFICAÇÕES -> DASHBOARD) */}
+          {/* ========================================================================= */}
+          {showCol1 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Preferências
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400">Personalização do Sistema</span>
+              </div>
+
+              {/* 1. IDIOMA & MOEDA */}
+              {showLang && (
+                <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
                 <Languages className="w-5 h-5" />
@@ -545,9 +474,41 @@ export const SettingsPage: React.FC = () => {
                 <option value="EUR">€ Euro (EUR)</option>
               </select>
             </div>
-          </div>
 
-          {/* 2. APARÊNCIA & TEMAS */}
+            {/* Privacy Mode Toggle (C-04) */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                {user.showValues ? (
+                  <Eye className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                ) : (
+                  <EyeOff className="w-4 h-4 text-amber-500" />
+                )}
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    Modo Privacidade (Ocultar Saldos)
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    {user.showValues
+                      ? 'Saldos e valores exibidos normalmente'
+                      : 'Valores monetários mascarados com asteriscos em todo o app'}
+                  </span>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!user.showValues}
+                  onChange={toggleHideValues}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* 2. APARÊNCIA & TEMAS */}
+        {showAppearance && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -648,8 +609,10 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
 
-          {/* 3. NOTIFICAÇÕES & ALERTAS */}
+        {/* 3. NOTIFICAÇÕES & ALERTAS */}
+        {showNotif && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -815,6 +778,51 @@ export const SettingsPage: React.FC = () => {
                 />
               </div>
 
+              {/* Progresso de Metas & Objetivos (C-05) */}
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-white block">Metas e Objetivos</span>
+                  <span className="text-[10px] text-slate-400">Lembretes de progresso e ritmo de economia</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.goalsProgress}
+                  onChange={e => setNotifPrefs(saveNotificationPrefs({ goalsProgress: e.target.checked }))}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {/* Resumo Diário da Carteira (C-05) */}
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-white block">Resumo Diário da Carteira</span>
+                  <span className="text-[10px] text-slate-400">Notificação diária consolidada com saldo e despesas</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.dailyDigest}
+                  onChange={e => setNotifPrefs(saveNotificationPrefs({ dailyDigest: e.target.checked }))}
+                  className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              {/* Horário de Notificação (C-05) */}
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white block">Horário Preferencial dos Alertas</span>
+                    <span className="text-[10px] text-slate-400">Momento do dia para verificação e avisos diários</span>
+                  </div>
+                </div>
+                <input
+                  type="time"
+                  value={notifPrefs.notifyTime || '09:00'}
+                  onChange={e => setNotifPrefs(saveNotificationPrefs({ notifyTime: e.target.value || '09:00' }))}
+                  className="px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200"
+                />
+              </div>
+
               {/* Som Suave */}
               <div className="flex items-center justify-between py-1">
                 <div className="flex items-center gap-2">
@@ -833,8 +841,10 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
 
-          {/* 4. DASHBOARD WIDGETS */}
+        {/* 4. DASHBOARD CARDS & WIDGETS (C-03) */}
+        {showDashboard && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -843,101 +853,58 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                    4. Widgets do Dashboard
+                    4. Personalização do Dashboard
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Ative ou desative os 15 widgets da visão geral
+                    Gerencie a visibilidade e a ordem dos cards na Visão Geral
                   </p>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={handleResetDashboardDefaults}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer shadow-xs active:scale-95"
-                title="Restaurar widgets padrão"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Padrão</span>
-              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              {/* Coluna Esquerda */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 block">
-                  Coluna Esquerda (8)
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                O Finly conta com um painel dinâmico e interativo diretamente na Visão Geral.
+                Lá você pode reordenar por arrastar e soltar, ocultar ou reativar qualquer card (calendário, orçamentos, balanços, cartões e mais) em tempo real.
+              </p>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400">
+                  Gerenciador V5 Integrado
                 </span>
-                <div className="space-y-1.5">
-                  {[
-                    { key: 'expensesDonut', label: 'Despesas por categoria' },
-                    { key: 'spendingFrequency', label: 'Frequência de gastos (Score)' },
-                    { key: 'monthlyBalance', label: 'Balanço mensal' },
-                    { key: 'pendingTransactions', label: 'Transações pendentes' },
-                    { key: 'budgetSummary', label: 'Resumo do orçamento' },
-                    { key: 'favoriteTransactions', label: 'Transações favoritas' },
-                    { key: 'movementCalendar', label: 'Calendário mensal' },
-                    { key: 'myAccounts', label: 'Minhas contas' },
-                  ].map(item => (
-                    <label key={item.key} className="flex items-center justify-between py-1 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
-                      <span className="truncate pr-2">{item.label}</span>
-                      <input
-                        type="checkbox"
-                        checked={(dashLeftWidgets as any)[item.key]}
-                        onChange={e => setDashLeftWidgets(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                        className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Coluna Direita */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 block">
-                  Coluna Direita (7)
-                </span>
-                <div className="space-y-1.5">
-                  {[
-                    { key: 'incomesDonut', label: 'Receitas por categoria' },
-                    { key: 'semiannualBalance', label: 'Balanço semestral' },
-                    { key: 'quarterlyBalance', label: 'Balanço trimestral' },
-                    { key: 'creditCardInfo', label: 'Cartões de crédito' },
-                    { key: 'goalsProgress', label: 'Objetivos e metas' },
-                    { key: 'monthSavings', label: 'Economia no mês' },
-                    { key: 'userProfile', label: 'Card de perfil' },
-                  ].map(item => (
-                    <label key={item.key} className="flex items-center justify-between py-1 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
-                      <span className="truncate pr-2">{item.label}</span>
-                      <input
-                        type="checkbox"
-                        checked={(dashRightWidgets as any)[item.key]}
-                        onChange={e => setDashRightWidgets(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                        className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
-                      />
-                    </label>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('finly_open_dashboard_customizer'));
+                  }}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-2"
+                >
+                  <Layout className="w-4 h-4" />
+                  <span>Abrir Gerenciador de Cards</span>
+                </button>
               </div>
             </div>
           </div>
+        )}
+      </div>
+    )}
+
+    {/* ========================================================================= */}
+    {/* COLUNA 2: SEGURANÇA E LOGIN (SEPARADO) */}
+    {/* ========================================================================= */}
+    {showCol2 && (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+              Segurança & Login
+            </h3>
+          </div>
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Proteção Ativa</span>
         </div>
 
-        {/* ========================================================================= */}
-        {/* COLUNA 2: SEGURANÇA E LOGIN (SEPARADO) */}
-        {/* ========================================================================= */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Segurança & Login
-              </h3>
-            </div>
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Proteção Ativa</span>
-          </div>
-
-          {/* 1. DADOS CADASTRAIS & LOGIN */}
+        {/* 1. DADOS CADASTRAIS & LOGIN */}
+        {showAccount && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -1019,199 +986,15 @@ export const SettingsPage: React.FC = () => {
               </div>
             </form>
           </div>
+        )}
 
-          {/* 2. ALTERAÇÃO DE SENHA */}
-          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
-                <Key className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                  Alteração de Senha
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Mantenha sua conta segura com uma senha forte
-                </p>
-              </div>
-            </div>
+        {/* 2. SEGURANÇA AVANÇADA (SENHA, PIN PBKDF2 & BIOMETRIA UNIFICADA) */}
+        {showSecurity && (
+          <SecuritySettingsSection />
+        )}
 
-            {passAlert && (
-              <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in ${
-                passAlert.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
-              }`}>
-                {passAlert.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
-                <span>{passAlert.message}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleChangePassword} className="space-y-3 pt-1">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Senha Atual
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    value={currentPass}
-                    onChange={e => setCurrentPass(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Nova Senha
-                  </label>
-                  <input
-                    type="password"
-                    value={newPass}
-                    onChange={e => setNewPass(e.target.value)}
-                    placeholder="Mínimo 6 dígitos"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Confirmar Nova Senha
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmPass}
-                    onChange={e => setConfirmPass(e.target.value)}
-                    placeholder="Repita a nova senha"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-1">
-                <button
-                  type="submit"
-                  disabled={isChangingPass}
-                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
-                >
-                  {isChangingPass ? 'Atualizando...' : 'Atualizar Senha'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* 3. BLOQUEIO BIOMÉTRICO E PIN NUMÉRICO */}
-          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
-                  <Fingerprint className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                    Bloqueio Biométrico & PIN
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Proteja a abertura do Finly com código de 4 dígitos ou biometria
-                  </p>
-                </div>
-              </div>
-
-              <input
-                type="checkbox"
-                checked={pinEnabled}
-                onChange={e => handleTogglePin(e.target.checked)}
-                className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
-              />
-            </div>
-
-            {pinEnabled && (
-              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                      Código PIN de Acesso
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {pinConfigured ? 'PIN de 4 dígitos configurado' : 'Nenhum PIN definido ainda'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsPinModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 transition-colors cursor-pointer"
-                  >
-                    {pinConfigured ? 'Alterar PIN' : 'Definir PIN'}
-                  </button>
-                </div>
-
-                {/* Biometrics Toggle if supported */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <Fingerprint className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                        Desbloqueio por Biometria
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {biometricSupported
-                          ? 'TouchID, FaceID ou impressão digital ativa'
-                          : biometricStatus.reason || 'Sensor biométrico não disponível'}
-                      </span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    disabled={!biometricSupported}
-                    checked={biometricEnabled}
-                    onChange={e => handleToggleBiometric(e.target.checked)}
-                    className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600 disabled:opacity-40"
-                  />
-                </div>
-
-                {/* Inactivity Timeout */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                        Bloquear Automaticamente
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        Tempo de inatividade após sair do app
-                      </span>
-                    </div>
-                  </div>
-                  <select
-                    value={lockTimeout}
-                    onChange={e => handleChangeTimeout(parseInt(e.target.value, 10))}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200"
-                  >
-                    <option value={0}>Imediatamente</option>
-                    <option value={1}>Após 1 minuto</option>
-                    <option value={5}>Após 5 minutos</option>
-                    <option value={15}>Após 15 minutos</option>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <PinSetupModal
-            isOpen={isPinModalOpen}
-            onClose={() => setIsPinModalOpen(false)}
-            onSuccess={() => {
-              setPinConfigured(true);
-              setPinEnabled(true);
-              setBiometricEnabledState(isBiometricEnabled());
-            }}
-          />
-
-          {/* 3. CÓPIAS DE SEGURANÇA & DADOS */}
+        {/* 3. CÓPIAS DE SEGURANÇA & DADOS */}
+        {showBackup && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -1262,9 +1045,32 @@ export const SettingsPage: React.FC = () => {
                 className="hidden"
               />
             </div>
-          </div>
 
-          {/* 4. DADOS & SISTEMA */}
+            {hasRollback && (
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="space-y-0.5 min-w-0">
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400 block truncate">
+                    Ponto de Restauração Anterior
+                  </span>
+                  <span className="text-[10px] text-slate-400 block">
+                    Snapshot automático salvo antes da última importação
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRollbackBackup}
+                  className="px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Desfazer Importação</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. DADOS & SISTEMA */}
+        {showSystem && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -1313,7 +1119,10 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowResetConfirmModal(true)}
+                  onClick={() => {
+                    setResetConfirmationInput('');
+                    setShowResetConfirmModal(true);
+                  }}
                   className="px-3.5 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer shrink-0 ml-2"
                 >
                   Limpar Dados
@@ -1348,8 +1157,10 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
 
-          {/* 5. SESSÃO & LOGOUT */}
+        {/* 5. SESSÃO & LOGOUT */}
+        {showSession && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
             <div>
               <span className="text-xs font-black text-slate-900 dark:text-white block">Sessão Atual</span>
@@ -1365,13 +1176,21 @@ export const SettingsPage: React.FC = () => {
               <span>Encerrar Sessão</span>
             </button>
           </div>
-        </div>
+        )}
       </div>
+    )}
+  </div>
+)}
 
       {/* Confirm Reset Data Modal */}
       <Modal
         isOpen={showResetConfirmModal}
-        onClose={() => !isResettingData && setShowResetConfirmModal(false)}
+        onClose={() => {
+          if (!isResettingData) {
+            setShowResetConfirmModal(false);
+            setResetConfirmationInput('');
+          }
+        }}
         title="Confirmar Limpeza de Dados"
         maxWidth="md"
       >
@@ -1381,16 +1200,57 @@ export const SettingsPage: React.FC = () => {
             <span>Atenção: Esta ação é irreversível!</span>
           </div>
 
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Você tem certeza que deseja excluir todas as suas transações, orçamentos, metas e dívidas?
-            As informações serão limpas permanentemente do seu dispositivo, da nuvem e do servidor para um recomeço limpo.
-          </p>
+          {currentUser?.id === 'usr-demo-financeiro' ? (
+            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 text-xs text-purple-700 dark:text-purple-300 leading-relaxed">
+              <span className="font-bold">Conta de Demonstração:</span> Esta ação apenas restaurará o modelo de dados original da demonstração no seu navegador local. Os dados na nuvem e de outros usuários não serão alterados.
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Você tem certeza que deseja excluir todas as suas transações, orçamentos, metas e dívidas?
+                As informações serão limpas permanentemente do seu dispositivo, da nuvem e do servidor para um recomeço limpo.
+              </p>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Recomendação de Segurança</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Exporte uma cópia de backup antes de resetar para evitar perdas acidentais.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={exportBackupJSON}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-600 dark:text-purple-300 transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar Backup</span>
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                  Digite <span className="text-rose-600 dark:text-rose-400 font-black">LIMPAR</span> para confirmar:
+                </label>
+                <input
+                  type="text"
+                  value={resetConfirmationInput}
+                  onChange={(e) => setResetConfirmationInput(e.target.value)}
+                  placeholder="LIMPAR"
+                  className="w-full px-3.5 py-2 text-xs font-mono font-bold rounded-xl border border-rose-300 dark:border-rose-900/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+            </>
+          )}
 
           <div className="pt-2 flex justify-end gap-2">
             <button
               type="button"
               disabled={isResettingData}
-              onClick={() => setShowResetConfirmModal(false)}
+              onClick={() => {
+                setShowResetConfirmModal(false);
+                setResetConfirmationInput('');
+              }}
               className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-50"
             >
               Cancelar
@@ -1398,14 +1258,20 @@ export const SettingsPage: React.FC = () => {
             <button
               type="button"
               onClick={handleConfirmResetData}
-              disabled={isResettingData}
-              className="flex items-center gap-2 px-5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white rounded-xl shadow-md cursor-pointer transition-all"
+              disabled={
+                isResettingData ||
+                (currentUser?.id !== 'usr-demo-financeiro' &&
+                  resetConfirmationInput.trim().toUpperCase() !== 'LIMPAR')
+              }
+              className="flex items-center gap-2 px-5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl shadow-md cursor-pointer transition-all"
             >
               {isResettingData ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Limpando Dados...</span>
                 </>
+              ) : currentUser?.id === 'usr-demo-financeiro' ? (
+                <span>Restaurar Demonstração</span>
               ) : (
                 <span>Confirmar Limpeza</span>
               )}

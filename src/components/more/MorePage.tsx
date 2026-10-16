@@ -31,6 +31,8 @@ import {
   ChevronUp,
   History,
   LifeBuoy,
+  AlertCircle,
+  Search,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -40,7 +42,6 @@ import {
   getSidebarItemLabel,
 } from '../../utils/sidebarConfig';
 import { SidebarCustomizerModal } from '../layout/SidebarCustomizerModal';
-import { WebWhatsNewModal } from '../common/WebWhatsNewModal';
 import { useTranslation } from '../../utils/i18n';
 import { CURRENT_RELEASE, RELEASES } from '../../data/releases';
 import { HELP_GUIDES, HELP_FAQS } from '../../data/helpCenterData';
@@ -68,6 +69,17 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'SOBRE'>(initialSubTab || 'GERAL');
   const [activeSidebarIds, setActiveSidebarIds] = useState<string[]>(getStoredSidebarItems);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [isSmallScreen, setIsSmallScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsSmallScreen(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Update check states
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
@@ -81,7 +93,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   }, []);
 
   const [showChangelogHistory, setShowChangelogHistory] = useState(false);
-  const [showWebWhatsNewModal, setShowWebWhatsNewModal] = useState(false);
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
 
@@ -196,6 +207,13 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       colorClass: 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400',
     },
     {
+      id: 'ajuda',
+      label: 'Central de Ajuda',
+      description: 'Guias práticos, tutoriais passo a passo e dúvidas frequentes',
+      icon: LifeBuoy,
+      colorClass: 'bg-amber-50 dark:bg-amber-600/20 text-amber-600 dark:text-amber-400',
+    },
+    {
       id: 'settings',
       label: getSidebarItemLabel('settings', lang),
       description: 'Preferências gerais, tema, moeda e dados',
@@ -204,8 +222,18 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
     },
   ];
 
-  // Filter out any items that are already active in the sidebar (ZERO DUPLICITY)
-  const visibleGeneralItems = generalMoreItems.filter(item => !activeSidebarIds.includes(item.id));
+  // Filter out items: if searching or on mobile/small screens, display all matching items so mobile users have full access (M-01 & M-03)
+  const visibleGeneralItems = generalMoreItems.filter(item => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q || 
+      item.label.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q) ||
+      item.id.toLowerCase().includes(q);
+
+    if (!matchesSearch) return false;
+    if (q || isSmallScreen) return true;
+    return !activeSidebarIds.includes(item.id);
+  });
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in pb-16">
@@ -260,14 +288,57 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         {/* ========================================================================= */}
         {segmentedTab === 'GERAL' && (
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {/* Quick Search Bar (M-03) */}
+            <div className="p-3.5 bg-slate-50/70 dark:bg-[#1C1C1F] border-b border-slate-100 dark:border-slate-800/80">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar módulos, ferramentas e recursos..."
+                  className="w-full pl-10 pr-20 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#2C2C2E] text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 shadow-xs transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 cursor-pointer"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+            </div>
+
             {visibleGeneralItems.length === 0 ? (
               <div className="p-8 text-center space-y-2">
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Todos os módulos principais já estão fixados na sua barra lateral!
-                </p>
-                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                  Você pode reorganizar ou mover itens de volta para cá clicando em "Personalizar Menu Lateral".
-                </p>
+                {searchQuery ? (
+                  <>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Nenhuma ferramenta encontrada para "{searchQuery}"
+                    </p>
+                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                      Verifique a ortografia ou limpe o filtro para ver todas as ferramentas disponíveis.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="mt-2 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      Limpar Busca
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Todos os módulos principais já estão fixados na sua barra lateral!
+                    </p>
+                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                      Você pode reorganizar ou mover itens de volta para cá clicando em "Personalizar Menu Lateral".
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               visibleGeneralItems.map(item => {
@@ -345,8 +416,9 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     } catch (e) {
                       setUpdateResult({
                         hasUpdate: false,
+                        failedCheck: true,
                         latestVersion: APP_VERSION,
-                        notes: 'Você já está com a versão mais recente.',
+                        notes: 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.',
                       });
                     } finally {
                       setIsCheckingUpdate(false);
@@ -359,7 +431,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
                 </button>
 
-                {isNativeCapacitor() && (
+                {(!isNativeCapacitor() || updateResult?.hasUpdate) && (
                 <button
                   type="button"
                   onClick={() => openExternalUrl(updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${updateResult?.latestVersion || APP_VERSION}/finly-v${updateResult?.latestVersion || APP_VERSION}.apk` || GITHUB_RELEASES_URL)}
@@ -384,26 +456,32 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
             {/* Banner de Atualização Sutil */}
             {updateResult && (
               <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
-                updateResult.hasUpdate
+                updateResult.failedCheck
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                  : updateResult.hasUpdate
                   ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
                   : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
               }`}>
                 <div className="flex items-center gap-2">
-                  {updateResult.hasUpdate ? (
+                  {updateResult.failedCheck ? (
+                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                  ) : updateResult.hasUpdate ? (
                     <Sparkles className="w-4 h-4 text-purple-500 shrink-0" />
                   ) : (
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                   )}
                   <span className="font-bold">
-                    {updateResult.hasUpdate
+                    {updateResult.failedCheck
+                      ? (updateResult.notes || 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.')
+                      : updateResult.hasUpdate
                       ? `Nova versão disponível na nuvem: v${updateResult.latestVersion}`
                       : `Você já está utilizando a versão mais recente (v${APP_VERSION}).`}
                   </span>
                 </div>
-                {updateResult.hasUpdate && isNativeCapacitor() && (
+                {updateResult.hasUpdate && (
                   <button
                     onClick={() => openExternalUrl(updateResult.downloadUrl || GITHUB_RELEASES_URL)}
-                    className="underline font-black text-[11px] cursor-pointer"
+                    className="underline font-black text-[11px] cursor-pointer shrink-0"
                   >
                     Baixar APK
                   </button>
@@ -613,12 +691,6 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         isOpen={isCustomizerOpen}
         onClose={() => setIsCustomizerOpen(false)}
         onItemsChange={items => setActiveSidebarIds(items)}
-      />
-
-      {/* Web Whats New Modal */}
-      <WebWhatsNewModal
-        isOpen={showWebWhatsNewModal}
-        onClose={() => setShowWebWhatsNewModal(false)}
       />
     </div>
   );

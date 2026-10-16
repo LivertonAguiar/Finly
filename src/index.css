@@ -357,11 +357,33 @@ html[data-theme-preset="sleek-neo-glass"].dark body {
   background-attachment: fixed !important;
 }
 
-html[data-theme-preset="sleek-neo-glass"].dark header {
-  background-color: rgba(14, 20, 35, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+/* Universal Adaptive Header & BottomNav for all theme presets */
+html.dark header,
+html.dark .finly-header {
+  background-color: var(--app-bg) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  html.dark header,
+  html.dark .finly-header {
+    background-color: color-mix(in srgb, var(--app-bg) 85%, transparent) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+}
+
+html.dark .finly-bottom-nav {
+  background-color: var(--app-bg) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  html.dark .finly-bottom-nav {
+    background-color: color-mix(in srgb, var(--app-bg) 92%, transparent) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
 }
 
 html[data-theme-preset="sleek-neo-glass"].dark aside {
@@ -907,6 +929,23 @@ html.dark .pill-tag-amber {
   .tx-amount {
     font-size: 0.9375rem !important; /* 15px */
   }
+}
+
+/* Micro-interaction: Waving Hand on Hover */
+@keyframes wave-hand {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-8deg); }
+  45% { transform: rotate(14deg); }
+  60% { transform: rotate(-4deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.hover\:animate-waving-hand:hover {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: wave-hand 1.2s infinite ease-in-out;
 }
 
 

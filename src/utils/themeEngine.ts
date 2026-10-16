@@ -231,6 +231,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     html.dark, :root.dark {
       --app-bg: ${darkBg} !important;
       --app-card-bg: ${darkCardBg} !important;
+      --finly-page: ${darkBg} !important;
+      --finly-surface: ${darkCardBg} !important;
       --text-primary: #FFFFFF !important;
       --text-secondary: #CBD5E1 !important;
       --text-muted: #94A3B8 !important;
@@ -238,6 +240,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
     html:not(.dark), :root:not(.dark) {
       --app-bg: ${lightBg} !important;
       --app-card-bg: ${lightCardBg} !important;
+      --finly-page: ${lightBg} !important;
+      --finly-surface: ${lightCardBg} !important;
       --text-primary: #0F172A !important;
       --text-secondary: #475569 !important;
       --text-muted: #64748B !important;

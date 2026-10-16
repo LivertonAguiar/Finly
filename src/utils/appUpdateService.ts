@@ -33,6 +33,7 @@ export const markVersionNotified = (version: string): void => {
 
 export interface UpdateCheckResult {
   hasUpdate: boolean;
+  failedCheck?: boolean;
   latestVersion: string;
   notes?: string;
   summary?: string;
@@ -322,8 +323,11 @@ const performCheck = async (options?: {
 
   return {
     hasUpdate: false,
+    failedCheck: options?.isManualCheck ? true : false,
     latestVersion: APP_VERSION,
-    notes: 'Você já está utilizando a versão mais recente do Finly.',
+    notes: options?.isManualCheck
+      ? 'Não foi possível conectar aos servidores de atualização. Verifique sua conexão com a internet.'
+      : 'Você já está utilizando a versão mais recente do Finly.',
     downloadUrl: GITHUB_RELEASES_URL,
     source: 'local',
   };

@@ -12,15 +12,69 @@ const LOCK_TIMEOUT_KEY = 'finly_lock_timeout_mins'; // 0 = immediate, 1 = 1min, 
 const LAST_ACTIVE_KEY = 'finly_last_active_ts';
 const SESSION_LOCKED_KEY = 'finly_session_locked';
 
-// Simple salt for client-side hashing
-const PIN_SALT = 'finly_secure_vault_2026_';
+const PIN_SALT_KEY = 'finly_pin_salt';
+const PIN_ATTEMPTS_KEY = 'finly_pin_failed_attempts';
+const PIN_LOCKOUT_KEY = 'finly_pin_lockout_until';
+
+// Legacy salt for transparent backwards compatibility
+const LEGACY_PIN_SALT = 'finly_secure_vault_2026_';
 
 /**
- * Generates a SHA-256 hash of the PIN
+ * Gets or creates a cryptographically secure dynamic salt per installation
  */
-export async function hashPin(pin: string): Promise<string> {
+export function getOrCreatePinSalt(): string {
+  try {
+    let salt = localStorage.getItem(PIN_SALT_KEY);
+    if (!salt) {
+      const randomValues = new Uint8Array(16);
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        crypto.getRandomValues(randomValues);
+        salt = Array.from(randomValues).map(b => b.toString(16).padStart(2, '0')).join('');
+      } else {
+        salt = 'finly_salt_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      }
+      localStorage.setItem(PIN_SALT_KEY, salt);
+    }
+    return salt;
+  } catch (e) {
+    return 'finly_dynamic_fallback_salt_2026';
+  }
+}
+
+/**
+ * Generates a PBKDF2 derived hash of the PIN with 100,000 iterations
+ */
+export async function hashPin(pin: string, customSalt?: string): Promise<string> {
+  const salt = customSalt || getOrCreatePinSalt();
   const encoder = new TextEncoder();
-  const data = encoder.encode(PIN_SALT + pin);
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(pin),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode(salt),
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    256
+  );
+  const hashArray = Array.from(new Uint8Array(derivedBits));
+  const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return `pbkdf2:${salt}:${hex}`;
+}
+
+/**
+ * Legacy single-round SHA-256 hash for backward compatibility
+ */
+export async function legacyHashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(LEGACY_PIN_SALT + pin);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -44,11 +98,31 @@ export function isSecurityLockEnabled(): boolean {
   }
 }
 
+const safeSessionStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(key) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(key, value);
+    } catch (e) {}
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(key);
+    } catch (e) {}
+  },
+};
+
 export function setSecurityLockEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(PIN_ENABLED_KEY, enabled ? 'true' : 'false');
     if (!enabled) {
-      sessionStorage.removeItem(SESSION_LOCKED_KEY);
+      safeSessionStorage.removeItem(SESSION_LOCKED_KEY);
     }
   } catch (e) {}
 }
@@ -57,20 +131,113 @@ export async function setPinCode(pin: string): Promise<void> {
   const hash = await hashPin(pin);
   localStorage.setItem(PIN_HASH_KEY, hash);
   localStorage.setItem(PIN_ENABLED_KEY, 'true');
+  resetFailedPinAttempts();
 }
 
-export async function verifyPinCode(pin: string): Promise<boolean> {
+/**
+ * Checks remaining lockout seconds if the user exceeded failed attempts
+ */
+export function getPinLockoutRemainingSeconds(): number {
+  try {
+    const lockoutUntilStr = localStorage.getItem(PIN_LOCKOUT_KEY);
+    if (!lockoutUntilStr) return 0;
+    const lockoutUntil = parseInt(lockoutUntilStr, 10);
+    const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+    if (remaining <= 0) {
+      localStorage.removeItem(PIN_LOCKOUT_KEY);
+      return 0;
+    }
+    return remaining;
+  } catch (e) {
+    return 0;
+  }
+}
+
+export function isPinLocked(): boolean {
+  return getPinLockoutRemainingSeconds() > 0;
+}
+
+export function recordFailedPinAttempt(): { locked: boolean; remainingSeconds: number; attempts: number } {
+  try {
+    const attemptsStr = localStorage.getItem(PIN_ATTEMPTS_KEY);
+    const attempts = (attemptsStr ? parseInt(attemptsStr, 10) : 0) + 1;
+    localStorage.setItem(PIN_ATTEMPTS_KEY, attempts.toString());
+
+    if (attempts >= 10) {
+      // Lock for 5 minutes (300 seconds)
+      const lockUntil = Date.now() + 300 * 1000;
+      localStorage.setItem(PIN_LOCKOUT_KEY, lockUntil.toString());
+      return { locked: true, remainingSeconds: 300, attempts };
+    } else if (attempts >= 5) {
+      // Lock for 30 seconds
+      const lockUntil = Date.now() + 30 * 1000;
+      localStorage.setItem(PIN_LOCKOUT_KEY, lockUntil.toString());
+      return { locked: true, remainingSeconds: 30, attempts };
+    }
+
+    return { locked: false, remainingSeconds: 0, attempts };
+  } catch (e) {
+    return { locked: false, remainingSeconds: 0, attempts: 1 };
+  }
+}
+
+export function resetFailedPinAttempts(): void {
+  try {
+    localStorage.removeItem(PIN_ATTEMPTS_KEY);
+    localStorage.removeItem(PIN_LOCKOUT_KEY);
+  } catch (e) {}
+}
+
+export async function verifyPinCode(pin: string): Promise<{ success: boolean; locked?: boolean; remainingSeconds?: number }> {
+  const remainingLockout = getPinLockoutRemainingSeconds();
+  if (remainingLockout > 0) {
+    return { success: false, locked: true, remainingSeconds: remainingLockout };
+  }
+
   const storedHash = localStorage.getItem(PIN_HASH_KEY);
-  if (!storedHash) return false;
-  const inputHash = await hashPin(pin);
-  return storedHash === inputHash;
+  if (!storedHash) return { success: false };
+
+  // 1. Verify PBKDF2 format (pbkdf2:<salt>:<hex>)
+  if (storedHash.startsWith('pbkdf2:')) {
+    const parts = storedHash.split(':');
+    if (parts.length === 3) {
+      const salt = parts[1];
+      const expectedHex = parts[2];
+      const computed = await hashPin(pin, salt);
+      const computedHex = computed.split(':')[2];
+      if (computedHex === expectedHex) {
+        resetFailedPinAttempts();
+        return { success: true };
+      }
+    }
+  } else {
+    // 2. Legacy single-round SHA-256 hash check
+    const legacy = await legacyHashPin(pin);
+    if (storedHash === legacy) {
+      // Seamless automatic migration to PBKDF2 with dynamic salt
+      await setPinCode(pin);
+      resetFailedPinAttempts();
+      return { success: true };
+    }
+  }
+
+  // Record failed attempt and compute lockout
+  const attemptResult = recordFailedPinAttempt();
+  return {
+    success: false,
+    locked: attemptResult.locked,
+    remainingSeconds: attemptResult.remainingSeconds,
+  };
 }
 
 export function removePinCode(): void {
   localStorage.removeItem(PIN_HASH_KEY);
   localStorage.removeItem(PIN_ENABLED_KEY);
   localStorage.removeItem(BIOMETRIC_ENABLED_KEY);
-  sessionStorage.removeItem(SESSION_LOCKED_KEY);
+  localStorage.removeItem(PIN_SALT_KEY);
+  localStorage.removeItem(PIN_ATTEMPTS_KEY);
+  localStorage.removeItem(PIN_LOCKOUT_KEY);
+  safeSessionStorage.removeItem(SESSION_LOCKED_KEY);
 }
 
 export function getLockTimeoutMinutes(): number {
@@ -220,7 +387,7 @@ export async function authenticateWithBiometrics(): Promise<boolean> {
 export function isAppLocked(): boolean {
   if (!isSecurityLockEnabled()) return false;
   try {
-    const isLocked = sessionStorage.getItem(SESSION_LOCKED_KEY);
+    const isLocked = safeSessionStorage.getItem(SESSION_LOCKED_KEY);
     return isLocked === 'true';
   } catch (e) {
     return false;
@@ -229,13 +396,13 @@ export function isAppLocked(): boolean {
 
 export function lockApp(): void {
   if (isSecurityLockEnabled()) {
-    sessionStorage.setItem(SESSION_LOCKED_KEY, 'true');
+    safeSessionStorage.setItem(SESSION_LOCKED_KEY, 'true');
     window.dispatchEvent(new CustomEvent('finly_lock_state_changed', { detail: { locked: true } }));
   }
 }
 
 export function unlockApp(): void {
-  sessionStorage.removeItem(SESSION_LOCKED_KEY);
+  safeSessionStorage.removeItem(SESSION_LOCKED_KEY);
   recordActivity();
   window.dispatchEvent(new CustomEvent('finly_lock_state_changed', { detail: { locked: false } }));
 }

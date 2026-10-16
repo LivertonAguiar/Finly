@@ -81,12 +81,16 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({ onUnlock }) => {
   const verifyEnteredPin = async (inputPin: string) => {
     setIsVerifying(true);
     try {
-      const isValid = await verifyPinCode(inputPin);
-      if (isValid) {
+      const res = await verifyPinCode(inputPin);
+      if (res.success) {
         handleSuccessfulUnlock();
       } else {
         setIsShaking(true);
-        setError('PIN incorreto. Tente novamente.');
+        if (res.locked && res.remainingSeconds) {
+          setError(`Bloqueado temporariamente por excesso de tentativas. Aguarde ${res.remainingSeconds}s.`);
+        } else {
+          setError('PIN incorreto. Tente novamente.');
+        }
         setTimeout(() => {
           setPin('');
           setIsShaking(false);

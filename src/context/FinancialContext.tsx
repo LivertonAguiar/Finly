@@ -95,6 +95,12 @@ interface UserStoreData {
   userProfile: UserProfile;
 }
 
+export interface ImportBackupResult {
+  success: boolean;
+  error?: string;
+  counts?: Record<string, number>;
+}
+
 interface PendingCardMutations {
   upserts: Record<string, CreditCard>;
   deletes: string[];
@@ -227,7 +233,9 @@ interface FinancialContextType {
   resetToCleanState: () => Promise<void>;
   loadDemoData: () => void;
   exportBackupJSON: () => Promise<void> | void;
-  importBackupJSON: (jsonString: string) => boolean;
+  importBackupJSON: (jsonString: string) => ImportBackupResult;
+  rollbackLastBackup: () => { success: boolean; message?: string };
+  hasRollbackSnapshot: () => boolean;
 
   // Calculated Metrics
   metrics: {
@@ -3225,8 +3233,34 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return () => window.removeEventListener('finly_in_app_notification', handleInAppNotif);
   }, []);
 
+  const loadDemoData = () => {
+    const demo = generateRealisticDemoStore();
+    setAccounts(demo.accounts);
+    replaceCardsWithPendingSync(demo.cards);
+    setCategories(demo.categories);
+    setTransactions(demo.transactions);
+    setTransactionSeries(demo.transactionSeries || []);
+    setBudgets(demo.budgets);
+    setGoals(demo.goals);
+    setDebts(demo.debts);
+    setInvestments(demo.investments);
+    setFamilyMembers(demo.familyMembers);
+    if (demo.notifications) setNotifications(demo.notifications);
+    if (demo.userProfile) setUser(prev => ({ ...prev, ...demo.userProfile }));
+    try {
+      localStorage.setItem(userStoreKey, JSON.stringify(demo));
+    } catch (_) {}
+  };
+
   // Reset / Clear Data (hard reset locally, in Supabase and on the server)
   const resetAllUserData = async () => {
+    // S-05: Demo Account Guard - Never wipe cloud or server store if on Demo account!
+    const isDemo = currentUser?.id === 'usr-demo-financeiro' || currentUser?.email === 'demo@finly.com';
+    if (isDemo) {
+      loadDemoData();
+      return;
+    }
+
     isResettingRef.current = true;
     remotePullSequenceRef.current += 1;
     localMutationRevisionRef.current += 1;
@@ -3319,25 +3353,6 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     await resetAllUserData();
   };
 
-  const loadDemoData = () => {
-    const demo = generateRealisticDemoStore();
-    setAccounts(demo.accounts);
-    replaceCardsWithPendingSync(demo.cards);
-    setCategories(demo.categories);
-    setTransactions(demo.transactions);
-    setTransactionSeries(demo.transactionSeries || []);
-    setBudgets(demo.budgets);
-    setGoals(demo.goals);
-    setDebts(demo.debts);
-    setInvestments(demo.investments);
-    setFamilyMembers(demo.familyMembers);
-    if (demo.notifications) setNotifications(demo.notifications);
-    if (demo.userProfile) setUser(prev => ({ ...prev, ...demo.userProfile }));
-    try {
-      localStorage.setItem(userStoreKey, JSON.stringify(demo));
-    } catch (_) {}
-  };
-
   // Backup & Restore
   const exportBackupJSON = () => {
     const dataToExport: UserStoreData = {
@@ -3366,27 +3381,155 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     URL.revokeObjectURL(url);
   };
 
-  const importBackupJSON = (jsonString: string): boolean => {
+  const hasRollbackSnapshot = (): boolean => {
+    try {
+      return !!localStorage.getItem('finly_backup_rollback_snapshot');
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const rollbackLastBackup = (): { success: boolean; message?: string } => {
+    try {
+      const snapStr = localStorage.getItem('finly_backup_rollback_snapshot');
+      if (!snapStr) {
+        return { success: false, message: 'Nenhum snapshot de reversão encontrado.' };
+      }
+      const parsed = JSON.parse(snapStr);
+      const data: UserStoreData = parsed?.data;
+      if (!data) return { success: false, message: 'Dados de snapshot corrompidos.' };
+
+      if (Array.isArray(data.accounts)) setAccounts(data.accounts);
+      if (Array.isArray(data.cards)) replaceCardsWithPendingSync(data.cards);
+      if (Array.isArray(data.categories)) setCategories(data.categories);
+      if (Array.isArray(data.budgets)) setBudgets(data.budgets);
+      if (Array.isArray(data.goals)) setGoals(data.goals);
+      if (Array.isArray(data.debts)) setDebts(data.debts);
+      if (Array.isArray(data.investments)) setInvestments(data.investments);
+      if (Array.isArray(data.transactions)) setTransactions(data.transactions);
+      if (Array.isArray(data.transactionSeries)) setTransactionSeries(data.transactionSeries);
+      if (Array.isArray(data.familyMembers)) setFamilyMembers(data.familyMembers);
+      if (data.userProfile) setUser(prev => ({ ...prev, ...data.userProfile }));
+
+      localStorage.removeItem('finly_backup_rollback_snapshot');
+      return { success: true, message: 'Reversão concluída com sucesso!' };
+    } catch (e: any) {
+      return { success: false, message: 'Falha ao reverter backup.' };
+    }
+  };
+
+  const importBackupJSON = (jsonString: string): ImportBackupResult => {
     try {
       const parsed = JSON.parse(jsonString);
-      if (!parsed || typeof parsed !== 'object') return false;
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { success: false, error: 'Arquivo inválido: o formato do backup deve ser um objeto JSON.' };
+      }
 
-      if (Array.isArray(parsed.accounts)) setAccounts(parsed.accounts);
-      if (Array.isArray(parsed.cards)) replaceCardsWithPendingSync(parsed.cards);
-      if (Array.isArray(parsed.categories)) setCategories(parsed.categories);
-      if (Array.isArray(parsed.budgets)) setBudgets(parsed.budgets);
-      if (Array.isArray(parsed.goals)) setGoals(parsed.goals);
-      if (Array.isArray(parsed.debts)) setDebts(parsed.debts);
-      if (Array.isArray(parsed.investments)) setInvestments(parsed.investments);
-      if (Array.isArray(parsed.transactions)) setTransactions(parsed.transactions);
-      if (Array.isArray(parsed.transactionSeries)) setTransactionSeries(parsed.transactionSeries);
-      if (Array.isArray(parsed.familyMembers)) setFamilyMembers(parsed.familyMembers);
-      if (parsed.userProfile) setUser(prev => ({ ...prev, ...parsed.userProfile }));
+      // Schema check: must have at least one recognized collection
+      const hasCoreCollections =
+        Array.isArray(parsed.accounts) ||
+        Array.isArray(parsed.transactions) ||
+        Array.isArray(parsed.categories) ||
+        Array.isArray(parsed.cards) ||
+        Array.isArray(parsed.budgets) ||
+        Array.isArray(parsed.goals);
 
-      return true;
-    } catch (e) {
+      if (!hasCoreCollections) {
+        return { success: false, error: 'Arquivo inválido: nenhuma estrutura de dados do Finly foi encontrada.' };
+      }
+
+      // Deep validate collections when present
+      if (Array.isArray(parsed.transactions) && parsed.transactions.length > 0) {
+        const sample = parsed.transactions.slice(0, 15);
+        const isValidSample = sample.every((t: any) => t && typeof t === 'object' && ('amount' in t || 'type' in t || 'description' in t));
+        if (!isValidSample) {
+          return { success: false, error: 'O arquivo contém transações com campos malformados ou corrompidos.' };
+        }
+      }
+
+      if (Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
+        const sample = parsed.accounts.slice(0, 10);
+        const isValidSample = sample.every((a: any) => a && typeof a === 'object' && ('balance' in a || 'name' in a));
+        if (!isValidSample) {
+          return { success: false, error: 'O arquivo contém contas com estrutura corrompida.' };
+        }
+      }
+
+      // Pre-import Snapshot creation for safe rollback
+      try {
+        const currentSnapshot: UserStoreData = {
+          accounts,
+          cards,
+          categories,
+          transactions,
+          transactionSeries,
+          budgets,
+          goals,
+          debts,
+          investments,
+          familyMembers,
+          notifications,
+          userProfile: user,
+        };
+        localStorage.setItem('finly_backup_rollback_snapshot', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          data: currentSnapshot,
+        }));
+      } catch (snapshotErr) {
+        console.warn('Não foi possível gravar o snapshot de reversão no localStorage:', snapshotErr);
+      }
+
+      // Apply valid collections with counts
+      const importedCounts: Record<string, number> = {};
+
+      if (Array.isArray(parsed.accounts)) {
+        setAccounts(parsed.accounts);
+        importedCounts.accounts = parsed.accounts.length;
+      }
+      if (Array.isArray(parsed.cards)) {
+        replaceCardsWithPendingSync(parsed.cards);
+        importedCounts.cards = parsed.cards.length;
+      }
+      if (Array.isArray(parsed.categories)) {
+        setCategories(parsed.categories);
+        importedCounts.categories = parsed.categories.length;
+      }
+      if (Array.isArray(parsed.budgets)) {
+        setBudgets(parsed.budgets);
+        importedCounts.budgets = parsed.budgets.length;
+      }
+      if (Array.isArray(parsed.goals)) {
+        setGoals(parsed.goals);
+        importedCounts.goals = parsed.goals.length;
+      }
+      if (Array.isArray(parsed.debts)) {
+        setDebts(parsed.debts);
+        importedCounts.debts = parsed.debts.length;
+      }
+      if (Array.isArray(parsed.investments)) {
+        setInvestments(parsed.investments);
+        importedCounts.investments = parsed.investments.length;
+      }
+      if (Array.isArray(parsed.transactions)) {
+        setTransactions(parsed.transactions);
+        importedCounts.transactions = parsed.transactions.length;
+      }
+      if (Array.isArray(parsed.transactionSeries)) {
+        setTransactionSeries(parsed.transactionSeries);
+        importedCounts.transactionSeries = parsed.transactionSeries.length;
+      }
+      if (Array.isArray(parsed.familyMembers)) {
+        setFamilyMembers(parsed.familyMembers);
+        importedCounts.familyMembers = parsed.familyMembers.length;
+      }
+      if (parsed.userProfile && typeof parsed.userProfile === 'object') {
+        setUser(prev => ({ ...prev, ...parsed.userProfile }));
+      }
+
+      return { success: true, counts: importedCounts };
+    } catch (e: any) {
       console.error('Error importing backup JSON:', e);
-      return false;
+      return { success: false, error: 'Falha ao processar o arquivo JSON: conteúdo malformatado.' };
     }
   };
 
@@ -3514,6 +3657,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         resetAllUserData,
         exportBackupJSON,
         importBackupJSON,
+        rollbackLastBackup,
+        hasRollbackSnapshot,
         resetToCleanState,
         loadDemoData,
         metrics,

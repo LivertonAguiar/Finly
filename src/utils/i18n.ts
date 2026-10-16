@@ -61,6 +61,10 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'common.status': 'Status',
     'common.actions': 'Ações',
     'common.hide_values': 'Modo Privacidade',
+    'greeting.morning': 'Bom dia',
+    'greeting.afternoon': 'Boa tarde',
+    'greeting.evening': 'Boa noite',
+    'greeting.subtitle': 'Aqui está o resumo financeiro das suas contas.',
 
     // Dashboard Cards
     'dash.manage_widgets': 'Gerenciar Tela Inicial',
@@ -100,7 +104,6 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'more.title': 'Mais opções',
     'more.subtitle': 'Ferramentas adicionais, gestão de categorias, automações e segurança',
     'more.tab.general': 'GERAL',
-    'more.tab.manage': 'GERENCIAR',
     'more.tab.about': 'SOBRE',
     'more.customize_sidebar': 'Personalizar Menu Lateral',
     'more.export_backup': 'Exportar Backup Completo',
@@ -164,6 +167,10 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'common.status': 'Status',
     'common.actions': 'Actions',
     'common.hide_values': 'Privacy Mode',
+    'greeting.morning': 'Good morning',
+    'greeting.afternoon': 'Good afternoon',
+    'greeting.evening': 'Good evening',
+    'greeting.subtitle': 'Here is your financial accounts summary.',
 
     // Dashboard Cards
     'dash.manage_widgets': 'Manage Home Screen',
@@ -203,7 +210,6 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'more.title': 'More Options',
     'more.subtitle': 'Extra tools, category management, automations and security',
     'more.tab.general': 'GENERAL',
-    'more.tab.manage': 'MANAGE',
     'more.tab.about': 'ABOUT',
     'more.customize_sidebar': 'Customize Sidebar Menu',
     'more.export_backup': 'Export Full Backup',
@@ -267,6 +273,10 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'common.status': 'Estado',
     'common.actions': 'Acciones',
     'common.hide_values': 'Modo Privacidad',
+    'greeting.morning': 'Buenos días',
+    'greeting.afternoon': 'Buenas tardes',
+    'greeting.evening': 'Buenas noches',
+    'greeting.subtitle': 'Aquí está el resumen financiero de tus cuentas.',
 
     // Dashboard Cards
     'dash.manage_widgets': 'Administrar Pantalla Principal',
@@ -306,7 +316,6 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'more.title': 'Más opciones',
     'more.subtitle': 'Herramientas adicionales, categorías, automatizaciones y seguridad',
     'more.tab.general': 'GENERAL',
-    'more.tab.manage': 'ADMINISTRAR',
     'more.tab.about': 'ACERCA DE',
     'more.customize_sidebar': 'Personalizar Menú Lateral',
     'more.export_backup': 'Exportar Copia de Seguridad',

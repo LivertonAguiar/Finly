@@ -5,12 +5,29 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-12
 
-### Visual, Mobile e Proteção de E-mail
-- **Dashboard e Matriz Orçamentária**:
-  - Correção de sobreposição, transparência e alinhamento sticky da matriz anual em dispositivos móveis.
-  - Correção da régua vertical do gráfico de fluxo de caixa, margens do eixo Y e realce dinâmico do dia selecionado.
-- **Segurança de E-mail e SMTP**:
-  - Bloqueio definitivo de envio para domínios fictícios no servidor SMTP pessoal e eliminação de bounces.
+### Segurança Criptográfica, Blindagem de Dados e Configurações
+- **Criptografia Forte de PIN (PBKDF2) e Proteção contra Força Bruta**:
+  - Migração de hashing simples de rodada única (SHA-256) para **PBKDF2 com 100.000 iterações** utilizando a API nativa WebCrypto (`crypto.subtle`).
+  - Geração de salt criptográfico dinâmico único por instalação (`finly_pin_salt`), eliminando vetores de rainbow table.
+  - Migração automática e transparente de PINs legados no primeiro desbloqueio bem-sucedido.
+  - Bloqueio progressivo contra ataques de força bruta: 5 tentativas incorretas bloqueiam por 30 segundos; 10 tentativas bloqueiam por 5 minutos com contadores protegidos.
+- **Validação Estrita de Schema e Reversão Atômica de Backups (Rollback)**:
+  - Validação rigorosa da estrutura JSON antes da importação de backups, verificando integridade de objetos e chaves obrigatórias (`transactions`, `accounts`, `categories`, etc.).
+  - Geração automática de snapshot seguro de reversão (`finly_backup_rollback_snapshot`) imediatamente antes de aplicar qualquer restauração.
+  - Novo botão "Desfazer Importação" na aba de Cópias de Segurança, permitindo reverter os dados ao estado anterior com um clique caso um backup incorreto seja carregado.
+- **Unificação de Segurança e Medidor de Força de Senha**:
+  - Criação do componente unificado `SecuritySettingsSection`, eliminando duplicação de formulários e estados entre a página de Perfil e Configurações.
+  - Medidor dinâmico de força de senha (`passwordStrength.ts`) com 4 níveis visuais (Fraca, Razoável, Boa, Forte) e dicas contextuais.
+  - Alternador de visibilidade de senha (ícones Eye / EyeOff) nos campos de senha atual, nova senha e confirmação.
+- **Modernização de Configurações**:
+  - Substituição dos 15 switches estáticos e desconectados de widgets por card inteligente integrado ao Gerenciador de Cards Dinâmico V5 da Visão Geral (`finly_open_dashboard_customizer`).
+  - Adição do controle de **Modo Privacidade (Ocultar Saldos)** nas Configurações, sincronizado com o contexto financeiro.
+  - Expansão dos controles de notificações: alertas de progresso de metas e objetivos, resumo diário da carteira e horário preferencial programável.
+  - Nova **Busca Rápida** no topo de Configurações, filtrando dinamicamente as seções conforme a digitação.
+- **Aprimoramento de Mais Opções**:
+  - Inclusão direta da **Central de Ajuda** na aba Geral de Mais Opções para acesso rápido a tutoriais e FAQs.
+  - Nova **Busca Rápida de Módulos e Ferramentas**, facilitando a localização de qualquer funcionalidade.
+  - Correção de acessibilidade em dispositivos móveis: usuários mobile agora acessam todos os módulos no "Mais", sem que itens fixados na barra lateral desktop fiquem ocultos no celular.
 
 ## [1.1.78] - 2026-09-30
 

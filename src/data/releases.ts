@@ -45,6 +45,16 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Ajustes visuais no Dashboard e Matriz Orçamentária no mobile, além de blindagem de SMTP contra e-mails para domínios fictícios.',
     highlights: [
       {
+        title: 'Boas-Vindas Personalizada no Dashboard',
+        description: 'Saudação inteligente (Bom dia, Boa tarde ou Boa noite) contextualizada com a hora local, primeiro nome do usuário e data por extenso, harmonizada com o seletor de mês.',
+        type: 'feature',
+      },
+      {
+        title: 'Cabeçalho e Navegação 100% Adaptativos aos Temas',
+        description: 'Eliminada barra preta no topo e rodapé ao utilizar temas escuros customizados (como Swiss Navy e Emerald Slate), agora perfeitamente integrados com efeito de vidro fosco.',
+        type: 'visual',
+      },
+      {
         title: 'Matriz Orçamentária Mobile',
         description: 'Tabela anual com alinhamento sticky sólido, sem sobreposição de colunas ou transparência indesejada em telas menores.',
         type: 'visual',
@@ -68,6 +78,31 @@ export const RELEASES: ReleaseInfo[] = [
         title: 'Data de Quitação de Faturas',
         description: 'Possibilidade de definir a data exata ao quitar faturas de cartão (hoje, retroativo ou adiantado) com conciliação bancária e badge visual de quitação.',
         type: 'feature',
+      },
+      {
+        title: 'Criptografia PBKDF2 e Proteção de PIN',
+        description: 'Migração transparente do PIN de segurança para PBKDF2 com 100.000 iterações, salt criptográfico dinâmico por instalação e bloqueio progressivo contra força bruta.',
+        type: 'feature',
+      },
+      {
+        title: 'Validação de Schema e Reversão Atômica de Backup',
+        description: 'Importação de backup com validação estrita de schema e snapshot automático de reversão, permitindo desfazer restaurações com um único clique.',
+        type: 'feature',
+      },
+      {
+        title: 'Segurança Unificada e Medidor de Força de Senha',
+        description: 'Painel compartilhado entre Perfil e Configurações com medidor dinâmico de segurança de senha, visualizador de caracteres e controle de inatividade.',
+        type: 'improvement',
+      },
+      {
+        title: 'Gerenciador Dinâmico de Cards e Modo Privacidade',
+        description: 'Configurações integradas ao customizador interativo de cards da Visão Geral, toggle de Modo Privacidade e novos controles granulares de notificações.',
+        type: 'improvement',
+      },
+      {
+        title: 'Busca Rápida e Central de Ajuda em Mais Opções',
+        description: 'Filtro inteligente de busca rápida em Configurações e Mais Opções, acesso direto à Central de Ajuda e garantia de acessibilidade irrestrita em mobile.',
+        type: 'improvement',
       },
     ],
   },

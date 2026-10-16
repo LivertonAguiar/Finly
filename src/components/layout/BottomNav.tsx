@@ -216,7 +216,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
       {/* Main Bottom Navigation Bar - Tab Bar Bancária Sóbria Borda a Borda */}
       <nav
-        className={`fixed bottom-0 left-0 right-0 z-50 md:hidden select-none bg-white dark:bg-[#121316] border-t border-slate-200 dark:border-[#222328] transition-transform duration-200 ${
+        className={`fixed bottom-0 left-0 right-0 z-50 md:hidden select-none finly-bottom-nav bg-white border-t border-slate-200 dark:border-white/[0.08] transition-transform duration-200 ${
           isHidden ? 'translate-y-full' : 'translate-y-0'
         }`}
         style={{

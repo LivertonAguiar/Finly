@@ -229,3 +229,19 @@ export function sortCardsByDueDay<T extends { dueDay?: number | string; closingD
     return (a.name || '').localeCompare(b.name || '');
   });
 }
+
+/**
+ * Formats a date to full locale string (e.g. "Quinta-feira, 15 de outubro")
+ */
+export function formatFullDate(date: Date = new Date(), locale: string = 'pt-BR'): string {
+  try {
+    const formatted = new Intl.DateTimeFormat(locale, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }).format(date);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  } catch (e) {
+    return date.toLocaleDateString();
+  }
+}
