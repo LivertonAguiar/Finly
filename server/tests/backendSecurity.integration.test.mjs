@@ -250,7 +250,7 @@ try {
     SMTP_HOST: '127.0.0.1',
     SMTP_PORT: String(smtpPort),
     SMTP_SECURE: 'false',
-    SMTP_USER: '',
+    SMTP_USER: 'security-test@example.invalid',
     SMTP_PASS: '',
     FINLY_DATA_DIR: runtimeDataDir,
     FINLY_DISABLE_BACKGROUND_JOBS: 'true',
