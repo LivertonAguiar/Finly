@@ -19,6 +19,7 @@ import {
 import { Sparkles, X } from 'lucide-react';
 import { PullToRefresh } from './components/mobile/PullToRefresh';
 import { UpdateNoticeCard } from './components/common/UpdateNoticeCard';
+import { WebUpdateBanner } from './components/common/WebUpdateBanner';
 import { InAppNotificationToast } from './components/common/InAppNotificationToast';
 import { ExpenseAddedToast } from './components/common/ExpenseAddedToast';
 import { AppUpdateModal } from './components/common/AppUpdateModal';
@@ -195,11 +196,9 @@ const AppContent: React.FC = () => {
     confirmWebBundleReadyWhenStable().catch(e => console.warn('[OTA] confirmWebBundleReadyWhenStable failed:', e));
   }, []);
 
-  // Proactive App Update Checker on Entry, Resume and Periodic Interval (Exclusivo Android Nativo)
+  // Proactive App Update Checker on Entry, Resume and Periodic Interval (Web e Android Nativo)
   useEffect(() => {
     if (!currentUser) return;
-    // O aviso e modal de atualização de APK são exclusivos do app nativo Android
-    if (!isNativeCapacitor()) return;
     let isCancelled = false;
 
     const runAutoCheck = async () => {
@@ -207,24 +206,40 @@ const AppContent: React.FC = () => {
         await new Promise(r => setTimeout(r, 2500));
         if (isCancelled) return;
 
-        // 1. Live Update Web Bundle Check
+        // 1. Live Update Web Bundle Check (funciona tanto no Android nativo quanto no Web Browser)
         try {
           const webCheck = await checkForWebUpdate();
-          if (webCheck.hasUpdate && webCheck.bundleUrl && !isCancelled) {
-            console.log(`[OTA] Novo bundle web v${webCheck.latestVersion} detectado. Iniciando download...`);
-            await downloadAndApplyWebBundle(webCheck);
+          if (webCheck.hasUpdate && !isCancelled) {
+            console.log(`[OTA] Novo bundle web v${webCheck.latestVersion} detectado.`);
+            if (isNativeCapacitor() && webCheck.bundleUrl) {
+              await downloadAndApplyWebBundle(webCheck);
+            } else {
+              // No ambiente Web, já sinaliza diretamente para exibir o banner flutuante
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                  new CustomEvent('finly_web_update_ready', {
+                    detail: {
+                      version: webCheck.latestVersion,
+                      notes: webCheck.notes,
+                    },
+                  })
+                );
+              }
+            }
           }
         } catch (wErr) {
           console.warn('[OTA] Erro na verificação de bundle web:', wErr);
         }
 
-        // 2. Native APK Version Check
-        const result = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: false });
-        if (result && result.hasUpdate && !isCancelled) {
-          const sessionPrompted = sessionStorage.getItem(`finly_update_prompted_${result.latestVersion}`);
-          if (!sessionPrompted) {
-            sessionStorage.setItem(`finly_update_prompted_${result.latestVersion}`, 'true');
-            setIsUpdateModalOpen(true);
+        // 2. Native APK Version Check (exclusivo para app Android nativo)
+        if (isNativeCapacitor()) {
+          const result = await checkForAppUpdates({ notifyIfFound: true, isManualCheck: false });
+          if (result && result.hasUpdate && !isCancelled) {
+            const sessionPrompted = sessionStorage.getItem(`finly_update_prompted_${result.latestVersion}`);
+            if (!sessionPrompted) {
+              sessionStorage.setItem(`finly_update_prompted_${result.latestVersion}`, 'true');
+              setIsUpdateModalOpen(true);
+            }
           }
         }
       } catch (e) {
@@ -234,8 +249,8 @@ const AppContent: React.FC = () => {
 
     runAutoCheck();
 
-    // Periodic check every 1 hour
-    const interval = setInterval(runAutoCheck, 60 * 60 * 1000);
+    // Periodic check every 15 minutes
+    const interval = setInterval(runAutoCheck, 15 * 60 * 1000);
 
     // Re-check when app returns from background
     const handleVisibility = () => {
@@ -591,31 +606,12 @@ const AppContent: React.FC = () => {
 
       {/* Floating Web Update Ready Notification */}
       {pendingWebUpdate && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] p-3.5 bg-gradient-to-r from-purple-950/95 to-indigo-950/95 backdrop-blur-md border border-purple-500/40 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-purple-300" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">Atualização pronta (v{pendingWebUpdate.version})</p>
-              <p className="text-[10px] text-purple-200 truncate">Reinicie para carregar os novos recursos</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={() => reloadToApplyWebUpdate()}
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
-            >
-              Reiniciar
-            </button>
-            <button
-              onClick={() => setPendingWebUpdate(null)}
-              className="p-1.5 text-purple-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <WebUpdateBanner
+          version={pendingWebUpdate.version}
+          notes={pendingWebUpdate.notes}
+          onReload={() => reloadToApplyWebUpdate()}
+          onDismiss={() => setPendingWebUpdate(null)}
+        />
       )}
     </div>
   );

@@ -61,6 +61,12 @@ export const getNativeVersion = (): string => {
  */
 export const getCurrentWebVersion = async (): Promise<string> => {
   if (!isNativeCapacitor()) {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem(STORAGE_KEYS.CURRENT_WEB_VERSION);
+        if (stored) return stored;
+      } catch (_) {}
+    }
     return APP_VERSION;
   }
   try {
@@ -101,18 +107,9 @@ export const fetchAppManifest = async (): Promise<AppManifestResponse | null> =>
 };
 
 /**
- * Checks if a newer web bundle is available and compatible with the installed native APK
+ * Checks if a newer web bundle is available and compatible with the installed native APK or web session
  */
 export const checkForWebUpdate = async (): Promise<WebUpdateCheckResult> => {
-  if (!isNativeCapacitor()) {
-    return {
-      hasUpdate: false,
-      currentVersion: APP_VERSION,
-      latestVersion: APP_VERSION,
-      skippedReason: 'NOT_NATIVE',
-    };
-  }
-
   const currentWebVersion = await getCurrentWebVersion();
   const nativeVersion = getNativeVersion();
 
@@ -127,6 +124,50 @@ export const checkForWebUpdate = async (): Promise<WebUpdateCheckResult> => {
   }
 
   const remoteWeb = manifest.web;
+
+  // Lógica específica para Web / PWA no navegador
+  if (!isNativeCapacitor()) {
+    // Na primeira execução da sessão web, registra a versão ativa
+    if (typeof window !== 'undefined' && !sessionStorage.getItem(STORAGE_KEYS.CURRENT_WEB_VERSION)) {
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_WEB_VERSION, remoteWeb.version);
+        if (remoteWeb.sha256) {
+          sessionStorage.setItem('finly_active_bundle_sha', remoteWeb.sha256);
+        }
+      } catch (_) {}
+      return {
+        hasUpdate: false,
+        currentVersion: remoteWeb.version,
+        latestVersion: remoteWeb.version,
+        skippedReason: 'UP_TO_DATE',
+      };
+    }
+
+    const isNewer = isNewerVersion(remoteWeb.version, currentWebVersion);
+    const activeSha = typeof window !== 'undefined' ? sessionStorage.getItem('finly_active_bundle_sha') : null;
+    const shaChanged = !!(remoteWeb.sha256 && activeSha && activeSha !== remoteWeb.sha256);
+
+    if (!isNewer && !shaChanged) {
+      return {
+        hasUpdate: false,
+        currentVersion: currentWebVersion,
+        latestVersion: remoteWeb.version,
+        skippedReason: 'UP_TO_DATE',
+      };
+    }
+
+    return {
+      hasUpdate: true,
+      currentVersion: currentWebVersion,
+      latestVersion: remoteWeb.version,
+      bundleUrl: remoteWeb.bundleUrl,
+      sha256: remoteWeb.sha256,
+      mandatory: !!remoteWeb.mandatory,
+      notes: remoteWeb.notes,
+    };
+  }
+
+  // Lógica para ambiente Android nativo com Capacitor LiveUpdate
   const isNewer = isNewerVersion(remoteWeb.version, currentWebVersion);
 
   if (!isNewer) {
@@ -222,21 +263,16 @@ export const downloadAndApplyWebBundle = async (
     // Clean up older bundles while preserving current and previous
     await cleanOldBundlesPreservingRollback(bundleId);
 
-    // If mandatory, reload immediately; otherwise notify UI
-    if (updateInfo.mandatory) {
-      console.log(`[OTA] Atualização obrigatória. Recarregando WebView...`);
-      await LiveUpdate.reload();
-    } else {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('finly_web_update_ready', {
-            detail: {
-              version: bundleId,
-              notes: updateInfo.notes,
-            },
-          })
-        );
-      }
+    // Notifica a interface para exibir o card flutuante de atualização com botão de reiniciar
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('finly_web_update_ready', {
+          detail: {
+            version: bundleId,
+            notes: updateInfo.notes,
+          },
+        })
+      );
     }
 
     return { success: true };
@@ -403,6 +439,12 @@ export const reloadToApplyWebUpdate = async (): Promise<void> => {
   if (isNativeCapacitor()) {
     await LiveUpdate.reload();
   } else {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_WEB_VERSION);
+        sessionStorage.removeItem('finly_active_bundle_sha');
+      } catch (_) {}
+    }
     window.location.reload();
   }
 };
