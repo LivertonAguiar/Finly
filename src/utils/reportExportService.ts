@@ -130,6 +130,50 @@ function drawFinlyHeaderLogo(doc: jsPDF, x: number, y: number, subtitle: string)
 }
 
 /**
+ * Draws the official Mastercard brand symbol with exact mathematical 1:1 circular geometry.
+ * Composed of two intersecting circles (Mastercard Red #EB001B and Mastercard Yellow #F79E1B)
+ * with a lens-shaped intersection (#FF5F00), rendered with zero distortion and 100% transparent background.
+ */
+function drawMastercardVector(doc: jsPDF, centerX: number, centerY: number, radius = 2.7) {
+  const distance = radius * 1.22;
+  const leftX = centerX - distance / 2;
+  const rightX = centerX + distance / 2;
+
+  // Círculo Esquerdo: Vermelho Mastercard #EB001B
+  doc.setFillColor(235, 0, 27);
+  doc.circle(leftX, centerY, radius, 'F');
+
+  // Círculo Direito: Amarelo Mastercard #F79E1B
+  doc.setFillColor(247, 158, 27);
+  doc.circle(rightX, centerY, radius, 'F');
+
+  // Interseção central (Lente de sobreposição: Laranja Mastercard #FF5F00)
+  const halfDist = distance / 2;
+  const rx = radius - halfDist;
+  const ry = Math.sqrt(Math.max(0.1, radius * radius - halfDist * halfDist));
+  doc.setFillColor(255, 95, 0);
+  doc.ellipse(centerX, centerY, rx, ry, 'F');
+}
+
+/**
+ * Draws the official Elo brand vector symbol directly with 100% transparent background.
+ */
+function drawEloVector(doc: jsPDF, startX: number, centerY: number) {
+  const r = 1.3;
+  doc.setFillColor(239, 65, 35); // Vermelho
+  doc.circle(startX + 2, centerY, r, 'F');
+  doc.setFillColor(255, 212, 0); // Amarelo
+  doc.circle(startX + 4.2, centerY, r, 'F');
+  doc.setFillColor(0, 164, 228); // Azul
+  doc.circle(startX + 6.4, centerY, r, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(255, 255, 255);
+  doc.text('elo', startX + 11.2, centerY + 2.2, { align: 'right' });
+}
+
+/**
  * Draws a realistic, high-end credit card mockup on the top-right of the header
  */
 function drawRealisticCreditCardMockup(
@@ -209,11 +253,9 @@ function drawRealisticCreditCardMockup(
   doc.line(nfcX + 1.2, nfcY - 2.2, nfcX + 2.2, nfcY);
   doc.line(nfcX + 2.2, nfcY, nfcX + 1.2, nfcY + 2.2);
 
-  // Top Right: Institution wordmark / logo in white (aspect ratio 1:1 rigoroso)
+  // Top Right: Institution wordmark / logo (proporção 1:1 rigorosa, SEM fundo branco artificial)
   if (bankLogoPng) {
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x + w - 12.5, y + 3.2, 9, 6.5, 1.2, 1.2, 'F');
-    doc.addImage(bankLogoPng, 'PNG', x + w - 11, y + 3.45, 6, 6);
+    doc.addImage(bankLogoPng, 'PNG', x + w - 12.2, y + 2.8, 8, 8);
   } else {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
@@ -222,39 +264,29 @@ function drawRealisticCreditCardMockup(
     doc.text(displayBankName, x + w - 3.5, y + 7.5, { align: 'right' });
   }
 
-  // Bottom Right: Official Brand Logo
-  if (brandLogoPng) {
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x + w - 13.5, y + h - 9, 10.5, 6.8, 1.2, 1.2, 'F');
-    doc.addImage(brandLogoPng, 'PNG', x + w - 13, y + h - 8.5, 9.5, 5.8);
-  } else if (brandName.includes('master')) {
-    // Exact vector Mastercard overlapping dual circles
-    const mcCenterY = y + h - 6;
-    const mcRadius = 2.7;
-    const mcLeftX = x + w - 9.5;
-    const mcRightX = mcLeftX + 3.2;
+  // Bottom Right: Official Brand Logo (Sem fundo branco artificial, Mastercard com geometria circular 1:1 absoluta)
+  const isMastercard = brandName.includes('master');
+  const isVisa = brandName.includes('visa');
+  const isElo = brandName.includes('elo') && !brandName.includes('alelo');
 
-    // Left Red Circle
-    doc.setFillColor(235, 0, 27); // Mastercard Red
-    doc.circle(mcLeftX, mcCenterY, mcRadius, 'F');
-
-    // Right Yellow Circle
-    doc.setFillColor(247, 158, 27); // Mastercard Yellow
-    doc.circle(mcRightX, mcCenterY, mcRadius, 'F');
-
-    // Overlapping intersection
-    doc.setFillColor(255, 95, 0); // Orange intersection
-    doc.ellipse((mcLeftX + mcRightX) / 2, mcCenterY, 1.1, mcRadius - 0.3, 'F');
-  } else if (brandName.includes('visa')) {
+  if (isMastercard) {
+    // Mastercard Vetorial: 2 círculos perfeitos 1:1, cores oficiais e zero achatamento
+    drawMastercardVector(doc, x + w - 7.6, y + h - 6.2, 2.7);
+  } else if (isVisa) {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
+    doc.setFontSize(8.5);
     doc.setTextColor(255, 255, 255);
     doc.text('VISA', x + w - 4, y + h - 4.5, { align: 'right' });
+  } else if (isElo) {
+    drawEloVector(doc, x + w - 13.5, y + h - 6.2);
+  } else if (brandLogoPng) {
+    // Outras bandeiras (Amex, Hipercard, etc.) sem retângulo branco por baixo
+    doc.addImage(brandLogoPng, 'PNG', x + w - 12.5, y + h - 8.5, 9, 6);
   } else {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
     doc.setTextColor(255, 255, 255);
-    doc.text(card.brand || 'CARD', x + w - 4, y + h - 4.5, { align: 'right' });
+    doc.text((card.brand || 'CARD').toUpperCase(), x + w - 4, y + h - 4.5, { align: 'right' });
   }
 
   // Bottom Left: Masked card digits (Formatação ASCII 100% segura no jsPDF, exibindo XXXX na ausência)
@@ -294,12 +326,15 @@ function drawInstitutionPill(
   labelText: string,
   accentRgb: [number, number, number],
   bankLogoPng: string | null,
-  brandLogoPng: string | null
+  brandLogoPng: string | null,
+  brandName = 'Mastercard'
 ): number {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   const textWidth = doc.getTextWidth(labelText);
-  const pillW = textWidth + (bankLogoPng ? 14 : 9) + (brandLogoPng ? 12 : 5);
+  const normBrand = (brandName || '').toLowerCase();
+  const hasBrand = normBrand.includes('master') || normBrand.includes('visa') || normBrand.includes('elo') || !!brandLogoPng;
+  const pillW = textWidth + (bankLogoPng ? 14 : 9) + (hasBrand ? 14 : 5);
   const pillH = 6.2;
 
   // White / Light Slate pill background
@@ -324,11 +359,18 @@ function drawInstitutionPill(
   // Text
   doc.setTextColor(30, 41, 59);
   doc.text(labelText, curX, y + 4.4);
-  curX += textWidth + 3;
+  curX += textWidth + 3.2;
 
-  // Mini Brand Logo on right if available
-  if (brandLogoPng) {
-    doc.addImage(brandLogoPng, 'PNG', curX, y + 1.2, 6.5, 3.8);
+  // Mini Brand Logo on right (geometria 1:1 impecável, sem caixas brancas)
+  if (normBrand.includes('master')) {
+    drawMastercardVector(doc, curX + 3.4, y + 3.1, 1.45);
+  } else if (normBrand.includes('visa')) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(26, 31, 113); // Visa Blue
+    doc.text('VISA', curX + 1, y + 4.4);
+  } else if (brandLogoPng) {
+    doc.addImage(brandLogoPng, 'PNG', curX, y + 1.3, 5.8, 3.6);
   }
 
   return pillW;
@@ -648,17 +690,20 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     console.warn('Notice: Failed to rasterize bank logo:', err);
   }
 
-  try {
-    const brandSvg = renderToStaticMarkup(
-      React.createElement(CardBrandLogo, {
-        brand: data.card.brand || theme.defaultBrand || 'Mastercard',
-        size: 140,
-        radius: 6,
-      })
-    );
-    brandLogoPng = await rasterizeSvgToPng(brandSvg, 160, 110);
-  } catch (err) {
-    console.warn('Notice: Failed to rasterize card brand logo:', err);
+  const rawBrand = (data.card.brand || theme.defaultBrand || 'Mastercard').toLowerCase();
+  if (!rawBrand.includes('master')) {
+    try {
+      const brandSvg = renderToStaticMarkup(
+        React.createElement(CardBrandLogo, {
+          brand: data.card.brand || theme.defaultBrand || 'Mastercard',
+          size: 140,
+          radius: 6,
+        })
+      );
+      brandLogoPng = await rasterizeSvgToPng(brandSvg, 140, 140);
+    } catch (err) {
+      console.warn('Notice: Failed to rasterize card brand logo:', err);
+    }
   }
 
   // 3. Header Banner (44mm height with gradient, official Finly branding and Realistic Card Art)
@@ -683,7 +728,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   const finalCardStr = rawCardDigits.length >= 2 ? `Final ${rawCardDigits}` : 'Final XXXX';
   const pillBase = theme.pillLabel || `${theme.name}${theme.code ? ` (${theme.code})` : ''} - ${(data.card.brand || theme.defaultBrand).toUpperCase()}`;
   const pillLabel = `${pillBase} | ${finalCardStr}`;
-  drawInstitutionPill(doc, 14, 28, pillLabel, theme.accentRgb, bankLogoPng, brandLogoPng);
+  drawInstitutionPill(doc, 14, 28, pillLabel, theme.accentRgb, bankLogoPng, brandLogoPng, data.card.brand || theme.defaultBrand);
 
   // Realistic Card Mockup on Top-Right (54mm x 34mm)
   const cardMockX = 142;

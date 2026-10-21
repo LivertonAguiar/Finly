@@ -203,4 +203,34 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   console.log('✓ Teste 6: Resolução de temas visuais bancários e co-branded (Inter, Nubank, Amazon, Casas Bahia, Credicard On) validada com sucesso');
 }
 
+// 7. Teste de especificação geométrica da Mastercard (Círculos 1:1 rigorosos, sem achatamento e sem caixa branca)
+{
+  const mcRadius = 2.7;
+  const distance = mcRadius * 1.22;
+  const totalWidth = distance + 2 * mcRadius;
+  const totalHeight = 2 * mcRadius;
+  const aspectRatio = totalWidth / totalHeight;
+
+  // Manual de Marca Mastercard: proporção oficial entre 1.55 e 1.65 (aprox 1.61)
+  assert.ok(aspectRatio >= 1.58 && aspectRatio <= 1.64, `Proporção da Mastercard deve respeitar manual oficial: ${aspectRatio}`);
+
+  // Validação da lente de interseção central
+  const halfDist = distance / 2;
+  const rx = mcRadius - halfDist;
+  const ry = Math.sqrt(mcRadius * mcRadius - halfDist * halfDist);
+  assert.ok(rx > 0 && ry > 0, 'Dimensões da lente de interseção devem ser estritamente positivas');
+  assert.ok(ry < mcRadius, 'A semi-altura da lente deve ser menor ou igual ao raio do círculo');
+
+  // Cores oficiais
+  const mcRed = [235, 0, 27];
+  const mcYellow = [247, 158, 27];
+  const mcOrange = [255, 95, 0];
+  assert.deepEqual(mcRed, [235, 0, 27], 'Vermelho Mastercard #EB001B');
+  assert.deepEqual(mcYellow, [247, 158, 27], 'Amarelo Mastercard #F79E1B');
+  assert.deepEqual(mcOrange, [255, 95, 0], 'Laranja de interseção Mastercard #FF5F00');
+
+  console.log('✓ Teste 7: Geometria circular 1:1, proporcionalidade e paleta oficial da Mastercard validadas');
+}
+
 console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');
+

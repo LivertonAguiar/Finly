@@ -45,6 +45,11 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
+        title: 'Refinamento Visual de Bandeiras e Logos nos Relatórios PDF',
+        description: 'Eliminação de caixas brancas sob os logos de bancos e bandeiras nos relatórios e faturas em PDF. Nova renderização vetorial nativa de alta fidelidade para a Mastercard com círculos 1:1 matematicamente perfeitos, cores oficiais e fundo 100% transparente.',
+        type: 'visual',
+      },
+      {
         title: 'Novo Layout Executivo de Faturas e Extratos (PDF e CSV)',
         description: 'Design executivo refinado de página única (Single-Page A4 Lock) com suavização cromática Slate/Navy, banner com gradiente oficial do emissor, mockup fotorrealista do cartão com chip metálico e contactless, 4 KPI cards analíticos com faixas semânticas, gráfico Donut de alta resolução com barras e pílulas percentuais, tabelas zebradas com cabeçalho Slate #273444, rodapé de autenticação eletrônica oficial e exportações CSV enriquecidas com UTF-8 BOM para Excel.',
         type: 'feature',

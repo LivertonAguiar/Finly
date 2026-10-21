@@ -11,7 +11,7 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 - **Suavização Cromática e Header com Gradiente Oficial**:
   - Fundo do cabeçalho em Slate/Navy profundo (`#0F172A` a `#1E293B`) transicionando suavemente para a cor do emissor (Banco Inter, Nubank, Itaú, Mercado Pago, C6, Bradesco, etc.) e finalizado com linha inferior de sotaque de 1.2mm.
 - **Mockup Fotorrealista do Cartão de Crédito**:
-  - Miniatura do cartão com proporção oficial 1.586:1 (54mm x 34mm), cantos arredondados, chip EMV metálico com linhas de circuito, ondas de aproximação *contactless* `)))`, wordmark da instituição e bandeira oficial (Mastercard com círculos sobrepostos perfeitos ou Visa).
+  - Miniatura do cartão com proporção oficial 1.586:1 (54mm x 34mm), cantos arredondados, chip EMV metálico com linhas de circuito, ondas de aproximação *contactless* `)))`, wordmark da instituição e bandeiras oficiais sem caixas brancas artificiais (Mastercard com desenho vetorial de círculos 1:1 matematicamente perfeitos, cores oficiais e transparência total).
 - **Pílula de Identificação do Emissor e Barra de Metadados**:
   - Badge no padrão `#F8FAFC` com borda sutil, emblema oficial, código COMPE e nome da instituição.
   - Barra de metadados horizontal com Competência, Fechamento, Vencimento e Emissão.
