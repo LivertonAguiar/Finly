@@ -229,6 +229,11 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       categories,
       currency: user?.currency || 'BRL',
       userEmail: user?.email,
+      availableLimit: target.available,
+      totalCommitted: target.totalCommitted,
+      isPaid: target.isPaid,
+      paymentDate: target.paymentDate,
+      paymentAmount: target.paymentAmount,
     });
   };
 

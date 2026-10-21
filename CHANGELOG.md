@@ -5,6 +5,20 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-16
 
+### Demonstrativo Executivo de Faturas em PDF (Identidade Bancária e Gráficos)
+- **Branding Dinâmico do Banco Emissor**:
+  - Integração do gerador de PDF (`reportExportService.ts`) com `getCardBankInfo` e `card.color`: os demonstrativos em PDF agora assumem a identidade cromática e institucional oficial de bancos brasileiros (ex: Nubank roxo `#820AD1`, Banco Inter laranja `#FF7A00`, Itaú laranja/marinho `#EC7000`, Bradesco/Santander vermelho, BTG/C6 Black, etc.).
+- **Miniatura Ilustrada do Cartão Virtual**:
+  - Cabeçalho executivo redesenhado com miniatura do cartão de crédito contendo chip metálico, símbolo *contactless* de aproximação, bandeira (Mastercard, Visa, Elo, etc.), numeração mascarada e titularidade.
+- **Destaque Mandatório da Data de Fechamento**:
+  - Inclusão do dia de fechamento da fatura em destaque no cabeçalho e em card exclusivo de KPI, com indicação do melhor dia para compras no ciclo subsequente.
+- **Cards Executivos de Resumo e Indicadores (KPIs)**:
+  - 4 cards analíticos: Total da Fatura, Fechamento da Fatura, Vencimento com badge de quitação/status, e Limite Total com Limite Disponível e barra gráfica de comprometimento.
+- **Análise Visual de Gastos por Categoria (Gráfico Donut em Alta Resolução)**:
+  - Geração de gráfico donut via Canvas de alta densidade (300 DPI) com paleta harmonizada com as cores do banco e barras proporcionais por categoria.
+- **Tabela de Lançamentos Detalhada e Zebrada**:
+  - Extrato detalhado com cabeçalho na paleta escura do banco, destaque para parcelas (`1/10`), identificador de terceiros/reembolsos e subtotal de fechamento.
+
 ### Recorrência de Despesas e Composição de Taxas (Condomínio, Água e Extras)
 - **Recálculo Dinâmico do Valor da Recorrência na Expiração de Taxas Temporárias**:
   - Correção na reconciliação de despesas recorrentes (`recurringExpenseSeries.ts`): quando itens temporários (como parcelas de taxa extra) chegam ao fim, o valor da transação (`amount`) é recalculado automaticamente para a soma exata dos componentes restantes ativos, eliminando a retenção indevida do valor cheio do mês anterior (ex: R$ 436,61).
