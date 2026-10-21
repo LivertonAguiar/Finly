@@ -3,9 +3,28 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [1.1.79] - 2026-10-12
+## [1.1.79] - 2026-10-16
 
-### Segurança Criptográfica, Blindagem de Dados e Configurações
+### Recorrência de Despesas e Composição de Taxas (Condomínio, Água e Extras)
+- **Recálculo Dinâmico do Valor da Recorrência na Expiração de Taxas Temporárias**:
+  - Correção na reconciliação de despesas recorrentes (`recurringExpenseSeries.ts`): quando itens temporários (como parcelas de taxa extra) chegam ao fim, o valor da transação (`amount`) é recalculado automaticamente para a soma exata dos componentes restantes ativos, eliminando a retenção indevida do valor cheio do mês anterior (ex: R$ 436,61).
+- **Propagação de Composição Fixa e Variável para os Próximos Meses**:
+  - Ao salvar ou editar um lançamento recorrente no escopo "Este e os próximos meses", os itens de comportamento fixo e variável (como taxa geral condominial e água/esgoto) são consolidados nos templates da série e propagados automaticamente para todas as ocorrências futuras.
+  - Descoberta inteligente de templates a partir de ocorrências anteriores da série caso a série ainda não possuísse `componentTemplates` definidos.
+- **Cabeçalho Fiel e Sincronização no Modal de Detalhes**:
+  - O cabeçalho "Total" na seção de Composição da Taxa agora exibe a soma real dos itens discriminados (`effectiveComponentsSum`) em vez de reproduzir cegamente o valor total da transação.
+  - Alerta contextual e botão "Sincronizar Valor" para corrigir qualquer lançamento com divergência entre a composição e o valor global em 1 clique.
+
+### Visual, Layout e Responsividade (Web e Mobile)
+- **Visualização Sem Cortes no Calendário Web**:
+  - Ampliação do contêiner para `max-w-7xl` e proporção de 7/5 colunas no grid, liberando mais de 100px adicionais de largura útil para o painel de Detalhes.
+  - Implementação de `flex-1 min-w-0` e tipografia fluida para títulos e metadados, eliminando reticências precoces (`Compras Supermerca...`) e quebras desordenadas de linhas.
+  - Expansão da área útil de rolagem interna do painel para acomodar mais lançamentos simultâneos sem vazios excessivos.
+- **Centralização do Seletor de Mês no Dashboard Mobile**:
+  - Alinhamento horizontal centralizado do botão de mês (`outubro ⌵`) em telas de smartphones com `relative flex items-center justify-center`, mantendo o botão de personalização alinhado à direita (`absolute right-0`).
+  - Preservação da distribuição alinhada à direita no desktop (`md:justify-end`).
+- **Blindagem da Esteira de CI (GitHub Actions)**:
+  - Injeção segura de remetente de teste no mock do runner de integração de segurança, garantindo validação 100% verde sem disparar alertas de falha por ausência de `.env`.
 - **Criptografia Forte de PIN (PBKDF2) e Proteção contra Força Bruta**:
   - Migração de hashing simples de rodada única (SHA-256) para **PBKDF2 com 100.000 iterações** utilizando a API nativa WebCrypto (`crypto.subtle`).
   - Geração de salt criptográfico dinâmico único por instalação (`finly_pin_salt`), eliminando vetores de rainbow table.

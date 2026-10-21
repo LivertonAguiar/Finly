@@ -2539,8 +2539,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
         </div>
 
-        {/* Right: Centered/Aligned Month Picker Popover + Personalizar Action */}
-        <div className="flex items-center justify-between md:justify-end gap-2.5 shrink-0 w-full md:w-auto pt-1 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-white/5">
+        {/* Right: Centered Month Picker Popover on Mobile + Personalizar Action at right */}
+        <div className="relative flex items-center justify-center md:justify-end gap-2.5 shrink-0 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-white/5">
           <MonthPickerPopover
             selectedDate={viewDate}
             onChangeMonth={(newDate) => {
@@ -2552,7 +2552,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
           <button
             onClick={() => setIsManageWidgetsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-white/[0.06] hover:dark:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:text-purple-500 dark:hover:text-purple-300 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
+            className="absolute right-0 md:relative md:right-auto flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-white/[0.06] hover:dark:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:text-purple-500 dark:hover:text-purple-300 hover:border-purple-500/50 shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
             title="Personalizar cards do dashboard"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />

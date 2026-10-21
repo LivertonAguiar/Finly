@@ -208,7 +208,7 @@ export const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in pb-16">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-16 px-2 sm:px-4">
       {/* 1. TOP HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -292,9 +292,9 @@ export const CalendarPage: React.FC = () => {
       </div>
 
       {/* 2. MAIN 2-COLUMN RESPONSIVE LAYOUT (FINLY CALENDAR LAYOUT) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT COLUMN: CALENDAR GRID (COL-SPAN-8) */}
-        <div className="lg:col-span-8 p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN: CALENDAR GRID (COL-SPAN-7) */}
+        <div className="lg:col-span-7 xl:col-span-7 p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
           {/* Days of Week Header */}
           <div className="grid grid-cols-7 text-center font-bold text-xs text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-100 dark:border-slate-800">
             <span>dom</span>
@@ -365,8 +365,8 @@ export const CalendarPage: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: DETALHES DO DIA (COL-SPAN-4 - FINLY SPEC) */}
-        <div className="lg:col-span-4 p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 flex flex-col justify-between">
+        {/* RIGHT COLUMN: DETALHES DO DIA (COL-SPAN-5) */}
+        <div className="lg:col-span-5 xl:col-span-5 p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
             {/* Header & Filter Toggle */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -415,7 +415,7 @@ export const CalendarPage: React.FC = () => {
                     <p className="text-xs text-slate-400">Nenhum lançamento neste dia.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                  <div className="space-y-2.5 max-h-[460px] sm:max-h-[500px] overflow-y-auto pr-1">
                     {selectedDayData?.transactions.map(t => {
                       const cat = findCategory(t.categoryId, t.subcategoryId);
                       const acc = accounts.find(a => a.id === t.accountId);
@@ -430,13 +430,14 @@ export const CalendarPage: React.FC = () => {
                             e.stopPropagation();
                             setSelectedDetailTx(t);
                           }}
-                          className="p-3 rounded-2xl bg-slate-50 dark:bg-[#343437]/50 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-3 group hover:border-purple-500/40 transition-colors cursor-pointer"
+                          className="p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-[#343437]/50 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-3 group hover:border-purple-500/40 transition-colors cursor-pointer"
                         >
-                          {/* Left: Status + Icon + Title */}
-                          <div className="flex items-center gap-2.5 min-w-0" onClick={e => e.stopPropagation()}>
+                          {/* Left: Status + Icon + Title (flex-1 ensures it takes full remaining width) */}
+                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => toggleTransactionStatus(t.id)}
-                              className="shrink-0 cursor-pointer text-slate-400 hover:text-purple-600"
+                              className="shrink-0 cursor-pointer text-slate-400 hover:text-purple-600 p-0.5"
+                              title={t.status === 'completed' ? 'Marcar como pendente' : 'Marcar como concluído'}
                             >
                               {t.status === 'completed' ? (
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -446,7 +447,7 @@ export const CalendarPage: React.FC = () => {
                             </button>
 
                             <div
-                              className="w-8 h-8 rounded-xl flex items-center justify-center text-xs shrink-0 shadow-xs"
+                              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-xs"
                               style={{
                                 backgroundColor: (cat?.color || '#7c4dff') + '20',
                                 color: cat?.color || '#7c4dff',
@@ -455,20 +456,31 @@ export const CalendarPage: React.FC = () => {
                               {cat?.subIcon || cat?.icon || (isIncome ? '💰' : '📁')}
                             </div>
 
-                            <div className="min-w-0 flex-1 pr-2">
-                              <p className="tx-description text-[14.5px] sm:text-[15.5px] font-bold text-slate-900 dark:text-white leading-snug break-words">
+                            <div className="min-w-0 flex-1 pr-1">
+                              <p
+                                className="text-[14px] sm:text-[15px] font-bold text-slate-900 dark:text-white leading-snug break-words"
+                                title={t.description}
+                              >
                                 {t.description}
                               </p>
-                              <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5 line-clamp-1">
-                                {formatDateShort(t.date)} • {card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}{cat?.subName ? ` • ${cat.subName}` : ''}
-                              </span>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                <span>{formatDateShort(t.date)}</span>
+                                <span>•</span>
+                                <span>{card ? `Cartão ${card.name}` : acc ? acc.name : cat?.name || 'Geral'}</span>
+                                {cat?.subName && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{cat.subName}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
 
                           {/* Right: Amount & Actions */}
                           <div className="text-right shrink-0">
                             <span
-                              className={`tx-amount text-sm font-black block ${
+                              className={`tx-amount text-sm sm:text-[15px] font-black block ${
                                 isIncome ? 'text-[#66bb6a]' : isExpense ? 'text-[#ef5350]' : 'text-slate-700 dark:text-slate-300'
                               }`}
                             >
@@ -476,33 +488,25 @@ export const CalendarPage: React.FC = () => {
                               {formatCurrency(t.amount, user.currency, !user.showValues)}
                             </span>
 
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
                               <button
                                 onClick={async () => {
                                   setEditingTransaction(t);
                                   setIsModalOpen(true);
                                 }}
                                 className="p-1 text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
+                                title="Editar lançamento"
                               >
-                                <Edit2 className="w-3 h-3" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={async () => {
                                   setDeleteCandidate(t);
-                                  return;
-                                  const ok = await confirm({
-                                    title: 'Excluir Lançamento',
-                                    message: `Deseja excluir "${t.description}"?`,
-                                    confirmText: 'Excluir',
-                                    type: 'danger'
-                                  });
-                                  if (ok) {
-                                    setDeleteCandidate(t);
-                                  }
                                 }}
                                 className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Excluir lançamento"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>

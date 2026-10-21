@@ -109,7 +109,7 @@ Write-Host "✔ Codigo e manifesto sincronizados com o GitHub." -ForegroundColor
 # 5. Deploy na VPS
 if ($Fast) {
     Write-Host "`n⚡ Executando deploy rapido de bundle OTA na VPS (~15s)..." -ForegroundColor Cyan
-    powershell.exe -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "deploy-web-ota.ps1") -Notes "$Notes"
+    powershell.exe -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "deploy-web-ota.ps1") -WebVersion "$webVer" -Notes "$Notes"
     if ($LASTEXITCODE -ne 0) {
         throw "Falha no deploy rapido OTA."
     }

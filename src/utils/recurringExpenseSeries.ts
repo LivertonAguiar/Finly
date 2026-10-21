@@ -253,15 +253,45 @@ export const reconcileRecurringExpenseSeries = ({
         updated.status = 'pending';
         changed = true;
       }
-      // Se a série possui componentTemplates e a ocorrência existente não possui components, preenche-os
-      if ((!existing.components || existing.components.length === 0) && Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
+
+      const hasSeriesTemplates = Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0;
+      // Reconciliar componentes em ocorrências existentes não concluídas e que não sejam exceções manuais
+      if (hasSeriesTemplates && existing.status !== 'completed' && !existing.isSeriesException) {
         const projected = projectRecurringComponents(series, date, index + 1);
         if (projected.length > 0) {
-          updated.hasComponents = true;
-          updated.components = projected;
+          const totalCents = projected.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+          const newAmount = Math.round(totalCents) / 100;
+          if (
+            !updated.hasComponents ||
+            updated.amount !== newAmount ||
+            !updated.components ||
+            updated.components.length !== projected.length
+          ) {
+            updated.hasComponents = true;
+            updated.components = projected;
+            updated.amount = newAmount;
+            changed = true;
+          }
+        } else if (updated.hasComponents) {
+          // Se não há mais componentes projetados (ex: temporários expiraram), limpa componentes e volta para o defaultAmount da série
+          updated.hasComponents = false;
+          updated.components = undefined;
+          const fallbackAmount = amountForDate(series, date);
+          if (updated.amount !== fallbackAmount) {
+            updated.amount = fallbackAmount;
+            changed = true;
+          }
+        }
+      } else if (updated.hasComponents && Array.isArray(updated.components) && updated.components.length > 0) {
+        // Garantia de integridade: se a transação tem componentes, o amount deve bater com a soma exata dos componentes
+        const totalCents = updated.components.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+        const compAmount = Math.round(totalCents) / 100;
+        if (compAmount > 0 && updated.amount !== compAmount) {
+          updated.amount = compAmount;
           changed = true;
         }
       }
+
       if (changed) {
         byOccurrence.set(key, updated);
         toUpdate.push(updated);
@@ -329,3 +359,186 @@ export const applyRecurringAmountChange = ({
     }),
   };
 };
+
+export interface ComponentsChangeInput {
+  series: RecurringExpenseSeries;
+  transactions: Transaction[];
+  selectedTransactionId: string;
+  scope: 'single' | 'current_and_future';
+  components: Array<Omit<TransactionComponent, 'id' | 'transactionId' | 'createdAt' | 'updatedAt'>>;
+  totalAmount?: number;
+  overwriteExceptions?: boolean;
+}
+
+export const applyRecurringExpenseComponentsChange = ({
+  series,
+  transactions,
+  selectedTransactionId,
+  scope,
+  components,
+  totalAmount,
+  overwriteExceptions = false,
+}: ComponentsChangeInput) => {
+  const selected = transactions.find(t => t.id === selectedTransactionId);
+  if (!selected || selected.seriesId !== series.id) {
+    throw new Error('Ocorrência da série não encontrada.');
+  }
+
+  const selectedSeq = selected.seriesSequence || 1;
+
+  if (scope === 'single') {
+    return {
+      series,
+      transactions: transactions.map(t => {
+        if (t.id !== selectedTransactionId) return t;
+        const totalCents = components.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+        const resolvedAmount = totalAmount ?? (components.length > 0 ? Math.round(totalCents) / 100 : t.amount);
+        return {
+          ...t,
+          hasComponents: components.length > 0,
+          components: components.map((c, i) => ({
+            ...c,
+            id: `comp-${t.id}-${i + 1}`,
+            transactionId: t.id,
+            createdAt: `${t.date}T12:00:00.000Z`,
+            updatedAt: `${t.date}T12:00:00.000Z`,
+          })),
+          amount: resolvedAmount,
+          isSeriesException: true,
+        };
+      }),
+    };
+  }
+
+  // Escopo 'current_and_future':
+  // 1. Deriva os templates para a série a partir dos componentes fornecidos.
+  // Componentes 'fixed' e 'variable' (como taxa geral e água) tornam-se templates recorrentes para todos os meses futuros!
+  // Componentes 'temporary' têm a parcela base ajustada com base na sequência atual.
+  // Componentes 'one_time' são mantidos somente na ocorrência selecionada e NÃO entram nos templates futuros.
+  const componentTemplates: Array<Omit<TransactionComponent, 'id' | 'transactionId'>> = components
+    .filter(c => c.type !== 'one_time')
+    .map(c => {
+      let recurrenceConfig = c.recurrenceConfig ? { ...c.recurrenceConfig } : undefined;
+      if (c.type === 'temporary' && recurrenceConfig?.enabled) {
+        const cur = recurrenceConfig.currentInstallment || 1;
+        // Ajusta a parcela inicial relativa ao início da série (sequence 1)
+        const baseStart = Math.max(1, cur - (selectedSeq - 1));
+        recurrenceConfig.currentInstallment = baseStart;
+      }
+      return {
+        description: c.description,
+        amount: c.amount,
+        categoryId: c.categoryId,
+        subcategoryId: c.subcategoryId,
+        type: c.type || 'fixed',
+        recurrenceConfig,
+        notes: c.notes,
+        financialNature: c.financialNature,
+        characteristics: c.characteristics,
+        includeInReports: c.includeInReports ?? true,
+        includeInBudget: c.includeInBudget ?? true,
+      };
+    });
+
+  const updatedSeries: RecurringExpenseSeries = {
+    ...series,
+    hasComponents: componentTemplates.length > 0,
+    componentTemplates: componentTemplates.length > 0 ? componentTemplates : undefined,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updatedTransactions = transactions.map(t => {
+    if (t.seriesId !== series.id) return t;
+
+    // Ocorrências passadas não são alteradas
+    if (t.date < selected.date) return t;
+
+    // Ocorrência selecionada: recebe exatamente os componentes informados
+    if (t.id === selected.id) {
+      const totalCents = components.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+      const resolvedAmount = totalAmount ?? (components.length > 0 ? Math.round(totalCents) / 100 : t.amount);
+      return {
+        ...t,
+        hasComponents: components.length > 0,
+        components: components.map((c, i) => ({
+          ...c,
+          id: `comp-${t.id}-${i + 1}`,
+          transactionId: t.id,
+          createdAt: `${t.date}T12:00:00.000Z`,
+          updatedAt: `${t.date}T12:00:00.000Z`,
+        })),
+        amount: resolvedAmount,
+        isSeriesException: false,
+      };
+    }
+
+    // Ocorrências futuras (t.date > selected.date)
+    if (t.isSeriesException && !overwriteExceptions) return t;
+
+    const seq = t.seriesSequence || selectedSeq + 1;
+    const projected = projectRecurringComponents(updatedSeries, t.date, seq);
+
+    if (projected.length > 0) {
+      const totalCents = projected.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+      return {
+        ...t,
+        hasComponents: true,
+        components: projected,
+        amount: Math.round(totalCents) / 100,
+        isSeriesException: false,
+      };
+    }
+
+    return {
+      ...t,
+      hasComponents: false,
+      components: undefined,
+      amount: amountForDate(updatedSeries, t.date),
+      isSeriesException: false,
+    };
+  });
+
+  return {
+    series: updatedSeries,
+    transactions: updatedTransactions,
+  };
+};
+
+export const discoverSeriesComponentTemplates = (
+  series: RecurringExpenseSeries,
+  seriesTransactions: Transaction[],
+): Array<Omit<TransactionComponent, 'id' | 'transactionId'>> | undefined => {
+  if (Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
+    return series.componentTemplates;
+  }
+  // Se series.componentTemplates estiver vazio, procurar na ocorrência mais recente da série que possui componentes
+  const withComps = [...seriesTransactions]
+    .filter(t => t.seriesId === series.id && t.hasComponents && Array.isArray(t.components) && t.components.length > 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  if (withComps.length === 0) return undefined;
+
+  const latestWithComps = withComps[0];
+  const templates: Array<Omit<TransactionComponent, 'id' | 'transactionId'>> = [];
+
+  (latestWithComps.components || []).forEach(c => {
+    // Apenas componentes recorrentes (fixed, variable ou temporary)
+    if (c.type === 'one_time') return;
+    templates.push({
+      description: c.description,
+      amount: c.amount,
+      categoryId: c.categoryId,
+      subcategoryId: c.subcategoryId,
+      type: c.type || 'fixed',
+      recurrenceConfig: c.recurrenceConfig,
+      notes: c.notes,
+      financialNature: c.financialNature,
+      characteristics: c.characteristics,
+      includeInReports: c.includeInReports ?? true,
+      includeInBudget: c.includeInBudget ?? true,
+    });
+  });
+
+  return templates.length > 0 ? templates : undefined;
+};
+

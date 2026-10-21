@@ -14,6 +14,7 @@ import {
   FamilyMember,
   NotificationItem,
   TransactionSeries,
+  TransactionComponent,
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { splitEmojiFromName, resolveCategory } from '../utils/categoryResolver';
@@ -36,7 +37,7 @@ import {
 } from '../utils/debtTransactionSync';
 import { getMonthlyInterestRate } from '../utils/financingCalculations';
 import { migrateLegacyTransactionSeries } from '../utils/transactionSeriesMigration';
-import { applyRecurringAmountChange } from '../utils/recurringExpenseSeries';
+import { applyRecurringAmountChange, applyRecurringExpenseComponentsChange } from '../utils/recurringExpenseSeries';
 import { propagateCategoryChange } from '../utils/seriesCategorySync';
 import { selectSeriesTargets, SeriesMutationScope, SeriesTargetSelection } from '../utils/transactionSeriesScope';
 import { isIncludedInPersonalAnalytics } from '../utils/transactionImpact';
@@ -162,6 +163,13 @@ interface FinancialContextType {
     id: string,
     amount: number,
     scope: 'single' | 'current_and_future',
+    overwriteExceptions?: boolean,
+  ) => void;
+  updateRecurringExpenseComponents: (
+    id: string,
+    components: Array<Omit<TransactionComponent, 'id' | 'transactionId' | 'createdAt' | 'updatedAt'>>,
+    scope: 'single' | 'current_and_future',
+    totalAmount?: number,
     overwriteExceptions?: boolean,
   ) => void;
   toggleTransactionStatus: (id: string) => void;
@@ -2403,6 +2411,59 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  const updateRecurringExpenseComponents = (
+    id: string,
+    components: Array<Omit<TransactionComponent, 'id' | 'transactionId' | 'createdAt' | 'updatedAt'>>,
+    scope: 'single' | 'current_and_future',
+    totalAmount?: number,
+    overwriteExceptions = false,
+  ) => {
+    setTransactions(prev => {
+      const transaction = prev.find(item => item.id === id);
+      const series = transaction?.seriesId
+        ? transactionSeries.find(item => item.id === transaction.seriesId)
+        : undefined;
+      if (!transaction || series?.kind !== 'recurring_expense') {
+        const totalCents = components.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
+        const resolvedAmount = totalAmount ?? (components.length > 0 ? Math.round(totalCents) / 100 : transaction?.amount);
+        return prev.map(t =>
+          t.id === id
+            ? {
+                ...t,
+                hasComponents: components.length > 0,
+                components: components.map((c, i) => ({
+                  ...c,
+                  id: (c as any).id || `comp-${id}-${i + 1}`,
+                  transactionId: id,
+                  createdAt: `${t.date}T12:00:00.000Z`,
+                  updatedAt: `${t.date}T12:00:00.000Z`,
+                })),
+                amount: resolvedAmount ?? t.amount,
+              }
+            : t
+        );
+      }
+      const result = applyRecurringExpenseComponentsChange({
+        series,
+        transactions: prev,
+        selectedTransactionId: id,
+        scope,
+        components,
+        totalAmount,
+        overwriteExceptions,
+      });
+      markLocalMutation();
+      setTransactionSeries(prevSeries => prevSeries.map(item => (item.id === series.id ? result.series : item)));
+      if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+        void supabaseDb.upsertTransactionSeries(currentUser.id, [result.series]);
+        result.transactions
+          .filter(item => item.seriesId === series.id)
+          .forEach(item => void supabaseDb.upsertTransaction(currentUser.id, item));
+      }
+      return result.transactions;
+    });
+  };
+
   const toggleTransactionStatus = (id: string) => {
     markLocalMutation();
     const tx = transactions.find(t => t.id === id);
@@ -3620,6 +3681,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         previewTransactionSeriesDeletion,
         deleteTransactionSeriesScope,
         updateRecurringExpenseAmount,
+        updateRecurringExpenseComponents,
         toggleTransactionStatus,
         reimburseThirdPartyTransaction,
         importTransactions,

@@ -6,7 +6,7 @@ import type {
   TransactionSeries,
 } from '../types';
 import { addMonthsClamped } from './cardInstallmentSeries';
-import { reconcileRecurringExpenseSeries } from './recurringExpenseSeries';
+import { reconcileRecurringExpenseSeries, discoverSeriesComponentTemplates } from './recurringExpenseSeries';
 
 export interface TransactionSeriesMigrationResult {
   transactions: Transaction[];
@@ -159,6 +159,13 @@ export const migrateLegacyTransactionSeries = ({
 
   for (const recurringSeries of migratedSeries) {
     if (recurringSeries.kind !== 'recurring_expense' || recurringSeries.needsReview) continue;
+    if (!recurringSeries.componentTemplates || recurringSeries.componentTemplates.length === 0) {
+      const discovered = discoverSeriesComponentTemplates(recurringSeries, migratedTransactions);
+      if (discovered && discovered.length > 0) {
+        recurringSeries.componentTemplates = discovered;
+        recurringSeries.hasComponents = true;
+      }
+    }
     migratedTransactions = reconcileRecurringExpenseSeries({
       series: recurringSeries,
       transactions: migratedTransactions,

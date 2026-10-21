@@ -39,6 +39,7 @@ import { saveOrShareFile } from '../../utils/fileDownloadHelper';
 import { SeriesDeleteModal } from './SeriesDeleteModal';
 import { ReimbursementModal } from './ReimbursementModal';
 import { buildCardInstallmentTimeline } from '../../utils/cardInstallmentSeries';
+import { projectRecurringComponents, discoverSeriesComponentTemplates } from '../../utils/recurringExpenseSeries';
 import {
   FINANCIAL_NATURE_CONFIG,
   NECESSITY_CONFIG,
@@ -69,6 +70,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     debts,
     transactions,
     transactionSeries,
+    updateTransaction,
     deleteTransaction,
     deleteTransactionSeriesScope,
     toggleTransactionStatus,
@@ -177,49 +179,57 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     transaction.tags?.includes('fatura') ||
     transaction.description.toLowerCase().startsWith('pagamento fatura');
 
-  // Detalhamento analítico de divisões (splits), com fallback para séries recorrentes (ex: condomínio)
+  // Detalhamento analítico de divisões (splits), com fallback e fusão para séries recorrentes (ex: condomínio)
   const effectiveComponents = useMemo(() => {
-    if (Array.isArray(transaction?.components) && transaction.components.length > 0) {
-      return transaction.components;
-    }
-    if (Array.isArray(propTransaction?.components) && propTransaction.components.length > 0) {
-      return propTransaction.components;
-    }
+    const rawComponents = (Array.isArray(transaction?.components) && transaction.components.length > 0)
+      ? transaction.components
+      : (Array.isArray(propTransaction?.components) && propTransaction.components.length > 0)
+      ? propTransaction.components
+      : null;
+
     const seriesId = transaction?.seriesId || propTransaction?.seriesId;
     const targetDate = transaction?.date || propTransaction?.date || '';
     const sequence = transaction?.seriesSequence || propTransaction?.seriesSequence || 1;
+    const series = seriesId ? transactionSeries.find(s => s.id === seriesId) : undefined;
 
-    if (seriesId) {
-      const series = transactionSeries.find(s => s.id === seriesId);
-      if (series && series.kind === 'recurring_expense' && Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0) {
-        return series.componentTemplates.map((tmpl, idx) => {
-          let recurrenceConfig = tmpl.recurrenceConfig ? { ...tmpl.recurrenceConfig } : undefined;
-          if (tmpl.type === 'temporary' && recurrenceConfig?.enabled) {
-            const startInstallment = recurrenceConfig.currentInstallment || 1;
-            const projectedInstallment = startInstallment + (sequence - 1);
-            recurrenceConfig.currentInstallment = projectedInstallment;
+    if (series && series.kind === 'recurring_expense') {
+      const templates = (Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0)
+        ? series.componentTemplates
+        : discoverSeriesComponentTemplates(series, transactions);
+
+      if (Array.isArray(templates) && templates.length > 0) {
+        const projected = projectRecurringComponents(
+          { ...series, componentTemplates: templates, hasComponents: true },
+          targetDate,
+          sequence
+        );
+        if (projected.length > 0) {
+          if (!rawComponents || rawComponents.length === 0) {
+            return projected;
           }
-          const compId = (tmpl as any).id || `tmpl-${idx}`;
-          return {
-            id: `comp-${series.id}-${targetDate}-${compId}`,
-            transactionId: transaction?.id || propTransaction?.id || '',
-            description: tmpl.description,
-            amount: tmpl.amount,
-            categoryId: tmpl.categoryId || series.categoryId,
-            subcategoryId: tmpl.subcategoryId || series.subcategoryId,
-            type: tmpl.type,
-            recurrenceConfig,
-            notes: tmpl.notes,
-            financialNature: (tmpl as any).financialNature,
-            characteristics: (tmpl as any).characteristics,
-            createdAt: `${targetDate}T12:00:00.000Z`,
-            updatedAt: `${targetDate}T12:00:00.000Z`,
-          };
-        });
+          // Se a ocorrência salva possui componentes, garantir que itens fixos e variáveis da série
+          // (como Taxa Geral e Água) estejam puxados mesmo se ausentes na ocorrência pontual
+          const merged = [...rawComponents];
+          projected.forEach(proj => {
+            const alreadyExists = merged.some(
+              m => m.description.toLowerCase().trim() === proj.description.toLowerCase().trim()
+            );
+            if (!alreadyExists && (proj.type === 'fixed' || proj.type === 'variable')) {
+              merged.push(proj);
+            }
+          });
+          return merged;
+        }
       }
     }
+
+    if (rawComponents) return rawComponents;
     return [];
-  }, [transaction, propTransaction, transactionSeries]);
+  }, [transaction, propTransaction, transactionSeries, transactions]);
+
+  const effectiveComponentsSum = useMemo(() => {
+    return effectiveComponents.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+  }, [effectiveComponents]);
 
   // If this transaction is a credit card invoice payment (e.g. "Pagamento Fatura"),
   // find the corresponding credit card and compute the breakdown of expenses included in that invoice.
@@ -746,9 +756,33 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 </div>
               </div>
               <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
-                Total: {formatCurrency(transaction.amount, user.currency, !user.showValues)}
+                Total: {formatCurrency(effectiveComponentsSum, user.currency, !user.showValues)}
               </span>
             </div>
+
+            {Math.abs(effectiveComponentsSum - transaction.amount) > 0.01 && (
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-300">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
+                  <span>
+                    O valor do lançamento ({formatCurrency(transaction.amount, user.currency, !user.showValues)}) difere da soma da composição ({formatCurrency(effectiveComponentsSum, user.currency, !user.showValues)}).
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateTransaction(transaction.id, {
+                      amount: effectiveComponentsSum,
+                      hasComponents: true,
+                      components: effectiveComponents,
+                    });
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] shrink-0 transition-colors shadow-sm"
+                >
+                  Sincronizar Valor
+                </button>
+              </div>
+            )}
 
             <div className="space-y-2">
               {effectiveComponents.map(comp => {

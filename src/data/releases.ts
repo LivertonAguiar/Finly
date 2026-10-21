@@ -45,6 +45,26 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
+        title: 'Sincronização e Propagação de Composição Recorrente',
+        description: 'Propagação automática de itens fixos e variáveis (como taxa condominial e água) para os meses futuros da série e recálculo dinâmico do valor total quando taxas temporárias expiram, eliminando retenção indevida do valor antigo cheio.',
+        type: 'feature',
+      },
+      {
+        title: 'Cálculo Real do Total e Sincronização no Modal de Detalhes',
+        description: 'O cabeçalho da Composição da Taxa agora exibe a soma exata dos itens ativos discriminados, com aviso de divergência e botão de sincronização automática com o valor do lançamento.',
+        type: 'improvement',
+      },
+      {
+        title: 'Calendário Web Sem Cortes de Informações',
+        description: 'Ampliação do contêiner para max-w-7xl, proporção 7/5 colunas no grid e tipografia fluida no painel de Detalhes, eliminando truncamento de descrições e exibindo metadados de forma nítida e espaçosa.',
+        type: 'improvement',
+      },
+      {
+        title: 'Centralização do Seletor de Mês no Mobile',
+        description: 'Alinhamento perfeitamente centralizado do botão de mês no Dashboard em smartphones com botão de personalizar posicionado à direita, trazendo equilíbrio visual e ergonomia no toque.',
+        type: 'visual',
+      },
+      {
         title: 'Otimização de Layout e Responsividade Mobile',
         description: 'Padding compacto (16px) nos 13 cards do Dashboard, grid vertical mais densa, dimensões fluidas de gráficos Donut e abas do modal perfeitamente alinhadas em celulares estreitos.',
         type: 'improvement',

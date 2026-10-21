@@ -14,7 +14,7 @@ import type {
 } from '../../types';
 import { formatCurrency, getTodayString, round2 } from '../../utils/formatters';
 import { buildCardInstallmentSeries, getInvoiceDueDate } from '../../utils/cardInstallmentSeries';
-import { reconcileRecurringExpenseSeries } from '../../utils/recurringExpenseSeries';
+import { reconcileRecurringExpenseSeries, discoverSeriesComponentTemplates } from '../../utils/recurringExpenseSeries';
 import { buildTransferTransaction } from '../../utils/transferRules';
 import {
   predictCategoryAndSubcategory,
@@ -67,6 +67,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     addTransactionSeries,
     updateTransaction,
     updateRecurringExpenseAmount,
+    updateRecurringExpenseComponents,
     user,
     familyMembers,
     customTags,
@@ -234,28 +235,54 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       Array.isArray(tx?.components) &&
       tx.components.length > 0
     );
-    const seriesTemplates = editingSeries?.kind === 'recurring_expense' && Array.isArray(editingSeries.componentTemplates) && editingSeries.componentTemplates.length > 0
-      ? editingSeries.componentTemplates
+    const seriesTemplates = editingSeries?.kind === 'recurring_expense'
+      ? (Array.isArray(editingSeries.componentTemplates) && editingSeries.componentTemplates.length > 0
+          ? editingSeries.componentTemplates
+          : discoverSeriesComponentTemplates(editingSeries, transactions))
       : null;
 
     if (txHasComponents && tx?.components) {
       setHasSplit(true);
-      setSplitItems(
-        tx.components.map(c => ({
-          id: c.id,
-          description: c.description,
-          amount: c.amount,
-          categoryId: c.categoryId,
-          subcategoryId: c.subcategoryId,
-          financialNature: c.financialNature,
-          necessity: c.characteristics?.necessity,
-          type: c.type,
-          currentInstallment: c.recurrenceConfig?.currentInstallment,
-          totalInstallments: c.recurrenceConfig?.totalInstallments,
-          notes: c.notes,
-        })),
-      );
-    } else if (seriesTemplates) {
+      const loadedItems = tx.components.map(c => ({
+        id: c.id,
+        description: c.description,
+        amount: c.amount,
+        categoryId: c.categoryId,
+        subcategoryId: c.subcategoryId,
+        financialNature: c.financialNature,
+        necessity: c.characteristics?.necessity,
+        type: c.type,
+        currentInstallment: c.recurrenceConfig?.currentInstallment,
+        totalInstallments: c.recurrenceConfig?.totalInstallments,
+        notes: c.notes,
+      }));
+
+      // Se a série possuir templates fixos ou variáveis ausentes na ocorrência salva (ex: Água), fundir
+      if (seriesTemplates) {
+        seriesTemplates.forEach((st, idx) => {
+          const exists = loadedItems.some(
+            li => li.description.toLowerCase().trim() === st.description.toLowerCase().trim()
+          );
+          if (!exists && (st.type === 'fixed' || st.type === 'variable')) {
+            loadedItems.push({
+              id: (st as any).id || `tmpl-${idx}`,
+              description: st.description,
+              amount: st.amount,
+              categoryId: st.categoryId || tx?.categoryId || '',
+              subcategoryId: st.subcategoryId || tx?.subcategoryId || '',
+              financialNature: (st as any).financialNature,
+              necessity: (st as any).characteristics?.necessity,
+              type: st.type,
+              currentInstallment: st.recurrenceConfig?.currentInstallment,
+              totalInstallments: st.recurrenceConfig?.totalInstallments,
+              notes: st.notes,
+            });
+          }
+        });
+      }
+
+      setSplitItems(loadedItems);
+    } else if (seriesTemplates && seriesTemplates.length > 0) {
       setHasSplit(true);
       setSplitItems(
         seriesTemplates.map((t, idx) => ({
@@ -264,8 +291,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           amount: t.amount,
           categoryId: t.categoryId || tx?.categoryId || '',
           subcategoryId: t.subcategoryId || tx?.subcategoryId || '',
+          financialNature: (t as any).financialNature,
+          necessity: (t as any).characteristics?.necessity,
           type: t.type,
-          currentInstallment: t.recurrenceConfig?.currentInstallment,
+          currentInstallment: t.type === 'temporary'
+            ? (t.recurrenceConfig?.currentInstallment || 1) + ((tx?.seriesSequence || 1) - 1)
+            : undefined,
           totalInstallments: t.recurrenceConfig?.totalInstallments,
           notes: t.notes,
         })),
@@ -710,9 +741,25 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
     const txData = baseTransaction();
     if (editingTransaction) {
-      if (editingSeries?.kind === 'recurring_expense' && amountNumber !== editingTransaction.amount) {
-        updateTransaction(editingTransaction.id, { ...txData, amount: editingTransaction.amount });
-        updateRecurringExpenseAmount(editingTransaction.id, amountNumber, fixedEditScope, overwriteExceptions);
+      if (editingSeries?.kind === 'recurring_expense') {
+        if (fixedEditScope === 'current_and_future') {
+          if (hasSplit && splitItems.length > 0) {
+            updateRecurringExpenseComponents(
+              editingTransaction.id,
+              txData.components || [],
+              'current_and_future',
+              amountNumber,
+              overwriteExceptions,
+            );
+          } else if (amountNumber !== editingTransaction.amount) {
+            updateRecurringExpenseAmount(editingTransaction.id, amountNumber, 'current_and_future', overwriteExceptions);
+            updateTransaction(editingTransaction.id, txData);
+          } else {
+            updateTransaction(editingTransaction.id, txData);
+          }
+        } else {
+          updateTransaction(editingTransaction.id, txData);
+        }
       } else {
         updateTransaction(editingTransaction.id, txData);
       }
@@ -1821,7 +1868,41 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               )}
             </div>
           )}
-          {editingSeries?.kind === 'recurring_expense' && <div className="rounded-xl border border-amber-200 dark:border-amber-900 p-3 space-y-2"><p className="text-xs font-black uppercase tracking-wider">APLICAR ALTERAÇÃO DO VALOR</p><label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="radio" checked={fixedEditScope === 'single'} onChange={() => setFixedEditScope('single')} />Somente este mês</label><label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="radio" checked={fixedEditScope === 'current_and_future'} onChange={() => setFixedEditScope('current_and_future')} />Este e os próximos</label>{fixedEditScope === 'current_and_future' && <label className="flex gap-2 text-xs font-semibold uppercase tracking-wider"><input type="checkbox" checked={overwriteExceptions} onChange={event => setOverwriteExceptions(event.target.checked)} />Sobrescrever valores excepcionais futuros</label>}</div>}
+          {editingSeries?.kind === 'recurring_expense' && (
+            <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/20 dark:bg-amber-950/10 p-3 space-y-2">
+              <p className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                APLICAR ALTERAÇÃO NA RECORRÊNCIA
+              </p>
+              <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="radio"
+                  name="fixedEditScope"
+                  checked={fixedEditScope === 'single'}
+                  onChange={() => setFixedEditScope('single')}
+                />
+                Somente este mês
+              </label>
+              <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="radio"
+                  name="fixedEditScope"
+                  checked={fixedEditScope === 'current_and_future'}
+                  onChange={() => setFixedEditScope('current_and_future')}
+                />
+                Este e os próximos meses (propagar composição fixa/variável e valor)
+              </label>
+              {fixedEditScope === 'current_and_future' && (
+                <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 cursor-pointer pt-1 border-t border-amber-200/60 dark:border-amber-900/40">
+                  <input
+                    type="checkbox"
+                    checked={overwriteExceptions}
+                    onChange={event => setOverwriteExceptions(event.target.checked)}
+                  />
+                  Sobrescrever valores excepcionais futuros
+                </label>
+              )}
+            </div>
+          )}
         </div>}
         {error && <p role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600">{error}</p>}
       </form>
