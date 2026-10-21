@@ -265,6 +265,40 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       detail: { preset, accentColor: accent, cardRadius: radius, mode }
     }));
   } catch (e) {}
+
+  // Sincroniza a barra de status do celular e meta tags do sistema
+  syncNativeStatusBar(isDark, isDark ? darkBg : lightBg).catch(() => {});
+};
+
+export const syncNativeStatusBar = async (isDark: boolean, bgHex: string) => {
+  if (typeof window === 'undefined') return;
+
+  // 1. Atualiza meta tags theme-color no HTML para navegadores web e PWA
+  try {
+    let metaTheme = document.querySelector('meta[name="theme-color"]:not([media])');
+    if (!metaTheme) {
+      metaTheme = document.createElement('meta');
+      metaTheme.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaTheme);
+    }
+    metaTheme.setAttribute('content', bgHex);
+
+    const darkMeta = document.querySelector('meta[name="theme-color"][media*="dark"]');
+    if (darkMeta) darkMeta.setAttribute('content', isDark ? bgHex : '#121214');
+    const lightMeta = document.querySelector('meta[name="theme-color"][media*="light"]');
+    if (lightMeta) lightMeta.setAttribute('content', !isDark ? bgHex : '#F8FAFC');
+  } catch (_) {}
+
+  // 2. Capacitor Android / iOS nativo
+  const Capacitor = (window as any).Capacitor;
+  if (Capacitor?.isNativePlatform?.()) {
+    try {
+      const { StatusBar, Style } = await import('@capacitor/status-bar');
+      await StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+      await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {});
+      await StatusBar.setBackgroundColor({ color: bgHex }).catch(() => {});
+    } catch (_) {}
+  }
 };
 
 export const initThemeEngine = () => {

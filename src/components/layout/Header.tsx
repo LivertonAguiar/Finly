@@ -101,6 +101,18 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 8;
+      setIsScrolled(prev => (prev !== scrolled ? scrolled : prev));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleLogout = () => {
     setShowUserMenu(false);
     logout();
@@ -108,7 +120,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className="sticky top-0 z-30 w-full finly-header bg-white/95 backdrop-blur-md border-b border-slate-200/80 dark:border-white/[0.08] px-4 sm:px-6 flex items-center justify-between transition-all"
+      className={`sticky top-0 z-30 w-full finly-header transition-all duration-200 px-4 sm:px-6 flex items-center justify-between ${
+        isScrolled
+          ? 'is-scrolled bg-white/90 dark:bg-[#080B14]/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/[0.06] shadow-2xs'
+          : 'bg-transparent border-b border-transparent'
+      }`}
       style={{
         paddingTop: 'max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px))',
         height: 'calc(4rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)))',

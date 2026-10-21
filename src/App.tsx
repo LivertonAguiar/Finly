@@ -255,9 +255,12 @@ const AppContent: React.FC = () => {
   // Fullscreen Edge-to-Edge configuration for Native Android with Notch / Cutout compensation
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+      const isDark = document.documentElement.classList.contains('dark');
+      const currentBg = getComputedStyle(document.documentElement).getPropertyValue('--app-bg').trim() || (isDark ? '#080B14' : '#F1F5F9');
       import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
         StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+        StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {});
+        StatusBar.setBackgroundColor({ color: currentBg }).catch(() => {});
       }).catch(() => {});
 
       // Fallback safe-area notch compensation if native listener hasn't set it yet

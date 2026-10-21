@@ -17,6 +17,10 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
   - Eliminação do bloqueio de validação ("O valor dos itens do detalhamento excede o total em R$ X") no modal de edição: o valor global do lançamento se sincroniza automaticamente com a soma dos componentes ativos, permitindo salvar e propagar as alterações sem travas.
 
 ### Visual, Layout e Responsividade (Web e Mobile)
+- **Integração Fluida do Topo (Header) e Sincronização da StatusBar Nativa**:
+  - Eliminação da faixa/corte horizontal opaco entre o Header e o fundo do aplicativo: o cabeçalho agora permanece 100% transparente no topo, permitindo que os gradientes e iluminações ambientais do tema fluam de forma contínua da borda superior até o conteúdo.
+  - Ativação de vidro fosco inteligente (`backdrop-blur-xl`) com borda suave apenas durante a rolagem da página.
+  - Sincronização dinâmica da barra de status do Android (Capacitor) e das meta tags de tema do sistema (`theme-color`) com o fundo exato do tema ativo em tempo real.
 - **Visualização Sem Cortes no Calendário Web**:
   - Ampliação do contêiner para `max-w-7xl` e proporção de 7/5 colunas no grid, liberando mais de 100px adicionais de largura útil para o painel de Detalhes.
   - Implementação de `flex-1 min-w-0` e tipografia fluida para títulos e metadados, eliminando reticências precoces (`Compras Supermerca...`) e quebras desordenadas de linhas.

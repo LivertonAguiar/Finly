@@ -55,6 +55,11 @@ export const RELEASES: ReleaseInfo[] = [
         type: 'improvement',
       },
       {
+        title: 'Integração do Topo e Sincronização da Barra de Status',
+        description: 'Cabeçalho 100% transparente no topo para fluir perfeitamente com os gradientes do tema sem cortes horizontais, vidro fosco inteligente durante a rolagem e sincronização da StatusBar do Android.',
+        type: 'visual',
+      },
+      {
         title: 'Calendário Web Sem Cortes de Informações',
         description: 'Ampliação do contêiner para max-w-7xl, proporção 7/5 colunas no grid e tipografia fluida no painel de Detalhes, eliminando truncamento de descrições e exibindo metadados de forma nítida e espaçosa.',
         type: 'improvement',

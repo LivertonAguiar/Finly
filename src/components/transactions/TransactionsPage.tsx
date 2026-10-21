@@ -579,7 +579,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   };
 
   const filterOptions = [
-    { id: 'all', label: 'Todas as transações', dotColor: 'bg-[#7c4dff]' },
+    { id: 'all', label: 'Todas as transações', dotColor: 'bg-purple-600' },
     { id: 'expense', label: 'Despesas', dotColor: 'bg-[#ef5350]' },
     { id: 'income', label: 'Receitas', dotColor: 'bg-[#66bb6a]' },
     { id: 'transfer', label: 'Transferências', dotColor: 'bg-[#42a5f5]' },

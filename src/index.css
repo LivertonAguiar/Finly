@@ -459,16 +459,29 @@ html[data-theme-preset="sleek-neo-glass"].dark body {
 }
 
 /* Universal Adaptive Header & BottomNav for all theme presets */
-html.dark header,
-html.dark .finly-header {
-  background-color: var(--app-bg) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+/* Header no topo: 100% transparente para integracao total com o gradiente e fundo */
+html.dark header:not(.is-scrolled),
+html.dark .finly-header:not(.is-scrolled) {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  border-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Header durante a rolagem: vidro fosco suave e discreto */
+html.dark header.is-scrolled,
+html.dark .finly-header.is-scrolled {
+  background-color: color-mix(in srgb, var(--app-bg) 80%, transparent) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
-  html.dark header,
-  html.dark .finly-header {
-    background-color: color-mix(in srgb, var(--app-bg) 85%, transparent) !important;
+  html.dark header.is-scrolled,
+  html.dark .finly-header.is-scrolled {
+    background-color: color-mix(in srgb, var(--app-bg) 80%, transparent) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
   }
