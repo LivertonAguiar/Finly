@@ -8,9 +8,9 @@
     "version": "1.1.79.20",
     "minNativeVersion": "1.1.0",
     "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.20.zip",
-    "sha256": "10f28ed5f609d242c25bafbdeeb4f2776a7567f18d9ad636da1287af56a4aedd",
+    "sha256": "f6875da1bc0e52ed3aa553c5c4b65353f85fbf3c0c5497cd5490b7d519baa7b2",
     "mandatory": true,
     "releaseDate": "2026-10-21",
-    "notes": "Novo layout executivo de faturas e extratos em PDF e CSV com branding bancario e KPI cards"
+    "notes": "Novo layout executivo de faturas e extratos em PDF e CSV com branding bancario oficial e KPI cards analíticos."
   }
 }
