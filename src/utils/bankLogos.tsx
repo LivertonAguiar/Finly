@@ -421,7 +421,7 @@ export const CarrefourCardIcon: React.FC<{ size?: number; radius?: number; class
   </svg>
 );
 
-/** High-Definition Official Credicard On Vector Icon */
+/** High-Definition Official Credicard On Vector Icon (Fiel ao Cartão Físico com Fundo Azul Marinho e Símbolo Credicard On) */
 export const CredicardOnIcon: React.FC<{ size?: number; radius?: number; className?: string }> = ({
   size = 32,
   radius = 6,
@@ -438,52 +438,56 @@ export const CredicardOnIcon: React.FC<{ size?: number; radius?: number; classNa
     aria-label="Credicard On"
   >
     <defs>
-      <linearGradient id="credicard-hd-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#003559" />
-        <stop offset="100%" stopColor="#001a2c" />
+      <linearGradient id="credicard-hd-bg" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#001438" />
+        <stop offset="70%" stopColor="#001844" />
+        <stop offset="100%" stopColor="#001f52" />
       </linearGradient>
-      <linearGradient id="credicard-on-pill" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#00e5ff" />
-        <stop offset="100%" stopColor="#00b4d8" />
+      <linearGradient id="credicard-bottom-neon" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#002d72" />
+        <stop offset="35%" stopColor="#0077b6" />
+        <stop offset="100%" stopColor="#00e5ff" />
       </linearGradient>
     </defs>
-    <rect width="100" height="100" rx={radius * 2} fill="url(#credicard-hd-bg)" />
     
-    {/* Credicard Ribbon / Símbolo clássico com anéis entrelaçados */}
-    <g transform="translate(18, 20)">
-      <circle cx="24" cy="18" r="13" stroke="#ffffff" strokeWidth="4" fill="none" opacity="0.95" />
-      <circle cx="40" cy="18" r="13" stroke="#00e5ff" strokeWidth="4" fill="none" opacity="0.95" />
+    {/* Fundo Azul Marinho Profundo */}
+    <rect width="100" height="100" rx={radius * 2} fill="#001438" />
+    <rect width="100" height="100" rx={radius * 2} fill="url(#credicard-hd-bg)" />
+
+    {/* Símbolo Oficial Credicard On com proporção e silhueta idêntica ao cartão real */}
+    <g transform="translate(50, 48) scale(1.08)">
+      {/* 1. Asa Superior Esquerda */}
+      <path
+        d="M -22,-2 C -24,-11 -16,-21 -2,-21 C 10,-21 17,-19 12,-14 C 4,-9 -6,-7 -15,-2 Z"
+        fill="#ffffff"
+      />
+
+      {/* 2. Núcleo Triangular Central */}
+      <path
+        d="M -9,-1 L -8,-10 L 14,-8 L 19,-4 L -1,3 Z"
+        fill="#ffffff"
+      />
+
+      {/* 3. Asa Inferior Direita */}
+      <path
+        d="M 22,2 C 24,11 16,21 2,21 C -10,21 -17,19 -12,14 C -4,9 6,7 15,2 Z"
+        fill="#ffffff"
+      />
+
+      {/* 4. Anel Orbital Inclinado (em perspectiva de -26 graus) */}
+      <g transform="rotate(-26)">
+        <path
+          d="M -34,0 C -34,-4.2 -18,-8 0,-8 C 18,-8 34,-4.2 34,0 C 34,4.2 18,8 0,8 C -18,8 -34,4.2 -34,0 Z M -27.5,0 C -27.5,2.6 -15,5.4 0,5.4 C 15,5.4 27.5,2.6 27.5,0 C 27.5,-2.6 15,-5.4 0,-5.4 C -15,-5.4 -27.5,-2.6 -27.5,0 Z"
+          fill="#ffffff"
+        />
+      </g>
     </g>
 
-    {/* Tipografia Oficial: credicard */}
-    <text
-      x="39"
-      y="69"
-      textAnchor="middle"
-      fill="#ffffff"
-      fontSize="13"
-      fontWeight="900"
-      fontFamily="Arial, system-ui, -apple-system, sans-serif"
-      letterSpacing="-0.5"
-    >
-      credicard
-    </text>
-
-    {/* Badge Neon: on */}
-    <g transform="translate(68, 56)">
-      <rect width="18" height="15" rx="7.5" fill="url(#credicard-on-pill)" />
-      <text
-        x="9"
-        y="11.5"
-        textAnchor="middle"
-        fill="#001a2c"
-        fontSize="10"
-        fontWeight="900"
-        fontFamily="Arial, sans-serif"
-      >
-        on
-      </text>
-    </g>
+    {/* Faixa Inferior Ciano Neon Característica do Cartão Real */}
+    <path
+      d="M 0,95 L 100,95 L 100,96 C 100,98.2 98.2,100 96,100 L 4,100 C 1.8,100 0,98.2 0,96 Z"
+      fill="url(#credicard-bottom-neon)"
+    />
   </svg>
 );
 
@@ -515,7 +519,7 @@ export const ALL_BANKS: BankInfo[] = [
   { id: 'santanderway', name: 'Santander Way', code: '033', color: '#ea1d25', textColor: '#ffffff', bgGradient: 'from-[#ea1d25] to-[#800000]' },
   { id: 'bradesconeo', name: 'Bradesco Neo', code: '237', color: '#d60036', textColor: '#ffffff', bgGradient: 'from-[#d60036] via-[#7a1862] to-[#162970]' },
   { id: 'carrefour', name: 'Cartão Carrefour', code: '000', color: '#00387b', textColor: '#ffffff', bgGradient: 'from-[#00387b] to-[#001c3d]' },
-  { id: 'credicard', name: 'Credicard On', code: '000', color: '#002b49', textColor: '#ffffff', bgGradient: 'from-[#003559] to-[#001726]' },
+  { id: 'credicard', name: 'Credicard On', code: '341', color: '#001438', textColor: '#00e5ff', bgGradient: 'from-[#001438] via-[#001f52] to-[#00e5ff]' },
   { id: 'carteira', name: 'Carteira', code: '000', color: '#10b981', textColor: '#ffffff', bgGradient: 'from-[#10b981] to-[#047857]' },
 ];
 

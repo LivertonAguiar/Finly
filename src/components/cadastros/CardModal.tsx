@@ -183,6 +183,8 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
           style={{
             background: (selectedBankId === 'bradesconeo' && !isCustomColor)
               ? 'linear-gradient(125deg, #d60036 0%, #7a1862 48%, #162970 100%)'
+              : (selectedBankId === 'credicard' && !isCustomColor)
+              ? 'linear-gradient(180deg, #001233 0%, #001844 70%, #002058 100%)'
               : `linear-gradient(135deg, ${color} 0%, ${color}dd 42%, #0f172a 100%)`,
             borderColor: `${color}80`,
             boxShadow: `0 16px 36px -6px ${color}60, 0 4px 14px rgba(0,0,0,0.45)`,
@@ -200,6 +202,11 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
                 <rect width="100%" height="100%" fill="url(#modal-neo-lines)" />
               </svg>
             </div>
+          )}
+
+          {/* Faixa inferior ciano neon para o Credicard On */}
+          {selectedBankId === 'credicard' && !isCustomColor && (
+            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003388] via-[#00b4d8] to-[#00e5ff] shadow-[0_0_12px_#00e5ff]" />
           )}
 
           {/* Top of Card: Bank Logo (Prominent) + Bank Emblem */}
@@ -232,15 +239,23 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
             </div>
           </div>
 
-          {/* Chip & Contactless Wave / NEO Branding */}
+          {/* Chip & Contactless Wave / NEO Branding / Credicard On */}
           <div className="flex items-center gap-3 z-10 my-auto">
-            <div className="w-10 h-7 rounded-lg bg-gradient-to-tr from-amber-300 via-amber-400 to-amber-200 border border-amber-500/60 shadow-md flex items-center justify-center">
-              <div className="w-full h-[1px] bg-amber-600/50" />
-            </div>
+            {selectedBankId === 'credicard' && !isCustomColor ? (
+              <div className="w-10 h-7 rounded-lg bg-gradient-to-tr from-slate-200 via-slate-100 to-slate-300 border border-slate-400/80 shadow-md flex items-center justify-center">
+                <div className="w-full h-[1px] bg-slate-500/40" />
+              </div>
+            ) : (
+              <div className="w-10 h-7 rounded-lg bg-gradient-to-tr from-amber-300 via-amber-400 to-amber-200 border border-amber-500/60 shadow-md flex items-center justify-center">
+                <div className="w-full h-[1px] bg-amber-600/50" />
+              </div>
+            )}
             {selectedBankId === 'bradesconeo' ? (
               <span className="text-sm font-black tracking-[0.3em] text-white/95 uppercase drop-shadow-md ml-1">
                 NEO
               </span>
+            ) : selectedBankId === 'credicard' && !isCustomColor ? (
+              <span className="text-lg text-[#00e5ff] drop-shadow-[0_0_8px_#00e5ff] font-bold">📶</span>
             ) : (
               <span className="text-lg opacity-75 drop-shadow-sm">📶</span>
             )}

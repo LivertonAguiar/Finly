@@ -184,12 +184,23 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
     closingDay: 5,
     dueDay: 12,
   };
-  const themeBahia = resolveBankPdfTheme(casasBahiaCard);
-  assert.equal(themeBahia.id, 'casasbahia');
-  assert.equal(themeBahia.accent, '#0047BB');
-  assert.ok(!themeBahia.pillLabel?.includes('•'), 'pillLabel não deve conter caractere bullet •');
+  const credicardCard: CreditCard = {
+    id: 'c5',
+    name: 'Credicard On Visa',
+    bankId: 'credicard',
+    brand: 'Visa',
+    limit: 12000,
+    closingDay: 8,
+    dueDay: 15,
+  };
+  const themeCredicard = resolveBankPdfTheme(credicardCard);
+  assert.equal(themeCredicard.id, 'credicard');
+  assert.equal(themeCredicard.accent, '#00E5FF', 'Accent do Credicard On deve ser ciano neon #00E5FF');
+  assert.deepEqual(themeCredicard.accentRgb, [0, 229, 255]);
+  assert.deepEqual(themeCredicard.cardBg, [0, 20, 56], 'CardBg do Credicard On deve ser azul marinho profundo oficial');
+  assert.ok(!themeCredicard.pillLabel?.includes('•'), 'pillLabel não deve conter caractere bullet •');
 
-  console.log('✓ Teste 6: Resolução de temas visuais bancários e co-branded (Inter, Nubank, Amazon, Casas Bahia) validada com sucesso');
+  console.log('✓ Teste 6: Resolução de temas visuais bancários e co-branded (Inter, Nubank, Amazon, Casas Bahia, Credicard On) validada com sucesso');
 }
 
 console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');

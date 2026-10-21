@@ -160,24 +160,46 @@ function drawRealisticCreditCardMockup(
   doc.roundedRect(x, y, w, h, 2.5, 2.5, 'S');
 
   // Top Left: Metallic EMV Chip
+  const isCredicard = theme.id === 'credicard';
   const chipX = x + 4;
   const chipY = y + 7.5;
   const chipW = 6.2;
   const chipH = 4.6;
 
-  doc.setFillColor(232, 220, 184); // Champagne gold
-  doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'F');
-  doc.setDrawColor(180, 155, 110);
-  doc.setLineWidth(0.15);
-  doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'S');
-  // Chip circuit contact lines
-  doc.line(chipX, chipY + 2.3, chipX + chipW, chipY + 2.3);
-  doc.line(chipX + 2.4, chipY, chipX + 2.4, chipY + chipH);
-  doc.line(chipX + 4.2, chipY, chipX + 4.2, chipY + chipH);
+  if (isCredicard) {
+    // Chip Prateado Platina Escovado (idêntico ao cartão físico Credicard On)
+    doc.setFillColor(224, 230, 240);
+    doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'F');
+    doc.setDrawColor(160, 175, 195);
+    doc.setLineWidth(0.15);
+    doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'S');
+    doc.line(chipX, chipY + 2.3, chipX + chipW, chipY + 2.3);
+    doc.line(chipX + 2.4, chipY, chipX + 2.4, chipY + chipH);
+    doc.line(chipX + 4.2, chipY, chipX + 4.2, chipY + chipH);
 
-  // Contactless waves beside chip
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.25);
+    // Faixa Inferior Ciano Neon Característica do Cartão Credicard On
+    doc.setFillColor(0, 229, 255);
+    doc.roundedRect(x + 1.5, y + h - 1.2, w - 3, 1.2, 0.6, 0.6, 'F');
+  } else {
+    doc.setFillColor(232, 220, 184); // Champagne gold
+    doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'F');
+    doc.setDrawColor(180, 155, 110);
+    doc.setLineWidth(0.15);
+    doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'S');
+    // Chip circuit contact lines
+    doc.line(chipX, chipY + 2.3, chipX + chipW, chipY + 2.3);
+    doc.line(chipX + 2.4, chipY, chipX + 2.4, chipY + chipH);
+    doc.line(chipX + 4.2, chipY, chipX + 4.2, chipY + chipH);
+  }
+
+  // Contactless waves beside chip (Ciano Neon vibrante para Credicard On)
+  if (isCredicard) {
+    doc.setDrawColor(0, 229, 255);
+    doc.setLineWidth(0.35);
+  } else {
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.25);
+  }
   const nfcX = chipX + chipW + 2.4;
   const nfcY = chipY + 2.3;
   // 3 subtle wave arcs

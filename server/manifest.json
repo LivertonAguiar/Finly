@@ -5,10 +5,10 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.23",
+    "version": "1.1.79.24",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.23.zip",
-    "sha256": "545a50ba8e0803df3895f7033418082a92144a0aa8d5be4261631e83ffe52ec0",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.24.zip",
+    "sha256": "c7281e1f48441cec3eda041e494b022594575979a0971dd0ee1c0e1a79ccc67d",
     "mandatory": true,
     "releaseDate": "2026-10-21",
     "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável."
