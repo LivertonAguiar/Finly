@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.16",
+    "version": "1.1.79.17",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.16.zip",
-    "sha256": "0ba4de51f6c62fa6276bad6207ff27f58e743f5ae074c79f42f01b4ba30814e9",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.17.zip",
+    "sha256": "1b64f227a4c75565ea0ff87d6e20dc2ba975a6206b6c6c714686337f31a4e468",
     "mandatory": true,
     "releaseDate": "2026-10-21",
-    "notes": "Correcao de sincronizacao de valor no detalhamento e liberacao do botao atualizar"
+    "notes": "Integracao do topo transparente com gradiente e sincronizacao da status bar"
   }
 }
