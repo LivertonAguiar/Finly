@@ -82,35 +82,52 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   console.log('✓ Teste 4: Dados enriquecidos de fatura e limites validados');
 }
 
-// 4. Teste de formatação dos últimos 4 dígitos e tratamento de ausência
+// 4. Teste de formatação dos últimos 4 dígitos e tratamento de ausência (ASCII 100% seguro contra .vhx)
 {
-  const formatCardNumber = (last4?: string) => {
-    const cleanLast4 = last4 ? last4.trim() : '';
-    return cleanLast4 ? `•••• •••• •••• ${cleanLast4}` : '•••• •••• •••• ••••';
+  const formatCardMockupNumber = (last4?: string) => {
+    const rawDigits = (last4 || '').replace(/\D/g, '').trim();
+    return rawDigits.length >= 2 ? `**** **** **** ${rawDigits}` : '**** **** **** XXXX';
+  };
+
+  const formatFinalCardLabel = (last4?: string) => {
+    const rawDigits = (last4 || '').replace(/\D/g, '').trim();
+    return rawDigits.length >= 2 ? `Final ${rawDigits}` : 'Final XXXX';
   };
 
   assert.equal(
-    formatCardNumber('1234'),
-    '•••• •••• •••• 1234',
-    'Deveria exibir os 4 dígitos finais quando informados'
+    formatCardMockupNumber('1234'),
+    '**** **** **** 1234',
+    'Deveria exibir os 4 dígitos finais no formato ASCII seguro quando informados'
   );
 
   assert.equal(
-    formatCardNumber(''),
-    '•••• •••• •••• ••••',
-    'Deveria exibir apenas máscara de bolinhas quando string vazia'
+    formatCardMockupNumber(''),
+    '**** **** **** XXXX',
+    'Deveria exibir XXXX claramente na ausência dos 4 dígitos'
   );
 
   assert.equal(
-    formatCardNumber(undefined),
-    '•••• •••• •••• ••••',
-    'Deveria exibir apenas máscara de bolinhas quando ausente/undefined (sem inventar dígitos falsos)'
+    formatCardMockupNumber(undefined),
+    '**** **** **** XXXX',
+    'Deveria exibir XXXX quando ausente/undefined (sem corrupção .vhx)'
   );
 
-  console.log('✓ Teste 5: Validação do final do cartão e tratamento elegante para ausência');
+  assert.equal(
+    formatFinalCardLabel('4321'),
+    'Final 4321',
+    'Deveria formatar Final 4321 no pill do cabeçalho'
+  );
+
+  assert.equal(
+    formatFinalCardLabel(undefined),
+    'Final XXXX',
+    'Deveria formatar Final XXXX no pill do cabeçalho na ausência de dígitos'
+  );
+
+  console.log('✓ Teste 5: Validação do final do cartão ASCII (**** XXXX) e eliminação de caracteres propensos a .vhx');
 }
 
-// 5. Teste de resolução de temas visuais bancários (Inter, Nubank, Itaú, Co-branded Amazon e Casas Bahia)
+// 5. Teste de resolução de temas visuais bancários e co-branded (Inter, Nubank, Itaú, Co-branded Amazon e Casas Bahia)
 {
   const interCard: CreditCard = {
     id: 'c1',
@@ -141,6 +158,7 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   const amazonCard: CreditCard = {
     id: 'c3',
     name: 'Cartão Amazon Prime',
+    bankId: 'bradesco', // Mesmo emitido por Bradesco, o branding oficial deve ser Amazon
     brand: 'Mastercard',
     limit: 8000,
     closingDay: 15,
@@ -149,10 +167,18 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   const themeAmazon = resolveBankPdfTheme(amazonCard);
   assert.equal(themeAmazon.id, 'amazon');
   assert.equal(themeAmazon.accent, '#FF9900');
+  assert.ok(!themeAmazon.pillLabel?.includes('•'), 'pillLabel não deve conter caractere bullet •');
+
+  // Validação do bankIdentifier co-branded
+  const bankIdentifier = (themeAmazon.id && themeAmazon.id !== 'custom')
+    ? themeAmazon.id
+    : (amazonCard.bankId || amazonCard.name);
+  assert.equal(bankIdentifier, 'amazon', 'Cartão Amazon deve resolver bankIdentifier como amazon mesmo com bankId bradesco');
 
   const casasBahiaCard: CreditCard = {
     id: 'c4',
     name: 'Casas Bahia Bradescard',
+    bankId: 'bradescard',
     brand: 'Visa',
     limit: 5000,
     closingDay: 5,
@@ -161,6 +187,7 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   const themeBahia = resolveBankPdfTheme(casasBahiaCard);
   assert.equal(themeBahia.id, 'casasbahia');
   assert.equal(themeBahia.accent, '#0047BB');
+  assert.ok(!themeBahia.pillLabel?.includes('•'), 'pillLabel não deve conter caractere bullet •');
 
   console.log('✓ Teste 6: Resolução de temas visuais bancários e co-branded (Inter, Nubank, Amazon, Casas Bahia) validada com sucesso');
 }

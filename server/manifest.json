@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.21",
+    "version": "1.1.79.23",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.21.zip",
-    "sha256": "1409bbd0ac1c25458d72111bec8795e6f82b2f7884b02a9ad10d761e81b973d7",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.23.zip",
+    "sha256": "545a50ba8e0803df3895f7033418082a92144a0aa8d5be4261631e83ffe52ec0",
     "mandatory": true,
     "releaseDate": "2026-10-21",
-    "notes": "Novo card de atualização pronta com detalhes e botão para reiniciar agora, além do novo layout executivo de faturas e extratos em PDF e CSV."
+    "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável."
   }
 }

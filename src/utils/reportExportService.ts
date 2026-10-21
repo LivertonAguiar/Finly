@@ -126,7 +126,7 @@ function drawFinlyHeaderLogo(doc: jsPDF, x: number, y: number, subtitle: string)
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.2);
   doc.setTextColor(203, 213, 225); // Slate 300
-  doc.text(`•  ${subtitle}`, x + 27.5, y + 5.5);
+  doc.text(`|  ${subtitle}`, x + 27.5, y + 5.5);
 }
 
 /**
@@ -187,11 +187,11 @@ function drawRealisticCreditCardMockup(
   doc.line(nfcX + 1.2, nfcY - 2.2, nfcX + 2.2, nfcY);
   doc.line(nfcX + 2.2, nfcY, nfcX + 1.2, nfcY + 2.2);
 
-  // Top Right: Institution wordmark / logo in white
+  // Top Right: Institution wordmark / logo in white (aspect ratio 1:1 rigoroso)
   if (bankLogoPng) {
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x + w - 12.5, y + 3.2, 9, 6.5, 1.2, 1.2, 'F');
-    doc.addImage(bankLogoPng, 'PNG', x + w - 12, y + 3.6, 8, 5.7);
+    doc.addImage(bankLogoPng, 'PNG', x + w - 11, y + 3.45, 6, 6);
   } else {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
@@ -235,12 +235,12 @@ function drawRealisticCreditCardMockup(
     doc.text(card.brand || 'CARD', x + w - 4, y + h - 4.5, { align: 'right' });
   }
 
-  // Bottom Left: Masked card digits
+  // Bottom Left: Masked card digits (Formatação ASCII 100% segura no jsPDF, exibindo XXXX na ausência)
   doc.setFont('courier', 'bold');
   doc.setFontSize(6.2);
   doc.setTextColor(255, 255, 255);
-  const cleanLast4 = card.last4Digits ? card.last4Digits.trim() : '';
-  const digitsDisplay = cleanLast4 ? `•••• ${cleanLast4}` : `•••• ••••`;
+  const rawDigits = (card.last4Digits || '').replace(/\D/g, '').trim();
+  const digitsDisplay = rawDigits.length >= 2 ? `**** **** **** ${rawDigits}` : `**** **** **** XXXX`;
   doc.text(digitsDisplay, x + 4, y + h - 4.8);
 }
 
@@ -313,18 +313,21 @@ function drawInstitutionPill(
 }
 
 /**
- * Generates an executive Donut Chart canvas for invoice category distribution
+ * Generates an executive Donut Chart canvas for invoice category distribution.
+ * Rendered at 1456x416 to guarantee an exact 3.5:1 ratio matching the 182x52mm PDF box,
+ * ensuring the donut is rendered as a geometrically perfect 1:1 circle with zero distortion.
  */
 function createInvoiceDonutChartCanvas(
   categoriesMap: Record<string, { name: string; amount: number; count: number }>,
   totalAmount: number,
   currency: string,
-  primaryHex: string
+  primaryHex: string,
+  centerLabel = 'TOTAL FATURA'
 ): string | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
-  canvas.width = 880;
-  canvas.height = 360;
+  canvas.width = 1456;
+  canvas.height = 416;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
@@ -342,7 +345,7 @@ function createInvoiceDonutChartCanvas(
 
   if (total <= 0 || entries.length === 0) {
     ctx.fillStyle = '#94A3B8';
-    ctx.font = '16px Helvetica, Arial, sans-serif';
+    ctx.font = '20px Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Nenhuma despesa categorizada nesta fatura', canvas.width / 2, canvas.height / 2);
     return canvas.toDataURL('image/png');
@@ -386,11 +389,11 @@ function createInvoiceDonutChartCanvas(
     });
   }
 
-  // Draw Donut on the left
-  const cx = 160;
-  const cy = 180;
-  const outerR = 120;
-  const innerR = 75;
+  // Draw Donut on the left - perfectly centered vertically at cy = 208 with 1:1 circle geometry
+  const cx = 205;
+  const cy = 208;
+  const outerR = 148;
+  const innerR = 92;
   let currentAngle = -Math.PI / 2;
 
   topItems.forEach(item => {
@@ -405,7 +408,7 @@ function createInvoiceDonutChartCanvas(
     ctx.fill();
 
     ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
     currentAngle = endAngle;
@@ -414,43 +417,43 @@ function createInvoiceDonutChartCanvas(
   // Donut Center Text
   ctx.textAlign = 'center';
   ctx.fillStyle = '#64748B';
-  ctx.font = 'bold 12px Helvetica, Arial, sans-serif';
-  ctx.fillText('TOTAL FATURA', cx, cy - 8);
+  ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
+  ctx.fillText(centerLabel, cx, cy - 10);
 
   ctx.fillStyle = '#0F172A';
-  ctx.font = 'bold 20px Helvetica, Arial, sans-serif';
-  ctx.fillText(formatCurrency(total, currency, false), cx, cy + 18);
+  ctx.font = 'bold 24px Helvetica, Arial, sans-serif';
+  ctx.fillText(formatCurrency(total, currency, false), cx, cy + 20);
 
   // Legend on Right
-  const legendX = 330;
-  let legendY = 28;
-  const rowH = 50;
+  const legendX = 420;
+  let legendY = 32;
+  const rowH = 58;
 
   ctx.textAlign = 'left';
   topItems.forEach(item => {
     // Color Dot
     ctx.fillStyle = item.color;
     ctx.beginPath();
-    ctx.arc(legendX + 8, legendY + 12, 6.5, 0, Math.PI * 2);
+    ctx.arc(legendX + 10, legendY + 16, 7.5, 0, Math.PI * 2);
     ctx.fill();
 
     // Category Name
     ctx.fillStyle = '#1E293B';
-    ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
-    const cleanName = item.name.length > 22 ? item.name.substring(0, 20) + '...' : item.name;
-    ctx.fillText(cleanName, legendX + 24, legendY + 16);
+    ctx.font = 'bold 17px Helvetica, Arial, sans-serif';
+    const cleanName = item.name.length > 24 ? item.name.substring(0, 22) + '...' : item.name;
+    ctx.fillText(cleanName, legendX + 30, legendY + 22);
 
     // Value
     ctx.fillStyle = '#475569';
-    ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
-    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 24, legendY + 34);
+    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
+    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 30, legendY + 44);
 
     // Progress bar
-    const barX = legendX + 220;
-    const maxBarW = 210;
-    const barY = legendY + 9;
-    const barH = 7;
-    const fillW = Math.max(3, (item.pct / 100) * maxBarW);
+    const barX = legendX + 330;
+    const maxBarW = 380;
+    const barY = legendY + 15;
+    const barH = 10;
+    const fillW = Math.max(4, (item.pct / 100) * maxBarW);
 
     ctx.fillStyle = '#F1F5F9';
     ctx.fillRect(barX, barY, maxBarW, barH);
@@ -458,21 +461,21 @@ function createInvoiceDonutChartCanvas(
     ctx.fillRect(barX, barY, fillW, barH);
 
     // Percentage Pill
-    const pillW = 62;
-    const pillH = 24;
-    const pillX = canvas.width - pillW - 20;
-    const pillY = legendY + 3;
+    const pillW = 76;
+    const pillH = 30;
+    const pillX = canvas.width - pillW - 24;
+    const pillY = legendY + 6;
 
     ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(pillX, pillY, pillW, pillH);
     ctx.strokeStyle = '#E2E8F0';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     ctx.strokeRect(pillX, pillY, pillW, pillH);
 
     ctx.fillStyle = item.color;
-    ctx.font = 'bold 12.5px Helvetica, Arial, sans-serif';
+    ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 16);
+    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 20);
 
     ctx.textAlign = 'left';
     legendY += rowH;
@@ -489,7 +492,7 @@ function createDonutChartCanvas(
   totalExpense: number,
   currency: string
 ): string | null {
-  return createInvoiceDonutChartCanvas(categoriesMap, totalExpense, currency, '#7C3AED');
+  return createInvoiceDonutChartCanvas(categoriesMap, totalExpense, currency, '#7C3AED', 'TOTAL GASTOS');
 }
 
 /**
@@ -606,10 +609,14 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   let bankLogoPng: string | null = null;
   let brandLogoPng: string | null = null;
 
+  const bankIdentifier = (theme.id && theme.id !== 'custom')
+    ? theme.id
+    : (data.card.bankId || data.card.name);
+
   try {
     const bankSvg = renderToStaticMarkup(
       React.createElement(BankLogo, {
-        nameOrId: data.card.bankId || data.card.name,
+        nameOrId: bankIdentifier,
         size: 140,
         radius: 8,
       })
@@ -649,8 +656,11 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   doc.setTextColor(255, 255, 255);
   doc.text(`Fatura de ${data.monthLabel}`, 14, 23);
 
-  // Institution Pill Badge
-  const pillLabel = theme.pillLabel || `${theme.name}${theme.code ? ` (${theme.code})` : ''} - ${(data.card.brand || theme.defaultBrand).toUpperCase()}`;
+  // Institution Pill Badge (com identificação elegante do final do cartão: Final XXXX na ausência)
+  const rawCardDigits = (data.card.last4Digits || '').replace(/\D/g, '').trim();
+  const finalCardStr = rawCardDigits.length >= 2 ? `Final ${rawCardDigits}` : 'Final XXXX';
+  const pillBase = theme.pillLabel || `${theme.name}${theme.code ? ` (${theme.code})` : ''} - ${(data.card.brand || theme.defaultBrand).toUpperCase()}`;
+  const pillLabel = `${pillBase} | ${finalCardStr}`;
   drawInstitutionPill(doc, 14, 28, pillLabel, theme.accentRgb, bankLogoPng, brandLogoPng);
 
   // Realistic Card Mockup on Top-Right (54mm x 34mm)
@@ -815,8 +825,8 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
 
   const donutImg = createInvoiceDonutChartCanvas(catMap, data.invoiceTotal, currency, theme.accent);
   if (donutImg) {
-    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 46);
-    currentY += 49;
+    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 52);
+    currentY += 56;
   }
 
   // Category Summary Table
@@ -1226,8 +1236,8 @@ export async function exportReportPDF(data: ReportExportData): Promise<void> {
 
   const donutImg = createDonutChartCanvas(expenseCategoriesMap, data.totalExpense, currency);
   if (donutImg) {
-    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 46);
-    currentY += 49;
+    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 52);
+    currentY += 56;
   }
 
   const categoryRows = Object.values(expenseCategoriesMap)
@@ -1377,7 +1387,7 @@ export async function exportReportPDF(data: ReportExportData): Promise<void> {
       doc.setFontSize(7.2);
       doc.setTextColor(148, 163, 184);
       doc.text(
-        `Finly Gestão Financeira • Extrato ${data.periodLabel}`,
+        `Finly Gestão Financeira | Extrato ${data.periodLabel}`,
         14,
         pageY
       );

@@ -56,7 +56,16 @@ export const EloIcon: React.FC<{ size?: number | string; radius?: number | strin
   radius = 6,
   className = '',
 }) => (
-  <svg width={size} height={size} viewBox="0 0 54 34" fill="none" className={className}>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 54 34"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    role="img"
+    aria-label="Elo"
+  >
     <rect width="54" height="34" rx={radius} fill="#000000" />
     <circle cx="14" cy="17" r="5" fill="#EF4123" />
     <circle cx="21.5" cy="17" r="5" fill="#FFD400" />
@@ -78,6 +87,7 @@ export const AmazonCardIcon: React.FC<{ size?: number; radius?: number; classNam
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Cartão Amazon"
@@ -88,6 +98,7 @@ export const AmazonCardIcon: React.FC<{ size?: number; radius?: number; classNam
         <stop offset="100%" stopColor="#131921" />
       </linearGradient>
     </defs>
+    <rect width="100" height="100" rx={radius * 2} fill="#131921" />
     <rect width="100" height="100" rx={radius * 2} fill="url(#amazon-hd-bg)" />
     <text
       x="50"
@@ -96,7 +107,7 @@ export const AmazonCardIcon: React.FC<{ size?: number; radius?: number; classNam
       fill="#ffffff"
       fontSize="21"
       fontWeight="900"
-      fontFamily="Arial, sans-serif"
+      fontFamily="Arial, Helvetica, sans-serif"
       letterSpacing="-0.8"
     >
       amazon
@@ -123,6 +134,7 @@ export const BradescardIcon: React.FC<{ size?: number; radius?: number; classNam
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Bradescard"
@@ -166,6 +178,7 @@ export const CasasBahiaCardIcon: React.FC<{ size?: number; radius?: number; clas
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Casas Bahia Card"
@@ -211,6 +224,7 @@ export const AmericanasCardIcon: React.FC<{ size?: number; radius?: number; clas
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Cartão Americanas"
@@ -250,6 +264,7 @@ export const SantanderWayIcon: React.FC<{ size?: number; radius?: number; classN
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Santander Way"
@@ -292,6 +307,7 @@ export const BradescoNeoIcon: React.FC<{ size?: number; radius?: number; classNa
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Bradesco Neo"
@@ -380,6 +396,7 @@ export const CarrefourCardIcon: React.FC<{ size?: number; radius?: number; class
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Cartão Carrefour"
@@ -415,6 +432,7 @@ export const CredicardOnIcon: React.FC<{ size?: number; radius?: number; classNa
     height={size}
     viewBox="0 0 100 100"
     fill="none"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
     role="img"
     aria-label="Credicard On"

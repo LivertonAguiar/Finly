@@ -170,7 +170,7 @@ export const BANK_PDF_THEMES: Record<string, BankPdfTheme> = {
     cardBg: [35, 47, 62],
     cardSecondaryBg: [19, 25, 33],
     defaultBrand: 'Mastercard',
-    pillLabel: 'Amazon • Bradesco (237) - MASTERCARD',
+    pillLabel: 'Amazon | Bradesco (237) - MASTERCARD',
   },
   casasbahia: {
     id: 'casasbahia',
@@ -183,7 +183,7 @@ export const BANK_PDF_THEMES: Record<string, BankPdfTheme> = {
     cardBg: [0, 71, 187],
     cardSecondaryBg: [204, 9, 47],
     defaultBrand: 'Visa',
-    pillLabel: 'Casas Bahia • Bradesco (237) - VISA',
+    pillLabel: 'Casas Bahia | Bradesco (237) - VISA',
   },
   credicard: {
     id: 'credicard',
@@ -196,7 +196,7 @@ export const BANK_PDF_THEMES: Record<string, BankPdfTheme> = {
     cardBg: [2, 132, 199],
     cardSecondaryBg: [0, 43, 73],
     defaultBrand: 'Visa',
-    pillLabel: 'Credicard On • Itaú (341) - VISA',
+    pillLabel: 'Credicard On | Itaú (341) - VISA',
   },
 };
 
