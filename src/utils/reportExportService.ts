@@ -26,732 +26,6 @@ export interface ReportExportData {
   activeChartTitle?: string;
 }
 
-/**
- * Generates an executive Donut Chart for category expenses on a high-DPI canvas
- */
-function createDonutChartCanvas(
-  categoriesMap: Record<string, { name: string; amount: number; count: number }>,
-  totalExpense: number,
-  currency: string
-): string | null {
-  if (typeof document === 'undefined') return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = 880;
-  canvas.height = 540;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-
-  // White Card Background
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Subtle Border
-  ctx.strokeStyle = '#E2E8F0';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-
-  // Card Header
-  ctx.fillStyle = '#1E293B';
-  ctx.font = 'bold 22px Helvetica, Arial, sans-serif';
-  ctx.fillText('DISTRIBUIÇÃO DE DESPESAS', 30, 44);
-
-  const entries = Object.values(categoriesMap).sort((a, b) => b.amount - a.amount);
-  const total = totalExpense > 0 ? totalExpense : entries.reduce((s, e) => s + e.amount, 0);
-
-  if (total <= 0 || entries.length === 0) {
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = '16px Helvetica, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Nenhuma despesa registrada no período', canvas.width / 2, canvas.height / 2);
-    return canvas.toDataURL('image/png');
-  }
-
-  // Top 5 categories + Outras
-  const palette = ['#7C4DFF', '#0099CC', '#10B981', '#FF8A00', '#EC4899', '#6366F1', '#94A3B8'];
-  const topCount = 5;
-  const topItems: { name: string; amount: number; color: string; pct: number }[] = [];
-  let otherAmount = 0;
-
-  entries.forEach((entry, idx) => {
-    if (idx < topCount) {
-      topItems.push({
-        name: entry.name,
-        amount: entry.amount,
-        color: palette[idx % palette.length],
-        pct: (entry.amount / total) * 100,
-      });
-    } else {
-      otherAmount += entry.amount;
-    }
-  });
-
-  if (otherAmount > 0) {
-    topItems.push({
-      name: 'Outras Categorias',
-      amount: otherAmount,
-      color: palette[topCount % palette.length],
-      pct: (otherAmount / total) * 100,
-    });
-  }
-
-  // Draw Donut
-  const cx = 200;
-  const cy = 290;
-  const outerR = 150;
-  const innerR = 92;
-
-  let currentAngle = -Math.PI / 2;
-
-  topItems.forEach(item => {
-    const sliceAngle = (item.amount / total) * (Math.PI * 2);
-    const endAngle = currentAngle + sliceAngle;
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, currentAngle, endAngle, false);
-    ctx.arc(cx, cy, innerR, endAngle, currentAngle, true);
-    ctx.closePath();
-    ctx.fillStyle = item.color;
-    ctx.fill();
-
-    // 2.5px white gap line
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    currentAngle = endAngle;
-  });
-
-  // Donut Center Text
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#64748B';
-  ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
-  ctx.fillText('TOTAL GASTO', cx, cy - 10);
-
-  ctx.fillStyle = '#0F172A';
-  ctx.font = 'bold 19px Helvetica, Arial, sans-serif';
-  ctx.fillText(formatCurrency(total, currency, false), cx, cy + 18);
-
-  // Legend on Right
-  const legendX = 410;
-  let legendY = 95;
-  const rowH = 68;
-
-  ctx.textAlign = 'left';
-  topItems.forEach(item => {
-    // Dot
-    ctx.fillStyle = item.color;
-    ctx.beginPath();
-    ctx.arc(legendX + 8, legendY + 12, 7, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Category Name
-    ctx.fillStyle = '#1E293B';
-    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
-    const cleanName = item.name.length > 20 ? item.name.substring(0, 18) + '...' : item.name;
-    ctx.fillText(cleanName, legendX + 24, legendY + 16);
-
-    // Value
-    ctx.fillStyle = '#475569';
-    ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
-    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 24, legendY + 40);
-
-    // Percentage Pill
-    ctx.fillStyle = '#F1F5F9';
-    const pillW = 68;
-    const pillH = 26;
-    const pillX = canvas.width - pillW - 30;
-    const pillY = legendY + 16;
-    ctx.fillRect(pillX, pillY, pillW, pillH);
-
-    ctx.fillStyle = item.color;
-    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 18);
-
-    ctx.textAlign = 'left';
-    legendY += rowH;
-  });
-
-  return canvas.toDataURL('image/png');
-}
-
-/**
- * Generates an executive Cash Flow Bar Chart on a high-DPI canvas
- */
-function createBarChartCanvas(
-  totalIncome: number,
-  totalExpense: number,
-  netBalance: number,
-  currency: string
-): string | null {
-  if (typeof document === 'undefined') return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = 880;
-  canvas.height = 540;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-
-  // White Card Background
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Subtle Border
-  ctx.strokeStyle = '#E2E8F0';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-
-  // Title
-  ctx.fillStyle = '#1E293B';
-  ctx.font = 'bold 22px Helvetica, Arial, sans-serif';
-  ctx.fillText('BALANÇO FINANCEIRO', 30, 44);
-
-  ctx.fillStyle = '#64748B';
-  ctx.font = '13px Helvetica, Arial, sans-serif';
-  ctx.fillText('Comparativo de Entradas, Saídas e Resultado Líquido', 30, 72);
-
-  const maxVal = Math.max(totalIncome, totalExpense, Math.abs(netBalance), 100);
-  const chartBottom = 420;
-  const chartTop = 120;
-  const chartHeight = chartBottom - chartTop;
-
-  // Grid lines
-  ctx.strokeStyle = '#F1F5F9';
-  ctx.lineWidth = 1.5;
-  for (let i = 0; i <= 4; i++) {
-    const y = chartTop + (chartHeight / 4) * i;
-    ctx.beginPath();
-    ctx.moveTo(30, y);
-    ctx.lineTo(canvas.width - 30, y);
-    ctx.stroke();
-
-    const gridVal = maxVal * (1 - i / 4);
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = '12px Helvetica, Arial, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(formatCurrency(gridVal, currency, false), canvas.width - 35, y - 6);
-  }
-
-  // Baseline
-  ctx.strokeStyle = '#CBD5E1';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(30, chartBottom);
-  ctx.lineTo(canvas.width - 30, chartBottom);
-  ctx.stroke();
-
-  interface BarItem {
-    label: string;
-    amount: number;
-    displayAmount: number;
-    color: string;
-    x: number;
-  }
-
-  // 3 Bars: Receitas, Despesas, Saldo
-  const bars: BarItem[] = [
-    {
-      label: 'Receitas',
-      amount: totalIncome,
-      displayAmount: totalIncome,
-      color: '#10B981',
-      x: 100,
-    },
-    {
-      label: 'Despesas',
-      amount: totalExpense,
-      displayAmount: totalExpense,
-      color: '#E11D48',
-      x: 350,
-    },
-    {
-      label: 'Saldo Líquido',
-      amount: Math.max(0, netBalance),
-      displayAmount: netBalance,
-      color: netBalance >= 0 ? '#7C4DFF' : '#F59E0B',
-      x: 600,
-    },
-  ];
-
-  const barW = 160;
-
-  bars.forEach(b => {
-    const h = (b.amount / maxVal) * chartHeight;
-    const barY = chartBottom - h;
-
-    // Draw Bar
-    ctx.fillStyle = b.color;
-    ctx.fillRect(b.x, barY, barW, h);
-
-    // Value label on top of bar
-    ctx.fillStyle = b.color;
-    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    const valStr = formatCurrency(b.displayAmount, currency, false);
-    ctx.fillText(valStr, b.x + barW / 2, Math.max(barY - 12, chartTop - 8));
-
-    // Label below bar
-    ctx.fillStyle = '#334155';
-    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
-    ctx.fillText(b.label, b.x + barW / 2, chartBottom + 35);
-
-    // Percentage of income (for expense and balance)
-    if (totalIncome > 0 && b.label !== 'Receitas') {
-      const pct = (b.displayAmount / totalIncome) * 100;
-      ctx.fillStyle = '#64748B';
-      ctx.font = '13px Helvetica, Arial, sans-serif';
-      ctx.fillText(`${pct.toFixed(1)}% das receitas`, b.x + barW / 2, chartBottom + 58);
-    }
-  });
-
-  return canvas.toDataURL('image/png');
-}
-
-/**
- * Generates and downloads an Executive PDF Financial Report with Charts & Tables
- */
-export async function exportReportPDF(data: ReportExportData): Promise<void> {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
-
-  const currency = data.currency || 'BRL';
-  const now = new Date();
-  const generationDateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
-
-  // Calculate savings rate
-  const savingsRate = data.totalIncome > 0
-    ? ((data.netBalance / data.totalIncome) * 100).toFixed(1)
-    : '0.0';
-
-  // --- HEADER BRANDING BANNER ---
-  doc.setFillColor(30, 27, 75); // Indigo 950
-  doc.rect(0, 0, 210, 38, 'F');
-
-  // Accent Line
-  doc.setFillColor(147, 51, 234); // Purple 600
-  doc.rect(0, 36, 210, 2, 'F');
-
-  // Title & Subtitle
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('FINLY', 14, 16);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(196, 181, 253); // Purple 200
-  doc.text('Relatório Executivo de Inteligência Financeira', 14, 23);
-
-  // Period Badge
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(255, 255, 255);
-  doc.text(`Período: ${data.periodLabel}`, 14, 31);
-
-  // Metadata right-aligned
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(203, 213, 225);
-  doc.text(`Gerado em: ${generationDateStr}`, 196, 15, { align: 'right' });
-  doc.text(`Regime: ${regimeLabel}`, 196, 20, { align: 'right' });
-  if (data.userEmail) {
-    doc.text(`Usuário: ${data.userEmail}`, 196, 25, { align: 'right' });
-  }
-
-  let currentY = 46;
-
-  // --- 1. EXECUTIVE SUMMARY CARDS ---
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('1. Resumo Executivo do Período', 14, currentY);
-  currentY += 5;
-
-  const cardWidth = 43;
-  const cardHeight = 22;
-  const cardGap = 5;
-  const startX = 14;
-
-  const summaryCards = [
-    {
-      title: 'RECEITAS TOTAIS',
-      value: formatCurrency(data.totalIncome, currency, false),
-      color: [16, 185, 129], // Emerald
-      bgColor: [236, 253, 245],
-    },
-    {
-      title: 'DESPESAS TOTAIS',
-      value: formatCurrency(data.totalExpense, currency, false),
-      color: [225, 29, 72], // Rose
-      bgColor: [255, 241, 242],
-    },
-    {
-      title: 'SALDO LÍQUIDO',
-      value: formatCurrency(data.netBalance, currency, false),
-      color: data.netBalance >= 0 ? [16, 185, 129] : [225, 29, 72],
-      bgColor: data.netBalance >= 0 ? [240, 253, 244] : [254, 242, 242],
-    },
-    {
-      title: 'TAXA DE ECONOMIA',
-      value: `${savingsRate}%`,
-      color: Number(savingsRate) >= 0 ? [124, 58, 237] : [225, 29, 72],
-      bgColor: [245, 243, 255],
-    },
-  ];
-
-  summaryCards.forEach((c, idx) => {
-    const x = startX + idx * (cardWidth + cardGap);
-    // Card background
-    doc.setFillColor(c.bgColor[0], c.bgColor[1], c.bgColor[2]);
-    doc.roundedRect(x, currentY, cardWidth, cardHeight, 2, 2, 'F');
-    // Border
-    doc.setDrawColor(c.color[0], c.color[1], c.color[2]);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(x, currentY, cardWidth, cardHeight, 2, 2, 'S');
-
-    // Title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 116, 139);
-    doc.text(c.title, x + 3, currentY + 7);
-
-    // Value
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(c.color[0], c.color[1], c.color[2]);
-    doc.text(c.value, x + 3, currentY + 16);
-  });
-
-  currentY += cardHeight + 8;
-
-  // Aggregate expenses by category for charts & tables
-  const expenseCategoriesMap: Record<string, { name: string; amount: number; count: number }> = {};
-  data.transactions
-    .filter(t => t.type === 'expense')
-    .forEach(t => {
-      const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
-      const catName = resolved.name;
-      if (!expenseCategoriesMap[catName]) {
-        expenseCategoriesMap[catName] = { name: catName, amount: 0, count: 0 };
-      }
-      expenseCategoriesMap[catName].amount += t.amount;
-      expenseCategoriesMap[catName].count += 1;
-    });
-
-  const categoryRows = Object.values(expenseCategoriesMap)
-    .sort((a, b) => b.amount - a.amount)
-    .map(c => {
-      const pct = data.totalExpense > 0 ? ((c.amount / data.totalExpense) * 100).toFixed(1) : '0.0';
-      return [
-        c.name,
-        String(c.count),
-        formatCurrency(c.amount, currency, false),
-        `${pct}%`,
-      ];
-    });
-
-  if (categoryRows.length === 0) {
-    categoryRows.push(['Nenhuma despesa registrada no período', '0', formatCurrency(0, currency, false), '0%']);
-  }
-
-  // --- 2. SECTION: VISUAL CHARTS & ANALYTICS ---
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('2. Panorama Visual e Gráficos Analíticos', 14, currentY);
-  currentY += 4;
-
-  // Generate Programmatic Donut & Bar Charts
-  const donutChartDataUrl = createDonutChartCanvas(expenseCategoriesMap, data.totalExpense, currency);
-  const barChartDataUrl = createBarChartCanvas(data.totalIncome, data.totalExpense, data.netBalance, currency);
-
-  const chartCardWidth = 88;
-  const chartCardHeight = 55;
-
-  if (donutChartDataUrl && barChartDataUrl) {
-    // 1. Donut Chart on Left (X: 14)
-    doc.addImage(donutChartDataUrl, 'PNG', 14, currentY, chartCardWidth, chartCardHeight);
-    // 2. Bar Chart on Right (X: 108)
-    doc.addImage(barChartDataUrl, 'PNG', 108, currentY, chartCardWidth, chartCardHeight);
-    currentY += chartCardHeight + 8;
-  }
-
-  // If activeChartImage is provided from screen capture, embed it as featured visual
-  if (data.activeChartImage) {
-    if (currentY > 195) {
-      doc.addPage();
-      currentY = 20;
-    }
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(30, 41, 59);
-    doc.text(`2.1 Visualização da Análise: ${data.activeChartTitle || 'Gráfico Interativo'}`, 14, currentY);
-    currentY += 4;
-
-    const activeChartW = 182;
-    const activeChartH = 75;
-
-    // Card Frame
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(14, currentY, activeChartW, activeChartH, 2, 2, 'F');
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(14, currentY, activeChartW, activeChartH, 2, 2, 'S');
-
-    doc.addImage(data.activeChartImage, 'PNG', 15, currentY + 1, activeChartW - 2, activeChartH - 2);
-    currentY += activeChartH + 8;
-  }
-
-  // --- 3. SECTION: CATEGORY BREAKDOWN TABLE ---
-  if (currentY > 210) {
-    doc.addPage();
-    currentY = 20;
-  }
-
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('3. Despesas por Categoria', 14, currentY);
-  currentY += 3;
-
-  autoTable(doc, {
-    startY: currentY,
-    head: [['Categoria', 'Qtd. Lançamentos', 'Total Gasto', '% do Total']],
-    body: categoryRows,
-    theme: 'striped',
-    headStyles: {
-      fillColor: [109, 40, 217], // Purple 700
-      textColor: 255,
-      fontSize: 8,
-      fontStyle: 'bold',
-    },
-    styles: {
-      fontSize: 8,
-      cellPadding: 2.5,
-    },
-    columnStyles: {
-      0: { cellWidth: 70 },
-      1: { halign: 'center', cellWidth: 30 },
-      2: { halign: 'right', cellWidth: 42 },
-      3: { halign: 'right', cellWidth: 40 },
-    },
-    margin: { left: 14, right: 14 },
-    didDrawCell: (hookData) => {
-      if (hookData.section === 'body' && hookData.column.index === 3) {
-        const raw = hookData.cell.raw as string;
-        const pct = parseFloat(raw.replace('%', '')) || 0;
-        const barX = hookData.cell.x + 3;
-        const barY = hookData.cell.y + hookData.cell.height - 3;
-        const maxW = hookData.cell.width - 6;
-        const fillW = Math.max(0, Math.min(maxW, (pct / 100) * maxW));
-
-        // Background progress rail
-        doc.setFillColor(226, 232, 240); // Slate 200
-        doc.roundedRect(barX, barY, maxW, 1.6, 0.8, 0.8, 'F');
-        // Filled bar
-        if (fillW > 0) {
-          doc.setFillColor(124, 58, 237); // Purple 600
-          doc.roundedRect(barX, barY, fillW, 1.6, 0.8, 0.8, 'F');
-        }
-      }
-    },
-  });
-
-  // --- 4. SECTION: DETAILED STATEMENT TABLE ---
-  // @ts-ignore
-  currentY = doc.lastAutoTable.finalY + 10;
-
-  // If close to page bottom, add page
-  if (currentY > 230) {
-    doc.addPage();
-    currentY = 20;
-  }
-
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('4. Demonstrativo Detalhado de Lançamentos', 14, currentY);
-  currentY += 3;
-
-  const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
-  const txRows = sortedTxs.map(t => {
-    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, t.type);
-    let paymentMethod = 'Carteira';
-    if (t.cardId) {
-      const card = data.cards.find(c => c.id === t.cardId);
-      paymentMethod = card ? `Cartão ${card.name}` : 'Cartão';
-    } else if (t.accountId) {
-      const acc = data.accounts.find(a => a.id === t.accountId);
-      paymentMethod = acc ? acc.name : 'Conta';
-    }
-
-    const typePrefix = t.type === 'expense' ? '- ' : '+ ';
-    const typeColor = t.type === 'expense' ? 'Despesa' : 'Receita';
-
-    return [
-      formatDate(t.date),
-      t.description || 'Sem descrição',
-      resolved.name,
-      paymentMethod,
-      typeColor,
-      typePrefix + formatCurrency(t.amount, currency, false),
-    ];
-  });
-
-  if (txRows.length === 0) {
-    txRows.push(['-', 'Nenhum lançamento encontrado', '-', '-', '-', '-']);
-  }
-
-  autoTable(doc, {
-    startY: currentY,
-    head: [['Data', 'Descrição', 'Categoria', 'Conta / Cartão', 'Tipo', 'Valor']],
-    body: txRows,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [30, 41, 59], // Slate 800
-      textColor: 255,
-      fontSize: 8,
-      fontStyle: 'bold',
-    },
-    styles: {
-      fontSize: 7.5,
-      cellPadding: 2,
-    },
-    columnStyles: {
-      0: { cellWidth: 20 },
-      1: { cellWidth: 55 },
-      2: { cellWidth: 35 },
-      3: { cellWidth: 32 },
-      4: { halign: 'center', cellWidth: 18 },
-      5: { halign: 'right', cellWidth: 22 },
-    },
-    margin: { left: 14, right: 14 },
-    didDrawPage: (dataHook) => {
-      // Add page number to footer
-      const pageCount = doc.getNumberOfPages();
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184); // Slate 400
-      doc.text(
-        `Finly Gestão Financeira • ${data.periodLabel} • Página ${dataHook.pageNumber} de ${pageCount}`,
-        105,
-        290,
-        { align: 'center' }
-      );
-    },
-  });
-
-  // Save / Share PDF (Mobile native, mobile web, or desktop)
-  const filename = `relatorio_finly_${data.periodSlug}.pdf`;
-  const blob = doc.output('blob');
-  await saveOrShareFile({
-    filename,
-    blob,
-    mimeType: 'application/pdf',
-    dialogTitle: 'Relatório Executivo Finly (PDF)',
-  });
-}
-
-/**
- * Generates and downloads a CSV Report with Summary and Transactions
- */
-export async function exportReportCSV(data: ReportExportData): Promise<void> {
-  const currency = data.currency || 'BRL';
-  const now = new Date();
-  const generationDateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
-
-  const lines: string[] = [];
-
-  // Section 1: Metadata
-  lines.push('FINLY - RELATÓRIO FINANCEIRO');
-  lines.push(`Período de Referência;${data.periodLabel}`);
-  lines.push(`Regime de Apuração;${regimeLabel}`);
-  lines.push(`Gerado em;${generationDateStr}`);
-  if (data.userEmail) lines.push(`Usuário;${data.userEmail}`);
-  lines.push('');
-
-  // Section 2: Executive Summary
-  lines.push('RESUMO EXECUTIVO');
-  lines.push(`Receitas Totais;${data.totalIncome.toFixed(2).replace('.', ',')}`);
-  lines.push(`Despesas Totais;${data.totalExpense.toFixed(2).replace('.', ',')}`);
-  lines.push(`Saldo Líquido;${data.netBalance.toFixed(2).replace('.', ',')}`);
-  const savingsPct = data.totalIncome > 0 ? ((data.netBalance / data.totalIncome) * 100).toFixed(1) : '0,0';
-  lines.push(`Taxa de Poupança;${savingsPct}%`);
-  lines.push('');
-
-  // Section 3: Categories
-  lines.push('DESPESAS POR CATEGORIA');
-  lines.push('Categoria;Qtd. Lançamentos;Total (R$);% do Total');
-
-  const expenseCategoriesMap: Record<string, { name: string; amount: number; count: number }> = {};
-  data.transactions
-    .filter(t => t.type === 'expense')
-    .forEach(t => {
-      const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
-      const catName = resolved.name;
-      if (!expenseCategoriesMap[catName]) {
-        expenseCategoriesMap[catName] = { name: catName, amount: 0, count: 0 };
-      }
-      expenseCategoriesMap[catName].amount += t.amount;
-      expenseCategoriesMap[catName].count += 1;
-    });
-
-  Object.values(expenseCategoriesMap)
-    .sort((a, b) => b.amount - a.amount)
-    .forEach(c => {
-      const pct = data.totalExpense > 0 ? ((c.amount / data.totalExpense) * 100).toFixed(1).replace('.', ',') : '0,0';
-      lines.push(`"${c.name}";${c.count};${c.amount.toFixed(2).replace('.', ',')};${pct}%`);
-    });
-
-  lines.push('');
-
-  // Section 4: Transaction Statement
-  lines.push('DEMONSTRATIVO DETALHADO DE LANÇAMENTOS');
-  lines.push('Data;Descrição;Categoria;Conta ou Cartão;Tipo;Status;Valor (R$)');
-
-  const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
-  sortedTxs.forEach(t => {
-    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, t.type);
-    let paymentMethod = 'Carteira';
-    if (t.cardId) {
-      const card = data.cards.find(c => c.id === t.cardId);
-      paymentMethod = card ? `Cartão ${card.name}` : 'Cartão';
-    } else if (t.accountId) {
-      const acc = data.accounts.find(a => a.id === t.accountId);
-      paymentMethod = acc ? acc.name : 'Conta';
-    }
-
-    const typeStr = t.type === 'expense' ? 'Despesa' : 'Receita';
-    const valFormatted = (t.type === 'expense' ? -t.amount : t.amount).toFixed(2).replace('.', ',');
-
-    lines.push(
-      `"${formatDate(t.date)}";"${(t.description || '').replace(/"/g, '""')}";"${resolved.name}";"${paymentMethod}";"${typeStr}";"${t.status}";${valFormatted}`
-    );
-  });
-
-  // UTF-8 BOM (\uFEFF) ensures Excel opens with special characters correctly formatted
-  await downloadCSV(`relatorio_finly_${data.periodSlug}.csv`, lines.join('\n'), 'Relatório Finly (CSV)');
-}
-
-/**
- * Triggers a universal file download or share using a UTF-8 BOM Blob.
- * Compatible with native Android/iOS (Capacitor), mobile web browsers, and desktop.
- */
-export async function downloadCSV(filename: string, content: string, dialogTitle?: string): Promise<void> {
-  const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
-  await saveOrShareFile({
-    filename,
-    blob,
-    mimeType: 'text/csv;charset=utf-8;',
-    dialogTitle: dialogTitle || `Exportar ${filename}`,
-  });
-}
-
 export interface InvoiceExportData {
   card: CreditCard;
   monthLabel: string;
@@ -769,121 +43,26 @@ export interface InvoiceExportData {
   paymentAmount?: number;
 }
 
-/**
- * Generates and downloads a detailed CSV of a Credit Card Invoice statement
- */
-export async function exportInvoiceCSV(data: InvoiceExportData): Promise<void> {
-  const now = new Date();
-  const generationDateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+import {
+  type BankPdfTheme,
+  BANK_PDF_THEMES,
+  resolveBankPdfTheme,
+  hexToRgb,
+  darkenRgb,
+} from './bankPdfThemes';
 
-  const lines: string[] = [];
-
-  // Section 1: Header Metadata
-  lines.push('FINLY - DETALHAMENTO DA FATURA DE CARTÃO DE CRÉDITO');
-  lines.push(`Cartão;${data.card.name}`);
-  lines.push(`Bandeira;${data.card.brand}`);
-  lines.push(`Período da Fatura;${data.monthLabel}`);
-  lines.push(`Fechamento da Fatura;Todo dia ${data.card.closingDay}`);
-  lines.push(`Vencimento da Fatura;Todo dia ${data.card.dueDay}`);
-  lines.push(`Limite Total;${data.card.limit.toFixed(2).replace('.', ',')}`);
-  lines.push(`Total da Fatura;${data.invoiceTotal.toFixed(2).replace('.', ',')}`);
-  lines.push(`Status da Fatura;${data.statusLabel}`);
-  lines.push(`Gerado em;${generationDateStr}`);
-  if (data.userEmail) lines.push(`Usuário;${data.userEmail}`);
-  lines.push('');
-
-  // Section 2: Category Breakdown
-  lines.push('GASTOS POR CATEGORIA NESTA FATURA');
-  lines.push('Categoria;Qtd. Lançamentos;Total (R$);% da Fatura');
-
-  const catMap: Record<string, { name: string; amount: number; count: number }> = {};
-  data.transactions.forEach(t => {
-    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
-    const name = resolved.name;
-    if (!catMap[name]) {
-      catMap[name] = { name, amount: 0, count: 0 };
-    }
-    catMap[name].amount += t.amount;
-    catMap[name].count += 1;
-  });
-
-  Object.values(catMap)
-    .sort((a, b) => b.amount - a.amount)
-    .forEach(c => {
-      const pct = data.invoiceTotal > 0 ? ((c.amount / data.invoiceTotal) * 100).toFixed(1).replace('.', ',') : '0,0';
-      lines.push(`"${c.name}";${c.count};${c.amount.toFixed(2).replace('.', ',')};${pct}%`);
-    });
-
-  lines.push('');
-
-  // Section 3: Itemized Transactions Statement
-  lines.push('LANÇAMENTOS DA FATURA');
-  lines.push('Data da Compra;Descrição;Categoria;Parcela;Terceiro;Status;Valor (R$)');
-
-  const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
-  sortedTxs.forEach(t => {
-    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
-    const parcelas = t.installments ? `${t.installments.current}/${t.installments.total}` : 'À vista';
-    const terceiro = t.isThirdParty ? `${t.thirdPartyName || 'Terceiro'}${t.reimbursed ? ' (Reembolsado)' : ''}` : '-';
-    const statusStr = t.status === 'completed' ? 'Paga' : 'Aberta';
-    const valorStr = t.amount.toFixed(2).replace('.', ',');
-
-    lines.push(
-      `"${formatDate(t.date)}";"${(t.description || '').replace(/"/g, '""')}";"${resolved.name}";"${parcelas}";"${terceiro}";"${statusStr}";${valorStr}`
-    );
-  });
-
-  if (sortedTxs.length === 0) {
-    lines.push('"-";"Nenhum lançamento nesta fatura";"-";"-";"-";"-";"0,00"');
-  }
-
-  await downloadCSV(`fatura_${data.periodSlug}.csv`, lines.join('\n'), `Fatura ${data.card.name} (CSV)`);
-}
-
-/**
- * Converts a hex color string (#RRGGBB or #RGB) to an [R, G, B] tuple
- */
-function hexToRgb(hex?: string): [number, number, number] {
-  if (!hex) return [130, 10, 209];
-  const clean = hex.replace('#', '').trim();
-  if (clean.length === 3) {
-    const r = parseInt(clean[0] + clean[0], 16);
-    const g = parseInt(clean[1] + clean[1], 16);
-    const b = parseInt(clean[2] + clean[2], 16);
-    return [isNaN(r) ? 130 : r, isNaN(g) ? 10 : g, isNaN(b) ? 209 : b];
-  }
-  if (clean.length >= 6) {
-    const r = parseInt(clean.substring(0, 2), 16);
-    const g = parseInt(clean.substring(2, 4), 16);
-    const b = parseInt(clean.substring(4, 6), 16);
-    return [isNaN(r) ? 130 : r, isNaN(g) ? 10 : g, isNaN(b) ? 209 : b];
-  }
-  return [130, 10, 209];
-}
-
-/**
- * Creates a deeper shade of an RGB color for rich header backgrounds
- */
-function darkenRgb([r, g, b]: [number, number, number], factor = 0.32): [number, number, number] {
-  return [
-    Math.max(0, Math.min(255, Math.round(r * factor))),
-    Math.max(0, Math.min(255, Math.round(g * factor))),
-    Math.max(0, Math.min(255, Math.round(b * factor))),
-  ];
-}
-
-/**
- * Determines whether text over this background color should be white or dark slate
- */
-function getContrastTextColor([r, g, b]: [number, number, number]): [number, number, number] {
-  const luminance = (r * 299 + g * 587 + b * 114) / 1000;
-  return luminance >= 160 ? [15, 23, 42] : [255, 255, 255];
-}
+export type { BankPdfTheme };
+export {
+  BANK_PDF_THEMES,
+  resolveBankPdfTheme,
+  hexToRgb,
+  darkenRgb,
+};
 
 /**
  * Rasterizes an SVG markup string into a high-resolution PNG data URL for jsPDF embedding
  */
-async function rasterizeSvgToPng(svgString: string, width = 160, height = 160): Promise<string | null> {
+export async function rasterizeSvgToPng(svgString: string, width = 160, height = 160): Promise<string | null> {
   if (typeof document === 'undefined') return null;
   return new Promise((resolve) => {
     try {
@@ -924,7 +103,217 @@ async function rasterizeSvgToPng(svgString: string, width = 160, height = 160): 
 }
 
 /**
- * Generates an executive Donut Chart canvas for invoice category distribution with natural uncompressed proportions
+ * Draws the official Finly header logo and branding symbol
+ */
+function drawFinlyHeaderLogo(doc: jsPDF, x: number, y: number, subtitle: string) {
+  // Blue circular badge with Finly symbol
+  doc.setFillColor(2, 132, 199); // Sky 600
+  doc.circle(x + 4, y + 4, 4, 'F');
+  doc.setFillColor(56, 189, 248); // Sky 400
+  doc.circle(x + 4, y + 4, 2.5, 'F');
+
+  // Piggy ear & coin notch
+  doc.setFillColor(255, 255, 255);
+  doc.circle(x + 3.4, y + 3.2, 0.8, 'F');
+
+  // FINLY title text
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FINLY', x + 10.5, y + 5.5);
+
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.2);
+  doc.setTextColor(203, 213, 225); // Slate 300
+  doc.text(`•  ${subtitle}`, x + 27.5, y + 5.5);
+}
+
+/**
+ * Draws a realistic, high-end credit card mockup on the top-right of the header
+ */
+function drawRealisticCreditCardMockup(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  theme: BankPdfTheme,
+  card: CreditCard,
+  bankLogoPng: string | null,
+  brandLogoPng: string | null
+) {
+  const cardBg = theme.cardBg;
+  const brandName = (card.brand || theme.defaultBrand || 'Mastercard').toLowerCase();
+
+  // Drop shadow hint
+  doc.setFillColor(0, 0, 0);
+  doc.roundedRect(x + 0.6, y + 0.8, w, h, 2.5, 2.5, 'F');
+
+  // Card Body
+  doc.setFillColor(cardBg[0], cardBg[1], cardBg[2]);
+  doc.roundedRect(x, y, w, h, 2.5, 2.5, 'F');
+
+  // Subtle specular highlight diagonal stroke across card
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(x, y, w, h, 2.5, 2.5, 'S');
+
+  // Top Left: Metallic EMV Chip
+  const chipX = x + 4;
+  const chipY = y + 7.5;
+  const chipW = 6.2;
+  const chipH = 4.6;
+
+  doc.setFillColor(232, 220, 184); // Champagne gold
+  doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'F');
+  doc.setDrawColor(180, 155, 110);
+  doc.setLineWidth(0.15);
+  doc.roundedRect(chipX, chipY, chipW, chipH, 0.8, 0.8, 'S');
+  // Chip circuit contact lines
+  doc.line(chipX, chipY + 2.3, chipX + chipW, chipY + 2.3);
+  doc.line(chipX + 2.4, chipY, chipX + 2.4, chipY + chipH);
+  doc.line(chipX + 4.2, chipY, chipX + 4.2, chipY + chipH);
+
+  // Contactless waves beside chip
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.25);
+  const nfcX = chipX + chipW + 2.4;
+  const nfcY = chipY + 2.3;
+  // 3 subtle wave arcs
+  doc.line(nfcX, nfcY - 1.6, nfcX + 0.8, nfcY);
+  doc.line(nfcX + 0.8, nfcY, nfcX, nfcY + 1.6);
+
+  doc.line(nfcX + 1.2, nfcY - 2.2, nfcX + 2.2, nfcY);
+  doc.line(nfcX + 2.2, nfcY, nfcX + 1.2, nfcY + 2.2);
+
+  // Top Right: Institution wordmark / logo in white
+  if (bankLogoPng) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x + w - 12.5, y + 3.2, 9, 6.5, 1.2, 1.2, 'F');
+    doc.addImage(bankLogoPng, 'PNG', x + w - 12, y + 3.6, 8, 5.7);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
+    const displayBankName = theme.name.toLowerCase();
+    doc.text(displayBankName, x + w - 3.5, y + 7.5, { align: 'right' });
+  }
+
+  // Bottom Right: Official Brand Logo
+  if (brandLogoPng) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x + w - 13.5, y + h - 9, 10.5, 6.8, 1.2, 1.2, 'F');
+    doc.addImage(brandLogoPng, 'PNG', x + w - 13, y + h - 8.5, 9.5, 5.8);
+  } else if (brandName.includes('master')) {
+    // Exact vector Mastercard overlapping dual circles
+    const mcCenterY = y + h - 6;
+    const mcRadius = 2.7;
+    const mcLeftX = x + w - 9.5;
+    const mcRightX = mcLeftX + 3.2;
+
+    // Left Red Circle
+    doc.setFillColor(235, 0, 27); // Mastercard Red
+    doc.circle(mcLeftX, mcCenterY, mcRadius, 'F');
+
+    // Right Yellow Circle
+    doc.setFillColor(247, 158, 27); // Mastercard Yellow
+    doc.circle(mcRightX, mcCenterY, mcRadius, 'F');
+
+    // Overlapping intersection
+    doc.setFillColor(255, 95, 0); // Orange intersection
+    doc.ellipse((mcLeftX + mcRightX) / 2, mcCenterY, 1.1, mcRadius - 0.3, 'F');
+  } else if (brandName.includes('visa')) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('VISA', x + w - 4, y + h - 4.5, { align: 'right' });
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text(card.brand || 'CARD', x + w - 4, y + h - 4.5, { align: 'right' });
+  }
+
+  // Bottom Left: Masked card digits
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(6.2);
+  doc.setTextColor(255, 255, 255);
+  const cleanLast4 = card.last4Digits ? card.last4Digits.trim() : '';
+  const digitsDisplay = cleanLast4 ? `•••• ${cleanLast4}` : `•••• ••••`;
+  doc.text(digitsDisplay, x + 4, y + h - 4.8);
+}
+
+/**
+ * Draws the smooth Executive Header Gradient Banner across the top
+ */
+function drawHeaderBanner(doc: jsPDF, startRgb: [number, number, number], endRgb: [number, number, number], height = 44) {
+  const steps = 42;
+  const stepWidth = 210 / steps;
+
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1);
+    const r = Math.round(startRgb[0] + (endRgb[0] - startRgb[0]) * t);
+    const g = Math.round(startRgb[1] + (endRgb[1] - startRgb[1]) * t);
+    const b = Math.round(startRgb[2] + (endRgb[2] - startRgb[2]) * t);
+
+    doc.setFillColor(r, g, b);
+    doc.rect(i * stepWidth, 0, stepWidth + 0.3, height, 'F');
+  }
+}
+
+/**
+ * Draws the modern institution identification pill badge
+ */
+function drawInstitutionPill(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  labelText: string,
+  accentRgb: [number, number, number],
+  bankLogoPng: string | null,
+  brandLogoPng: string | null
+): number {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  const textWidth = doc.getTextWidth(labelText);
+  const pillW = textWidth + (bankLogoPng ? 14 : 9) + (brandLogoPng ? 12 : 5);
+  const pillH = 6.2;
+
+  // White / Light Slate pill background
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(x, y, pillW, pillH, 1.8, 1.8, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.25);
+  doc.roundedRect(x, y, pillW, pillH, 1.8, 1.8, 'S');
+
+  let curX = x + 2.5;
+
+  // Mini emblem icon on left
+  if (bankLogoPng) {
+    doc.addImage(bankLogoPng, 'PNG', curX, y + 1, 4.2, 4.2);
+    curX += 5.5;
+  } else {
+    doc.setFillColor(accentRgb[0], accentRgb[1], accentRgb[2]);
+    doc.roundedRect(curX, y + 1.2, 3.8, 3.8, 0.8, 0.8, 'F');
+    curX += 5;
+  }
+
+  // Text
+  doc.setTextColor(30, 41, 59);
+  doc.text(labelText, curX, y + 4.4);
+  curX += textWidth + 3;
+
+  // Mini Brand Logo on right if available
+  if (brandLogoPng) {
+    doc.addImage(brandLogoPng, 'PNG', curX, y + 1.2, 6.5, 3.8);
+  }
+
+  return pillW;
+}
+
+/**
+ * Generates an executive Donut Chart canvas for invoice category distribution
  */
 function createInvoiceDonutChartCanvas(
   categoriesMap: Record<string, { name: string; amount: number; count: number }>,
@@ -934,8 +323,8 @@ function createInvoiceDonutChartCanvas(
 ): string | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
-  canvas.width = 900;
-  canvas.height = 420;
+  canvas.width = 880;
+  canvas.height = 360;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
@@ -945,7 +334,7 @@ function createInvoiceDonutChartCanvas(
 
   // Subtle Border
   ctx.strokeStyle = '#E2E8F0';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
 
   const entries = Object.values(categoriesMap).sort((a, b) => b.amount - a.amount);
@@ -959,16 +348,16 @@ function createInvoiceDonutChartCanvas(
     return canvas.toDataURL('image/png');
   }
 
-  // Palette centered around the bank's primary color
+  // Rich harmonized executive palette
   const palette = [
     primaryHex,
-    '#6366F1',
-    '#0EA5E9',
-    '#10B981',
-    '#F59E0B',
-    '#EC4899',
-    '#8B5CF6',
-    '#64748B',
+    '#6366F1', // Indigo
+    '#0EA5E9', // Sky
+    '#10B981', // Emerald
+    '#F59E0B', // Amber
+    '#EC4899', // Pink
+    '#8B5CF6', // Violet
+    '#64748B', // Slate
   ];
 
   const topCount = 5;
@@ -997,11 +386,11 @@ function createInvoiceDonutChartCanvas(
     });
   }
 
-  // Draw Donut on the left with natural proportions
-  const cx = 175;
-  const cy = 210;
-  const outerR = 135;
-  const innerR = 85;
+  // Draw Donut on the left
+  const cx = 160;
+  const cy = 180;
+  const outerR = 120;
+  const innerR = 75;
   let currentAngle = -Math.PI / 2;
 
   topItems.forEach(item => {
@@ -1025,7 +414,7 @@ function createInvoiceDonutChartCanvas(
   // Donut Center Text
   ctx.textAlign = 'center';
   ctx.fillStyle = '#64748B';
-  ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
+  ctx.font = 'bold 12px Helvetica, Arial, sans-serif';
   ctx.fillText('TOTAL FATURA', cx, cy - 8);
 
   ctx.fillStyle = '#0F172A';
@@ -1033,35 +422,35 @@ function createInvoiceDonutChartCanvas(
   ctx.fillText(formatCurrency(total, currency, false), cx, cy + 18);
 
   // Legend on Right
-  const legendX = 360;
-  let legendY = 32;
-  const rowH = 56;
+  const legendX = 330;
+  let legendY = 28;
+  const rowH = 50;
 
   ctx.textAlign = 'left';
   topItems.forEach(item => {
     // Color Dot
     ctx.fillStyle = item.color;
     ctx.beginPath();
-    ctx.arc(legendX + 8, legendY + 12, 8, 0, Math.PI * 2);
+    ctx.arc(legendX + 8, legendY + 12, 6.5, 0, Math.PI * 2);
     ctx.fill();
 
     // Category Name
     ctx.fillStyle = '#1E293B';
-    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
-    const cleanName = item.name.length > 24 ? item.name.substring(0, 22) + '...' : item.name;
-    ctx.fillText(cleanName, legendX + 26, legendY + 16);
+    ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
+    const cleanName = item.name.length > 22 ? item.name.substring(0, 20) + '...' : item.name;
+    ctx.fillText(cleanName, legendX + 24, legendY + 16);
 
     // Value
     ctx.fillStyle = '#475569';
-    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
-    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 26, legendY + 36);
+    ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
+    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 24, legendY + 34);
 
     // Progress bar
-    const barX = legendX + 230;
-    const maxBarW = 200;
+    const barX = legendX + 220;
+    const maxBarW = 210;
     const barY = legendY + 9;
-    const barH = 8;
-    const fillW = Math.max(4, (item.pct / 100) * maxBarW);
+    const barH = 7;
+    const fillW = Math.max(3, (item.pct / 100) * maxBarW);
 
     ctx.fillStyle = '#F1F5F9';
     ctx.fillRect(barX, barY, maxBarW, barH);
@@ -1069,9 +458,9 @@ function createInvoiceDonutChartCanvas(
     ctx.fillRect(barX, barY, fillW, barH);
 
     // Percentage Pill
-    const pillW = 66;
-    const pillH = 26;
-    const pillX = canvas.width - pillW - 25;
+    const pillW = 62;
+    const pillH = 24;
+    const pillX = canvas.width - pillW - 20;
     const pillY = legendY + 3;
 
     ctx.fillStyle = '#F8FAFC';
@@ -1081,12 +470,107 @@ function createInvoiceDonutChartCanvas(
     ctx.strokeRect(pillX, pillY, pillW, pillH);
 
     ctx.fillStyle = item.color;
-    ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
+    ctx.font = 'bold 12.5px Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 17);
+    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 16);
 
     ctx.textAlign = 'left';
     legendY += rowH;
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
+/**
+ * Generates an executive Donut Chart canvas for general reports/extratos
+ */
+function createDonutChartCanvas(
+  categoriesMap: Record<string, { name: string; amount: number; count: number }>,
+  totalExpense: number,
+  currency: string
+): string | null {
+  return createInvoiceDonutChartCanvas(categoriesMap, totalExpense, currency, '#7C3AED');
+}
+
+/**
+ * Generates an executive Cash Flow Bar Chart on a high-DPI canvas
+ */
+function createBarChartCanvas(
+  totalIncome: number,
+  totalExpense: number,
+  netBalance: number,
+  currency: string
+): string | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 880;
+  canvas.height = 420;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = '#E2E8F0';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+  ctx.fillStyle = '#1E293B';
+  ctx.font = 'bold 18px Helvetica, Arial, sans-serif';
+  ctx.fillText('BALANÇO FINANCEIRO', 26, 36);
+
+  const maxVal = Math.max(totalIncome, totalExpense, Math.abs(netBalance), 100);
+  const chartBottom = 330;
+  const chartTop = 80;
+  const chartHeight = chartBottom - chartTop;
+
+  // Grid lines
+  ctx.strokeStyle = '#F1F5F9';
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i <= 4; i++) {
+    const y = chartTop + (chartHeight / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(26, y);
+    ctx.lineTo(canvas.width - 26, y);
+    ctx.stroke();
+
+    const gridVal = maxVal * (1 - i / 4);
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '11px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(formatCurrency(gridVal, currency, false), canvas.width - 30, y - 5);
+  }
+
+  // Baseline
+  ctx.strokeStyle = '#CBD5E1';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(26, chartBottom);
+  ctx.lineTo(canvas.width - 26, chartBottom);
+  ctx.stroke();
+
+  const bars = [
+    { label: 'Receitas', amount: totalIncome, color: '#10B981', x: 80 },
+    { label: 'Despesas', amount: totalExpense, color: '#E11D48', x: 330 },
+    { label: 'Saldo Líquido', amount: Math.max(0, netBalance), color: netBalance >= 0 ? '#7C3AED' : '#F59E0B', x: 580 },
+  ];
+
+  const barW = 160;
+  bars.forEach(b => {
+    const h = (b.amount / maxVal) * chartHeight;
+    const barY = chartBottom - h;
+
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x, barY, barW, h);
+
+    ctx.fillStyle = b.color;
+    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(formatCurrency(b.amount, currency, false), b.x + barW / 2, Math.max(barY - 10, chartTop - 4));
+
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
+    ctx.fillText(b.label, b.x + barW / 2, chartBottom + 28);
   });
 
   return canvas.toDataURL('image/png');
@@ -1106,22 +590,12 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   const now = new Date();
   const generationDateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  // 1. Bank Theme & Branding Resolution
-  const bank = getCardBankInfo(data.card);
-  const primaryHex = data.card.color || bank?.color || '#820AD1';
-  const primaryRgb = hexToRgb(primaryHex);
-  const darkRgb = darkenRgb(primaryRgb, 0.32);
-  const textOnPrimary = getContrastTextColor(primaryRgb);
-  const bankName = bank?.name || data.card.name;
-  const bankCode = bank?.code && bank.code !== '000' ? bank.code : '';
-  const cardBrand = (data.card.brand || 'Crédito').toUpperCase();
-
-  // Closing day, due day & best buy day calculation
+  // 1. Resolve Bank Theme & Visuals
+  const theme = resolveBankPdfTheme(data.card);
   const closingDay = data.card.closingDay;
   const dueDay = data.card.dueDay;
   const bestBuyDay = closingDay + 1 > 31 ? 1 : closingDay + 1;
 
-  // Limits & Committed calculations
   const cardLimit = data.card.limit || 0;
   const availableLimit = typeof data.availableLimit === 'number'
     ? data.availableLimit
@@ -1148,7 +622,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   try {
     const brandSvg = renderToStaticMarkup(
       React.createElement(CardBrandLogo, {
-        brand: data.card.brand || 'Mastercard',
+        brand: data.card.brand || theme.defaultBrand || 'Mastercard',
         size: 140,
         radius: 6,
       })
@@ -1158,156 +632,66 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     console.warn('Notice: Failed to rasterize card brand logo:', err);
   }
 
-  // 3. Executive Header Banner (Spacious 50mm height with official Bank Emblem & Card)
-  doc.setFillColor(darkRgb[0], darkRgb[1], darkRgb[2]);
-  doc.rect(0, 0, 210, 50, 'F');
-  // Bottom accent line
-  doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-  doc.rect(0, 48.5, 210, 1.5, 'F');
+  // 3. Header Banner (44mm height with gradient, official Finly branding and Realistic Card Art)
+  const headerHeight = 44;
+  drawHeaderBanner(doc, theme.headerGradientStart, theme.headerGradientEnd, headerHeight);
 
-  // Bank Logo Emblem Box on Left
-  const emblemX = 14;
-  const emblemY = 10;
-  const emblemSize = 16;
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(emblemX, emblemY, emblemSize, emblemSize, 3, 3, 'F');
-  if (bankLogoPng) {
-    doc.addImage(bankLogoPng, 'PNG', emblemX + 1, emblemY + 1, emblemSize - 2, emblemSize - 2);
-  }
+  // Bottom Accent Line
+  doc.setFillColor(theme.accentRgb[0], theme.accentRgb[1], theme.accentRgb[2]);
+  doc.rect(0, headerHeight - 1.2, 210, 1.2, 'F');
 
-  // Title area beside emblem
-  const textLeftX = emblemX + emblemSize + 4; // 34mm
+  // Finly Logo on Top-Left
+  drawFinlyHeaderLogo(doc, 14, 7.5, 'DEMONSTRATIVO DE FATURA');
+
+  // Invoice Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13.5);
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text('FINLY', textLeftX, 16);
+  doc.text(`Fatura de ${data.monthLabel}`, 14, 23);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(226, 232, 240);
-  doc.text('•  DEMONSTRATIVO DE FATURA', textLeftX + 18, 16);
+  // Institution Pill Badge
+  const pillLabel = theme.pillLabel || `${theme.name}${theme.code ? ` (${theme.code})` : ''} - ${(data.card.brand || theme.defaultBrand).toUpperCase()}`;
+  drawInstitutionPill(doc, 14, 28, pillLabel, theme.accentRgb, bankLogoPng, brandLogoPng);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  doc.text(`Fatura de ${data.monthLabel}`, textLeftX, 24);
+  // Realistic Card Mockup on Top-Right (54mm x 34mm)
+  const cardMockX = 142;
+  const cardMockY = 5.2;
+  const cardMockW = 54;
+  const cardMockH = 34;
+  drawRealisticCreditCardMockup(doc, cardMockX, cardMockY, cardMockW, cardMockH, theme, data.card, bankLogoPng, brandLogoPng);
 
-  // Bank & Brand Pill Badge
-  const bankPillText = `${bankName}${bankCode ? ` (${bankCode})` : ''} • ${cardBrand}`;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  const pillTextWidth = doc.getTextWidth(bankPillText);
-  const pillW = pillTextWidth + 8;
-  const pillH = 6;
-  const pillY = 28;
-
-  doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-  doc.roundedRect(textLeftX, pillY, pillW, pillH, 1.5, 1.5, 'F');
-  doc.setTextColor(textOnPrimary[0], textOnPrimary[1], textOnPrimary[2]);
-  doc.text(bankPillText, textLeftX + 4, pillY + 4.3);
-
-  // Optional Brand Badge beside Pill
-  if (brandLogoPng) {
-    const brandBadgeX = textLeftX + pillW + 3;
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(brandBadgeX, pillY, 11, pillH, 1.5, 1.5, 'F');
-    doc.addImage(brandLogoPng, 'PNG', brandBadgeX + 1, pillY + 0.8, 9, 4.4);
-  }
-
-  // Subtitle with closing & due dates
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(203, 213, 225);
-  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, textLeftX, 41);
-
-  // 4. Proportional Mini Virtual Credit Card on Top Right (True 1.6:1 Credit Card ratio: 56x35mm)
-  const cardX = 142;
-  const cardY = 7.5;
-  const cardW = 56;
-  const cardH = 35;
-
-  doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-  doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'F');
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'S');
-
-  // Top Left of Card: Official Bank Logo
-  if (bankLogoPng) {
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(cardX + 4, cardY + 3.5, 8.5, 8.5, 1.8, 1.8, 'F');
-    doc.addImage(bankLogoPng, 'PNG', cardX + 4.5, cardY + 4, 7.5, 7.5);
-  }
-
-  // Top Right of Card: Official Card Brand Logo
-  if (brandLogoPng) {
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(cardX + cardW - 13.5, cardY + 3.5, 10, 7.5, 1.5, 1.5, 'F');
-    doc.addImage(brandLogoPng, 'PNG', cardX + cardW - 13, cardY + 4, 9, 6.5);
-  } else {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text(cardBrand, cardX + cardW - 4, cardY + 8, { align: 'right' });
-  }
-
-  // Center: Metallic Chip & Contactless wave
-  doc.setFillColor(226, 232, 240);
-  doc.roundedRect(cardX + 4, cardY + 13.5, 8, 6, 1, 1, 'F');
-  doc.setDrawColor(148, 163, 184);
-  doc.setLineWidth(0.2);
-  doc.line(cardX + 4, cardY + 16.5, cardX + 12, cardY + 16.5);
-  doc.line(cardX + 8, cardY + 13.5, cardX + 8, cardY + 19.5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(255, 255, 255);
-  doc.text(')))', cardX + 14, cardY + 18);
-
-  // Masked Number (Correct handling of absence: no dummy numbers!)
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(255, 255, 255);
-  const cardDigits = data.card.last4Digits ? data.card.last4Digits.trim() : '';
-  const cardNumberDisplay = cardDigits ? `••••  ••••  ••••  ${cardDigits}` : `••••  ••••  ••••  ••••`;
-  doc.text(cardNumberDisplay, cardX + 4, cardY + 24);
-
-  // Cardholder and Due
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
-  doc.setTextColor(226, 232, 240);
-  const holderRaw = data.userEmail ? data.userEmail.split('@')[0] : data.card.name;
-  const holderName = holderRaw.toUpperCase().substring(0, 16);
-  doc.text(holderName, cardX + 4, cardY + 30.5);
-  doc.text(`VENC: DIA ${dueDay.toString().padStart(2, '0')}`, cardX + cardW - 4, cardY + 30.5, { align: 'right' });
-
-  // 5. Metadata Info Bar (Between Header and Cards, generous 8mm height)
-  let currentY = 54;
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, currentY, 182, 8, 1.5, 1.5, 'F');
+  // 4. Metadata Info Bar (Y: 46.5mm, Height: 7.5mm)
+  let currentY = 46.5;
+  doc.setFillColor(241, 245, 249); // Slate 100
+  doc.roundedRect(14, currentY, 182, 7.5, 1.5, 1.5, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(14, currentY, 182, 8, 1.5, 1.5, 'S');
+  doc.setLineWidth(0.25);
+  doc.roundedRect(14, currentY, 182, 7.5, 1.5, 1.5, 'S');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
-  doc.text(`Competência: ${data.monthLabel}`, 18, currentY + 5.2);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, 105, currentY + 5.2, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Emissão: ${generationDateStr}`, 192, currentY + 5.2, { align: 'right' });
-  currentY += 14;
+  doc.text(`Competência: ${data.monthLabel}`, 18, currentY + 4.9);
 
-  // 6. Section 1: Resumo Executivo da Fatura (4 Modern KPI Cards com 28mm de altura sem achatamento)
-  doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setTextColor(30, 41, 59);
+  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, 105, currentY + 4.9, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Emissão: ${generationDateStr}`, 192, currentY + 4.9, { align: 'right' });
+
+  currentY += 11;
+
+  // 5. Section 1: Resumo Executivo da Fatura (4 Modern KPI Cards)
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
   doc.text('1. Resumo Executivo da Fatura', 14, currentY);
-  currentY += 4.5;
+  currentY += 3.8;
 
   const cardWidth = 43;
-  const cardHeight = 28;
+  const cardHeight = 22.5;
   const cardGap = 3.33;
   const startX = 14;
 
@@ -1319,7 +703,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
       title: 'TOTAL DA FATURA',
       value: formatCurrency(data.invoiceTotal, currency, false),
       sub: 'Valor do ciclo atual',
-      accentColor: [225, 29, 72],
+      accentColor: [225, 29, 72] as [number, number, number],
       badge: null,
       bar: null,
     },
@@ -1327,7 +711,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
       title: 'FECHAMENTO',
       value: `Todo dia ${closingDay}`,
       sub: `Melhor compra: Dia ${bestBuyDay}`,
-      accentColor: [16, 185, 129],
+      accentColor: [16, 185, 129] as [number, number, number],
       badge: null,
       bar: null,
     },
@@ -1335,15 +719,15 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
       title: 'VENCIMENTO',
       value: `Todo dia ${dueDay}`,
       sub: isPaidStatus ? 'Pagamento efetuado' : 'Aguardando liquidação',
-      accentColor: isPaidStatus ? [16, 185, 129] : isOverdueStatus ? [225, 29, 72] : [245, 158, 11],
-      badge: data.statusLabel.toUpperCase(),
+      accentColor: (isPaidStatus ? [16, 185, 129] : isOverdueStatus ? [225, 29, 72] : [245, 158, 11]) as [number, number, number],
+      badge: isPaidStatus ? '✓ FATURA PAGA' : isOverdueStatus ? 'FATURA VENCIDA' : 'FATURA ABERTA',
       bar: null,
     },
     {
       title: 'LIMITE TOTAL',
       value: formatCurrency(cardLimit, currency, false),
       sub: `Disponível: ${formatCurrency(availableLimit, currency, false)}`,
-      accentColor: primaryRgb,
+      accentColor: theme.accentRgb,
       badge: null,
       bar: usedPercentage,
     },
@@ -1351,74 +735,74 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
 
   summaryCards.forEach((c, idx) => {
     const x = startX + idx * (cardWidth + cardGap);
-    // Background
+    // Card background
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x, currentY, cardWidth, cardHeight, 1.8, 1.8, 'F');
-    // Border
+    // Subtle border
     doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.25);
     doc.roundedRect(x, currentY, cardWidth, cardHeight, 1.8, 1.8, 'S');
 
-    // Left accent stripe
+    // Left accent stripe (2mm)
     doc.setFillColor(c.accentColor[0], c.accentColor[1], c.accentColor[2]);
-    doc.roundedRect(x, currentY, 2, cardHeight, 1, 1, 'F');
+    doc.roundedRect(x, currentY, 2.2, cardHeight, 1, 1, 'F');
 
     // Title
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
+    doc.setFontSize(6.2);
     doc.setTextColor(100, 116, 139);
-    doc.text(c.title, x + 5, currentY + 7);
+    doc.text(c.title, x + 5, currentY + 5.5);
 
     // Value
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(idx === 0 ? 11.5 : 10.5);
+    doc.setFontSize(idx === 0 ? 11 : 9.8);
     doc.setTextColor(idx === 0 ? c.accentColor[0] : 15, idx === 0 ? c.accentColor[1] : 23, idx === 0 ? c.accentColor[2] : 42);
-    doc.text(c.value, x + 5, currentY + 16);
+    doc.text(c.value, x + 5, currentY + 12.8);
 
     // Subtitle or Bar
     if (c.bar !== null) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.8);
+      doc.setFontSize(5.5);
       doc.setTextColor(71, 85, 105);
-      doc.text(c.sub, x + 5, currentY + 22);
+      doc.text(c.sub, x + 5, currentY + 17.5);
 
       // Usage bar
       const barX = x + 5;
-      const barY = currentY + 23.5;
-      const barW = cardWidth - 10;
-      const barH = 1.8;
+      const barY = currentY + 18.8;
+      const barW = cardWidth - 9.5;
+      const barH = 1.6;
       doc.setFillColor(241, 245, 249);
-      doc.roundedRect(barX, barY, barW, barH, 0.9, 0.9, 'F');
+      doc.roundedRect(barX, barY, barW, barH, 0.8, 0.8, 'F');
       const fillW = Math.max(1, (c.bar / 100) * barW);
-      doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-      doc.roundedRect(barX, barY, fillW, barH, 0.9, 0.9, 'F');
+      doc.setFillColor(theme.accentRgb[0], theme.accentRgb[1], theme.accentRgb[2]);
+      doc.roundedRect(barX, barY, fillW, barH, 0.8, 0.8, 'F');
     } else if (c.badge) {
-      // Badge
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.8);
+      doc.setFontSize(5.5);
       const isOk = c.badge.includes('PAGA');
       const isErr = c.badge.includes('VENC');
+
       doc.setFillColor(isOk ? 220 : isErr ? 254 : 254, isOk ? 252 : isErr ? 226 : 243, isOk ? 231 : isErr ? 226 : 199);
-      const badgeW = doc.getTextWidth(`● ${c.badge}`) + 5;
-      doc.roundedRect(x + 5, currentY + 19.5, Math.min(cardWidth - 8, badgeW), 5, 1.2, 1.2, 'F');
-      doc.setTextColor(isOk ? 22 : isErr ? 153 : 146, isOk ? 101 : isErr ? 27 : 64, isOk ? 52 : isErr ? 27 : 14);
-      doc.text(`● ${c.badge}`, x + 7.5, currentY + 23.2);
+      const badgeW = doc.getTextWidth(c.badge) + 4.5;
+      doc.roundedRect(x + 5, currentY + 15.5, Math.min(cardWidth - 8, badgeW), 4.6, 1, 1, 'F');
+      doc.setTextColor(isOk ? 21 : isErr ? 190 : 180, isOk ? 128 : isErr ? 18 : 83, isOk ? 61 : isErr ? 60 : 9);
+      doc.text(c.badge, x + 7.2, currentY + 18.7);
     } else {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.2);
-      doc.setTextColor(idx === 1 ? 16 : 100, idx === 1 ? 185 : 116, idx === 1 ? 129 : 139);
-      doc.text(c.sub, x + 5, currentY + 22.5);
+      doc.setFontSize(5.8);
+      doc.setTextColor(idx === 1 ? 5 : 100, idx === 1 ? 150 : 116, idx === 1 ? 105 : 139);
+      doc.text(c.sub, x + 5, currentY + 18.2);
     }
   });
 
-  currentY += cardHeight + 9;
+  currentY += cardHeight + 6;
 
-  // 7. Section 2: Distribuição de Gastos da Fatura (Donut Chart proporcional + Tabela)
-  doc.setTextColor(30, 41, 59);
+  // 6. Section 2: Distribuição de Gastos da Fatura
+  doc.setTextColor(15, 23, 42);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.text('2. Distribuição de Gastos da Fatura', 14, currentY);
-  currentY += 4;
+  currentY += 3.5;
 
   const catMap: Record<string, { name: string; amount: number; count: number }> = {};
   data.transactions.forEach(t => {
@@ -1429,13 +813,13 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     catMap[name].count += 1;
   });
 
-  const donutImg = createInvoiceDonutChartCanvas(catMap, data.invoiceTotal, currency, primaryHex);
+  const donutImg = createInvoiceDonutChartCanvas(catMap, data.invoiceTotal, currency, theme.accent);
   if (donutImg) {
-    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 68);
-    currentY += 73;
+    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 46);
+    currentY += 49;
   }
 
-  // Category Table
+  // Category Summary Table
   const catRows = Object.values(catMap)
     .sort((a, b) => b.amount - a.amount)
     .map(c => {
@@ -1447,45 +831,56 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     catRows.push(['Nenhuma despesa nesta fatura', '0', formatCurrency(0, currency, false), '0%']);
   }
 
-  if (currentY > 215) {
-    doc.addPage();
-    currentY = 20;
-  }
+  // Single-Page A4 Check: If compact room needed, scale table cell padding
+  const totalTxCount = data.transactions.length;
+  const isCompactA4 = totalTxCount <= 14;
 
   autoTable(doc, {
     startY: currentY,
     head: [['Categoria', 'Qtd. Lançamentos', 'Total Gasto', '% da Fatura']],
     body: catRows,
-    theme: 'striped',
+    theme: 'plain',
     headStyles: {
-      fillColor: [primaryRgb[0], primaryRgb[1], primaryRgb[2]],
-      textColor: [textOnPrimary[0], textOnPrimary[1], textOnPrimary[2]],
-      fontSize: 8,
+      fillColor: [39, 52, 68], // Slate escuro elegante #273444
+      textColor: [255, 255, 255],
+      fontSize: 7.2,
       fontStyle: 'bold',
+      cellPadding: isCompactA4 ? 1.6 : 2.0,
     },
-    styles: { fontSize: 7.5, cellPadding: 2.5 },
+    styles: {
+      fontSize: 7.2,
+      cellPadding: isCompactA4 ? 1.5 : 1.9,
+      textColor: [30, 41, 59],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
     columnStyles: {
       0: { cellWidth: 80 },
-      1: { halign: 'center', cellWidth: 35 },
+      1: { halign: 'center', cellWidth: 32 },
       2: { halign: 'right', cellWidth: 40 },
-      3: { halign: 'right', cellWidth: 27 },
+      3: { halign: 'right', cellWidth: 30 },
     },
     margin: { left: 14, right: 14 },
   });
 
-  // 8. Section 3: Lançamentos Detalhados da Fatura
+  // 7. Section 3: Lançamentos Detalhados da Fatura
   // @ts-ignore
-  currentY = doc.lastAutoTable.finalY + 10;
-  if (currentY > 210) {
+  currentY = doc.lastAutoTable.finalY + 6;
+
+  // If table won't fit on this page, start clean on next page
+  if (currentY > 225 && !isCompactA4) {
     doc.addPage();
-    currentY = 20;
+    currentY = 18;
   }
 
-  doc.setTextColor(30, 41, 59);
+  doc.setTextColor(15, 23, 42);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.text('3. Lançamentos Detalhados da Fatura', 14, currentY);
-  currentY += 4;
+  currentY += 3.5;
 
   const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
   const txRows = sortedTxs.map(t => {
@@ -1506,7 +901,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     txRows.push(['-', 'Nenhum lançamento nesta fatura', '-', '-', '-', '-']);
   }
 
-  // Summary row at the bottom of the table
+  // Summary Row at bottom
   txRows.push([
     '',
     'TOTAL DA FATURA',
@@ -1518,27 +913,37 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
 
   autoTable(doc, {
     startY: currentY,
-    head: [['Data Compra', 'Descrição / Estabelecimento', 'Categoria', 'Parcela', 'Terceiro', 'Valor']],
+    head: [['DATA COMPRA', 'DESCRIÇÃO / ESTABELECIMENTO', 'CATEGORIA', 'PARCELA', 'TERCEIRO', 'VALOR']],
     body: txRows,
-    theme: 'grid',
+    theme: 'plain',
     headStyles: {
-      fillColor: [darkRgb[0], darkRgb[1], darkRgb[2]],
+      fillColor: [39, 52, 68], // Slate escuro elegante #273444
       textColor: [255, 255, 255],
-      fontSize: 8,
+      fontSize: 7.2,
       fontStyle: 'bold',
+      cellPadding: isCompactA4 ? 1.6 : 2.0,
     },
-    styles: { fontSize: 7.5, cellPadding: 2.5 },
+    styles: {
+      fontSize: 7.2,
+      cellPadding: isCompactA4 ? 1.4 : 1.9,
+      textColor: [30, 41, 59],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
     columnStyles: {
-      0: { cellWidth: 22 },
-      1: { cellWidth: 62 },
-      2: { cellWidth: 38 },
+      0: { halign: 'center', cellWidth: 22 },
+      1: { cellWidth: 58 },
+      2: { cellWidth: 40 },
       3: { halign: 'center', cellWidth: 20 },
       4: { halign: 'center', cellWidth: 20 },
-      5: { halign: 'right', cellWidth: 20 },
+      5: { halign: 'right', cellWidth: 22 },
     },
     margin: { left: 14, right: 14 },
     didParseCell: (dataHook) => {
-      // Highlight last row (Total row)
+      // Highlight the last total row
       if (dataHook.row.index === txRows.length - 1) {
         dataHook.cell.styles.fontStyle = 'bold';
         dataHook.cell.styles.fillColor = [241, 245, 249];
@@ -1551,37 +956,40 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
       const pageCount = doc.getNumberOfPages();
       const pageY = 290;
 
-      // Top subtle border line
+      // Divider line
       doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.3);
-      doc.line(14, pageY - 3, 196, pageY - 3);
+      doc.setLineWidth(0.25);
+      doc.line(14, pageY - 2.8, 196, pageY - 2.8);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7.2);
       doc.setTextColor(148, 163, 184);
       doc.text(
-        `Finly • ${bankName}${bankCode ? ` (${bankCode})` : ''} • Fatura ${data.monthLabel}`,
+        `Finly • ${theme.name}${theme.code ? ` (${theme.code})` : ''} • Fatura ${data.monthLabel}`,
         14,
         pageY
       );
+
+      doc.setFontSize(6.5);
+      doc.setTextColor(148, 163, 184);
       doc.text(
-        `Página ${dataHook.pageNumber} de ${pageCount}`,
+        `Autenticação: FINLY.C.C.${theme.code || 'FINLY'}.FATURA.${data.periodSlug.toUpperCase()}.${Math.abs(Math.round(data.invoiceTotal * 100))}`,
+        105,
+        pageY,
+        { align: 'center' }
+      );
+
+      doc.setFontSize(7.2);
+      doc.text(
+        pageCount === 1 ? 'Autenticação eletrônica de um extrato oficial Finly' : `Página ${dataHook.pageNumber} de ${pageCount}`,
         196,
         pageY,
         { align: 'right' }
       );
-      doc.setFontSize(6.5);
-      doc.setTextColor(203, 213, 225);
-      doc.text(
-        `Autenticação: FINLY-${data.periodSlug.toUpperCase()}-${Math.abs(Math.round(data.invoiceTotal * 100))}`,
-        105,
-        pageY + 3,
-        { align: 'center' }
-      );
     },
   });
 
-  // Save / Share PDF (Mobile native, mobile web, or desktop)
+  // Save / Share PDF
   const filename = `fatura_${data.periodSlug}.pdf`;
   const blob = doc.output('blob');
   await saveOrShareFile({
@@ -1592,3 +1000,613 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   });
 }
 
+/**
+ * Generates and downloads an executive, bank-branded PDF of General Reports / Extratos
+ */
+export async function exportReportPDF(data: ReportExportData): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const currency = data.currency || 'BRL';
+  const now = new Date();
+  const generationDateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
+
+  const savingsRate = data.totalIncome > 0
+    ? ((data.netBalance / data.totalIncome) * 100).toFixed(1)
+    : '0.0';
+
+  // Finly Executive Theme
+  const headerStartRgb: [number, number, number] = [15, 23, 42]; // Deep Slate #0F172A
+  const headerEndRgb: [number, number, number] = [49, 46, 129]; // Indigo 900 #312E81
+  const accentRgb: [number, number, number] = [124, 58, 237]; // Violet 600
+
+  // 1. Header Banner (44mm)
+  const headerHeight = 44;
+  drawHeaderBanner(doc, headerStartRgb, headerEndRgb, headerHeight);
+
+  // Bottom Accent Line
+  doc.setFillColor(accentRgb[0], accentRgb[1], accentRgb[2]);
+  doc.rect(0, headerHeight - 1.2, 210, 1.2, 'F');
+
+  // Finly Logo on Top-Left
+  drawFinlyHeaderLogo(doc, 14, 7.5, 'DEMONSTRATIVO DE EXTRATO FINANCEIRO');
+
+  // Main Report Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Extrato Financeiro - ${data.periodLabel}`, 14, 23);
+
+  // Pill Badge
+  drawInstitutionPill(
+    doc,
+    14,
+    28,
+    `Finly Inteligência Financeira • Regime: ${regimeLabel}`,
+    accentRgb,
+    null,
+    null
+  );
+
+  // Virtual Finly Platinum Card Mockup on Top-Right
+  const finlyMockCard: CreditCard = {
+    id: 'finly-wallet',
+    name: 'Finly Platinum',
+    brand: 'Mastercard',
+    limit: data.totalIncome + data.totalExpense,
+    closingDay: 1,
+    dueDay: 10,
+    color: '#7C3AED',
+  };
+  const finlyTheme: BankPdfTheme = {
+    id: 'finly',
+    name: 'Finly Platinum',
+    code: '000',
+    accent: '#7C3AED',
+    accentRgb: [124, 58, 237],
+    headerGradientStart: [15, 23, 42],
+    headerGradientEnd: [49, 46, 129],
+    cardBg: [30, 27, 75],
+    cardSecondaryBg: [49, 46, 129],
+    defaultBrand: 'Mastercard',
+    pillLabel: 'Finly Platinum Digital Wallet',
+  };
+  drawRealisticCreditCardMockup(doc, 142, 5.2, 54, 34, finlyTheme, finlyMockCard, null, null);
+
+  // 2. Metadata Info Bar (Y: 46.5mm)
+  let currentY = 46.5;
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(14, currentY, 182, 7.5, 1.5, 1.5, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.25);
+  doc.roundedRect(14, currentY, 182, 7.5, 1.5, 1.5, 'S');
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Período: ${data.periodLabel}`, 18, currentY + 4.9);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text(`Regime: ${regimeLabel}`, 105, currentY + 4.9, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Emissão: ${generationDateStr}`, 192, currentY + 4.9, { align: 'right' });
+
+  currentY += 11;
+
+  // 3. Section 1: Resumo Executivo do Período
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.text('1. Resumo Executivo do Extrato', 14, currentY);
+  currentY += 3.8;
+
+  const cardWidth = 43;
+  const cardHeight = 22.5;
+  const cardGap = 3.33;
+  const startX = 14;
+
+  const isNetPositive = data.netBalance >= 0;
+
+  const summaryCards = [
+    {
+      title: 'RECEITAS TOTAIS',
+      value: formatCurrency(data.totalIncome, currency, false),
+      sub: 'Entradas consolidadas',
+      accentColor: [16, 185, 129] as [number, number, number],
+      badge: null,
+      bar: null,
+    },
+    {
+      title: 'DESPESAS TOTAIS',
+      value: formatCurrency(data.totalExpense, currency, false),
+      sub: 'Saídas consolidadas',
+      accentColor: [225, 29, 72] as [number, number, number],
+      badge: null,
+      bar: null,
+    },
+    {
+      title: 'SALDO LÍQUIDO',
+      value: formatCurrency(data.netBalance, currency, false),
+      sub: isNetPositive ? 'Superávit do período' : 'Déficit do período',
+      accentColor: (isNetPositive ? [16, 185, 129] : [225, 29, 72]) as [number, number, number],
+      badge: isNetPositive ? '✓ SUPERÁVIT' : 'DÉFICIT',
+      bar: null,
+    },
+    {
+      title: 'TAXA DE POUPANÇA',
+      value: `${savingsRate}%`,
+      sub: 'Economia acumulada',
+      accentColor: [124, 58, 237] as [number, number, number],
+      badge: null,
+      bar: Math.max(0, Math.min(100, parseFloat(savingsRate) || 0)),
+    },
+  ];
+
+  summaryCards.forEach((c, idx) => {
+    const x = startX + idx * (cardWidth + cardGap);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, currentY, cardWidth, cardHeight, 1.8, 1.8, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(x, currentY, cardWidth, cardHeight, 1.8, 1.8, 'S');
+
+    doc.setFillColor(c.accentColor[0], c.accentColor[1], c.accentColor[2]);
+    doc.roundedRect(x, currentY, 2.2, cardHeight, 1, 1, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text(c.title, x + 5, currentY + 5.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(idx === 1 ? 10.5 : 10);
+    doc.setTextColor(idx === 1 ? 225 : idx === 0 ? 16 : 15, idx === 1 ? 29 : idx === 0 ? 185 : 23, idx === 1 ? 72 : idx === 0 ? 129 : 42);
+    doc.text(c.value, x + 5, currentY + 12.8);
+
+    if (c.bar !== null) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(c.sub, x + 5, currentY + 17.5);
+
+      const barX = x + 5;
+      const barY = currentY + 18.8;
+      const barW = cardWidth - 9.5;
+      const barH = 1.6;
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(barX, barY, barW, barH, 0.8, 0.8, 'F');
+      const fillW = Math.max(1, (c.bar / 100) * barW);
+      doc.setFillColor(124, 58, 237);
+      doc.roundedRect(barX, barY, fillW, barH, 0.8, 0.8, 'F');
+    } else if (c.badge) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      const isOk = c.badge.includes('SUPERÁVIT');
+      doc.setFillColor(isOk ? 220 : 254, isOk ? 252 : 226, isOk ? 231 : 226);
+      const badgeW = doc.getTextWidth(c.badge) + 4.5;
+      doc.roundedRect(x + 5, currentY + 15.5, Math.min(cardWidth - 8, badgeW), 4.6, 1, 1, 'F');
+      doc.setTextColor(isOk ? 21 : 190, isOk ? 128 : 18, isOk ? 61 : 60);
+      doc.text(c.badge, x + 7.2, currentY + 18.7);
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.8);
+      doc.setTextColor(idx === 0 ? 5 : 100, idx === 0 ? 150 : 116, idx === 0 ? 105 : 139);
+      doc.text(c.sub, x + 5, currentY + 18.2);
+    }
+  });
+
+  currentY += cardHeight + 6;
+
+  // 4. Section 2: Distribuição Financeira e Gastos
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.text('2. Distribuição Financeira e Gastos do Período', 14, currentY);
+  currentY += 3.5;
+
+  const expenseCategoriesMap: Record<string, { name: string; amount: number; count: number }> = {};
+  data.transactions
+    .filter(t => t.type === 'expense')
+    .forEach(t => {
+      const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
+      const catName = resolved.name;
+      if (!expenseCategoriesMap[catName]) {
+        expenseCategoriesMap[catName] = { name: catName, amount: 0, count: 0 };
+      }
+      expenseCategoriesMap[catName].amount += t.amount;
+      expenseCategoriesMap[catName].count += 1;
+    });
+
+  const donutImg = createDonutChartCanvas(expenseCategoriesMap, data.totalExpense, currency);
+  if (donutImg) {
+    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 46);
+    currentY += 49;
+  }
+
+  const categoryRows = Object.values(expenseCategoriesMap)
+    .sort((a, b) => b.amount - a.amount)
+    .map(c => {
+      const pct = data.totalExpense > 0 ? ((c.amount / data.totalExpense) * 100).toFixed(1) : '0.0';
+      return [c.name, String(c.count), formatCurrency(c.amount, currency, false), `${pct}%`];
+    });
+
+  if (categoryRows.length === 0) {
+    categoryRows.push(['Nenhuma despesa registrada no período', '0', formatCurrency(0, currency, false), '0%']);
+  }
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Categoria', 'Qtd. Lançamentos', 'Total Gasto', '% do Total']],
+    body: categoryRows,
+    theme: 'plain',
+    headStyles: {
+      fillColor: [39, 52, 68],
+      textColor: [255, 255, 255],
+      fontSize: 7.2,
+      fontStyle: 'bold',
+      cellPadding: 1.8,
+    },
+    styles: {
+      fontSize: 7.2,
+      cellPadding: 1.6,
+      textColor: [30, 41, 59],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    columnStyles: {
+      0: { cellWidth: 80 },
+      1: { halign: 'center', cellWidth: 32 },
+      2: { halign: 'right', cellWidth: 40 },
+      3: { halign: 'right', cellWidth: 30 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  // 5. Section 3: Demonstrativo Detalhado de Lançamentos
+  // @ts-ignore
+  currentY = doc.lastAutoTable.finalY + 6;
+  if (currentY > 225) {
+    doc.addPage();
+    currentY = 18;
+  }
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.text('3. Demonstrativo Detalhado de Lançamentos', 14, currentY);
+  currentY += 3.5;
+
+  const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
+  const txRows = sortedTxs.map(t => {
+    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, t.type);
+    let paymentMethod = 'Carteira';
+    if (t.cardId) {
+      const card = data.cards.find(c => c.id === t.cardId);
+      paymentMethod = card ? `Cartão ${card.name}` : 'Cartão';
+    } else if (t.accountId) {
+      const acc = data.accounts.find(a => a.id === t.accountId);
+      paymentMethod = acc ? acc.name : 'Conta';
+    }
+
+    const typePrefix = t.type === 'expense' ? '- ' : '+ ';
+    const typeLabel = t.type === 'expense' ? 'Despesa' : 'Receita';
+
+    return [
+      formatDate(t.date),
+      t.description || 'Sem descrição',
+      resolved.name,
+      paymentMethod,
+      typeLabel,
+      typePrefix + formatCurrency(t.amount, currency, false),
+    ];
+  });
+
+  if (txRows.length === 0) {
+    txRows.push(['-', 'Nenhum lançamento encontrado', '-', '-', '-', '-']);
+  }
+
+  // Summary Row
+  txRows.push([
+    '',
+    'TOTAL GERAL',
+    '',
+    '',
+    `${sortedTxs.length} item(ns)`,
+    formatCurrency(data.netBalance, currency, false),
+  ]);
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [['DATA', 'DESCRIÇÃO', 'CATEGORIA', 'CONTA / CARTÃO', 'TIPO', 'VALOR']],
+    body: txRows,
+    theme: 'plain',
+    headStyles: {
+      fillColor: [39, 52, 68],
+      textColor: [255, 255, 255],
+      fontSize: 7.2,
+      fontStyle: 'bold',
+      cellPadding: 1.8,
+    },
+    styles: {
+      fontSize: 7.2,
+      cellPadding: 1.6,
+      textColor: [30, 41, 59],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 20 },
+      1: { cellWidth: 58 },
+      2: { cellWidth: 36 },
+      3: { cellWidth: 30 },
+      4: { halign: 'center', cellWidth: 18 },
+      5: { halign: 'right', cellWidth: 20 },
+    },
+    margin: { left: 14, right: 14 },
+    didParseCell: (dataHook) => {
+      if (dataHook.row.index === txRows.length - 1) {
+        dataHook.cell.styles.fontStyle = 'bold';
+        dataHook.cell.styles.fillColor = [241, 245, 249];
+        if (dataHook.column.index === 5) {
+          dataHook.cell.styles.textColor = isNetPositive ? [16, 185, 129] : [225, 29, 72];
+        }
+      }
+    },
+    didDrawPage: (dataHook) => {
+      const pageCount = doc.getNumberOfPages();
+      const pageY = 290;
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.25);
+      doc.line(14, pageY - 2.8, 196, pageY - 2.8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.2);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        `Finly Gestão Financeira • Extrato ${data.periodLabel}`,
+        14,
+        pageY
+      );
+
+      doc.setFontSize(6.5);
+      doc.text(
+        `Autenticação: FINLY.EXTRATO.${data.periodSlug.toUpperCase()}.${Math.abs(Math.round(data.netBalance * 100))}`,
+        105,
+        pageY,
+        { align: 'center' }
+      );
+
+      doc.setFontSize(7.2);
+      doc.text(
+        pageCount === 1 ? 'Autenticação eletrônica de um extrato oficial Finly' : `Página ${dataHook.pageNumber} de ${pageCount}`,
+        196,
+        pageY,
+        { align: 'right' }
+      );
+    },
+  });
+
+  const filename = `extrato_finly_${data.periodSlug}.pdf`;
+  const blob = doc.output('blob');
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'application/pdf',
+    dialogTitle: 'Extrato Financeiro Finly (PDF)',
+  });
+}
+
+/**
+ * Triggers a universal file download or share using a UTF-8 BOM Blob.
+ */
+export async function downloadCSV(filename: string, content: string, dialogTitle?: string): Promise<void> {
+  const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+  await saveOrShareFile({
+    filename,
+    blob,
+    mimeType: 'text/csv;charset=utf-8;',
+    dialogTitle: dialogTitle || `Exportar ${filename}`,
+  });
+}
+
+/**
+ * Generates and downloads an executive, structured CSV of a Credit Card Invoice statement
+ */
+export async function exportInvoiceCSV(data: InvoiceExportData): Promise<void> {
+  const now = new Date();
+  const generationDateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+  const theme = resolveBankPdfTheme(data.card);
+  const closingDay = data.card.closingDay;
+  const dueDay = data.card.dueDay;
+  const bestBuyDay = closingDay + 1 > 31 ? 1 : closingDay + 1;
+
+  const cardLimit = data.card.limit || 0;
+  const availableLimit = typeof data.availableLimit === 'number'
+    ? data.availableLimit
+    : Math.max(0, cardLimit - data.invoiceTotal);
+
+  const lines: string[] = [];
+
+  // Section 1: Header Metadata
+  lines.push('FINLY - DEMONSTRATIVO DE FATURA DE CARTÃO DE CRÉDITO');
+  lines.push(`Instituição Emissora;${theme.name}`);
+  lines.push(`Código COMPE;${theme.code || '000'}`);
+  lines.push(`Cartão;${data.card.name}`);
+  lines.push(`Bandeira;${(data.card.brand || theme.defaultBrand).toUpperCase()}`);
+  lines.push(`Competência / Período;${data.monthLabel}`);
+  lines.push(`Fechamento da Fatura;Todo dia ${closingDay}`);
+  lines.push(`Vencimento da Fatura;Todo dia ${dueDay}`);
+  lines.push(`Melhor Dia de Compra;Dia ${bestBuyDay}`);
+  lines.push(`Status da Fatura;${data.statusLabel}`);
+  lines.push(`Limite Total (R$);${cardLimit.toFixed(2).replace('.', ',')}`);
+  lines.push(`Limite Disponível (R$);${availableLimit.toFixed(2).replace('.', ',')}`);
+  lines.push(`Total da Fatura (R$);${data.invoiceTotal.toFixed(2).replace('.', ',')}`);
+  lines.push(`Data de Emissão;${generationDateStr}`);
+  lines.push(`Autenticação Eletrônica;FINLY.C.C.${theme.code || 'FINLY'}.FATURA.${data.periodSlug.toUpperCase()}.${Math.abs(Math.round(data.invoiceTotal * 100))}`);
+  if (data.userEmail) lines.push(`Usuário Titular;${data.userEmail}`);
+  lines.push('');
+
+  // Section 2: Executive Summary
+  lines.push('1. RESUMO EXECUTIVO DA FATURA');
+  lines.push('Métrica;Valor;Detalhe');
+  lines.push(`Total da Fatura;R$ ${data.invoiceTotal.toFixed(2).replace('.', ',')};Valor do ciclo atual`);
+  lines.push(`Fechamento;Todo dia ${closingDay};Melhor compra: Dia ${bestBuyDay}`);
+  lines.push(`Vencimento;Todo dia ${dueDay};${data.statusLabel}`);
+  const limitPct = cardLimit > 0 ? ((availableLimit / cardLimit) * 100).toFixed(1).replace('.', ',') : '0,0';
+  lines.push(`Limite Total;R$ ${cardLimit.toFixed(2).replace('.', ',')};Disponível: R$ ${availableLimit.toFixed(2).replace('.', ',')} (${limitPct}% livre)`);
+  lines.push('');
+
+  // Section 3: Category Breakdown
+  lines.push('2. DISTRIBUIÇÃO DE GASTOS DA FATURA');
+  lines.push('Categoria;Qtd. Lançamentos;Total Gasto (R$);% da Fatura');
+
+  const catMap: Record<string, { name: string; amount: number; count: number }> = {};
+  data.transactions.forEach(t => {
+    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
+    const name = resolved.name;
+    if (!catMap[name]) {
+      catMap[name] = { name, amount: 0, count: 0 };
+    }
+    catMap[name].amount += t.amount;
+    catMap[name].count += 1;
+  });
+
+  Object.values(catMap)
+    .sort((a, b) => b.amount - a.amount)
+    .forEach(c => {
+      const pct = data.invoiceTotal > 0 ? ((c.amount / data.invoiceTotal) * 100).toFixed(1).replace('.', ',') : '0,0';
+      lines.push(`"${c.name}";${c.count};${c.amount.toFixed(2).replace('.', ',')};${pct}%`);
+    });
+
+  lines.push('');
+
+  // Section 4: Itemized Transactions Statement
+  lines.push('3. LANÇAMENTOS DETALHADOS DA FATURA');
+  lines.push('Data Compra;Descrição / Estabelecimento;Categoria;Parcela;Terceiro;Status;Valor (R$)');
+
+  const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
+  sortedTxs.forEach(t => {
+    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
+    const parcelas = t.installments ? `${t.installments.current}/${t.installments.total}` : 'À vista';
+    const terceiro = t.isThirdParty ? `${t.thirdPartyName || 'Terceiro'}${t.reimbursed ? ' (Reembolsado)' : ''}` : '-';
+    const statusStr = t.status === 'completed' ? 'Paga' : 'Aberta';
+    const valorStr = t.amount.toFixed(2).replace('.', ',');
+
+    lines.push(
+      `"${formatDate(t.date)}";"${(t.description || '').replace(/"/g, '""')}";"${resolved.name}";"${parcelas}";"${terceiro}";"${statusStr}";${valorStr}`
+    );
+  });
+
+  if (sortedTxs.length === 0) {
+    lines.push('"-";"Nenhum lançamento nesta fatura";"-";"-";"-";"-";"0,00"');
+  }
+
+  // Summary row at the bottom
+  lines.push(`"";"TOTAL DA FATURA";"";"";"${sortedTxs.length} item(ns)";"";${data.invoiceTotal.toFixed(2).replace('.', ',')}`);
+
+  await downloadCSV(`fatura_${data.periodSlug}.csv`, lines.join('\n'), `Fatura ${data.card.name} (CSV)`);
+}
+
+/**
+ * Generates and downloads an executive, structured CSV Report with Summary, Categories and Transactions
+ */
+export async function exportReportCSV(data: ReportExportData): Promise<void> {
+  const now = new Date();
+  const generationDateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+  const regimeLabel = data.viewRegime === 'invoice_month' ? 'Competência / Fatura do Cartão' : data.viewRegime === 'due_date' ? 'Vencimento da Fatura (Caixa)' : 'Data da Compra';
+
+  const lines: string[] = [];
+
+  // Section 1: Metadata
+  lines.push('FINLY - DEMONSTRATIVO DE EXTRATO FINANCEIRO');
+  lines.push(`Período de Referência;${data.periodLabel}`);
+  lines.push(`Regime de Apuração;${regimeLabel}`);
+  lines.push(`Data de Emissão;${generationDateStr}`);
+  lines.push(`Autenticação Eletrônica;FINLY.EXTRATO.${data.periodSlug.toUpperCase()}.${Math.abs(Math.round(data.netBalance * 100))}`);
+  if (data.userEmail) lines.push(`Usuário Titular;${data.userEmail}`);
+  lines.push('');
+
+  // Section 2: Executive Summary
+  lines.push('1. RESUMO EXECUTIVO DO EXTRATO');
+  lines.push('Métrica;Valor;Detalhe');
+  lines.push(`Receitas Totais;R$ ${data.totalIncome.toFixed(2).replace('.', ',')};Entradas consolidadas no período`);
+  lines.push(`Despesas Totais;R$ ${data.totalExpense.toFixed(2).replace('.', ',')};Saídas consolidadas no período`);
+  const isNetPositive = data.netBalance >= 0;
+  lines.push(`Saldo Líquido;R$ ${data.netBalance.toFixed(2).replace('.', ',')};${isNetPositive ? 'Superávit do período' : 'Déficit do período'}`);
+  const savingsPct = data.totalIncome > 0 ? ((data.netBalance / data.totalIncome) * 100).toFixed(1).replace('.', ',') : '0,0';
+  lines.push(`Taxa de Poupança;${savingsPct}%;Economia acumulada no período`);
+  lines.push('');
+
+  // Section 3: Categories Breakdown
+  lines.push('2. DESPESAS POR CATEGORIA');
+  lines.push('Categoria;Qtd. Lançamentos;Total Gasto (R$);% do Total');
+
+  const expenseCategoriesMap: Record<string, { name: string; amount: number; count: number }> = {};
+  data.transactions
+    .filter(t => t.type === 'expense')
+    .forEach(t => {
+      const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, 'expense');
+      const catName = resolved.name;
+      if (!expenseCategoriesMap[catName]) {
+        expenseCategoriesMap[catName] = { name: catName, amount: 0, count: 0 };
+      }
+      expenseCategoriesMap[catName].amount += t.amount;
+      expenseCategoriesMap[catName].count += 1;
+    });
+
+  Object.values(expenseCategoriesMap)
+    .sort((a, b) => b.amount - a.amount)
+    .forEach(c => {
+      const pct = data.totalExpense > 0 ? ((c.amount / data.totalExpense) * 100).toFixed(1).replace('.', ',') : '0,0';
+      lines.push(`"${c.name}";${c.count};${c.amount.toFixed(2).replace('.', ',')};${pct}%`);
+    });
+
+  lines.push('');
+
+  // Section 4: Transaction Statement
+  lines.push('3. DEMONSTRATIVO DETALHADO DE LANÇAMENTOS');
+  lines.push('Data;Descrição;Categoria;Conta / Cartão;Tipo;Status;Valor (R$)');
+
+  const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
+  sortedTxs.forEach(t => {
+    const resolved = resolveCategory(data.categories, t.categoryId, t.subcategoryId, t.type);
+    let paymentMethod = 'Carteira';
+    if (t.cardId) {
+      const card = data.cards.find(c => c.id === t.cardId);
+      paymentMethod = card ? `Cartão ${card.name}` : 'Cartão';
+    } else if (t.accountId) {
+      const acc = data.accounts.find(a => a.id === t.accountId);
+      paymentMethod = acc ? acc.name : 'Conta';
+    }
+
+    const typeStr = t.type === 'expense' ? 'Despesa' : 'Receita';
+    const valFormatted = (t.type === 'expense' ? -t.amount : t.amount).toFixed(2).replace('.', ',');
+
+    lines.push(
+      `"${formatDate(t.date)}";"${(t.description || '').replace(/"/g, '""')}";"${resolved.name}";"${paymentMethod}";"${typeStr}";"${t.status}";${valFormatted}`
+    );
+  });
+
+  if (sortedTxs.length === 0) {
+    lines.push('"-";"Nenhum lançamento no período";"-";"-";"-";"-";"0,00"');
+  }
+
+  // Summary Row
+  lines.push(`"";"TOTAL GERAL";"";"";"${sortedTxs.length} item(ns)";"";${data.netBalance.toFixed(2).replace('.', ',')}`);
+
+  await downloadCSV(`extrato_finly_${data.periodSlug}.csv`, lines.join('\n'), 'Extrato Financeiro Finly (CSV)');
+}

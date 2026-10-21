@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { getCardBankInfo } from '../src/utils/bankLogos';
-import { InvoiceExportData } from '../src/utils/reportExportService';
+import type { InvoiceExportData } from '../src/utils/reportExportService';
+import { resolveBankPdfTheme } from '../src/utils/bankPdfThemes';
 import { CreditCard } from '../src/types';
 
 console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---');
@@ -109,5 +110,59 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   console.log('✓ Teste 5: Validação do final do cartão e tratamento elegante para ausência');
 }
 
-console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');
+// 5. Teste de resolução de temas visuais bancários (Inter, Nubank, Itaú, Co-branded Amazon e Casas Bahia)
+{
+  const interCard: CreditCard = {
+    id: 'c1',
+    name: 'Banco Inter Gold',
+    brand: 'Mastercard',
+    limit: 6780,
+    closingDay: 3,
+    dueDay: 10,
+    color: '#ff7a00',
+  };
+  const themeInter = resolveBankPdfTheme(interCard);
+  assert.equal(themeInter.code, '077');
+  assert.equal(themeInter.accent, '#FF7A00');
+  assert.deepEqual(themeInter.accentRgb, [255, 122, 0]);
 
+  const nuCard: CreditCard = {
+    id: 'c2',
+    name: 'Nubank',
+    brand: 'Mastercard',
+    limit: 10000,
+    closingDay: 20,
+    dueDay: 27,
+  };
+  const themeNu = resolveBankPdfTheme(nuCard);
+  assert.equal(themeNu.code, '260');
+  assert.equal(themeNu.accent, '#820AD1');
+
+  const amazonCard: CreditCard = {
+    id: 'c3',
+    name: 'Cartão Amazon Prime',
+    brand: 'Mastercard',
+    limit: 8000,
+    closingDay: 15,
+    dueDay: 22,
+  };
+  const themeAmazon = resolveBankPdfTheme(amazonCard);
+  assert.equal(themeAmazon.id, 'amazon');
+  assert.equal(themeAmazon.accent, '#FF9900');
+
+  const casasBahiaCard: CreditCard = {
+    id: 'c4',
+    name: 'Casas Bahia Bradescard',
+    brand: 'Visa',
+    limit: 5000,
+    closingDay: 5,
+    dueDay: 12,
+  };
+  const themeBahia = resolveBankPdfTheme(casasBahiaCard);
+  assert.equal(themeBahia.id, 'casasbahia');
+  assert.equal(themeBahia.accent, '#0047BB');
+
+  console.log('✓ Teste 6: Resolução de temas visuais bancários e co-branded (Inter, Nubank, Amazon, Casas Bahia) validada com sucesso');
+}
+
+console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');

@@ -5,19 +5,23 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-16
 
-### Demonstrativo Executivo de Faturas em PDF (Identidade Bancária e Gráficos)
-- **Branding Dinâmico do Banco Emissor**:
-  - Integração do gerador de PDF (`reportExportService.ts`) com `getCardBankInfo` e `card.color`: os demonstrativos em PDF agora assumem a identidade cromática e institucional oficial de bancos brasileiros (ex: Nubank roxo `#820AD1`, Banco Inter laranja `#FF7A00`, Itaú laranja/marinho `#EC7000`, Bradesco/Santander vermelho, BTG/C6 Black, etc.).
-- **Miniatura Ilustrada do Cartão Virtual**:
-  - Cabeçalho executivo redesenhado com miniatura do cartão de crédito contendo chip metálico, símbolo *contactless* de aproximação, bandeira (Mastercard, Visa, Elo, etc.), numeração mascarada e titularidade.
-- **Destaque Mandatório da Data de Fechamento**:
-  - Inclusão do dia de fechamento da fatura em destaque no cabeçalho e em card exclusivo de KPI, com indicação do melhor dia para compras no ciclo subsequente.
-- **Cards Executivos de Resumo e Indicadores (KPIs)**:
-  - 4 cards analíticos: Total da Fatura, Fechamento da Fatura, Vencimento com badge de quitação/status, e Limite Total com Limite Disponível e barra gráfica de comprometimento.
-- **Análise Visual de Gastos por Categoria (Gráfico Donut em Alta Resolução)**:
-  - Geração de gráfico donut via Canvas de alta densidade (300 DPI) com paleta harmonizada com as cores do banco e barras proporcionais por categoria.
-- **Tabela de Lançamentos Detalhada e Zebrada**:
-  - Extrato detalhado com cabeçalho na paleta escura do banco, destaque para parcelas (`1/10`), identificador de terceiros/reembolsos e subtotal de fechamento.
+### Novo Layout Executivo de Faturas e Extratos (PDF e CSV)
+- **Design System de Página Única (Single-Page A4 Lock)**:
+  - Ajuste milimétrico de alturas verticais e paddings para garantir que demonstrativos de até 15 lançamentos caibam integralmente em exatamente 1 página A4 sem cortes ou separação da tabela de detalhamento.
+- **Suavização Cromática e Header com Gradiente Oficial**:
+  - Fundo do cabeçalho em Slate/Navy profundo (`#0F172A` a `#1E293B`) transicionando suavemente para a cor do emissor (Banco Inter, Nubank, Itaú, Mercado Pago, C6, Bradesco, etc.) e finalizado com linha inferior de sotaque de 1.2mm.
+- **Mockup Fotorrealista do Cartão de Crédito**:
+  - Miniatura do cartão com proporção oficial 1.586:1 (54mm x 34mm), cantos arredondados, chip EMV metálico com linhas de circuito, ondas de aproximação *contactless* `)))`, wordmark da instituição e bandeira oficial (Mastercard com círculos sobrepostos perfeitos ou Visa).
+- **Pílula de Identificação do Emissor e Barra de Metadados**:
+  - Badge no padrão `#F8FAFC` com borda sutil, emblema oficial, código COMPE e nome da instituição.
+  - Barra de metadados horizontal com Competência, Fechamento, Vencimento e Emissão.
+- **4 KPI Cards Executivos com Faixas Semânticas**:
+  - Total da Fatura em destaque carmim `#E11D48`, Fechamento com indicação de melhor dia de compra em esmeralda, Vencimento com badge de status (Paga, Aberta, Vencida), e Limite Total com barra gráfica de utilização.
+- **Gráfico Donut e Tabelas com Cabeçalho Slate `#273444`**:
+  - Gráfico Donut de alta resolução com valores centrais, marcadores coloridos, barras de progresso e pílulas de porcentagem.
+  - Tabelas de resumo de categorias e lançamentos detalhados com cabeçalho Slate escuro elegante `#273444`, linhas zebradas e linha final de totalizadores.
+- **Exportações CSV Ricas com Codificação UTF-8 BOM**:
+  - Estruturação completa em seções (Metadados, Resumo Executivo, Distribuição por Categoria e Lançamentos Detalhados) com separador `;` e prefixo UTF-8 BOM (`\uFEFF`) para compatibilidade perfeita no Microsoft Excel e Google Planilhas.
 
 ### Recorrência de Despesas e Composição de Taxas (Condomínio, Água e Extras)
 - **Recálculo Dinâmico do Valor da Recorrência na Expiração de Taxas Temporárias**:

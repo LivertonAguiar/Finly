@@ -45,8 +45,8 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
-        title: 'PDF de Faturas com Identidade Bancária, Logos Oficiais e 4 Dígitos',
-        description: 'Demonstrativo executivo de faturas de cartão de crédito em PDF com branding dinâmico e logotipos oficiais da instituição (Nubank, Inter, Itaú, Bradesco, Santander, BTG, etc.) e da bandeira (Mastercard, Visa, Elo, etc.) rasterizados em alta resolução. Proporções executivas no cartão virtual e gráfico Donut, suporte ao cadastro dos 4 últimos dígitos do cartão e tratamento elegante para ausência de numeração.',
+        title: 'Novo Layout Executivo de Faturas e Extratos (PDF e CSV)',
+        description: 'Design executivo refinado de página única (Single-Page A4 Lock) com suavização cromática Slate/Navy, banner com gradiente oficial do emissor, mockup fotorrealista do cartão com chip metálico e contactless, 4 KPI cards analíticos com faixas semânticas, gráfico Donut de alta resolução com barras e pílulas percentuais, tabelas zebradas com cabeçalho Slate #273444, rodapé de autenticação eletrônica oficial e exportações CSV enriquecidas com UTF-8 BOM para Excel.',
         type: 'feature',
       },
       {
