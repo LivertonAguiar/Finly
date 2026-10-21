@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.19",
+    "version": "1.1.79.20",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.19.zip",
-    "sha256": "a55e692b269e94bbe089d36bf716df084d9e9662de31a4b451ac5c4046643331",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.20.zip",
+    "sha256": "10f28ed5f609d242c25bafbdeeb4f2776a7567f18d9ad636da1287af56a4aedd",
     "mandatory": true,
     "releaseDate": "2026-10-21",
-    "notes": "Logos oficiais de banco e bandeira no PDF de fatura, proporcoes executivas e ultimos 4 digitos"
+    "notes": "Novo layout executivo de faturas e extratos em PDF e CSV com branding bancario e KPI cards"
   }
 }
