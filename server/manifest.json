@@ -8,7 +8,7 @@
     "version": "1.1.79.15",
     "minNativeVersion": "1.1.0",
     "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.15.zip",
-    "sha256": "12f8cd74b1d7214c14bd0ad3c4e5d320e6ac3139543c27b701d4bfe2c81f19f8",
+    "sha256": "9906daacbf5ce3f3043503eada4882cef421671787717bef9a6247740f0401af",
     "mandatory": true,
     "releaseDate": "2026-10-21",
     "notes": "Correcao de recalculo de condominio e propagacao de composicao fixa e variavel para meses futuros."
