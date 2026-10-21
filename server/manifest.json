@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.79/finly-v1.1.79.apk"
   },
   "web": {
-    "version": "1.1.79.17",
+    "version": "1.1.79.18",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.17.zip",
-    "sha256": "1b64f227a4c75565ea0ff87d6e20dc2ba975a6206b6c6c714686337f31a4e468",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.79.18.zip",
+    "sha256": "6770e548b028658088bf3e9e13aa9a12bcc029f3121c431ae343d05139a80db6",
     "mandatory": true,
     "releaseDate": "2026-10-21",
-    "notes": "Integracao do topo transparente com gradiente e sincronizacao da status bar"
+    "notes": "Demonstrativo executivo de faturas em PDF com identidade bancaria, graficos e fechamento"
   }
 }
