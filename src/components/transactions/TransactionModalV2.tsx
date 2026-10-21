@@ -282,25 +282,34 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       }
 
       setSplitItems(loadedItems);
+      const totalCents = loadedItems.reduce((acc, it) => acc + Math.round((Number(it.amount) || 0) * 100), 0);
+      if (totalCents > 0) {
+        setCentsAmount(totalCents);
+        setAmount((totalCents / 100).toFixed(2));
+      }
     } else if (seriesTemplates && seriesTemplates.length > 0) {
       setHasSplit(true);
-      setSplitItems(
-        seriesTemplates.map((t, idx) => ({
-          id: (t as any).id || `tmpl-${idx}`,
-          description: t.description,
-          amount: t.amount,
-          categoryId: t.categoryId || tx?.categoryId || '',
-          subcategoryId: t.subcategoryId || tx?.subcategoryId || '',
-          financialNature: (t as any).financialNature,
-          necessity: (t as any).characteristics?.necessity,
-          type: t.type,
-          currentInstallment: t.type === 'temporary'
-            ? (t.recurrenceConfig?.currentInstallment || 1) + ((tx?.seriesSequence || 1) - 1)
-            : undefined,
-          totalInstallments: t.recurrenceConfig?.totalInstallments,
-          notes: t.notes,
-        })),
-      );
+      const loadedItems = seriesTemplates.map((t, idx) => ({
+        id: (t as any).id || `tmpl-${idx}`,
+        description: t.description,
+        amount: t.amount,
+        categoryId: t.categoryId || tx?.categoryId || '',
+        subcategoryId: t.subcategoryId || tx?.subcategoryId || '',
+        financialNature: (t as any).financialNature,
+        necessity: (t as any).characteristics?.necessity,
+        type: t.type,
+        currentInstallment: t.type === 'temporary'
+          ? (t.recurrenceConfig?.currentInstallment || 1) + ((tx?.seriesSequence || 1) - 1)
+          : undefined,
+        totalInstallments: t.recurrenceConfig?.totalInstallments,
+        notes: t.notes,
+      }));
+      setSplitItems(loadedItems);
+      const totalCents = loadedItems.reduce((acc, it) => acc + Math.round((Number(it.amount) || 0) * 100), 0);
+      if (totalCents > 0) {
+        setCentsAmount(totalCents);
+        setAmount((totalCents / 100).toFixed(2));
+      }
     } else {
       setHasSplit(false);
       setSplitItems([]);
@@ -724,6 +733,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       return setError('Informe a data de vencimento da despesa pendente ou com lembrete.');
     }
 
+    let finalAmount = amountNumber;
+
     if (hasSplit && splitItems.length > 0) {
       const hasInvalidItem = splitItems.some(it => !it.amount || it.amount <= 0);
       if (hasInvalidItem) {
@@ -732,14 +743,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
       const splitValidation = validateTransactionComponents(amountNumber, splitItems);
       if (!splitValidation.isValid) {
-        if (splitValidation.difference > 0) {
-          return setError(`Faltam ${formatCurrency(splitValidation.difference, user.currency)} para distribuir entre os itens do detalhamento.`);
+        // Se estiver editando despesa recorrente ou lançamento existente com detalhamento,
+        // alinha automaticamente com a soma real dos itens para não bloquear a atualização
+        if (editingSeries?.kind === 'recurring_expense' || Boolean(editingTransaction)) {
+          finalAmount = splitValidation.distributedAmount;
+          const newCents = Math.round(finalAmount * 100);
+          setCentsAmount(newCents);
+          setAmount((newCents / 100).toFixed(2));
+        } else {
+          if (splitValidation.difference > 0) {
+            return setError(`Faltam ${formatCurrency(splitValidation.difference, user.currency)} para distribuir entre os itens do detalhamento.`);
+          }
+          return setError(`O valor dos itens do detalhamento excede o total em ${formatCurrency(Math.abs(splitValidation.difference), user.currency)}.`);
         }
-        return setError(`O valor dos itens do detalhamento excede o total em ${formatCurrency(Math.abs(splitValidation.difference), user.currency)}.`);
       }
     }
 
-    const txData = baseTransaction();
+    const txData = {
+      ...baseTransaction(),
+      amount: finalAmount,
+    };
     if (editingTransaction) {
       if (editingSeries?.kind === 'recurring_expense') {
         if (fixedEditScope === 'current_and_future') {
@@ -748,11 +771,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               editingTransaction.id,
               txData.components || [],
               'current_and_future',
-              amountNumber,
+              finalAmount,
               overwriteExceptions,
             );
-          } else if (amountNumber !== editingTransaction.amount) {
-            updateRecurringExpenseAmount(editingTransaction.id, amountNumber, 'current_and_future', overwriteExceptions);
+          } else if (finalAmount !== editingTransaction.amount) {
+            updateRecurringExpenseAmount(editingTransaction.id, finalAmount, 'current_and_future', overwriteExceptions);
             updateTransaction(editingTransaction.id, txData);
           } else {
             updateTransaction(editingTransaction.id, txData);
@@ -1261,6 +1284,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   currency={user.currency}
                   defaultCategoryId={categoryId}
                   defaultSubcategoryId={subcategoryId}
+                  onUpdateTotalAmount={newTotal => {
+                    const newCents = Math.round(newTotal * 100);
+                    setCentsAmount(newCents);
+                    setAmount((newCents / 100).toFixed(2));
+                    setError('');
+                  }}
                 />
               )}
             </div>
@@ -1904,7 +1933,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           )}
         </div>}
-        {error && <p role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600">{error}</p>}
+        {error && (
+          <div role="alert" className="rounded-xl bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-sm font-bold text-rose-600 flex items-center justify-between gap-2 flex-wrap">
+            <span>{error}</span>
+            {hasSplit && splitItems.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const itemsSum = splitItems.reduce((acc, it) => acc + (Number(it.amount) || 0), 0);
+                  const newCents = Math.round(itemsSum * 100);
+                  setCentsAmount(newCents);
+                  setAmount((newCents / 100).toFixed(2));
+                  setError('');
+                }}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer"
+              >
+                Sincronizar total com os itens
+              </button>
+            )}
+          </div>
+        )}
       </form>
     </Modal>
   </>

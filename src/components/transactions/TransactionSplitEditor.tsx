@@ -30,6 +30,7 @@ interface TransactionSplitEditorProps {
   currency?: string;
   defaultCategoryId?: string;
   defaultSubcategoryId?: string;
+  onUpdateTotalAmount?: (newTotal: number) => void;
 }
 
 const COMMON_PRESETS = [
@@ -49,6 +50,7 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
   currency = 'BRL',
   defaultCategoryId = '',
   defaultSubcategoryId = '',
+  onUpdateTotalAmount,
 }) => {
   const expenseCategories = useMemo(
     () => categories.filter(c => c.type === 'expense'),
@@ -383,15 +385,26 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
             )}
           </div>
 
-          {validation.difference > 0 && (
-            <button
-              type="button"
-              onClick={handleDistributeRemainder}
-              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 transition-colors cursor-pointer"
-            >
-              Distribuir restante
-            </button>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {validation.difference > 0 && (
+              <button
+                type="button"
+                onClick={handleDistributeRemainder}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 transition-colors cursor-pointer"
+              >
+                Distribuir restante
+              </button>
+            )}
+            {!validation.isValid && onUpdateTotalAmount && (
+              <button
+                type="button"
+                onClick={() => onUpdateTotalAmount(validation.distributedAmount)}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-800 dark:text-purple-300 transition-colors cursor-pointer"
+              >
+                Ajustar total para {formatCurrency(validation.distributedAmount, currency)}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

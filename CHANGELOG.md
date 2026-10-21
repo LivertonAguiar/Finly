@@ -11,9 +11,10 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 - **Propagação de Composição Fixa e Variável para os Próximos Meses**:
   - Ao salvar ou editar um lançamento recorrente no escopo "Este e os próximos meses", os itens de comportamento fixo e variável (como taxa geral condominial e água/esgoto) são consolidados nos templates da série e propagados automaticamente para todas as ocorrências futuras.
   - Descoberta inteligente de templates a partir de ocorrências anteriores da série caso a série ainda não possuísse `componentTemplates` definidos.
-- **Cabeçalho Fiel e Sincronização no Modal de Detalhes**:
+- **Cabeçalho Fiel e Sincronização no Modal de Detalhes e Edição**:
   - O cabeçalho "Total" na seção de Composição da Taxa agora exibe a soma real dos itens discriminados (`effectiveComponentsSum`) em vez de reproduzir cegamente o valor total da transação.
   - Alerta contextual e botão "Sincronizar Valor" para corrigir qualquer lançamento com divergência entre a composição e o valor global em 1 clique.
+  - Eliminação do bloqueio de validação ("O valor dos itens do detalhamento excede o total em R$ X") no modal de edição: o valor global do lançamento se sincroniza automaticamente com a soma dos componentes ativos, permitindo salvar e propagar as alterações sem travas.
 
 ### Visual, Layout e Responsividade (Web e Mobile)
 - **Visualização Sem Cortes no Calendário Web**:
