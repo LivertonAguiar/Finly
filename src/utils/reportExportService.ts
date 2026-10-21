@@ -1,3 +1,5 @@
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Transaction, Category, Account, CreditCard } from '../types';
@@ -5,7 +7,7 @@ import { ViewRegime } from './invoiceCalculator';
 import { formatCurrency, formatDate } from './formatters';
 import { resolveCategory } from './categoryResolver';
 import { saveOrShareFile } from './fileDownloadHelper';
-import { getCardBankInfo } from './bankLogos';
+import { getCardBankInfo, BankLogo, CardBrandLogo } from './bankLogos';
 
 export interface ReportExportData {
   periodLabel: string;
@@ -879,7 +881,50 @@ function getContrastTextColor([r, g, b]: [number, number, number]): [number, num
 }
 
 /**
- * Generates an executive Donut Chart canvas for invoice category distribution
+ * Rasterizes an SVG markup string into a high-resolution PNG data URL for jsPDF embedding
+ */
+async function rasterizeSvgToPng(svgString: string, width = 160, height = 160): Promise<string | null> {
+  if (typeof document === 'undefined') return null;
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      let cleanSvg = svgString;
+      if (!cleanSvg.includes('xmlns=')) {
+        cleanSvg = cleanSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+      }
+      if (!cleanSvg.includes('width=')) {
+        cleanSvg = cleanSvg.replace('<svg ', `<svg width="${width}" height="${height}" `);
+      }
+      const svgBase64 = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cleanSvg);
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/png'));
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => {
+        resolve(null);
+      };
+      img.src = svgBase64;
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Generates an executive Donut Chart canvas for invoice category distribution with natural uncompressed proportions
  */
 function createInvoiceDonutChartCanvas(
   categoriesMap: Record<string, { name: string; amount: number; count: number }>,
@@ -889,8 +934,8 @@ function createInvoiceDonutChartCanvas(
 ): string | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
-  canvas.width = 880;
-  canvas.height = 340;
+  canvas.width = 900;
+  canvas.height = 420;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
@@ -952,11 +997,11 @@ function createInvoiceDonutChartCanvas(
     });
   }
 
-  // Draw Donut on the left
-  const cx = 150;
-  const cy = 170;
-  const outerR = 110;
-  const innerR = 68;
+  // Draw Donut on the left with natural proportions
+  const cx = 175;
+  const cy = 210;
+  const outerR = 135;
+  const innerR = 85;
   let currentAngle = -Math.PI / 2;
 
   topItems.forEach(item => {
@@ -980,42 +1025,42 @@ function createInvoiceDonutChartCanvas(
   // Donut Center Text
   ctx.textAlign = 'center';
   ctx.fillStyle = '#64748B';
-  ctx.font = 'bold 12px Helvetica, Arial, sans-serif';
+  ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
   ctx.fillText('TOTAL FATURA', cx, cy - 8);
 
   ctx.fillStyle = '#0F172A';
-  ctx.font = 'bold 17px Helvetica, Arial, sans-serif';
-  ctx.fillText(formatCurrency(total, currency, false), cx, cy + 16);
+  ctx.font = 'bold 20px Helvetica, Arial, sans-serif';
+  ctx.fillText(formatCurrency(total, currency, false), cx, cy + 18);
 
   // Legend on Right
-  const legendX = 320;
+  const legendX = 360;
   let legendY = 32;
-  const rowH = 48;
+  const rowH = 56;
 
   ctx.textAlign = 'left';
   topItems.forEach(item => {
     // Color Dot
     ctx.fillStyle = item.color;
     ctx.beginPath();
-    ctx.arc(legendX + 6, legendY + 10, 6, 0, Math.PI * 2);
+    ctx.arc(legendX + 8, legendY + 12, 8, 0, Math.PI * 2);
     ctx.fill();
 
     // Category Name
     ctx.fillStyle = '#1E293B';
-    ctx.font = 'bold 15px Helvetica, Arial, sans-serif';
-    const cleanName = item.name.length > 22 ? item.name.substring(0, 20) + '...' : item.name;
-    ctx.fillText(cleanName, legendX + 22, legendY + 14);
+    ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
+    const cleanName = item.name.length > 24 ? item.name.substring(0, 22) + '...' : item.name;
+    ctx.fillText(cleanName, legendX + 26, legendY + 16);
 
     // Value
     ctx.fillStyle = '#475569';
-    ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
-    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 22, legendY + 32);
+    ctx.font = 'bold 14px Helvetica, Arial, sans-serif';
+    ctx.fillText(formatCurrency(item.amount, currency, false), legendX + 26, legendY + 36);
 
     // Progress bar
-    const barX = legendX + 220;
-    const maxBarW = 210;
-    const barY = legendY + 7;
-    const barH = 7;
+    const barX = legendX + 230;
+    const maxBarW = 200;
+    const barY = legendY + 9;
+    const barH = 8;
     const fillW = Math.max(4, (item.pct / 100) * maxBarW);
 
     ctx.fillStyle = '#F1F5F9';
@@ -1024,10 +1069,10 @@ function createInvoiceDonutChartCanvas(
     ctx.fillRect(barX, barY, fillW, barH);
 
     // Percentage Pill
-    const pillW = 62;
-    const pillH = 22;
+    const pillW = 66;
+    const pillH = 26;
     const pillX = canvas.width - pillW - 25;
-    const pillY = legendY + 2;
+    const pillY = legendY + 3;
 
     ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(pillX, pillY, pillW, pillH);
@@ -1036,9 +1081,9 @@ function createInvoiceDonutChartCanvas(
     ctx.strokeRect(pillX, pillY, pillW, pillH);
 
     ctx.fillStyle = item.color;
-    ctx.font = 'bold 12px Helvetica, Arial, sans-serif';
+    ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 15);
+    ctx.fillText(`${item.pct.toFixed(1)}%`, pillX + pillW / 2, pillY + 17);
 
     ctx.textAlign = 'left';
     legendY += rowH;
@@ -1083,87 +1128,122 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     : Math.max(0, cardLimit - data.invoiceTotal);
   const usedPercentage = cardLimit > 0 ? Math.min(100, Math.max(0, ((cardLimit - availableLimit) / cardLimit) * 100)) : 0;
 
-  // 2. Executive Header Banner (Dark bank shade with primary accent line)
+  // 2. Rasterize Official Bank and Card Brand Logos
+  let bankLogoPng: string | null = null;
+  let brandLogoPng: string | null = null;
+
+  try {
+    const bankSvg = renderToStaticMarkup(
+      React.createElement(BankLogo, {
+        nameOrId: data.card.bankId || data.card.name,
+        size: 140,
+        radius: 8,
+      })
+    );
+    bankLogoPng = await rasterizeSvgToPng(bankSvg, 140, 140);
+  } catch (err) {
+    console.warn('Notice: Failed to rasterize bank logo:', err);
+  }
+
+  try {
+    const brandSvg = renderToStaticMarkup(
+      React.createElement(CardBrandLogo, {
+        brand: data.card.brand || 'Mastercard',
+        size: 140,
+        radius: 6,
+      })
+    );
+    brandLogoPng = await rasterizeSvgToPng(brandSvg, 160, 110);
+  } catch (err) {
+    console.warn('Notice: Failed to rasterize card brand logo:', err);
+  }
+
+  // 3. Executive Header Banner (Spacious 50mm height with official Bank Emblem & Card)
   doc.setFillColor(darkRgb[0], darkRgb[1], darkRgb[2]);
-  doc.rect(0, 0, 210, 44, 'F');
+  doc.rect(0, 0, 210, 50, 'F');
   // Bottom accent line
   doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-  doc.rect(0, 42.5, 210, 1.5, 'F');
+  doc.rect(0, 48.5, 210, 1.5, 'F');
 
-  // Title area
+  // Bank Logo Emblem Box on Left
+  const emblemX = 14;
+  const emblemY = 10;
+  const emblemSize = 16;
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(emblemX, emblemY, emblemSize, emblemSize, 3, 3, 'F');
+  if (bankLogoPng) {
+    doc.addImage(bankLogoPng, 'PNG', emblemX + 1, emblemY + 1, emblemSize - 2, emblemSize - 2);
+  }
+
+  // Title area beside emblem
+  const textLeftX = emblemX + emblemSize + 4; // 34mm
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('FINLY', 14, 14);
+  doc.setFontSize(15);
+  doc.text('FINLY', textLeftX, 16);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(226, 232, 240);
-  doc.text('•  DEMONSTRATIVO DE FATURA', 35, 14);
+  doc.text('•  DEMONSTRATIVO DE FATURA', textLeftX + 18, 16);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(255, 255, 255);
-  doc.text(`Fatura de ${data.monthLabel}`, 14, 22);
+  doc.text(`Fatura de ${data.monthLabel}`, textLeftX, 24);
 
-  // Bank badge pill
+  // Bank & Brand Pill Badge
   const bankPillText = `${bankName}${bankCode ? ` (${bankCode})` : ''} • ${cardBrand}`;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   const pillTextWidth = doc.getTextWidth(bankPillText);
-  const pillW = pillTextWidth + 10;
+  const pillW = pillTextWidth + 8;
   const pillH = 6;
-  const pillX = 14;
-  const pillY = 26;
+  const pillY = 28;
 
   doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-  doc.roundedRect(pillX, pillY, pillW, pillH, 1.5, 1.5, 'F');
+  doc.roundedRect(textLeftX, pillY, pillW, pillH, 1.5, 1.5, 'F');
   doc.setTextColor(textOnPrimary[0], textOnPrimary[1], textOnPrimary[2]);
-  doc.text(bankPillText, pillX + 5, pillY + 4.3);
+  doc.text(bankPillText, textLeftX + 4, pillY + 4.3);
+
+  // Optional Brand Badge beside Pill
+  if (brandLogoPng) {
+    const brandBadgeX = textLeftX + pillW + 3;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(brandBadgeX, pillY, 11, pillH, 1.5, 1.5, 'F');
+    doc.addImage(brandLogoPng, 'PNG', brandBadgeX + 1, pillY + 0.8, 9, 4.4);
+  }
 
   // Subtitle with closing & due dates
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(203, 213, 225);
-  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, 14, 38);
+  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, textLeftX, 41);
 
-  // 3. Mini Virtual Credit Card on Top Right
-  const cardX = 144;
-  const cardY = 5.5;
-  const cardW = 52;
-  const cardH = 33;
+  // 4. Proportional Mini Virtual Credit Card on Top Right (True 1.6:1 Credit Card ratio: 56x35mm)
+  const cardX = 142;
+  const cardY = 7.5;
+  const cardW = 56;
+  const cardH = 35;
 
   doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-  doc.roundedRect(cardX, cardY, cardW, cardH, 2.5, 2.5, 'F');
+  doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'F');
   doc.setDrawColor(255, 255, 255);
   doc.setLineWidth(0.2);
-  doc.roundedRect(cardX, cardY, cardW, cardH, 2.5, 2.5, 'S');
+  doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'S');
 
-  // Chip
-  doc.setFillColor(226, 232, 240);
-  doc.roundedRect(cardX + 4, cardY + 4.5, 7.5, 5.5, 1, 1, 'F');
-  doc.setDrawColor(148, 163, 184);
-  doc.setLineWidth(0.2);
-  doc.line(cardX + 4, cardY + 7.2, cardX + 11.5, cardY + 7.2);
-  doc.line(cardX + 7.7, cardY + 4.5, cardX + 7.7, cardY + 10);
+  // Top Left of Card: Official Bank Logo
+  if (bankLogoPng) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(cardX + 4, cardY + 3.5, 8.5, 8.5, 1.8, 1.8, 'F');
+    doc.addImage(bankLogoPng, 'PNG', cardX + 4.5, cardY + 4, 7.5, 7.5);
+  }
 
-  // Contactless wave
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(255, 255, 255);
-  doc.text(')))', cardX + 13.5, cardY + 8.5);
-
-  // Brand Logo / Badge
-  if (cardBrand.includes('MASTER')) {
-    doc.setFillColor(235, 0, 27);
-    doc.circle(cardX + cardW - 11, cardY + 7.5, 3.2, 'F');
-    doc.setFillColor(255, 95, 0);
-    doc.circle(cardX + cardW - 6.5, cardY + 7.5, 3.2, 'F');
-  } else if (cardBrand.includes('VISA')) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text('VISA', cardX + cardW - 5, cardY + 8.5, { align: 'right' });
+  // Top Right of Card: Official Card Brand Logo
+  if (brandLogoPng) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(cardX + cardW - 13.5, cardY + 3.5, 10, 7.5, 1.5, 1.5, 'F');
+    doc.addImage(brandLogoPng, 'PNG', cardX + cardW - 13, cardY + 4, 9, 6.5);
   } else {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
@@ -1171,41 +1251,55 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     doc.text(cardBrand, cardX + cardW - 4, cardY + 8, { align: 'right' });
   }
 
-  // Masked Number
-  doc.setFont('courier', 'bold');
+  // Center: Metallic Chip & Contactless wave
+  doc.setFillColor(226, 232, 240);
+  doc.roundedRect(cardX + 4, cardY + 13.5, 8, 6, 1, 1, 'F');
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.2);
+  doc.line(cardX + 4, cardY + 16.5, cardX + 12, cardY + 16.5);
+  doc.line(cardX + 8, cardY + 13.5, cardX + 8, cardY + 19.5);
+
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(255, 255, 255);
-  const last4 = (data.card.id || '9876').slice(-4);
-  doc.text(`••••  ••••  ••••  ${last4}`, cardX + 4, cardY + 18);
+  doc.text(')))', cardX + 14, cardY + 18);
+
+  // Masked Number (Correct handling of absence: no dummy numbers!)
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  const cardDigits = data.card.last4Digits ? data.card.last4Digits.trim() : '';
+  const cardNumberDisplay = cardDigits ? `••••  ••••  ••••  ${cardDigits}` : `••••  ••••  ••••  ••••`;
+  doc.text(cardNumberDisplay, cardX + 4, cardY + 24);
 
   // Cardholder and Due
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.5);
+  doc.setFontSize(6);
   doc.setTextColor(226, 232, 240);
   const holderRaw = data.userEmail ? data.userEmail.split('@')[0] : data.card.name;
   const holderName = holderRaw.toUpperCase().substring(0, 16);
-  doc.text(holderName, cardX + 4, cardY + 26);
-  doc.text(`VENC: DIA ${dueDay.toString().padStart(2, '0')}`, cardX + cardW - 4, cardY + 26, { align: 'right' });
+  doc.text(holderName, cardX + 4, cardY + 30.5);
+  doc.text(`VENC: DIA ${dueDay.toString().padStart(2, '0')}`, cardX + cardW - 4, cardY + 30.5, { align: 'right' });
 
-  // 4. Metadata Info Bar (Between Header and Cards)
-  let currentY = 48;
+  // 5. Metadata Info Bar (Between Header and Cards, generous 8mm height)
+  let currentY = 54;
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, currentY, 182, 7, 1.2, 1.2, 'F');
+  doc.roundedRect(14, currentY, 182, 8, 1.5, 1.5, 'F');
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.2);
-  doc.roundedRect(14, currentY, 182, 7, 1.2, 1.2, 'S');
+  doc.roundedRect(14, currentY, 182, 8, 1.5, 1.5, 'S');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
-  doc.text(`Competência: ${data.monthLabel}`, 18, currentY + 4.7);
+  doc.text(`Competência: ${data.monthLabel}`, 18, currentY + 5.2);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, 105, currentY + 4.7, { align: 'center' });
+  doc.text(`Fechamento: Todo dia ${closingDay}  |  Vencimento: Todo dia ${dueDay}`, 105, currentY + 5.2, { align: 'center' });
   doc.setFont('helvetica', 'normal');
-  doc.text(`Emissão: ${generationDateStr}`, 192, currentY + 4.7, { align: 'right' });
-  currentY += 12;
+  doc.text(`Emissão: ${generationDateStr}`, 192, currentY + 5.2, { align: 'right' });
+  currentY += 14;
 
-  // 5. Section 1: Resumo Executivo da Fatura (4 Modern KPI Cards)
+  // 6. Section 1: Resumo Executivo da Fatura (4 Modern KPI Cards com 28mm de altura sem achatamento)
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
@@ -1213,7 +1307,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   currentY += 4.5;
 
   const cardWidth = 43;
-  const cardHeight = 23;
+  const cardHeight = 28;
   const cardGap = 3.33;
   const startX = 14;
 
@@ -1273,58 +1367,58 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
-    doc.text(c.title, x + 5, currentY + 6);
+    doc.text(c.title, x + 5, currentY + 7);
 
     // Value
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(idx === 0 ? 11 : 10);
+    doc.setFontSize(idx === 0 ? 11.5 : 10.5);
     doc.setTextColor(idx === 0 ? c.accentColor[0] : 15, idx === 0 ? c.accentColor[1] : 23, idx === 0 ? c.accentColor[2] : 42);
-    doc.text(c.value, x + 5, currentY + 13.5);
+    doc.text(c.value, x + 5, currentY + 16);
 
     // Subtitle or Bar
     if (c.bar !== null) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.5);
+      doc.setFontSize(5.8);
       doc.setTextColor(71, 85, 105);
-      doc.text(c.sub, x + 5, currentY + 18.5);
+      doc.text(c.sub, x + 5, currentY + 22);
 
       // Usage bar
       const barX = x + 5;
-      const barY = currentY + 20;
+      const barY = currentY + 23.5;
       const barW = cardWidth - 10;
-      const barH = 1.6;
+      const barH = 1.8;
       doc.setFillColor(241, 245, 249);
-      doc.roundedRect(barX, barY, barW, barH, 0.8, 0.8, 'F');
+      doc.roundedRect(barX, barY, barW, barH, 0.9, 0.9, 'F');
       const fillW = Math.max(1, (c.bar / 100) * barW);
       doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-      doc.roundedRect(barX, barY, fillW, barH, 0.8, 0.8, 'F');
+      doc.roundedRect(barX, barY, fillW, barH, 0.9, 0.9, 'F');
     } else if (c.badge) {
       // Badge
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.5);
+      doc.setFontSize(5.8);
       const isOk = c.badge.includes('PAGA');
       const isErr = c.badge.includes('VENC');
       doc.setFillColor(isOk ? 220 : isErr ? 254 : 254, isOk ? 252 : isErr ? 226 : 243, isOk ? 231 : isErr ? 226 : 199);
       const badgeW = doc.getTextWidth(`● ${c.badge}`) + 5;
-      doc.roundedRect(x + 5, currentY + 15.5, Math.min(cardWidth - 8, badgeW), 4.5, 1, 1, 'F');
+      doc.roundedRect(x + 5, currentY + 19.5, Math.min(cardWidth - 8, badgeW), 5, 1.2, 1.2, 'F');
       doc.setTextColor(isOk ? 22 : isErr ? 153 : 146, isOk ? 101 : isErr ? 27 : 64, isOk ? 52 : isErr ? 27 : 14);
-      doc.text(`● ${c.badge}`, x + 7.5, currentY + 18.8);
+      doc.text(`● ${c.badge}`, x + 7.5, currentY + 23.2);
     } else {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(5.8);
+      doc.setFontSize(6.2);
       doc.setTextColor(idx === 1 ? 16 : 100, idx === 1 ? 185 : 116, idx === 1 ? 129 : 139);
-      doc.text(c.sub, x + 5, currentY + 19);
+      doc.text(c.sub, x + 5, currentY + 22.5);
     }
   });
 
-  currentY += cardHeight + 8;
+  currentY += cardHeight + 9;
 
-  // 6. Section 2: Distribuição de Gastos da Fatura (Donut Chart + Table)
+  // 7. Section 2: Distribuição de Gastos da Fatura (Donut Chart proporcional + Tabela)
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('2. Distribuição de Gastos da Fatura', 14, currentY);
-  currentY += 3.5;
+  currentY += 4;
 
   const catMap: Record<string, { name: string; amount: number; count: number }> = {};
   data.transactions.forEach(t => {
@@ -1337,8 +1431,8 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
 
   const donutImg = createInvoiceDonutChartCanvas(catMap, data.invoiceTotal, currency, primaryHex);
   if (donutImg) {
-    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 52);
-    currentY += 56;
+    doc.addImage(donutImg, 'PNG', 14, currentY, 182, 68);
+    currentY += 73;
   }
 
   // Category Table
@@ -1353,6 +1447,11 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     catRows.push(['Nenhuma despesa nesta fatura', '0', formatCurrency(0, currency, false), '0%']);
   }
 
+  if (currentY > 215) {
+    doc.addPage();
+    currentY = 20;
+  }
+
   autoTable(doc, {
     startY: currentY,
     head: [['Categoria', 'Qtd. Lançamentos', 'Total Gasto', '% da Fatura']],
@@ -1364,7 +1463,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
       fontSize: 8,
       fontStyle: 'bold',
     },
-    styles: { fontSize: 7.5, cellPadding: 2 },
+    styles: { fontSize: 7.5, cellPadding: 2.5 },
     columnStyles: {
       0: { cellWidth: 80 },
       1: { halign: 'center', cellWidth: 35 },
@@ -1374,10 +1473,10 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     margin: { left: 14, right: 14 },
   });
 
-  // 7. Section 3: Lançamentos Detalhados da Fatura
+  // 8. Section 3: Lançamentos Detalhados da Fatura
   // @ts-ignore
-  currentY = doc.lastAutoTable.finalY + 9;
-  if (currentY > 215) {
+  currentY = doc.lastAutoTable.finalY + 10;
+  if (currentY > 210) {
     doc.addPage();
     currentY = 20;
   }
@@ -1386,7 +1485,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('3. Lançamentos Detalhados da Fatura', 14, currentY);
-  currentY += 3.5;
+  currentY += 4;
 
   const sortedTxs = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date));
   const txRows = sortedTxs.map(t => {
@@ -1428,7 +1527,7 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
       fontSize: 8,
       fontStyle: 'bold',
     },
-    styles: { fontSize: 7.5, cellPadding: 2 },
+    styles: { fontSize: 7.5, cellPadding: 2.5 },
     columnStyles: {
       0: { cellWidth: 22 },
       1: { cellWidth: 62 },

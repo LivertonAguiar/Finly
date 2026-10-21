@@ -41,6 +41,7 @@ export interface CreditCard {
   color: string;
   defaultAccountId?: string;
   bankId?: string;
+  last4Digits?: string;
 }
 
 export type TransactionSeriesKind = 'card_installment' | 'recurring_expense';

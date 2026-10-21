@@ -35,6 +35,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
   const [limit, setLimit] = useState('5000');
   const [closingDay, setClosingDay] = useState('20');
   const [dueDay, setDueDay] = useState('27');
+  const [last4Digits, setLast4Digits] = useState('');
   const [color, setColor] = useState('#820ad1');
   const [isCustomColor, setIsCustomColor] = useState(false);
   const [defaultAccountId, setDefaultAccountId] = useState(accounts[0]?.id || '');
@@ -58,6 +59,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         setLimit(editingCard.limit !== undefined ? Number(editingCard.limit).toString() : '0');
         setClosingDay(editingCard.closingDay ? editingCard.closingDay.toString() : '20');
         setDueDay(editingCard.dueDay ? editingCard.dueDay.toString() : '27');
+        setLast4Digits(editingCard.last4Digits || '');
         setColor(editingCard.color || '#820ad1');
         setDefaultAccountId(editingCard.defaultAccountId || accounts[0]?.id || '');
 
@@ -88,6 +90,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         setLimit('5000');
         setClosingDay('20');
         setDueDay('27');
+        setLast4Digits('');
         setColor(defaultBank.color);
         setIsCustomColor(false);
         setDefaultAccountId(accounts[0]?.id || '');
@@ -137,6 +140,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
     const cDay = Math.min(31, Math.max(1, parseInt(closingDay, 10) || 20));
     const dDay = Math.min(31, Math.max(1, parseInt(dueDay, 10) || 27));
     const finalName = name.trim() || 'Cartão de Crédito';
+    const cleanLast4 = last4Digits.replace(/\D/g, '').slice(-4);
 
     if (editingCard) {
       updateCard(editingCard.id, {
@@ -145,6 +149,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         limit: numLimit,
         closingDay: cDay,
         dueDay: dDay,
+        last4Digits: cleanLast4 ? cleanLast4 : undefined,
         color,
         defaultAccountId,
         bankId: selectedBankId,
@@ -156,6 +161,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
         limit: numLimit,
         closingDay: cDay,
         dueDay: dDay,
+        last4Digits: cleanLast4 ? cleanLast4 : undefined,
         color,
         defaultAccountId,
         bankId: selectedBankId,
@@ -218,15 +224,11 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
               </div>
             </div>
 
-            {/* Bank Emblem / Badge (Substitui bandeira pelo ícone do banco) */}
+            {/* Top Right: Brand Logo */}
             <div
-              className="px-3 py-1.5 rounded-2xl bg-black/30 backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-sm transition-all"
-              style={{ borderColor: `${color}70` }}
+              className="px-2.5 py-1.5 rounded-2xl bg-white/20 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-sm transition-all"
             >
-              <BankLogo nameOrId={selectedBankId || name} size={18} className="w-5 h-5 rounded-md object-contain" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-white">
-                {currentBank?.name || 'Banco'}
-              </span>
+              <CardBrandLogo brand={brand} size={22} className="w-7 h-5 object-contain" />
             </div>
           </div>
 
@@ -242,6 +244,13 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
             ) : (
               <span className="text-lg opacity-75 drop-shadow-sm">📶</span>
             )}
+          </div>
+
+          {/* Card Number */}
+          <div className="z-10 my-1">
+            <span className="text-xs sm:text-sm font-mono font-bold tracking-widest text-white/95 drop-shadow-sm">
+              ••••  ••••  ••••  {last4Digits ? last4Digits : '••••'}
+            </span>
           </div>
 
           {/* Bottom: Cardholder and Limit */}
@@ -337,7 +346,7 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Dia Fechamento</label>
             <input
@@ -361,6 +370,21 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
               value={dueDay}
               onChange={e => setDueDay(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 shadow-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Final do Cartão
+              <span className="text-[10px] text-slate-400 font-normal ml-1">(4 dígitos)</span>
+            </label>
+            <input
+              type="text"
+              maxLength={4}
+              placeholder="Ex: 9876"
+              value={last4Digits}
+              onChange={e => setLast4Digits(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 shadow-xs"
             />
           </div>
         </div>

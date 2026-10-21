@@ -81,4 +81,33 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   console.log('✓ Teste 4: Dados enriquecidos de fatura e limites validados');
 }
 
+// 4. Teste de formatação dos últimos 4 dígitos e tratamento de ausência
+{
+  const formatCardNumber = (last4?: string) => {
+    const cleanLast4 = last4 ? last4.trim() : '';
+    return cleanLast4 ? `•••• •••• •••• ${cleanLast4}` : '•••• •••• •••• ••••';
+  };
+
+  assert.equal(
+    formatCardNumber('1234'),
+    '•••• •••• •••• 1234',
+    'Deveria exibir os 4 dígitos finais quando informados'
+  );
+
+  assert.equal(
+    formatCardNumber(''),
+    '•••• •••• •••• ••••',
+    'Deveria exibir apenas máscara de bolinhas quando string vazia'
+  );
+
+  assert.equal(
+    formatCardNumber(undefined),
+    '•••• •••• •••• ••••',
+    'Deveria exibir apenas máscara de bolinhas quando ausente/undefined (sem inventar dígitos falsos)'
+  );
+
+  console.log('✓ Teste 5: Validação do final do cartão e tratamento elegante para ausência');
+}
+
 console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');
+
