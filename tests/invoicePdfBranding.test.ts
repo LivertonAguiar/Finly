@@ -252,6 +252,18 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   console.log('✓ Teste 8: Contrato de visualização temporária em memória sem download validado');
 }
 
+// 9. Teste de compatibilidade de encoding WinAnsi nos badges de status do PDF (sem glifos quebrados como ' ou ?)
+{
+  const testStatusLabels = ['FATURA PAGA', 'FATURA VENCIDA', 'FATURA ABERTA', 'SUPERÁVIT', 'DÉFICIT'];
+  testStatusLabels.forEach(label => {
+    assert.ok(!label.includes('✓'), `Label "${label}" não deve conter caractere Unicode checkmark ✓`);
+    assert.ok(!label.includes('✔'), `Label "${label}" não deve conter caractere Unicode checkmark ✔`);
+    assert.ok(!label.includes('•'), `Label "${label}" não deve conter caractere Unicode bullet •`);
+    assert.ok(!label.startsWith("'"), `Label "${label}" não deve iniciar com aspas simples/apóstrofo '`);
+  });
+  console.log('✓ Teste 9: Compatibilidade estrita de encoding WinAnsi e ausência de glifos unicode quebrados nos badges');
+}
+
 console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');
 
 

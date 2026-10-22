@@ -45,6 +45,11 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
+        title: 'Correção Visual nos Badges de Status das Faturas e Relatórios PDF',
+        description: 'Eliminação de falhas de encoding que geravam caracteres espúrios (como aspas simples ou apóstrofos) nos badges de Fatura Paga, Aberta e Vencida. Substituição por renderização vetorial nativa em PDF com checkmarks nítidos e dots de status semânticos.',
+        type: 'fix',
+      },
+      {
         title: 'Visualização Temporária de PDF em Memória (Sem Download Obrigatório)',
         description: 'Agora é possível visualizar faturas de cartões de crédito e extratos financeiros diretamente na tela em um visualizador executivo em memória RAM, sem salvar nenhum arquivo no dispositivo. Caso deseje guardar ou imprimir o documento, as opções de salvar cópia e impressão estão disponíveis de forma opcional dentro do visualizador.',
         type: 'feature',

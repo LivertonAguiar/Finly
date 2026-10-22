@@ -5,6 +5,11 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-16
 
+### Correção Visual nos Badges de Status das Faturas e Relatórios PDF
+- **Eliminação de Caracteres Quebrados e Glifos Inválidos no PDF**:
+  - Correção da falha de encoding WinAnsi nas fontes padrão do jsPDF que convertia símbolos unicode (como `✓`) no caractere `'` (aspas simples ou apóstrofo) nos badges de "FATURA PAGA", "FATURA ABERTA" e "FATURA VENCIDA".
+  - Implementação de renderização vetorial geométrica direta em PDF (`doc.line` e `doc.circle`), desenhando checkmarks esmeralda de traço nítido e dots de status semânticos perfeitamente alinhados, sem depender de glifos do sistema operacional.
+
 ### Visualização Temporária de PDF em Memória (Sem Download Obrigatório)
 - **Modal Executivo de Visualização em Memória (`PdfViewerModal`)**:
   - Exibição de faturas e extratos em PDF diretamente na interface sem necessidade de download ou compartilhamento prévio.

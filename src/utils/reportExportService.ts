@@ -803,7 +803,7 @@ export async function generateInvoicePDFBlob(data: InvoiceExportData): Promise<G
       value: `Todo dia ${dueDay}`,
       sub: isPaidStatus ? 'Pagamento efetuado' : 'Aguardando liquidação',
       accentColor: (isPaidStatus ? [16, 185, 129] : isOverdueStatus ? [225, 29, 72] : [245, 158, 11]) as [number, number, number],
-      badge: isPaidStatus ? '✓ FATURA PAGA' : isOverdueStatus ? 'FATURA VENCIDA' : 'FATURA ABERTA',
+      badge: isPaidStatus ? 'FATURA PAGA' : isOverdueStatus ? 'FATURA VENCIDA' : 'FATURA ABERTA',
       bar: null,
     },
     {
@@ -866,10 +866,29 @@ export async function generateInvoicePDFBlob(data: InvoiceExportData): Promise<G
       const isErr = c.badge.includes('VENC');
 
       doc.setFillColor(isOk ? 220 : isErr ? 254 : 254, isOk ? 252 : isErr ? 226 : 243, isOk ? 231 : isErr ? 226 : 199);
-      const badgeW = doc.getTextWidth(c.badge) + 4.5;
-      doc.roundedRect(x + 5, currentY + 15.5, Math.min(cardWidth - 8, badgeW), 4.6, 1, 1, 'F');
+      const textW = doc.getTextWidth(c.badge);
+      const badgeW = textW + 8.5;
+      const badgeX = x + 5;
+      const badgeY = currentY + 15.5;
+      const badgeH = 4.6;
+      doc.roundedRect(badgeX, badgeY, Math.min(cardWidth - 8, badgeW), badgeH, 1, 1, 'F');
+
+      // Indicador visual geométrico nítido (vetorial nativo, sem falha de encoding)
+      if (isOk) {
+        doc.setDrawColor(21, 128, 61);
+        doc.setLineWidth(0.42);
+        doc.line(badgeX + 2.0, badgeY + 2.5, badgeX + 2.9, badgeY + 3.4);
+        doc.line(badgeX + 2.9, badgeY + 3.4, badgeX + 4.5, badgeY + 1.5);
+      } else if (isErr) {
+        doc.setFillColor(190, 18, 60);
+        doc.circle(badgeX + 3.2, badgeY + 2.3, 0.9, 'F');
+      } else {
+        doc.setFillColor(217, 119, 6);
+        doc.circle(badgeX + 3.2, badgeY + 2.3, 0.9, 'F');
+      }
+
       doc.setTextColor(isOk ? 21 : isErr ? 190 : 180, isOk ? 128 : isErr ? 18 : 83, isOk ? 61 : isErr ? 60 : 9);
-      doc.text(c.badge, x + 7.2, currentY + 18.7);
+      doc.text(c.badge, badgeX + 5.8, currentY + 18.7);
     } else {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(5.8);
@@ -1048,7 +1067,7 @@ export async function generateInvoicePDFBlob(data: InvoiceExportData): Promise<G
       doc.setFontSize(7.2);
       doc.setTextColor(148, 163, 184);
       doc.text(
-        `Finly • ${theme.name}${theme.code ? ` (${theme.code})` : ''} • Fatura ${data.monthLabel}`,
+        `Finly | ${theme.name}${theme.code ? ` (${theme.code})` : ''} | Fatura ${data.monthLabel}`,
         14,
         pageY
       );
@@ -1141,7 +1160,7 @@ export async function generateReportPDFBlob(data: ReportExportData): Promise<Gen
     doc,
     14,
     28,
-    `Finly Inteligência Financeira • Regime: ${regimeLabel}`,
+    `Finly Inteligência Financeira | Regime: ${regimeLabel}`,
     accentRgb,
     null,
     null
@@ -1231,7 +1250,7 @@ export async function generateReportPDFBlob(data: ReportExportData): Promise<Gen
       value: formatCurrency(data.netBalance, currency, false),
       sub: isNetPositive ? 'Superávit do período' : 'Déficit do período',
       accentColor: (isNetPositive ? [16, 185, 129] : [225, 29, 72]) as [number, number, number],
-      badge: isNetPositive ? '✓ SUPERÁVIT' : 'DÉFICIT',
+      badge: isNetPositive ? 'SUPERÁVIT' : 'DÉFICIT',
       bar: null,
     },
     {
@@ -1285,10 +1304,25 @@ export async function generateReportPDFBlob(data: ReportExportData): Promise<Gen
       doc.setFontSize(5.5);
       const isOk = c.badge.includes('SUPERÁVIT');
       doc.setFillColor(isOk ? 220 : 254, isOk ? 252 : 226, isOk ? 231 : 226);
-      const badgeW = doc.getTextWidth(c.badge) + 4.5;
-      doc.roundedRect(x + 5, currentY + 15.5, Math.min(cardWidth - 8, badgeW), 4.6, 1, 1, 'F');
+      const textW = doc.getTextWidth(c.badge);
+      const badgeW = textW + 8.5;
+      const badgeX = x + 5;
+      const badgeY = currentY + 15.5;
+      const badgeH = 4.6;
+      doc.roundedRect(badgeX, badgeY, Math.min(cardWidth - 8, badgeW), badgeH, 1, 1, 'F');
+
+      if (isOk) {
+        doc.setDrawColor(21, 128, 61);
+        doc.setLineWidth(0.42);
+        doc.line(badgeX + 2.0, badgeY + 2.5, badgeX + 2.9, badgeY + 3.4);
+        doc.line(badgeX + 2.9, badgeY + 3.4, badgeX + 4.5, badgeY + 1.5);
+      } else {
+        doc.setFillColor(190, 18, 60);
+        doc.circle(badgeX + 3.2, badgeY + 2.3, 0.9, 'F');
+      }
+
       doc.setTextColor(isOk ? 21 : 190, isOk ? 128 : 18, isOk ? 61 : 60);
-      doc.text(c.badge, x + 7.2, currentY + 18.7);
+      doc.text(c.badge, badgeX + 5.8, currentY + 18.7);
     } else {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(5.8);
