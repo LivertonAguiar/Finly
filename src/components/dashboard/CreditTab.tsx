@@ -21,6 +21,7 @@ import {
   Layers,
   Download,
   FileText,
+  Eye,
   RotateCcw,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
@@ -32,10 +33,11 @@ import { TransactionModal } from '../transactions/TransactionModal';
 import { TransactionDetailModal } from '../transactions/TransactionDetailModal';
 import { SeriesDeleteModal } from '../transactions/SeriesDeleteModal';
 import { ReimbursementModal } from '../transactions/ReimbursementModal';
+import { PdfViewerModal } from '../common/PdfViewerModal';
 import { Modal } from '../ui/Modal';
 import { ViewModeToggle, CardViewMode } from '../ui/ViewModeToggle';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
-import { exportInvoiceCSV, exportInvoicePDF, downloadCSV } from '../../utils/reportExportService';
+import { exportInvoiceCSV, exportInvoicePDF, generateInvoicePDFBlob, downloadCSV } from '../../utils/reportExportService';
 import { resolveCategory } from '../../utils/categoryResolver';
 import { getCardTransactionInvoiceMonth, isCardInvoicePaid, getCardInvoicePaymentDetails } from '../../utils/invoiceCalculator';
 
@@ -214,6 +216,69 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       currency: user?.currency || 'BRL',
       userEmail: user?.email,
     });
+  };
+
+  // In-memory Temporary PDF Preview State
+  const [pdfPreview, setPdfPreview] = useState<{
+    isOpen: boolean;
+    title: string;
+    subtitle?: string;
+    blob: Blob | null;
+    filename: string;
+    dialogTitle?: string;
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    blob: null,
+    filename: '',
+  });
+
+  const handleViewInvoicePDF = async (targetCard?: typeof activeCardDetail) => {
+    const target = targetCard || activeCardDetail;
+    if (!target) return;
+
+    const title = `Fatura ${target.name} - ${capitalizedMonth} de ${yearNum}`;
+    const filename = `fatura_${target.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${currentMonthPrefix}.pdf`;
+
+    setPdfPreview({
+      isOpen: true,
+      title,
+      subtitle: `Demonstrativo executivo da fatura • ${target.name}`,
+      blob: null,
+      filename,
+      dialogTitle: `Fatura ${target.name} (PDF)`,
+      isLoading: true,
+    });
+
+    try {
+      const result = await generateInvoicePDFBlob({
+        card: target,
+        monthLabel: `${capitalizedMonth} de ${yearNum}`,
+        periodSlug: `${target.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_fatura_${currentMonthPrefix}`,
+        invoiceTotal: target.invoiceTotal,
+        statusLabel: target.statusLabel,
+        transactions: target.monthTxs,
+        categories,
+        currency: user?.currency || 'BRL',
+        userEmail: user?.email,
+        availableLimit: target.available,
+        totalCommitted: target.totalCommitted,
+        isPaid: target.isPaid,
+        paymentDate: target.paymentDate,
+        paymentAmount: target.paymentAmount,
+      });
+
+      setPdfPreview(prev => ({
+        ...prev,
+        blob: result.blob,
+        filename: result.filename,
+        isLoading: false,
+      }));
+    } catch (err) {
+      console.error('Erro ao gerar preview de fatura PDF:', err);
+      setPdfPreview(prev => ({ ...prev, isOpen: false, isLoading: false }));
+    }
   };
 
   const handleExportInvoicePDF = async (targetCard?: typeof activeCardDetail) => {
@@ -408,12 +473,28 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                     <button
                       onClick={() => {
                         setIsHeaderMenuOpen(false);
+                        handleViewInvoicePDF(activeCardDetail);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center justify-between cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Eye className="w-4 h-4 text-purple-500" />
+                        <span>Visualizar fatura (PDF)</span>
+                      </div>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-300 dark:border-emerald-800">
+                        Temporário
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
                         handleExportInvoicePDF(activeCardDetail);
                       }}
                       className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer transition-colors"
                     >
                       <FileText className="w-4 h-4 text-rose-500" />
-                      <span>Exportar fatura para PDF</span>
+                      <span>Baixar fatura em PDF</span>
                     </button>
                   </div>
                 )}
@@ -639,12 +720,12 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleExportInvoicePDF(activeCardDetail)}
+                  onClick={() => handleViewInvoicePDF(activeCardDetail)}
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-600 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-300 text-[11px] font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
-                  title="Exportar fatura em documento PDF"
+                  title="Visualizar fatura em documento PDF (temporário em memória, sem download)"
                 >
-                  <FileText className="w-3.5 h-3.5 text-rose-500" />
-                  <span>PDF</span>
+                  <Eye className="w-3.5 h-3.5 text-purple-500" />
+                  <span>Visualizar PDF</span>
                 </button>
                 <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeCardDetail.statusColor}`}>
                   {activeCardDetail.isPaid && <CheckCircle2 className="w-3 h-3 shrink-0" />}
@@ -1805,6 +1886,18 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       )}
       <SeriesDeleteModal transaction={deleteCandidate} onClose={() => setDeleteCandidate(null)} />
       <ReimbursementModal transaction={reimbursementCandidate} onClose={() => setReimbursementCandidate(null)} />
+
+      {/* In-Memory Temporary PDF Preview Modal */}
+      <PdfViewerModal
+        isOpen={pdfPreview.isOpen}
+        onClose={() => setPdfPreview(prev => ({ ...prev, isOpen: false, blob: null }))}
+        title={pdfPreview.title}
+        subtitle={pdfPreview.subtitle}
+        blob={pdfPreview.blob}
+        filename={pdfPreview.filename}
+        dialogTitle={pdfPreview.dialogTitle}
+        isLoading={pdfPreview.isLoading}
+      />
     </div>
   );
 };

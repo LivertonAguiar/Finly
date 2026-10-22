@@ -43,6 +43,12 @@ export interface InvoiceExportData {
   paymentAmount?: number;
 }
 
+export interface GeneratedPdfResult {
+  blob: Blob;
+  filename: string;
+  dialogTitle: string;
+}
+
 import {
   type BankPdfTheme,
   BANK_PDF_THEMES,
@@ -644,9 +650,9 @@ function createBarChartCanvas(
 }
 
 /**
- * Generates and downloads an executive, bank-branded PDF statement of a Credit Card Invoice
+ * Generates an executive, bank-branded PDF statement Blob of a Credit Card Invoice in memory (zero download)
  */
-export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
+export async function generateInvoicePDFBlob(data: InvoiceExportData): Promise<GeneratedPdfResult> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -1066,21 +1072,33 @@ export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
     },
   });
 
-  // Save / Share PDF
+  // In-memory PDF Result (zero download)
   const filename = `fatura_${data.periodSlug}.pdf`;
   const blob = doc.output('blob');
+  return {
+    blob,
+    filename,
+    dialogTitle: `Fatura ${data.card.name} (PDF)`,
+  };
+}
+
+/**
+ * Generates and downloads/shares an executive, bank-branded PDF statement of a Credit Card Invoice
+ */
+export async function exportInvoicePDF(data: InvoiceExportData): Promise<void> {
+  const { blob, filename, dialogTitle } = await generateInvoicePDFBlob(data);
   await saveOrShareFile({
     filename,
     blob,
     mimeType: 'application/pdf',
-    dialogTitle: `Fatura ${data.card.name} (PDF)`,
+    dialogTitle,
   });
 }
 
 /**
- * Generates and downloads an executive, bank-branded PDF of General Reports / Extratos
+ * Generates an executive, bank-branded PDF Blob of General Reports / Extratos in memory (zero download)
  */
-export async function exportReportPDF(data: ReportExportData): Promise<void> {
+export async function generateReportPDFBlob(data: ReportExportData): Promise<GeneratedPdfResult> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -1477,13 +1495,26 @@ export async function exportReportPDF(data: ReportExportData): Promise<void> {
     },
   });
 
+  // In-memory PDF Result (zero download)
   const filename = `extrato_finly_${data.periodSlug}.pdf`;
   const blob = doc.output('blob');
+  return {
+    blob,
+    filename,
+    dialogTitle: 'Extrato Financeiro Finly (PDF)',
+  };
+}
+
+/**
+ * Generates and downloads/shares an executive, bank-branded PDF of General Reports / Extratos
+ */
+export async function exportReportPDF(data: ReportExportData): Promise<void> {
+  const { blob, filename, dialogTitle } = await generateReportPDFBlob(data);
   await saveOrShareFile({
     filename,
     blob,
     mimeType: 'application/pdf',
-    dialogTitle: 'Extrato Financeiro Finly (PDF)',
+    dialogTitle,
   });
 }
 

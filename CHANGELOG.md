@@ -5,6 +5,13 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-16
 
+### Visualização Temporária de PDF em Memória (Sem Download Obrigatório)
+- **Modal Executivo de Visualização em Memória (`PdfViewerModal`)**:
+  - Exibição de faturas e extratos em PDF diretamente na interface sem necessidade de download ou compartilhamento prévio.
+  - O documento é alocado temporariamente em memória RAM via `Blob` e `URL.createObjectURL`, com liberação e revogação imediata (`URL.revokeObjectURL`) ao fechar a janela, garantindo zero armazenamento residual no disco do aparelho.
+  - Opções integradas de visualização nítida, impressão direta e salvamento/compartilhamento sob demanda apenas se o usuário optar por guardar uma cópia.
+  - Integração nos botões de ação de Faturas de Cartão de Crédito (`CreditTab.tsx`) e na Central de Relatórios (`ReportsPage.tsx`).
+
 ### Novo Layout Executivo de Faturas e Extratos (PDF e CSV)
 - **Design System de Página Única (Single-Page A4 Lock)**:
   - Ajuste milimétrico de alturas verticais e paddings para garantir que demonstrativos de até 15 lançamentos caibam integralmente em exatamente 1 página A4 sem cortes ou separação da tabela de detalhamento.

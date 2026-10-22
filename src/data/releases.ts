@@ -45,6 +45,11 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
+        title: 'Visualização Temporária de PDF em Memória (Sem Download Obrigatório)',
+        description: 'Agora é possível visualizar faturas de cartões de crédito e extratos financeiros diretamente na tela em um visualizador executivo em memória RAM, sem salvar nenhum arquivo no dispositivo. Caso deseje guardar ou imprimir o documento, as opções de salvar cópia e impressão estão disponíveis de forma opcional dentro do visualizador.',
+        type: 'feature',
+      },
+      {
         title: 'Refinamento Visual de Bandeiras e Logos nos Relatórios PDF',
         description: 'Eliminação de caixas brancas sob os logos de bancos e bandeiras nos relatórios e faturas em PDF. Nova renderização vetorial nativa de alta fidelidade para a Mastercard com círculos 1:1 matematicamente perfeitos, cores oficiais e fundo 100% transparente.',
         type: 'visual',

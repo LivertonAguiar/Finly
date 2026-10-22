@@ -21,6 +21,7 @@ import {
   Sparkles,
   Scale,
   Layers,
+  Eye,
 } from 'lucide-react';
 import { ComparativeReport } from './ComparativeReport';
 import { FinancingReport } from './FinancingReport';
@@ -39,9 +40,10 @@ import {
   ViewRegime,
 } from '../../utils/invoiceCalculator';
 import { FilterPopover, FilterState } from '../ui/FilterPopover';
-import { exportReportPDF, exportReportCSV } from '../../utils/reportExportService';
+import { exportReportPDF, generateReportPDFBlob, exportReportCSV } from '../../utils/reportExportService';
 import { exportReportExcel } from '../../utils/excelExportService';
 import { getFamilyMemberList, formatMemberDisplayName } from '../../utils/familyUtils';
+import { PdfViewerModal } from '../common/PdfViewerModal';
 import html2canvas from 'html2canvas';
 
 export type ReportMainTab =
@@ -231,6 +233,83 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
+  // In-memory Temporary PDF Preview State
+  const [pdfPreview, setPdfPreview] = useState<{
+    isOpen: boolean;
+    title: string;
+    subtitle?: string;
+    blob: Blob | null;
+    filename: string;
+    dialogTitle?: string;
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    blob: null,
+    filename: '',
+  });
+
+  const handleViewPDF = async () => {
+    setIsExportDropdownOpen(false);
+    const title = `Extrato Financeiro - ${capitalizedMonth} de ${yearNum}`;
+    const filename = `extrato_finly_${currentMonthPrefix}_${viewRegime}.pdf`;
+
+    setPdfPreview({
+      isOpen: true,
+      title,
+      subtitle: `Demonstrativo financeiro executivo • Regime: ${viewRegime === 'invoice_month' ? 'Competência' : viewRegime === 'due_date' ? 'Vencimento' : 'Data da Compra'}`,
+      blob: null,
+      filename,
+      dialogTitle: 'Extrato Financeiro Finly (PDF)',
+      isLoading: true,
+    });
+
+    try {
+      let activeChartImage: string | undefined = undefined;
+
+      if (reportContainerRef.current) {
+        try {
+          const canvas = await html2canvas(reportContainerRef.current, {
+            scale: 1.5,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true,
+          });
+          activeChartImage = canvas.toDataURL('image/png');
+        } catch (err) {
+          console.warn('Erro ao capturar elemento do gráfico DOM:', err);
+        }
+      }
+
+      const result = await generateReportPDFBlob({
+        periodLabel: `${capitalizedMonth} de ${yearNum}`,
+        periodSlug: `${currentMonthPrefix}_${viewRegime}`,
+        viewRegime,
+        totalIncome: reportTotals.income,
+        totalExpense: reportTotals.expense,
+        netBalance: reportTotals.balance,
+        transactions: filteredTransactions,
+        categories,
+        accounts,
+        cards,
+        currency: user?.currency || 'BRL',
+        userEmail: user?.email,
+        activeChartImage,
+        activeChartTitle: `Relatório Executivo - ${capitalizedMonth} ${yearNum}`,
+      });
+
+      setPdfPreview(prev => ({
+        ...prev,
+        blob: result.blob,
+        filename: result.filename,
+        isLoading: false,
+      }));
+    } catch (e) {
+      console.error('Erro ao gerar preview de relatório PDF:', e);
+      setPdfPreview(prev => ({ ...prev, isOpen: false, isLoading: false }));
+    }
+  };
+
   // Export handlers
   const handleExportPDF = async () => {
     setIsExporting(true);
@@ -388,6 +467,26 @@ export const ReportsPage: React.FC = () => {
               >
                 <button
                   type="button"
+                  onClick={handleViewPDF}
+                  disabled={isExporting}
+                  className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <Eye className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <span>Visualizar em PDF</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
+                        Temporário
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-normal truncate">Visualização em memória sem download</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleExportPDF}
                   disabled={isExporting}
                   className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
@@ -396,7 +495,7 @@ export const ReportsPage: React.FC = () => {
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-black text-slate-900 dark:text-slate-100">Relatório em PDF</div>
+                    <div className="font-black text-slate-900 dark:text-slate-100">Baixar Relatório em PDF</div>
                     <div className="text-[10px] text-slate-400 font-normal">Documento executivo formatado</div>
                   </div>
                 </button>
@@ -764,6 +863,18 @@ export const ReportsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* In-Memory Temporary PDF Preview Modal */}
+      <PdfViewerModal
+        isOpen={pdfPreview.isOpen}
+        onClose={() => setPdfPreview(prev => ({ ...prev, isOpen: false, blob: null }))}
+        title={pdfPreview.title}
+        subtitle={pdfPreview.subtitle}
+        blob={pdfPreview.blob}
+        filename={pdfPreview.filename}
+        dialogTitle={pdfPreview.dialogTitle}
+        isLoading={pdfPreview.isLoading}
+      />
     </div>
   );
 };

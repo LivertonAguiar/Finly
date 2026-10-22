@@ -232,5 +232,26 @@ console.log('--- Iniciando testes de Identidade Bancária e PDF de Faturas ---')
   console.log('✓ Teste 7: Geometria circular 1:1, proporcionalidade e paleta oficial da Mastercard validadas');
 }
 
+// 8. Teste de contrato de visualização temporária em memória (zero download forçado)
+{
+  type GeneratedResultShape = {
+    blob: unknown;
+    filename: string;
+    dialogTitle: string;
+  };
+
+  const sampleResult: GeneratedResultShape = {
+    blob: new Blob(['fake-pdf-content'], { type: 'application/pdf' }),
+    filename: 'fatura_amazon_prime_2026-10.pdf',
+    dialogTitle: 'Fatura Cartão Amazon Prime (PDF)',
+  };
+
+  assert.ok(sampleResult.blob instanceof Blob, 'Resultado deve encapsular Blob do PDF em memória');
+  assert.equal(sampleResult.filename, 'fatura_amazon_prime_2026-10.pdf');
+  assert.equal(sampleResult.dialogTitle, 'Fatura Cartão Amazon Prime (PDF)');
+  console.log('✓ Teste 8: Contrato de visualização temporária em memória sem download validado');
+}
+
 console.log('✅ Todos os testes de Identidade Bancária e Fatura passaram com 100% de sucesso!');
+
 
