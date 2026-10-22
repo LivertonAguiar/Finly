@@ -475,22 +475,6 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                         setIsHeaderMenuOpen(false);
                         handleViewInvoicePDF(activeCardDetail);
                       }}
-                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center justify-between cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Eye className="w-4 h-4 text-purple-500" />
-                        <span>Visualizar fatura (PDF)</span>
-                      </div>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-300 dark:border-emerald-800">
-                        Temporário
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsHeaderMenuOpen(false);
-                        handleExportInvoicePDF(activeCardDetail);
-                      }}
                       className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer transition-colors"
                     >
                       <FileText className="w-4 h-4 text-rose-500" />
@@ -722,10 +706,10 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                   type="button"
                   onClick={() => handleViewInvoicePDF(activeCardDetail)}
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-600 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-300 text-[11px] font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
-                  title="Visualizar fatura em documento PDF (temporário em memória, sem download)"
+                  title="Baixar fatura em documento PDF (com pré-visualização)"
                 >
-                  <Eye className="w-3.5 h-3.5 text-purple-500" />
-                  <span>Visualizar PDF</span>
+                  <FileText className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Baixar PDF</span>
                 </button>
                 <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeCardDetail.statusColor}`}>
                   {activeCardDetail.isPaid && <CheckCircle2 className="w-3 h-3 shrink-0" />}

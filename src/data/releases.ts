@@ -45,6 +45,11 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
+        title: 'Renderizador Universal de PDF em Canvas e Fluxo Unificado de Baixar com Prévia',
+        description: 'Substituição do iframe nativo por renderização de alta fidelidade em HTML5 Canvas via PDF.js, garantindo visualização nítida e instantânea no Android WebView, iOS e navegadores móveis sem tela em branco. Unificação da interface com um único botão intuitivo ("Baixar fatura em PDF" / "Baixar Relatório em PDF") que abre a prévia do documento, permitindo conferir na tela antes de salvar ou compartilhar através do botão de download interno.',
+        type: 'improvement',
+      },
+      {
         title: 'Auto-Previsão Inteligente de Categorias e Tags na Composição de Lançamentos',
         description: 'Ao adicionar ou preencher itens na composição de um lançamento (splits), o sistema agora prevê e preenche automaticamente a categoria e subcategoria mais adequada com base na descrição digitada e no histórico financeiro, exibindo confirmação visual. Além disso, as palavras-chave e afinidades semânticas de cada item da composição passam a alimentar a barra de tags sugeridas do lançamento, permitindo adicionar tags com 1 único toque.',
         type: 'feature',

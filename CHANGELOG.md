@@ -5,6 +5,14 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-16
 
+### Renderizador Universal de PDF em Canvas e Fluxo Unificado de Download com Prévia
+- **Renderização Nativa em HTML5 Canvas via PDF.js**:
+  - Eliminação de telas em branco em navegadores móveis (Android Chrome e Android WebView), substituindo a tag `<iframe>` pelo motor de renderização gráfica em Canvas do Mozilla PDF.js em alta definição (escala 2.0x retina).
+  - Suporte a rolagem contínua de páginas, zoom interativo (60% a 200%) e impressão formatada.
+- **Fluxo Unificado de Download com Pré-Visualização**:
+  - Simplificação da interface eliminando botões duplicados nos menus de faturas e relatórios.
+  - O botão principal de ação agora é **"Baixar fatura em PDF"** / **"Baixar Relatório em PDF"**, que abre a prévia do documento em alta fidelidade. O botão de download e salvamento permanece destacado dentro da própria visualização para que o usuário baixe ou compartilhe somente se desejar.
+
 ### Auto-Previsão Inteligente de Categorias e Tags na Composição de Lançamentos
 - **Auto-Categorização em Tempo Real nos Itens de Composição (Splits)**:
   - Ao digitar a descrição de um item dentro da composição/detalhamento ou ao selecionar um preset rápido, o motor inteligente avalia o termo digitado e o histórico financeiro do usuário (`predictCategoryAndSubcategory`), preenchendo automaticamente a categoria e subcategoria mais apropriadas.

@@ -471,26 +471,6 @@ export const ReportsPage: React.FC = () => {
                   disabled={isExporting}
                   className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                    <Eye className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                      <span>Visualizar em PDF</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
-                        Temporário
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 font-normal truncate">Visualização em memória sem download</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleExportPDF}
-                  disabled={isExporting}
-                  className="w-full px-4 py-3 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 flex items-center gap-3 cursor-pointer transition-colors"
-                >
                   <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
