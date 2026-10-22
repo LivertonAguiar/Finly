@@ -434,9 +434,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       historicalTransactions: transactions,
       currentTags: tags,
       customTags,
-      limit: 8,
+      limit: 10,
+      splitItems: hasSplit ? splitItems : undefined,
     });
-  }, [description, categoryId, subcategoryId, type, isCard, thirdParty, categories, transactions, tags, customTags]);
+  }, [description, categoryId, subcategoryId, type, isCard, thirdParty, categories, transactions, tags, customTags, hasSplit, splitItems]);
 
   const allAvailableTags = useMemo(() => {
     const set = new Set<string>();
@@ -1280,6 +1281,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   components={splitItems}
                   onChange={setSplitItems}
                   categories={categories}
+                  historicalTransactions={transactions}
+                  onAddTag={addTag}
                   isRecurring={fixedExpense || isCardRecurring}
                   currency={user.currency}
                   defaultCategoryId={categoryId}

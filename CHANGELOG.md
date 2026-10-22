@@ -5,6 +5,18 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.79] - 2026-10-16
 
+### Auto-Previsão Inteligente de Categorias e Tags na Composição de Lançamentos
+- **Auto-Categorização em Tempo Real nos Itens de Composição (Splits)**:
+  - Ao digitar a descrição de um item dentro da composição/detalhamento ou ao selecionar um preset rápido, o motor inteligente avalia o termo digitado e o histórico financeiro do usuário (`predictCategoryAndSubcategory`), preenchendo automaticamente a categoria e subcategoria mais apropriadas.
+  - Exibição de indicador visual contextual ("✨ Sugerido: Categoria > Subcategoria") com micro-animação fluida, preservando a liberdade de alteração manual pelo usuário.
+- **Propagação Inteligente de Tags a partir da Composição**:
+  - As palavras-chave e afinidades semânticas de todos os itens da composição passam a alimentar ativamente o gerador dinâmico de tags do modal (`suggestDynamicTags`).
+  - Cada item da composição agora oferece atalhos de micro-tags inteligentes com 1 toque para inclusão instantânea no lançamento.
+
+### Nova Subcategoria Oficial: Gás de Cozinha
+- **Mapeamento Dedicado em Moradia**:
+  - Inclusão da subcategoria `sub-mor-gas` ("Gás de Cozinha", ícone 🔥) sob a categoria macro Moradia, com integração nos dicionários de categorização, presets rápidos da composição e reconhecimento automático de botijão, recargas e concessionárias de gás (Ultragaz, Liquigás, Supergasbras, Nacional Gás, Copagaz, Comgás, etc.).
+
 ### Correção Visual nos Badges de Status das Faturas e Relatórios PDF
 - **Eliminação de Caracteres Quebrados e Glifos Inválidos no PDF**:
   - Correção da falha de encoding WinAnsi nas fontes padrão do jsPDF que convertia símbolos unicode (como `✓`) no caractere `'` (aspas simples ou apóstrofo) nos badges de "FATURA PAGA", "FATURA ABERTA" e "FATURA VENCIDA".

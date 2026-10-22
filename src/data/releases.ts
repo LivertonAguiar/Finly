@@ -45,6 +45,16 @@ export const RELEASES: ReleaseInfo[] = [
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
       {
+        title: 'Auto-Previsão Inteligente de Categorias e Tags na Composição de Lançamentos',
+        description: 'Ao adicionar ou preencher itens na composição de um lançamento (splits), o sistema agora prevê e preenche automaticamente a categoria e subcategoria mais adequada com base na descrição digitada e no histórico financeiro, exibindo confirmação visual. Além disso, as palavras-chave e afinidades semânticas de cada item da composição passam a alimentar a barra de tags sugeridas do lançamento, permitindo adicionar tags com 1 único toque.',
+        type: 'feature',
+      },
+      {
+        title: 'Nova Subcategoria Oficial: Gás de Cozinha',
+        description: 'Inclusão da subcategoria dedicada "Gás de Cozinha" (com ícone 🔥) dentro de Moradia, com reconhecimento inteligente de marcas e termos (botijão, Ultragaz, Liquigás, Supergasbras, Comgás, etc.) e tags sugeridas contextualizadas.',
+        type: 'feature',
+      },
+      {
         title: 'Correção Visual nos Badges de Status das Faturas e Relatórios PDF',
         description: 'Eliminação de falhas de encoding que geravam caracteres espúrios (como aspas simples ou apóstrofos) nos badges de Fatura Paga, Aberta e Vencida. Substituição por renderização vetorial nativa em PDF com checkmarks nítidos e dots de status semânticos.',
         type: 'fix',

@@ -164,6 +164,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
         "categoryId": "cat-desp-moradia"
       },
       {
+        "id": "sub-mor-gas",
+        "name": "Gás de Cozinha",
+        "icon": "🔥",
+        "categoryId": "cat-desp-moradia"
+      },
+      {
         "id": "sub-mor-internet",
         "name": "Internet",
         "icon": "🌐",

@@ -1,9 +1,14 @@
 import React, { useMemo } from 'react';
-import { Plus, Trash2, CheckCircle2, AlertTriangle, Layers, Sparkles } from 'lucide-react';
-import type { Category, ComponentRepetitionType, FinancialNature, TransactionComponent } from '../../types';
+import { Plus, Trash2, CheckCircle2, AlertTriangle, Layers, Sparkles, Tag } from 'lucide-react';
+import type { Category, ComponentRepetitionType, FinancialNature, Transaction, TransactionComponent } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { toCents, fromCents, validateTransactionComponents } from '../../utils/transactionAnalytics';
 import { inferSmartTaxonomy } from '../../utils/smartTaxonomy';
+import {
+  predictCategoryAndSubcategory,
+  suggestDynamicTags,
+  normalizeTag,
+} from '../../utils/smartCategorizer';
 import { SubcategoryPicker } from '../ui/SubcategoryPicker';
 import { OptionPicker } from '../ui/OptionPicker';
 
@@ -19,6 +24,9 @@ export type SplitFormItem = {
   currentInstallment?: number;
   totalInstallments?: number;
   notes?: string;
+  predictedCategoryName?: string;
+  predictedSubcategoryName?: string;
+  manuallySelectedCategory?: boolean;
 };
 
 interface TransactionSplitEditorProps {
@@ -26,6 +34,8 @@ interface TransactionSplitEditorProps {
   components: SplitFormItem[];
   onChange: (items: SplitFormItem[]) => void;
   categories: Category[];
+  historicalTransactions?: Transaction[];
+  onAddTag?: (tag: string) => void;
   isRecurring?: boolean;
   currency?: string;
   defaultCategoryId?: string;
@@ -35,7 +45,9 @@ interface TransactionSplitEditorProps {
 
 const COMMON_PRESETS = [
   { label: 'Taxa Condominial', defaultType: 'fixed' as const },
+  { label: 'Gás de Cozinha', defaultType: 'variable' as const },
   { label: 'Água / Esgoto', defaultType: 'variable' as const },
+  { label: 'Energia Elétrica', defaultType: 'variable' as const },
   { label: 'Taxa Extra', defaultType: 'temporary' as const },
   { label: 'Salão de Festas / Deck', defaultType: 'one_time' as const },
   { label: 'Fundo de Reserva', defaultType: 'fixed' as const },
@@ -46,6 +58,8 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
   components,
   onChange,
   categories,
+  historicalTransactions = [],
+  onAddTag,
   isRecurring = false,
   currency = 'BRL',
   defaultCategoryId = '',
@@ -63,24 +77,42 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
   );
 
   const handleAddItem = (presetDescription?: string, presetType?: ComponentRepetitionType) => {
+    let initialCatId = '';
+    let initialSubId = '';
+    let predCatName = '';
+    let predSubName = '';
+
+    if (presetDescription && presetDescription.trim().length >= 3) {
+      const pred = predictCategoryAndSubcategory(presetDescription, 'expense', categories, historicalTransactions);
+      if (pred) {
+        initialCatId = pred.categoryId;
+        initialSubId = pred.subcategoryId || '';
+        predCatName = pred.categoryName;
+        predSubName = pred.subcategoryName || '';
+      }
+    }
+
     const inferred = inferSmartTaxonomy({
       description: presetDescription || '',
       type: 'expense',
-      categoryId: '',
-      subcategoryId: '',
+      categoryId: initialCatId,
+      subcategoryId: initialSubId,
     });
 
     const newItem: SplitFormItem = {
       id: `comp-draft-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       description: presetDescription || '',
       amount: 0,
-      categoryId: '',
-      subcategoryId: '',
+      categoryId: initialCatId,
+      subcategoryId: initialSubId,
       financialNature: inferred.financialNature,
       necessity: inferred.characteristics.necessity,
       type: presetType || (isRecurring ? 'fixed' : 'one_time'),
       currentInstallment: undefined,
       totalInstallments: undefined,
+      predictedCategoryName: predCatName,
+      predictedSubcategoryName: predSubName,
+      manuallySelectedCategory: false,
     };
 
     onChange([...components, newItem]);
@@ -88,17 +120,43 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
 
   const handleUpdateItem = (index: number, patch: Partial<SplitFormItem>) => {
     const current = components[index];
-    const shouldReclassify = patch.description !== undefined
-      || patch.categoryId !== undefined
-      || patch.subcategoryId !== undefined;
+    let nextPatch = { ...patch };
+
+    // Previsão automática inteligente ao alterar a descrição
+    if (patch.description !== undefined) {
+      const desc = patch.description.trim();
+      if (desc.length >= 3 && !current.manuallySelectedCategory) {
+        const pred = predictCategoryAndSubcategory(desc, 'expense', categories, historicalTransactions);
+        if (pred) {
+          nextPatch.categoryId = pred.categoryId;
+          nextPatch.subcategoryId = pred.subcategoryId || '';
+          nextPatch.predictedCategoryName = pred.categoryName;
+          nextPatch.predictedSubcategoryName = pred.subcategoryName || '';
+        }
+      } else if (desc.length < 3 && current.predictedCategoryName) {
+        nextPatch.predictedCategoryName = undefined;
+        nextPatch.predictedSubcategoryName = undefined;
+      }
+    }
+
+    // Se o usuário selecionou manualmente a categoria no picker
+    if (patch.categoryId !== undefined && patch.description === undefined) {
+      nextPatch.manuallySelectedCategory = true;
+      nextPatch.predictedCategoryName = undefined;
+      nextPatch.predictedSubcategoryName = undefined;
+    }
+
+    const shouldReclassify = nextPatch.description !== undefined
+      || nextPatch.categoryId !== undefined
+      || nextPatch.subcategoryId !== undefined;
     let nextFinancialNature = current.financialNature;
     let nextNecessity = current.necessity;
     if (shouldReclassify) {
       const inferred = inferSmartTaxonomy({
-        description: patch.description ?? current.description,
+        description: nextPatch.description ?? current.description,
         type: 'expense',
-        categoryId: patch.categoryId ?? current.categoryId,
-        subcategoryId: patch.subcategoryId ?? current.subcategoryId,
+        categoryId: nextPatch.categoryId ?? current.categoryId,
+        subcategoryId: nextPatch.subcategoryId ?? current.subcategoryId,
       });
       nextFinancialNature = inferred.financialNature;
       nextNecessity = inferred.characteristics.necessity;
@@ -106,7 +164,7 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
     const updated = components.map((item, i) =>
       i === index ? {
         ...item,
-        ...patch,
+        ...nextPatch,
         financialNature: nextFinancialNature,
         necessity: nextNecessity,
       } : item
@@ -278,6 +336,53 @@ export const TransactionSplitEditor: React.FC<TransactionSplitEditorProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Sugestões e Tags Inteligentes do Item */}
+              {(item.predictedCategoryName || (item.description && item.description.trim().length >= 2)) && (
+                <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-700/40 text-xs">
+                  {/* Badge de Previsão de Categoria */}
+                  {item.predictedCategoryName ? (
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-800/40 text-purple-700 dark:text-purple-300 text-[11px] font-medium animate-in fade-in">
+                      <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
+                      <span>
+                        Sugerido: <strong>{item.predictedCategoryName}</strong>
+                        {item.predictedSubcategoryName ? ` > ${item.predictedSubcategoryName}` : ''}
+                      </span>
+                    </div>
+                  ) : <div />}
+
+                  {/* Micro-tags sugeridas com 1 clique para o lançamento */}
+                  {onAddTag && (() => {
+                    const itemSuggestedTags = suggestDynamicTags({
+                      description: item.description,
+                      categoryId: item.categoryId,
+                      subcategoryId: item.subcategoryId,
+                      categories,
+                      historicalTransactions,
+                      limit: 4,
+                    });
+                    if (itemSuggestedTags.length === 0) return null;
+                    return (
+                      <div className="inline-flex items-center gap-1 flex-wrap">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-0.5">
+                          <Tag className="w-2.5 h-2.5" /> Tags:
+                        </span>
+                        {itemSuggestedTags.map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => onAddTag(tag)}
+                            title={`Adicionar #${tag} ao lançamento`}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-purple-100 dark:bg-slate-700/80 dark:hover:bg-purple-900/60 text-slate-600 dark:text-slate-300 hover:text-purple-700 dark:hover:text-purple-300 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-600/60"
+                          >
+                            + #{tag}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Opções de Repetição para despesas fixas recorrentes */}
               {isRecurring && (

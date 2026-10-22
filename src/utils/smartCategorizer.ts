@@ -133,6 +133,17 @@ export const BUILT_IN_RULES: KeywordRule[] = [
   },
   {
     keywords: [
+      'gas de cozinha', 'botijao de gas', 'botijao', 'recarga de gas', 'ultragaz',
+      'liquigas', 'supergasbras', 'nacional gas', 'copagaz', 'comgas', 'gas encanado',
+      'glp', 'gas glp', 'gas'
+    ],
+    categoryType: 'expense',
+    categoryMatcher: ['moradia', 'habitacao', 'casa'],
+    subcategoryMatcher: ['gas', 'gas de cozinha', 'cozinha'],
+    defaultTags: ['fixo', 'contas', 'moradia', 'gas'],
+  },
+  {
+    keywords: [
       'internet', 'vivo fibra', 'claro residencial', 'claro net', 'oi fibra', 'provedor internet'
     ],
     categoryType: 'expense',
@@ -646,6 +657,7 @@ export interface SuggestTagsParams {
   currentTags?: string[];
   customTags?: string[];
   limit?: number;
+  splitItems?: Array<{ description?: string; categoryId?: string; subcategoryId?: string }>;
 }
 
 const PT_STOPWORDS = new Set([
@@ -707,6 +719,7 @@ export const SUBCATEGORY_TAG_AFFINITY: Record<string, string[]> = {
   energia: ['energia', 'luz', 'fixo', 'contas'],
   agua: ['agua', 'saneamento', 'fixo', 'contas'],
   internet: ['internet', 'fibra', 'wifi', 'fixo'],
+  gas: ['gas', 'contas', 'moradia', 'botijao', 'casa'],
   aluguel: ['aluguel', 'moradia', 'imovel', 'fixo'],
   condominio: ['condominio', 'moradia', 'fixo'],
   salario: ['salario', 'trabalho', 'fixo', 'mensal'],
@@ -718,9 +731,10 @@ export const SUBCATEGORY_TAG_AFFINITY: Record<string, string[]> = {
  * 1. Keywords extracted directly from the typed description (highest score)
  * 2. Semantic affinity with the selected subcategory & category
  * 3. Contextual tags from built-in rules (e.g. 'uber', 'limpeza', 'mercado')
- * 4. User's manually registered custom tags matching current context
- * 5. Context-filtered historical transactions (same category/desc)
- * 6. Operational flags ('terceiros', 'cartao')
+ * 4. Split items (composição do lançamento) - extrai palavras e afinidades dos componentes
+ * 5. User's manually registered custom tags matching current context
+ * 6. Context-filtered historical transactions (same category/desc)
+ * 7. Operational flags ('terceiros', 'cartao')
  */
 export function suggestDynamicTags({
   description = '',
@@ -734,6 +748,7 @@ export function suggestDynamicTags({
   currentTags = [],
   customTags = [],
   limit = 8,
+  splitItems = [],
 }: SuggestTagsParams): string[] {
   const normDesc = normalizeText(description);
   const descTokens = extractKeywordsFromDescription(description);
@@ -767,6 +782,46 @@ export function suggestDynamicTags({
     for (const rule of BUILT_IN_RULES) {
       if (rule.keywords.some(kw => containsWholePhrase(normDesc, kw))) {
         rule.defaultTags?.forEach(t => addScore(t, 25));
+      }
+    }
+  }
+
+  // 3.1. Match with keywords, rules and affinities from Split Items (Composição do Lançamento)
+  if (Array.isArray(splitItems) && splitItems.length > 0) {
+    for (const item of splitItems) {
+      if (item.description) {
+        const itemTokens = extractKeywordsFromDescription(item.description);
+        for (const tok of itemTokens) {
+          addScore(tok, 28);
+        }
+        const normItemDesc = normalizeText(item.description);
+        if (normItemDesc.length >= 2) {
+          for (const rule of BUILT_IN_RULES) {
+            if (rule.keywords.some(kw => containsWholePhrase(normItemDesc, kw))) {
+              rule.defaultTags?.forEach(t => addScore(t, 22));
+            }
+          }
+        }
+      }
+
+      if (item.categoryId) {
+        const foundCat = categories.find(c => c.id === item.categoryId);
+        if (foundCat) {
+          const normC = normalizeText(foundCat.name);
+          for (const [key, affinityTags] of Object.entries(CATEGORY_TAG_AFFINITY)) {
+            if (normC.includes(key) || key.includes(normC)) {
+              affinityTags.forEach(t => addScore(t, 16));
+            }
+          }
+        }
+      }
+
+      if (item.subcategoryId) {
+        for (const [key, affinityTags] of Object.entries(SUBCATEGORY_TAG_AFFINITY)) {
+          if (item.subcategoryId.includes(key) || key.includes(item.subcategoryId)) {
+            affinityTags.forEach(t => addScore(t, 22));
+          }
+        }
       }
     }
   }

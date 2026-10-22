@@ -176,5 +176,34 @@ const tagsCustom = suggestDynamicTags({
 });
 assert.ok(tagsCustom.includes('praia-ferias'), 'Deve priorizar tags customizadas correspondentes');
 
+// J. Test Gás de Cozinha prediction
+const predGas = predictCategoryAndSubcategory('Botijão de gás Ultragaz 13kg', 'expense', DEFAULT_CATEGORIES);
+assert.ok(predGas, 'Deve prever gás');
+assert.equal(predGas.categoryId, 'cat-desp-moradia');
+assert.equal(predGas.subcategoryId, 'sub-mor-gas');
+assert.ok(predGas.suggestedTags?.includes('gas'), 'Deve sugerir tag gas');
+
+const predGasEncanado = predictCategoryAndSubcategory('Comgás conta mensal gás encanado', 'expense', DEFAULT_CATEGORIES);
+assert.ok(predGasEncanado, 'Deve prever Comgás');
+assert.equal(predGasEncanado.categoryId, 'cat-desp-moradia');
+assert.equal(predGasEncanado.subcategoryId, 'sub-mor-gas');
+
+// K. Test tag suggestions derived from Split Items (Composição do Lançamento)
+const tagsFromSplit = suggestDynamicTags({
+  description: 'Boleto Condomínio Edifício Solar',
+  categoryId: 'cat-desp-moradia',
+  subcategoryId: 'sub-mor-condominio',
+  categories: DEFAULT_CATEGORIES,
+  splitItems: [
+    { description: 'Taxa Condominial Ordinária', categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-condominio' },
+    { description: 'Consumo de Água / Esgoto', categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-agua' },
+    { description: 'Recarga Gás de Cozinha Botijão', categoryId: 'cat-desp-moradia', subcategoryId: 'sub-mor-gas' },
+  ],
+  currentTags: [],
+});
+assert.ok(tagsFromSplit.includes('gas'), 'Deve sugerir tag gas a partir dos itens da composição');
+assert.ok(tagsFromSplit.includes('agua'), 'Deve sugerir tag agua a partir dos itens da composição');
+assert.ok(tagsFromSplit.includes('condominio'), 'Deve sugerir tag condominio');
+
 console.log('✅ smartTagAndSubcategoryPrediction.test.ts: Todos os testes passaram com 100% de sucesso!');
 
