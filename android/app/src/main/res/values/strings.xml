@@ -4,4 +4,6 @@
     <string name="title_activity_main">Finly</string>
     <string name="package_name">com.finly.app</string>
     <string name="custom_url_scheme">com.finly.app</string>
+    <string name="widget_name">Finly - Resumo Financeiro</string>
+    <string name="widget_description">Acompanhe seu saldo disponível, despesas mensais e contas pendentes direto na tela inicial.</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.finly.app;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(FinlyBiometricPlugin.class);
+        registerPlugin(FinlyWidgetPlugin.class);
         super.onCreate(savedInstanceState);
         setupEdgeToEdge();
     }
@@ -25,6 +27,22 @@ public class MainActivity extends BridgeActivity {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
             applyEdgeToEdgeFlags();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && "new_transaction".equals(intent.getStringExtra("quick_action"))) {
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().post(() -> {
+                    getBridge().getWebView().evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('finly_quick_action', { detail: { action: 'new_transaction' } }));",
+                        null
+                    );
+                });
+            }
         }
     }
 

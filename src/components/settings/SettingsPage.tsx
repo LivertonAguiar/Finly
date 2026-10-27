@@ -34,6 +34,7 @@ import {
   Search,
   Eye,
   EyeOff,
+  Smartphone,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { SecuritySettingsSection } from './SecuritySettingsSection';
@@ -49,6 +50,7 @@ import {
   requestNotificationPermission,
   sendTestNotification,
   NotificationPreferences,
+  isNativePlatform,
 } from '../../utils/notificationEngine';
 
 export const SettingsPage: React.FC = () => {
@@ -655,11 +657,15 @@ export const SettingsPage: React.FC = () => {
                       ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
                       : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
                   }`}>
-                    {notifPermission === 'granted' ? 'Ativo no Navegador' : notifPermission === 'denied' ? 'Bloqueado' : 'Pendente'}
+                    {isNativePlatform()
+                      ? (notifPermission === 'granted' ? 'Alarmes Nativos Ativos' : notifPermission === 'denied' ? 'Bloqueado no Sistema' : 'Pendente')
+                      : (notifPermission === 'granted' ? 'Ativo no Navegador' : notifPermission === 'denied' ? 'Bloqueado' : 'Pendente')}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                  Disparos inteligentes para Web e Mobile
+                  {isNativePlatform()
+                    ? 'Disparos nativos em segundo plano (AlarmManager)'
+                    : 'Disparos inteligentes para Web e Mobile'}
                 </p>
               </div>
 
@@ -839,6 +845,19 @@ export const SettingsPage: React.FC = () => {
                   className="w-4 h-4 text-purple-600 rounded border-slate-300 dark:border-slate-700 cursor-pointer accent-purple-600"
                 />
               </div>
+
+              {/* Dica Android: Funcionamento com App Fechado & Otimização de Bateria */}
+              {isNativePlatform() && (
+                <div className="mt-3 p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800/40 text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5">
+                  <div className="flex items-center gap-2 font-bold text-indigo-700 dark:text-indigo-400">
+                    <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                    <span>Funcionamento com App Fechado</span>
+                  </div>
+                  <p className="leading-relaxed text-[10px] text-slate-500 dark:text-slate-400">
+                    Os alarmes do Finly são registrados diretamente no sistema Android. Para evitar que o sistema encerre o agendador em repouso profundo (Doze Mode), recomendamos definir o uso de bateria do Finly como <strong>Sem Restrições</strong> nas configurações do seu celular.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -55,6 +55,7 @@ import {
 } from '../utils/pendingMutationJournal';
 
 import { calculateDerivedAccountBalances } from '../utils/derivedAccountBalances';
+import { syncNativeWidget } from '../utils/widgetBridge';
 export { calculateDerivedAccountBalances };
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
@@ -3749,6 +3750,32 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       filteredTransactions,
     };
   }, [accounts, transactions, period, customDateRange, investments, debts, cards]);
+
+  // Sincronização contínua com o Widget nativo da tela inicial do Android
+  useEffect(() => {
+    if (Array.isArray(accounts) && accounts.length > 0) {
+      const curMonth = getCurrentMonth();
+      const currentMonthExpenses = transactions
+        .filter(t => t.type === 'expense' && t.status === 'completed' && t.date.startsWith(curMonth) && isIncludedInPersonalAnalytics(t))
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const pendingCount = transactions.filter(
+        t => t.type === 'expense' && t.status === 'pending' && !t.ignored
+      ).length;
+
+      const [y, m] = curMonth.split('-').map(Number);
+      const dateForMonth = new Date(y, m - 1, 1);
+      const monthLabel = dateForMonth.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+
+      void syncNativeWidget({
+        balance: metrics.totalBalance,
+        monthlyExpenses: currentMonthExpenses,
+        pendingBillsCount: pendingCount,
+        monthName: monthLabel,
+        currency: user.currency || 'BRL',
+      });
+    }
+  }, [metrics.totalBalance, transactions, accounts, user.currency]);
 
   return (
     <FinancialContext.Provider

@@ -492,8 +492,15 @@ export const HELP_GUIDES: HelpGuide[] = [
         webInstruction: 'No Computador: O app se atualiza automaticamente na nuvem sem necessidade de downloads.',
         androidInstruction: 'Receba avisos na barra de status do celular sobre faturas e baixe atualizações do APK na aba Sobre com 1 toque.',
       },
+      {
+        stepNumber: 4,
+        title: 'Widget na Tela Inicial do Celular',
+        description: 'Acompanhe seu saldo em tempo real e adicione despesas instantaneamente.',
+        webInstruction: 'Recurso nativo exclusivo para dispositivos Android.',
+        androidInstruction: 'Toque e segure em uma área vazia da tela inicial do celular, escolha "Widgets", selecione o Finly e posicione o card. O widget exibe seu saldo disponível, despesas do mês e um botão (+) que abre a tela de nova despesa diretamente.',
+      },
     ],
-    relatedFaqIds: ['faq-atualizacao-android', 'faq-offline'],
+    relatedFaqIds: ['faq-atualizacao-android', 'faq-offline', 'faq-widget-android'],
   },
   {
     id: 'seguranca-senha-biometria',
@@ -781,5 +788,19 @@ export const HELP_FAQS: HelpFaqItem[] = [
     answer: 'O Finly possui uma arquitetura de atualização dupla: 1) Atualização Nativa (APK): necessária apenas quando há novos plugins de sistema ou recursos nativos do Android; 2) Live Update (Web OTA): entrega melhorias visuais, novidades e correções instantaneamente em segundo plano sem precisar reinstalar o APK. O app funciona 100% offline com os arquivos locais e valida a integridade (SHA-256) antes de qualquer ativação.',
     category: 'mobile_web',
     tags: ['atualizacao', 'ota', 'live update', 'versao', 'apk', 'offline'],
+  },
+  {
+    id: 'faq-notificacoes-app-fechado',
+    question: 'Como garantir que as notificações de vencimento cheguem mesmo com o app Android fechado?',
+    answer: 'O Finly utiliza o AlarmManager nativo do Android com permissões de alarmes exatos (allowWhileIdle), permitindo que os alertas de contas a vencer e faturas de cartão toquem mesmo com o app fechado e a tela desligada. Em aparelhos com gerenciamento agressivo de bateria (como Xiaomi, Samsung e Motorola), é altamente recomendado acessar as Informações do Finly nas Configurações do Android, tocar em "Bateria" e marcar a opção "Sem Restrições" (ou desativar a Economia de Bateria).',
+    category: 'mobile_web',
+    tags: ['notificacoes', 'app fechado', 'segundo plano', 'alarmmanager', 'bateria', 'doze mode'],
+  },
+  {
+    id: 'faq-widget-android',
+    question: 'Como adicionar e usar o Widget do Finly na tela inicial do celular?',
+    answer: 'Mantenha pressionado um espaço vazio na tela inicial do Android, toque no menu "Widgets", role até encontrar "Finly" e arraste o card "Finly - Resumo Financeiro" para sua tela. Ele exibe em tempo real seu saldo consolidado, despesas acumuladas do mês e contas pendentes. Tocar no corpo do widget abre o Finly diretamente, e tocar no botão (+) abre instantaneamente a janela para cadastrar uma nova despesa.',
+    category: 'mobile_web',
+    tags: ['widget', 'tela inicial', 'saldo', 'resumo', 'atalho rapido', 'android'],
   },
 ];

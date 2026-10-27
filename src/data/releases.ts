@@ -42,6 +42,33 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-27',
+    summary: 'Suporte a Widgets Nativos na tela inicial do Android, notificações e alarmes exatos com app fechado e sincronização contínua de métricas.',
+    highlights: [
+      {
+        title: 'Widgets Nativos na Tela Inicial do Android',
+        description: 'Card interativo com RemoteViews exibindo saldo disponível consolidado, despesas acumuladas do mês, contas pendentes e botão de atalho rápido (+) para cadastrar despesas diretamente.',
+        type: 'feature',
+      },
+      {
+        title: 'Alarmes Nativos com App Fechado (AlarmManager)',
+        description: 'Agendamento determinístico no sistema Android com permissão de alarmes exatos (allowWhileIdle), garantindo avisos de faturas e contas pendentes mesmo com o app encerrado ou em repouso profundo (Doze Mode).',
+        type: 'feature',
+      },
+      {
+        title: 'Sincronização Reativa Contínua',
+        description: 'Atualização automática dos valores do widget nativo no momento em que transações, contas ou faturas são lançadas ou modificadas.',
+        type: 'improvement',
+      },
+      {
+        title: 'Central de Ajuda e Orientações de Bateria',
+        description: 'Novo guia no Help Center e aviso em Configurações orientando a configuração de bateria sem restrições em dispositivos Xiaomi, Samsung e Motorola.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.80',
+    releaseDate: '2026-10-27',
     summary: 'Resiliência contra perda de status pago em redes móveis, eliminação de oscilação rápida de saldo (flicker), fixação definitiva de edições em despesas detalhadas e motor de persistência durável para continuidade operacional.',
     highlights: [
       {

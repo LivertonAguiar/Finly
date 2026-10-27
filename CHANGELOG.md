@@ -3,6 +3,25 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.81] - 2026-10-27
+
+### Widgets Nativos na Tela Inicial do Android
+- **Componente Nativo com RemoteViews e Design Finly**:
+  - Implementação de App Widget para Android (`FinlyWidgetProvider.java`, `finly_app_widget.xml`) com design escuro elegante (#1C1C1E), cantos arredondados e pílulas semânticas.
+  - Exibição de métricas essenciais em tempo real: saldo total disponível, despesas acumuladas no mês corrente e total de contas pendentes.
+  - Botão de ação rápida (+) integrado com cor de destaque (#7C4DFF), abrindo instantaneamente o modal de nova despesa diretamente a partir da tela inicial do celular.
+
+### Alarmes Nativos com App Fechado (AlarmManager)
+- **Disparos Pontuais com allowWhileIdle**:
+  - Reformulação do motor de notificações (`notificationEngine.ts`) com geração determinística de IDs inteiros de 31 bits (`stableNotificationId`).
+  - Agendamento prévio no `AlarmManager` nativo do Android com a flag `allowWhileIdle: true`, garantindo que os alertas de vencimento toquem com exatidão mesmo com o app encerrado ou no modo repouso profundo (*Doze Mode*).
+  - Adição das permissões necessárias no `AndroidManifest.xml` (`SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`).
+
+### Sincronização Reativa Contínua & Orientações de Bateria
+- **Ponte Capacitor Nativa e Central de Ajuda**:
+  - Criação da ponte TypeScript `widgetBridge.ts` e do plugin `FinlyWidgetPlugin.java`, sincronizando as métricas reativamente sempre que houver modificações em transações ou contas.
+  - Adição de indicador de status de alarmes nativos em Configurações e passo a passo detalhado no Help Center (`helpCenterData.ts`) ensinando a adicionar o widget e desativar restrições de bateria no Android.
+
 ## [1.1.80] - 2026-10-27
 
 ### Diário de Mutações e Blindagem contra Perda de Status no Mobile

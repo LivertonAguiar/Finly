@@ -634,3 +634,295 @@ export function checkAndTriggerScheduledAlerts(data: {
     });
   }
 }
+
+/**
+ * Generates a stable 32-bit integer ID for Capacitor LocalNotifications from a string key.
+ */
+export function stableNotificationId(key: string): number {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash << 5) - hash + key.charCodeAt(i);
+    hash |= 0;
+  }
+  return (Math.abs(hash) % 2147483640) + 1;
+}
+
+export interface SystemNotificationScheduleItem {
+  id: number;
+  key: string;
+  title: string;
+  body: string;
+  scheduledAt: Date;
+  kind: 'pending_bill' | 'card_invoice';
+  entityId: string;
+  amount: number;
+  dueDate: string;
+}
+
+/**
+ * Computes all upcoming future notifications that must be registered in the native Android
+ * AlarmManager so they trigger on time even if the app is completely closed/killed.
+ */
+export function computeFutureNotificationSchedule({
+  transactions,
+  cards,
+  preferences,
+  now = new Date(),
+}: {
+  transactions: Transaction[];
+  cards: CreditCard[];
+  preferences: NotificationSelectionPreferences;
+  now?: Date;
+}): SystemNotificationScheduleItem[] {
+  const items: SystemNotificationScheduleItem[] = [];
+  const [notifyHour, notifyMinute] = (preferences.notifyTime || '09:00').split(':').map(Number);
+  const nowTime = now.getTime();
+
+  // Helper to parse date YYYY-MM-DD safely in local time
+  const parseLocalDate = (dateStr: string, hour = 9, minute = 0): Date => {
+    const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d, hour, minute, 0, 0);
+  };
+
+  // 1. Pending Bills (Contas a Pagar)
+  if (preferences.pendingBills && Array.isArray(transactions)) {
+    transactions.forEach(tx => {
+      if (
+        tx.type !== 'expense' ||
+        tx.cardId ||
+        tx.status !== 'pending' ||
+        tx.ignored ||
+        !tx.dueDate ||
+        tx.reminder?.enabled === false
+      ) {
+        return;
+      }
+
+      const daysAhead = tx.reminder?.daysBefore ?? preferences.dueDaysAhead ?? 3;
+      const targetHour = tx.reminder?.reminderTime
+        ? Number(tx.reminder.reminderTime.split(':')[0]) || notifyHour
+        : notifyHour;
+      const targetMinute = tx.reminder?.reminderTime
+        ? Number(tx.reminder.reminderTime.split(':')[1]) || notifyMinute
+        : notifyMinute;
+
+      // Milestone A: On Due Date
+      const dueDateTarget = parseLocalDate(tx.dueDate, targetHour, targetMinute);
+      if (dueDateTarget.getTime() > nowTime) {
+        const key = `sys_bill:${tx.id}:due_day:${tx.dueDate}`;
+        items.push({
+          id: stableNotificationId(key),
+          key,
+          title: '⏰ Conta a Pagar Vence Hoje',
+          body: `A conta "${tx.description}" (R$ ${Number(tx.amount || 0).toFixed(2).replace('.', ',')}) vence hoje!`,
+          scheduledAt: dueDateTarget,
+          kind: 'pending_bill',
+          entityId: tx.id,
+          amount: tx.amount,
+          dueDate: tx.dueDate,
+        });
+      }
+
+      // Milestone B: Anticipated Reminder (e.g. 1 or N days ahead)
+      if (daysAhead > 0) {
+        const [y, m, d] = tx.dueDate.slice(0, 10).split('-').map(Number);
+        const aheadTarget = new Date(y, m - 1, d - daysAhead, targetHour, targetMinute, 0, 0);
+        if (aheadTarget.getTime() > nowTime) {
+          const key = `sys_bill:${tx.id}:ahead_${daysAhead}:${tx.dueDate}`;
+          items.push({
+            id: stableNotificationId(key),
+            key,
+            title: '⏰ Lembrete de Conta a Pagar',
+            body: `A conta "${tx.description}" vence em ${daysAhead} ${daysAhead === 1 ? 'dia' : 'dias'}.`,
+            scheduledAt: aheadTarget,
+            kind: 'pending_bill',
+            entityId: tx.id,
+            amount: tx.amount,
+            dueDate: tx.dueDate,
+          });
+        }
+      }
+    });
+  }
+
+  // 2. Card Invoices (Faturas de Cartão de Crédito)
+  if (preferences.cardInvoices && Array.isArray(cards) && Array.isArray(transactions)) {
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth() + 1;
+
+    cards.forEach(card => {
+      const dueDay = card.dueDay || 10;
+      // Evaluate current month invoice and next month invoice
+      const monthsToCheck = [
+        `${todayY}-${String(todayM).padStart(2, '0')}`,
+        todayM === 12
+          ? `${todayY + 1}-01`
+          : `${todayY}-${String(todayM + 1).padStart(2, '0')}`,
+      ];
+
+      monthsToCheck.forEach(invMonth => {
+        const [y, m] = invMonth.split('-').map(Number);
+        const daysInMonth = new Date(y, m, 0).getDate();
+        const effectiveDueDay = Math.min(dueDay, daysInMonth);
+        const dueDateStr = `${y}-${String(m).padStart(2, '0')}-${String(effectiveDueDay).padStart(2, '0')}`;
+
+        // Calculate pending invoice total
+        const cardExpenses = transactions.filter(
+          t => t.cardId === card.id && t.type === 'expense' && !t.ignored && t.status !== 'completed' &&
+               (t.invoiceMonth === invMonth || (!t.invoiceMonth && t.date?.startsWith(invMonth)))
+        );
+        const invoiceTotal = cardExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+        const isPaid = isCardInvoicePaid(card, invMonth, transactions);
+
+        if (invoiceTotal <= 0 || isPaid) return;
+
+        // Milestone A: On Due Date
+        const dueTarget = parseLocalDate(dueDateStr, notifyHour, notifyMinute);
+        if (dueTarget.getTime() > nowTime) {
+          const key = `sys_card:${card.id}:${invMonth}:due_day`;
+          items.push({
+            id: stableNotificationId(key),
+            key,
+            title: '💳 Fatura de Cartão Vence Hoje',
+            body: `A fatura do seu cartão ${card.name} (R$ ${invoiceTotal.toFixed(2).replace('.', ',')}) vence hoje!`,
+            scheduledAt: dueTarget,
+            kind: 'card_invoice',
+            entityId: card.id,
+            amount: invoiceTotal,
+            dueDate: dueDateStr,
+          });
+        }
+
+        // Milestone B: Ahead
+        const daysAhead = preferences.dueDaysAhead ?? 3;
+        if (daysAhead > 0) {
+          const aheadTarget = new Date(y, m - 1, effectiveDueDay - daysAhead, notifyHour, notifyMinute, 0, 0);
+          if (aheadTarget.getTime() > nowTime) {
+            const key = `sys_card:${card.id}:${invMonth}:ahead_${daysAhead}`;
+            items.push({
+              id: stableNotificationId(key),
+              key,
+              title: '💳 Vencimento de Fatura',
+              body: `A fatura do cartão ${card.name} vence em ${daysAhead} ${daysAhead === 1 ? 'dia' : 'dias'}.`,
+              scheduledAt: aheadTarget,
+              kind: 'card_invoice',
+              entityId: card.id,
+              amount: invoiceTotal,
+              dueDate: dueDateStr,
+            });
+          }
+        }
+      });
+    });
+  }
+
+  // Sort chronologically
+  return items.sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+}
+
+/**
+ * Synchronizes native system alarms with local pending transactions and card invoices.
+ * Schedules alarms using allowWhileIdle: true so Android fires notifications even when the app is closed.
+ */
+export async function syncSystemScheduledNotifications(data: {
+  transactions: Transaction[];
+  cards: CreditCard[];
+}): Promise<{ scheduled: number; active: number; cancelled: number }> {
+  if (!isNativePlatform()) {
+    return { scheduled: 0, active: 0, cancelled: 0 };
+  }
+
+  const prefs = getStoredNotificationPrefs();
+
+  try {
+    await initializeNotificationChannels();
+
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== 'granted') {
+      return { scheduled: 0, active: 0, cancelled: 0 };
+    }
+
+    const pendingNative = await LocalNotifications.getPending();
+    const existingIds = new Set((pendingNative.notifications || []).map(n => n.id));
+
+    // If notifications disabled by user, cancel all pending
+    if (!prefs.enabled) {
+      if (pendingNative.notifications && pendingNative.notifications.length > 0) {
+        await LocalNotifications.cancel({
+          notifications: pendingNative.notifications.map(n => ({ id: n.id })),
+        });
+      }
+      return { scheduled: 0, active: 0, cancelled: pendingNative.notifications?.length || 0 };
+    }
+
+    // Compute future items required
+    const targetItems = computeFutureNotificationSchedule({
+      transactions: data.transactions || [],
+      cards: data.cards || [],
+      preferences: prefs,
+      now: new Date(),
+    });
+
+    const targetIds = new Set(targetItems.map(item => item.id));
+
+    // Identify stale notifications (e.g. bills that were paid or deleted)
+    const toCancel = (pendingNative.notifications || [])
+      .filter(n => !targetIds.has(n.id))
+      .map(n => ({ id: n.id }));
+
+    if (toCancel.length > 0) {
+      await LocalNotifications.cancel({ notifications: toCancel });
+    }
+
+    // Identify new items to schedule (not already in native queue)
+    const toSchedule = targetItems.filter(item => !existingIds.has(item.id));
+
+    if (toSchedule.length > 0) {
+      // Limit to 40 upcoming alarms to respect Android AlarmManager quota
+      const batch = toSchedule.slice(0, 40).map(item => ({
+        id: item.id,
+        title: item.title,
+        body: item.body,
+        schedule: {
+          at: item.scheduledAt,
+          allowWhileIdle: true, // Required for Android Doze Mode
+        },
+        channelId: 'finly-alerts-v2',
+        sound: 'finly_chime.wav',
+        smallIcon: 'ic_stat_finly_notification',
+        iconColor: '#7C4DFF',
+        extra: {
+          key: item.key,
+          kind: item.kind,
+          entityId: item.entityId,
+          dueDate: item.dueDate,
+        },
+      }));
+
+      await LocalNotifications.schedule({ notifications: batch });
+    }
+
+    return {
+      scheduled: toSchedule.length,
+      active: targetItems.length,
+      cancelled: toCancel.length,
+    };
+  } catch (err) {
+    console.warn('[Finly Notifications] syncSystemScheduledNotifications failed:', err);
+    return { scheduled: 0, active: 0, cancelled: 0 };
+  }
+}
+
+/**
+ * Checks if exact alarms are permitted on Android 12+ (API 31+)
+ */
+export async function checkExactAlarmPermission(): Promise<boolean> {
+  if (!isNativePlatform()) return true;
+  try {
+    if (typeof (LocalNotifications as any).checkExactNotificationSetting === 'function') {
+      const res = await (LocalNotifications as any).checkExactNotificationSetting();
+      return res?.exact_alarm_allowed !== false;
+    }
+  } catch (_) {}
+  return true;
+}

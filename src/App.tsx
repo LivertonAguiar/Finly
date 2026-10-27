@@ -8,7 +8,8 @@ import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
 import type { TransactionsNavParams } from './components/transactions/TransactionsPage';
 import { AuthPage } from './components/auth/AuthPage';
-import { checkAndTriggerScheduledAlerts } from './utils/notificationEngine';
+import { checkAndTriggerScheduledAlerts, syncSystemScheduledNotifications } from './utils/notificationEngine';
+import { checkNativeQuickAction } from './utils/widgetBridge';
 import { checkForAppUpdates, isNativeCapacitor } from './utils/appUpdateService';
 import {
   confirmWebBundleReadyWhenStable,
@@ -190,6 +191,13 @@ const AppContent: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [currentUser]);
+
+  // Sincroniza alarmes nativos no Android (AlarmManager) para disparos com o app fechado
+  useEffect(() => {
+    if (currentUser && Array.isArray(transactions) && transactions.length > 0) {
+      void syncSystemScheduledNotifications({ transactions, cards });
+    }
+  }, [currentUser, transactions, cards]);
 
   // Confirm Web Bundle loaded successfully only after stable bootstrap to avoid premature confirmation
   useEffect(() => {
@@ -439,6 +447,32 @@ const AppContent: React.FC = () => {
     window.addEventListener('finly_open_update_modal', handleOpenUpdate);
     return () => window.removeEventListener('finly_open_update_modal', handleOpenUpdate);
   }, [handleSelectTab]);
+
+  // Listener para Ações Rápidas disparadas pelo Widget da Tela Inicial do Android
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // 1. Inicialização a frio (app aberto pelo botão + do widget)
+    void checkNativeQuickAction().then(action => {
+      if (action === 'new_transaction') {
+        setNewTxInitialType('expense');
+        setNewTxPaymentMethod('account');
+        setIsNewTxOpen(true);
+      }
+    });
+
+    // 2. Retorno do segundo plano (app já estava em memória)
+    const handleQuickAction = (e: any) => {
+      if (e.detail?.action === 'new_transaction') {
+        setNewTxInitialType('expense');
+        setNewTxPaymentMethod('account');
+        setIsNewTxOpen(true);
+      }
+    };
+
+    window.addEventListener('finly_quick_action', handleQuickAction);
+    return () => window.removeEventListener('finly_quick_action', handleQuickAction);
+  }, [currentUser]);
 
   const handleOpenSpeedDialAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {
     if (actionType === 'income') {
