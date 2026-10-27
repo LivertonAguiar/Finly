@@ -15,6 +15,7 @@ import {
   NotificationItem,
   TransactionSeries,
   TransactionComponent,
+  TransactionStatus,
 } from '../types';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { splitEmojiFromName, resolveCategory } from '../utils/categoryResolver';
@@ -46,6 +47,15 @@ import { isInvoicePaymentTransaction, getCardTransactionInvoiceMonth } from '../
 import { deduplicateFamilyMembers } from '../utils/familyUtils';
 import { getStoredCustomTags, saveCustomTags } from '../utils/tagManager';
 import { normalizeTag } from '../utils/smartCategorizer';
+import {
+  PendingMutationJournal,
+  enqueueMutationUpsert,
+  enqueueMutationDelete,
+  reconcilePendingMutations,
+} from '../utils/pendingMutationJournal';
+
+import { calculateDerivedAccountBalances } from '../utils/derivedAccountBalances';
+export { calculateDerivedAccountBalances };
 
 export const DEFAULT_WALLET_ACCOUNT: Account = {
   id: 'acc-carteira-padrao',
@@ -104,6 +114,11 @@ export interface ImportBackupResult {
 
 interface PendingCardMutations {
   upserts: Record<string, CreditCard>;
+  deletes: string[];
+}
+
+interface PendingTransactionMutations {
+  upserts: Record<string, Transaction>;
   deletes: string[];
 }
 
@@ -333,6 +348,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const effectiveStoreUserId = currentUser?.invitedBy || userId;
   const userStoreKey = `finly_user_${effectiveStoreUserId}_store`;
   const pendingCardMutationsKey = `finly_user_${effectiveStoreUserId}_pending_card_mutations`;
+  const pendingTxMutationsKey = `finly_user_${effectiveStoreUserId}_pending_tx_mutations`;
+  const pendingTxMutationsRef = useRef<PendingTransactionMutations>({ upserts: {}, deletes: [] });
   const pendingTxDeletesKey = `finly_user_${effectiveStoreUserId}_pending_tx_deletes`;
   const pendingTxDeletesRef = useRef<string[]>([]);
   const appearancePreferenceKey = `finly_user_${effectiveStoreUserId}_appearance`;
@@ -368,6 +385,46 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (_) {
       return { upserts: {}, deletes: [] };
     }
+  };
+
+  const persistPendingTxMutations = () => {
+    try {
+      const pending = pendingTxMutationsRef.current;
+      if (Object.keys(pending.upserts).length === 0 && pending.deletes.length === 0) {
+        localStorage.removeItem(pendingTxMutationsKey);
+      } else {
+        localStorage.setItem(pendingTxMutationsKey, JSON.stringify(pending));
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const loadPendingTxMutations = (): PendingTransactionMutations => {
+    try {
+      const raw = localStorage.getItem(pendingTxMutationsKey);
+      if (!raw) return { upserts: {}, deletes: [] };
+      const parsed = JSON.parse(raw);
+      return {
+        upserts: parsed?.upserts && typeof parsed.upserts === 'object' ? parsed.upserts : {},
+        deletes: Array.isArray(parsed?.deletes) ? parsed.deletes : [],
+      };
+    } catch (_) {
+      return { upserts: {}, deletes: [] };
+    }
+  };
+
+  const queueTransactionUpsert = (tx: Transaction) => {
+    if (!currentUser || isDemoUser()) return;
+    pendingTxMutationsRef.current = enqueueMutationUpsert(pendingTxMutationsRef.current, tx);
+    persistPendingTxMutations();
+  };
+
+  const queueTransactionDelete = (txId: string) => {
+    if (!currentUser || isDemoUser()) return;
+    pendingTxMutationsRef.current = enqueueMutationDelete(pendingTxMutationsRef.current, txId);
+    persistPendingTxMutations();
   };
 
   const markLocalMutation = () => {
@@ -546,57 +603,88 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return sortCardsByDueDay(Array.from(byId.values()));
   };
 
+  const transactionsMatch = (left: Transaction, right: Transaction): boolean => {
+    if (left.id !== right.id) return false;
+    if (left.status !== right.status) return false;
+    if (left.amount !== right.amount) return false;
+    if (left.date !== right.date) return false;
+    if (left.description !== right.description) return false;
+    if (left.categoryId !== right.categoryId) return false;
+    if ((left.subcategoryId || '') !== (right.subcategoryId || '')) return false;
+    if ((left.accountId || '') !== (right.accountId || '')) return false;
+    if ((left.cardId || '') !== (right.cardId || '')) return false;
+    if (Boolean(left.hasComponents) !== Boolean(right.hasComponents)) return false;
+    if (Boolean(left.isSeriesException) !== Boolean(right.isSeriesException)) return false;
+    if (left.hasComponents && right.hasComponents) {
+      const leftComps = left.components || [];
+      const rightComps = right.components || [];
+      if (leftComps.length !== rightComps.length) return false;
+      for (let i = 0; i < leftComps.length; i++) {
+        if (leftComps[i].amount !== rightComps[i].amount) return false;
+        if (leftComps[i].description !== rightComps[i].description) return false;
+      }
+    }
+    return true;
+  };
+
   const reconcileRemoteTransactions = (remoteTxs: Transaction[]): Transaction[] => {
-    const byId = new Map<string, Transaction>();
-    for (const rTx of remoteTxs) {
-      if (rTx && rTx.id && !isGhostTransaction(rTx)) {
-        byId.set(rTx.id, normalizeStoredTransaction(rTx));
-      }
-    }
+    const cleanRemote = remoteTxs
+      .filter(rTx => rTx && rTx.id && !isGhostTransaction(rTx))
+      .map(normalizeStoredTransaction);
 
-    const pendingDeletes = new Set(pendingTxDeletesRef.current);
-    // Anti-data-loss: nunca descartar transações locais que existem em memória/cache
-    // a menos que o usuário as tenha deletado expressamente
+    // Anti-data-loss: nunca descartar transações locais que existem em memória
+    // que ainda não estejam em cleanRemote nem marcadas para exclusão
+    const pendingDeletesSet = new Set(pendingTxMutationsRef.current.deletes);
     for (const localTx of transactionsRef.current) {
-      if (localTx && localTx.id && !isGhostTransaction(localTx) && !pendingDeletes.has(localTx.id)) {
-        const existing = byId.get(localTx.id);
-        if (existing) {
-          // Anti-data-loss: se a transação local possui componentes analíticos ou metadados e a remota não, preserva os locais
-          if ((!existing.components || existing.components.length === 0) && localTx.components && localTx.components.length > 0) {
-            existing.components = localTx.components;
-            existing.hasComponents = true;
-          }
-          if (!existing.financialNature && localTx.financialNature) {
-            existing.financialNature = localTx.financialNature;
-          }
-          if (!existing.characteristics && localTx.characteristics) {
-            existing.characteristics = localTx.characteristics;
-          }
-          if (!existing.relationships && localTx.relationships) {
-            existing.relationships = localTx.relationships;
-          }
-        } else {
-          byId.set(localTx.id, localTx);
-          if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-            void supabaseDb.upsertTransaction(currentUser.id, localTx).catch(() => {});
-          }
+      if (localTx && localTx.id && !isGhostTransaction(localTx) && !pendingDeletesSet.has(localTx.id)) {
+        if (!cleanRemote.some(r => r.id === localTx.id) && !pendingTxMutationsRef.current.upserts[localTx.id]) {
+          pendingTxMutationsRef.current = enqueueMutationUpsert(pendingTxMutationsRef.current, localTx);
         }
       }
     }
 
-    for (const delId of pendingDeletes) {
-      if (byId.has(delId)) {
-        byId.delete(delId);
-        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
-          void supabaseDb.deleteTransactions(currentUser.id, [delId]).catch(() => {});
+    const { items, journal, retryUpserts, retryDeletes } = reconcilePendingMutations({
+      remoteItems: cleanRemote,
+      journal: pendingTxMutationsRef.current,
+      equals: transactionsMatch,
+    });
+
+    pendingTxMutationsRef.current = journal;
+    persistPendingTxMutations();
+
+    if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+      if (retryUpserts.length > 0) {
+        retryUpserts.forEach(tx => void supabaseDb.upsertTransaction(currentUser.id, tx).catch(() => {}));
+      }
+      if (retryDeletes.length > 0) {
+        void supabaseDb.deleteTransactions(currentUser.id, retryDeletes).catch(() => {});
+      }
+    }
+
+    // Preserva componentes analíticos e metadados se a transação local tiver e a remota não
+    const localMap = new Map(transactionsRef.current.map(t => [t.id, t]));
+    for (const tx of items) {
+      const localTx = localMap.get(tx.id);
+      if (localTx) {
+        if ((!tx.components || tx.components.length === 0) && localTx.components && localTx.components.length > 0) {
+          tx.components = localTx.components;
+          tx.hasComponents = true;
+        }
+        if (!tx.financialNature && localTx.financialNature) {
+          tx.financialNature = localTx.financialNature;
+        }
+        if (!tx.characteristics && localTx.characteristics) {
+          tx.characteristics = localTx.characteristics;
+        }
+        if (!tx.relationships && localTx.relationships) {
+          tx.relationships = localTx.relationships;
         }
       }
     }
 
-    const result = Array.from(byId.values());
-    const payTxs = result.filter(t => isInvoicePaymentTransaction(t) && t.status === 'completed');
+    const payTxs = items.filter(t => isInvoicePaymentTransaction(t) && t.status === 'completed');
     if (payTxs.length > 0) {
-      for (const t of result) {
+      for (const t of items) {
         if (t.cardId && t.type === 'expense' && t.status !== 'completed') {
           const card = cardsRef.current.find(c => c.id === t.cardId);
           const invMonth = getCardTransactionInvoiceMonth(t, card);
@@ -611,7 +699,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     }
 
-    return result.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   };
 
   const reconcileRemoteSeries = (remoteSeries: TransactionSeries[]): TransactionSeries[] => {
@@ -1081,9 +1169,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     canWriteFullStoreToSupabaseRef.current = false;
 
     try {
+      const rawTxMutations = loadPendingTxMutations();
       const rawDeletes = localStorage.getItem(pendingTxDeletesKey);
-      pendingTxDeletesRef.current = rawDeletes ? JSON.parse(rawDeletes) : [];
+      const oldDeletes: string[] = rawDeletes ? JSON.parse(rawDeletes) : [];
+      for (const d of oldDeletes) {
+        if (!rawTxMutations.deletes.includes(d)) rawTxMutations.deletes.push(d);
+      }
+      pendingTxMutationsRef.current = rawTxMutations;
+      persistPendingTxMutations();
+      pendingTxDeletesRef.current = rawTxMutations.deletes;
     } catch (_) {
+      pendingTxMutationsRef.current = { upserts: {}, deletes: [] };
       pendingTxDeletesRef.current = [];
     }
 
@@ -1118,8 +1214,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     hasLocalAppearancePreferenceRef.current = Boolean(
       localStorage.getItem(appearancePreferenceKey) || localStorage.getItem(userStoreKey)
     );
+    const initialDerivedAccounts = calculateDerivedAccountBalances(store.accounts, store.transactions);
     setUser(store.userProfile);
-    setAccounts(store.accounts);
+    setAccounts(initialDerivedAccounts);
     setCards(store.cards);
     setCategories(store.categories);
     setBudgets(store.budgets);
@@ -1192,7 +1289,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               series: cleanSeries,
               today: getTodayString(),
             });
-            setAccounts(cleanAccounts);
+            const cleanAccountsWithDerivedBalances = calculateDerivedAccountBalances(cleanAccounts, migratedSeries.transactions);
+            setAccounts(cleanAccountsWithDerivedBalances);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
             setBudgets(cleanBudgets);
@@ -1293,7 +1391,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           series: cleanSeries,
           today: getTodayString(),
         });
-        setAccounts(cleanAccounts);
+        const cleanAccountsWithDerivedBalances = calculateDerivedAccountBalances(cleanAccounts, migratedSeries.transactions);
+        setAccounts(cleanAccountsWithDerivedBalances);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
         setBudgets(cleanBudgets);
@@ -1466,7 +1565,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (currentUser.id === 'usr-demo-financeiro' || currentUser.email === 'demo@finly.com') {
         const store = loadUserStore();
         setUser(store.userProfile);
-        setAccounts(store.accounts);
+        setAccounts(calculateDerivedAccountBalances(store.accounts, store.transactions));
         setCards(store.cards);
         setCategories(store.categories);
         setBudgets(store.budgets);
@@ -1481,10 +1580,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       const pullSequence = ++remotePullSequenceRef.current;
-      const revisionAtStart = localMutationRevisionRef.current;
       const canApplySnapshot = () => (
         pullSequence === remotePullSequenceRef.current &&
-        revisionAtStart === localMutationRevisionRef.current &&
         !isResettingRef.current
       );
 
@@ -1515,7 +1612,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               series: cleanSeries,
               today: getTodayString(),
             });
-            setAccounts(cleanAccounts);
+            const cleanAccountsWithDerivedBalances = calculateDerivedAccountBalances(cleanAccounts, migratedSeries.transactions);
+            setAccounts(cleanAccountsWithDerivedBalances);
             setCards(cleanCards);
             setCategories(mergeCategories(sbStore.categories));
             setBudgets(cleanBudgets);
@@ -1591,7 +1689,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           series: cleanSeries,
           today: getTodayString(),
         });
-        setAccounts(cleanAccounts);
+        const cleanAccountsWithDerivedBalances = calculateDerivedAccountBalances(cleanAccounts, migratedSeries.transactions);
+        setAccounts(cleanAccountsWithDerivedBalances);
         setCards(cleanCards);
         setCategories(mergeCategories(serverStore.categories));
         setBudgets(cleanBudgets);
@@ -1617,7 +1716,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Fallback reload from local storage
         const store = loadUserStore();
         setUser(store.userProfile);
-        setAccounts(store.accounts);
+        setAccounts(calculateDerivedAccountBalances(store.accounts, store.transactions));
         setCards(store.cards);
         setCategories(store.categories);
         setBudgets(store.budgets);
@@ -1694,25 +1793,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // =========================================================================
   useEffect(() => {
     setAccounts(prevAccounts => {
-      const defaultAccId = prevAccounts[0]?.id || 'acc-carteira-padrao';
-      const updated = prevAccounts.map(account => {
-        let balance = account.initialBalance ?? 0;
-        for (const tx of transactions) {
-          if (tx.status !== 'completed') continue;
-          const isThisAccount = tx.accountId === account.id || (!tx.cardId && !tx.accountId && account.id === defaultAccId);
-
-          if (tx.type === 'income' && isThisAccount) {
-            balance += tx.amount;
-          } else if (tx.type === 'expense' && isThisAccount) {
-            balance -= tx.amount;
-          } else if (tx.type === 'transfer') {
-            if (tx.accountId === account.id) balance -= tx.amount;
-            if (tx.targetAccountId === account.id) balance += tx.amount;
-          }
-        }
-        balance = round2(balance);
-        return balance !== account.balance ? { ...account, balance } : account;
-      });
+      const updated = calculateDerivedAccountBalances(prevAccounts, transactions);
       return updated.some((a, i) => a !== prevAccounts[i]) ? updated : prevAccounts;
     });
   }, [transactions]);
@@ -2145,6 +2226,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       localStorage.setItem(pendingTxDeletesKey, JSON.stringify(pendingTxDeletesRef.current));
     } catch (_) {}
 
+    queueTransactionUpsert(newTx);
+
     // Balance is auto-recalculated by the derived balance effect
     setTransactions(prev => [newTx, ...prev]);
 
@@ -2157,6 +2240,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (transactionSeries.some(item => item.id === series.id)) return;
     markLocalMutation();
     setTransactionSeries(prev => [series, ...prev]);
+    occurrences.forEach(tx => queueTransactionUpsert(tx));
     setTransactions(prev => {
       const existingIds = new Set(prev.map(transaction => transaction.id));
       return [...occurrences.filter(transaction => !existingIds.has(transaction.id)), ...prev];
@@ -2191,19 +2275,27 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       ? Boolean(data.hasComponents && components && components.length > 0)
       : (components && components.length > 0 ? oldTx.hasComponents : false);
 
+    const isCategoryChanged =
+      (data.categoryId !== undefined && data.categoryId !== oldTx.categoryId) ||
+      (data.subcategoryId !== undefined && data.subcategoryId !== oldTx.subcategoryId);
+
+    // Se estiver editando ocorrência individual de uma série sem mudar categoria global,
+    // protege marcando isSeriesException para impedir sobreposição em recálculos
+    const isSingleSeriesException = Boolean(oldTx.seriesId && !isCategoryChanged);
+
     const newTx: Transaction = {
       ...oldTx,
       ...data,
       amount: data.amount !== undefined ? round2(data.amount) : oldTx.amount,
       hasComponents,
       components,
+      isSeriesException: data.isSeriesException !== undefined
+        ? data.isSeriesException
+        : (isSingleSeriesException ? true : oldTx.isSeriesException),
     };
 
-    const isCategoryChanged =
-      (data.categoryId !== undefined && data.categoryId !== oldTx.categoryId) ||
-      (data.subcategoryId !== undefined && data.subcategoryId !== oldTx.subcategoryId);
-
     markLocalMutation();
+    queueTransactionUpsert(newTx);
 
     if (isCategoryChanged) {
       const propagation = propagateCategoryChange({
@@ -2224,6 +2316,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         for (const affId of propagation.affectedTransactionIds) {
           const affTx = updatedTransactions.find(t => t.id === affId);
           if (affTx) {
+            queueTransactionUpsert(affTx);
             void supabaseDb.upsertTransaction(currentUser.id, affTx).catch(() => {});
           }
         }
@@ -2246,6 +2339,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const deleteTransaction = (id: string) => {
     markLocalMutation();
+    queueTransactionDelete(id);
     if (!pendingTxDeletesRef.current.includes(id)) {
       pendingTxDeletesRef.current.push(id);
       try {
@@ -2306,6 +2400,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     markLocalMutation();
 
     ids.forEach(id => {
+      queueTransactionDelete(id);
       if (!pendingTxDeletesRef.current.includes(id)) pendingTxDeletesRef.current.push(id);
     });
     try {
@@ -2320,6 +2415,8 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     showUndo({
       message: `${deletedTxs.length} transações excluídas`,
       onUndo: () => {
+        markLocalMutation();
+        deletedTxs.forEach(tx => queueTransactionUpsert(tx));
         pendingTxDeletesRef.current = pendingTxDeletesRef.current.filter(item => !idSet.has(item));
         setTransactions(prev => [...deletedTxs, ...prev]);
       },
@@ -2426,22 +2523,25 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!transaction || series?.kind !== 'recurring_expense') {
         const totalCents = components.reduce((sum, c) => sum + Math.round((Number(c.amount) || 0) * 100), 0);
         const resolvedAmount = totalAmount ?? (components.length > 0 ? Math.round(totalCents) / 100 : transaction?.amount);
-        return prev.map(t =>
-          t.id === id
-            ? {
-                ...t,
-                hasComponents: components.length > 0,
-                components: components.map((c, i) => ({
-                  ...c,
-                  id: (c as any).id || `comp-${id}-${i + 1}`,
-                  transactionId: id,
-                  createdAt: `${t.date}T12:00:00.000Z`,
-                  updatedAt: `${t.date}T12:00:00.000Z`,
-                })),
-                amount: resolvedAmount ?? t.amount,
-              }
-            : t
-        );
+        const updatedTx: Transaction = {
+          ...transaction!,
+          hasComponents: components.length > 0,
+          components: components.map((c, i) => ({
+            ...c,
+            id: (c as any).id || `comp-${id}-${i + 1}`,
+            transactionId: id,
+            createdAt: `${transaction?.date || getTodayString()}T12:00:00.000Z`,
+            updatedAt: `${transaction?.date || getTodayString()}T12:00:00.000Z`,
+          })),
+          amount: resolvedAmount ?? transaction!.amount,
+          isSeriesException: true,
+        };
+        queueTransactionUpsert(updatedTx);
+        markLocalMutation();
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertTransaction(currentUser.id, updatedTx).catch(() => {});
+        }
+        return prev.map(t => (t.id === id ? updatedTx : t));
       }
       const result = applyRecurringExpenseComponentsChange({
         series,
@@ -2454,6 +2554,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
       markLocalMutation();
       setTransactionSeries(prevSeries => prevSeries.map(item => (item.id === series.id ? result.series : item)));
+      result.transactions
+        .filter(item => item.id === id || (scope === 'current_and_future' && item.seriesId === series.id))
+        .forEach(item => queueTransactionUpsert(item));
       if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
         void supabaseDb.upsertTransactionSeries(currentUser.id, [result.series]);
         result.transactions
@@ -2572,8 +2675,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev =>
       prev.map(t => {
         if (t.id !== id) return t;
-        const nextStatus = t.status === 'completed' ? 'pending' : 'completed';
-        return { ...t, status: nextStatus };
+        const nextStatus: TransactionStatus = t.status === 'completed' ? 'pending' : 'completed';
+        const updated: Transaction = { ...t, status: nextStatus };
+        queueTransactionUpsert(updated);
+        if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
+          void supabaseDb.upsertTransaction(currentUser.id, updated).catch(() => {});
+        }
+        return updated;
       })
     );
   };

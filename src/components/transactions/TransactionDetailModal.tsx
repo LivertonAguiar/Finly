@@ -207,8 +207,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           if (!rawComponents || rawComponents.length === 0) {
             return projected;
           }
-          // Se a ocorrência salva possui componentes, garantir que itens fixos e variáveis da série
-          // (como Taxa Geral e Água) estejam puxados mesmo se ausentes na ocorrência pontual
+          // Se a ocorrência salva possui componentes e é uma exceção customizada, preservar estritamente os componentes salvos
+          if (transaction?.isSeriesException) {
+            return rawComponents;
+          }
+          // Caso contrário, garantir que itens fixos e variáveis da série (como Taxa Geral e Água) estejam puxados
           const merged = [...rawComponents];
           projected.forEach(proj => {
             const alreadyExists = merged.some(
@@ -775,6 +778,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       amount: effectiveComponentsSum,
                       hasComponents: true,
                       components: effectiveComponents,
+                      isSeriesException: Boolean(transaction.seriesId),
                     });
                   }}
                   className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] shrink-0 transition-colors shadow-sm"

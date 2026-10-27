@@ -258,7 +258,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       }));
 
       // Se a série possuir templates fixos ou variáveis ausentes na ocorrência salva (ex: Água), fundir
-      if (seriesTemplates) {
+      // apenas se a ocorrência não for uma exceção já personalizada pelo usuário
+      if (seriesTemplates && !tx?.isSeriesException) {
         seriesTemplates.forEach((st, idx) => {
           const exists = loadedItems.some(
             li => li.description.toLowerCase().trim() === st.description.toLowerCase().trim()
@@ -782,7 +783,24 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             updateTransaction(editingTransaction.id, txData);
           }
         } else {
-          updateTransaction(editingTransaction.id, txData);
+          if (hasSplit && splitItems.length > 0) {
+            updateRecurringExpenseComponents(
+              editingTransaction.id,
+              txData.components || [],
+              'single',
+              finalAmount,
+              false,
+            );
+            updateTransaction(editingTransaction.id, {
+              ...txData,
+              isSeriesException: true,
+            });
+          } else {
+            updateTransaction(editingTransaction.id, {
+              ...txData,
+              isSeriesException: true,
+            });
+          }
         }
       } else {
         updateTransaction(editingTransaction.id, txData);

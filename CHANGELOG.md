@@ -3,6 +3,28 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.80] - 2026-10-27
+
+### Diário de Mutações e Blindagem contra Perda de Status no Mobile
+- **Persistência de Mutações Pendentes com Sincronização em Segundo Plano**:
+  - Implementação do diário transacional (`pendingTxMutationsRef` com persistência em `localStorage`) e despacho atômico imediato ao banco remoto via `supabaseDb.upsertTransaction`.
+  - Reconciliação inteligente com `reconcilePendingMutations`: impede que snapshots remotos defasados revertam status de despesas recém-pagas durante operações de pull-to-refresh em redes móveis instáveis ou com alta latência.
+
+### Eliminação de Oscilação Rápida de Saldo (Zero Flicker)
+- **Cálculo Derivado de Saldos Instantâneo**:
+  - Criação do utilitário isolado `src/utils/derivedAccountBalances.ts`, calculando os saldos derivados consolidados das contas bancárias antes do envio do estado ao React (`setAccounts`).
+  - Eliminação completa de oscilações visuais e saltos nos cartões de saldo do Dashboard e da aba Contas durante o carregamento inicial e atualizações manuais.
+
+### Preservação de Splits e Edições em Despesas Recorrentes
+- **Fixação de Alterações no Escopo Pontual**:
+  - Correção na edição de despesas recorrentes detalhadas no modal de transação (`TransactionModalV2`), assegurando invocação de `updateRecurringExpenseComponents(..., 'single', ...)` e atribuição de `isSeriesException: true`.
+  - Proteção contra fusão forçada de templates excluídos pelo usuário (`TransactionDetailModal` e `TransactionModalV2`).
+
+### Ponto de Recuperação Contínua e Continuidade Operacional
+- **Subsistema de Resiliência de Agentes e Sessões**:
+  - Criação do artefato de governança e recuperação contínua `.agents/CHECKPOINT.md` para assegurar retomada fluida de tarefas em casos de queda de energia ou esgotamento de janela de contexto.
+  - Registro de diretrizes permanentes de arquitetura em `.github/instructions/finly-resilience-memory.instructions.md`.
+
 ## [1.1.79] - 2026-10-16
 
 ### Renderizador Universal de PDF em Canvas e Fluxo Unificado de Download com Prévia

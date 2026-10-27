@@ -36,11 +36,38 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-10-12';
+export const CURRENT_BUILD_DATE = '2026-10-27';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-10-27',
+    summary: 'Resiliência contra perda de status pago em redes móveis, eliminação de oscilação rápida de saldo (flicker), fixação definitiva de edições em despesas detalhadas e motor de persistência durável para continuidade operacional.',
+    highlights: [
+      {
+        title: 'Diário de Mutações e Blindagem contra Perda de Status no Mobile',
+        description: 'Implementação de diário transacional de mutações pendentes com persistência local e salvamento atômico em segundo plano. Despesas marcadas como pagas não são mais revertidas por snapshots antigos do Supabase durante pull-to-refresh em conexões móveis lentas.',
+        type: 'fix',
+      },
+      {
+        title: 'Eliminação da Oscilação Rápida de Saldo (Zero Flicker)',
+        description: 'Recálculo instantâneo de saldos derivados das contas antes do envio do estado para o React, garantindo que o saldo seja exibido 100% consolidado e estático no carregamento e refresh da página.',
+        type: 'improvement',
+      },
+      {
+        title: 'Preservação de Splits e Edições em Despesas Recorrentes',
+        description: 'Correção de edições no escopo pontual em despesas recorrentes detalhadas, garantindo atribuição da flag de exceção e impedindo a re-projeção involuntária de templates excluídos pelo usuário.',
+        type: 'fix',
+      },
+      {
+        title: 'Ponto de Recuperação Contínua e Continuidade Operacional',
+        description: 'Novo subsistema de observabilidade e recuperação durável (.agents/CHECKPOINT.md) assegurando persistência e retomada contínua de tarefas mesmo após quedas de energia ou interrupções de conexão.',
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    version: '1.1.79',
     releaseDate: '2026-10-16',
     summary: 'Aprimoramento global de responsividade em telas móveis e desktop, tipografia de alta precisão Plus Jakarta Sans e blindagem de segurança criptográfica.',
     highlights: [
