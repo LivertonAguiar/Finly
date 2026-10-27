@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.80",
+    "version": "1.1.81",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.80/finly-v1.1.80.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.81/finly-v1.1.81.apk"
   },
   "web": {
-    "version": "1.1.80.1",
+    "version": "1.1.81.1",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.80.1.zip",
-    "sha256": "ff25c91066fdca53144638f373ef851abf162919db63fd59aa2ce691e5a19122",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.81.1.zip",
+    "sha256": "b3ccfa4b9f83115828387ec3456057fae24f9d8fe7fab14d760e6c9e2ef4ba20",
     "mandatory": true,
     "releaseDate": "2026-10-27",
-    "notes": "Resiliência contra perda de status pago no mobile, fim do flicker de saldo e correção de splits em despesas recorrentes"
+    "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável."
   }
 }
