@@ -119,7 +119,7 @@ if (-not $apkFound) {
 
 try {
 Write-Host "Empacotando arquivos do projeto..." -ForegroundColor Yellow
-tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data/stores" --exclude="server/data/stores/*" --exclude="server/data/ollama" --exclude="server/data/ollama/*" --exclude="server/data/*.json" --exclude="server/public/bundles" --exclude="server/public/bundles/*" -czf $archivePath -C $repoRoot .
+tar.exe --exclude="node_modules" --exclude="android" --exclude=".git" --exclude="dist" --exclude=".agents" --exclude="*oracleJdk*" --exclude="scratch*" --exclude="server/data" --exclude="server/data/*" --exclude="server/public/bundles" --exclude="server/public/bundles/*" -czf $archivePath -C $repoRoot .
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao criar o pacote de atualizacao." }
 if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf) -or (Get-Item -LiteralPath $archivePath).Length -le 0) {
     throw "Deploy falhou: o pacote de atualizacao esta ausente ou vazio."
@@ -136,7 +136,7 @@ scp.exe -i $keyPath -o StrictHostKeyChecking=accept-new $bundlePath "$($server):
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou ao enviar o bundle OTA." }
 
 Write-Host "Reconstruindo container Docker no servidor..." -ForegroundColor Yellow
-$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --exclude="server/data/stores/*" --exclude="server/data/*.json" --exclude="server/public/bundles/*" && rm -f finly-update.tar.gz && docker compose up -d --build --remove-orphans'
+$cmd = 'cd /opt/docker/finly && tar -xzf finly-update.tar.gz --no-same-owner --no-overwrite-dir --exclude="server/data/*" --exclude="server/public/bundles/*" && rm -f finly-update.tar.gz && docker compose up -d --build --remove-orphans'
 ssh.exe -n -i $keyPath -o StrictHostKeyChecking=accept-new $server $cmd
 if ($LASTEXITCODE -ne 0) { throw "Deploy falhou durante a reconstrucao do container." }
 
