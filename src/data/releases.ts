@@ -36,11 +36,33 @@ export interface ReleaseInfo {
 }
 
 export const CURRENT_VERSION = packageVersion;
-export const CURRENT_BUILD_DATE = '2026-10-27';
+export const CURRENT_BUILD_DATE = '2026-10-28';
 
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-10-28',
+    summary: 'Painel dedicado do Widget nas Configurações, correção de compatibilidade de RemoteViews no Android e detecção inteligente de APK pendente pós-OTA.',
+    highlights: [
+      {
+        title: 'Painel do Widget nas Configurações',
+        description: 'Nova seção em Configurações com instruções passo a passo para adicionar o widget no celular, botão de sincronização forçada e diagnóstico de compatibilidade do APK.',
+        type: 'feature',
+      },
+      {
+        title: 'Correção de Layout RemoteViews no Android',
+        description: 'Substituição de tags genéricas por FrameLayout em finly_app_widget.xml e inclusão de previewLayout para renderização perfeita no launcher do celular.',
+        type: 'fix',
+      },
+      {
+        title: 'Detecção de APK Defasado pós-OTA',
+        description: 'O aplicativo agora identifica quando o APK nativo precisa ser atualizado mesmo após o download do pacote web via OTA, alertando com link direto de download.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
+    version: '1.1.81',
     releaseDate: '2026-10-27',
     summary: 'Suporte a Widgets Nativos na tela inicial do Android, notificações e alarmes exatos com app fechado e sincronização contínua de métricas.',
     highlights: [

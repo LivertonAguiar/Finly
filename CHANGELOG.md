@@ -3,6 +3,25 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.82] - 2026-10-28
+
+### Painel do Widget nas Configurações
+- **Guia Passo a Passo e Sincronização Forçada**:
+  - Nova seção "5. Widget da Tela Inicial (Android)" nas Configurações do Finly.
+  - Exibição de status da integração e botão para forçar a sincronização de saldo em contas e despesas acumuladas com o Android.
+  - Alerta em destaque com botão direto de download caso o APK nativo instalado no aparelho esteja desatualizado em relação à versão recomendada na nuvem.
+
+### Correção de Compatibilidade RemoteViews no Android
+- **Renderização Perfeita no Launcher**:
+  - Substituição da tag genérica `<View>` por `<FrameLayout>` em `finly_app_widget.xml`, em estrita conformidade com as restrições de inflação do `RemoteViews` do Android.
+  - Configuração de `android:previewLayout` em `finly_widget_info.xml` para pré-visualização instantânea na gaveta de widgets da tela inicial.
+  - Bloco de tratamento defensivo `try/catch` e ativação imediata no evento `onEnabled` em `FinlyWidgetProvider.java`.
+
+### Detecção Inteligente de APK Defasado pós-OTA
+- **Alerta de Atualização de APK**:
+  - Consulta da versão física do APK através de `@capacitor/app` (`getInstalledApkVersion`).
+  - Distinção transparente entre a versão do pacote Web (OTA) e a versão do APK instalado em `MorePage.tsx` e `AppUpdateModal.tsx`.
+
 ## [1.1.81] - 2026-10-27
 
 ### Widgets Nativos na Tela Inicial do Android

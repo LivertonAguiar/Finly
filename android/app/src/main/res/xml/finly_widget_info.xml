@@ -6,8 +6,8 @@
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/finly_app_widget"
+    android:previewLayout="@layout/finly_app_widget"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="@string/widget_description"
-    android:previewImage="@drawable/ic_stat_finly_purple">
+    android:description="@string/widget_description">
 </appwidget-provider>

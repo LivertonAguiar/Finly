@@ -34,6 +34,7 @@ export const markVersionNotified = (version: string): void => {
 export interface UpdateCheckResult {
   hasUpdate: boolean;
   failedCheck?: boolean;
+  currentVersion?: string;
   latestVersion: string;
   notes?: string;
   summary?: string;
@@ -91,6 +92,37 @@ export const verifyApkReady = async (version: string): Promise<boolean> => {
 
 export const isNativeCapacitor = (): boolean => {
   return typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+};
+
+let cachedNativeApkVersion: string | null = null;
+
+/**
+ * Retorna a versão real do APK Android instalado no dispositivo do usuário através do @capacitor/app.
+ * No ambiente Web / PWA, utiliza a versão base de compilação APP_VERSION.
+ */
+export const getInstalledApkVersion = async (): Promise<string> => {
+  if (cachedNativeApkVersion) return cachedNativeApkVersion;
+  if (isNativeCapacitor()) {
+    try {
+      const { App } = await import('@capacitor/app');
+      const info = await App.getInfo();
+      if (info && info.version) {
+        cachedNativeApkVersion = info.version;
+        return info.version;
+      }
+    } catch (err) {
+      console.warn('[Version] Erro ao obter versão real do APK via @capacitor/app:', err);
+    }
+  }
+  return APP_VERSION;
+};
+
+export const getCachedApkVersion = (): string => {
+  return cachedNativeApkVersion || APP_VERSION;
+};
+
+export const setInstalledApkVersionForTest = (version: string | null): void => {
+  cachedNativeApkVersion = version;
 };
 
 export const isMobileDevice = (): boolean => {
@@ -186,7 +218,8 @@ const performCheck = async (options?: {
     if (apiRes && apiRes.ok) {
       const serverInfo = await apiRes.json();
       const serverVer = (serverInfo.latestVersion || serverInfo.version || '').replace(/^v/, '');
-      const hasNewVersion = isNewerVersion(serverVer, APP_VERSION);
+      const nativeVer = isNativeCapacitor() ? await getInstalledApkVersion() : APP_VERSION;
+      const hasNewVersion = isNewerVersion(serverVer, nativeVer);
       const downloadUrl = serverInfo.downloadUrl || GITHUB_RELEASES_URL;
 
       // Verify if APK is actually ready on GitHub before declaring update ready on Android
@@ -202,6 +235,7 @@ const performCheck = async (options?: {
 
       const result: UpdateCheckResult = {
         hasUpdate: effectiveHasUpdate,
+        currentVersion: nativeVer,
         latestVersion: serverVer || APP_VERSION,
         notes: isCompiling
           ? `A nova versão v${serverVer} está sendo compilada no GitHub Actions (~1 a 2 min). O download e a notificação serão liberados automaticamente assim que o APK estiver pronto.`
@@ -257,11 +291,13 @@ const performCheck = async (options?: {
       const ghData = await ghRes.json();
       const ghVer = (ghData.tag_name || '').replace(/^v/, '');
       if (ghVer) {
-        const hasUpdate = isNewerVersion(ghVer, APP_VERSION);
+        const nativeVer = isNativeCapacitor() ? await getInstalledApkVersion() : APP_VERSION;
+        const hasUpdate = isNewerVersion(ghVer, nativeVer);
         const apkAsset = ghData.assets?.find((a: any) => typeof a.name === 'string' && a.name.endsWith('.apk'));
         const downloadUrl = apkAsset?.browser_download_url || ghData.html_url || GITHUB_RELEASES_URL;
         const result: UpdateCheckResult = {
           hasUpdate,
+          currentVersion: nativeVer,
           latestVersion: ghVer,
           notes: ghData.body || CURRENT_RELEASE.summary,
           downloadUrl,
@@ -321,9 +357,11 @@ const performCheck = async (options?: {
     }
   } catch (_) {}
 
+  const nativeVer = isNativeCapacitor() ? await getInstalledApkVersion() : APP_VERSION;
   return {
     hasUpdate: false,
     failedCheck: options?.isManualCheck ? true : false,
+    currentVersion: nativeVer,
     latestVersion: APP_VERSION,
     notes: options?.isManualCheck
       ? 'Não foi possível conectar aos servidores de atualização. Verifique sua conexão com a internet.'

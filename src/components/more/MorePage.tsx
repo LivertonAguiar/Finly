@@ -55,6 +55,8 @@ import {
   isMobileDevice,
   getPlatformLabel,
   UpdateCheckResult,
+  getInstalledApkVersion,
+  isNewerVersion,
 } from '../../utils/appUpdateService';
 import { getCurrentWebVersion } from '../../services/webUpdateService';
 
@@ -84,11 +86,13 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
   // Update check states
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [apkVersion, setApkVersion] = useState<string>(APP_VERSION);
   const [webVersion, setWebVersion] = useState<string>(APP_VERSION);
 
   useEffect(() => {
     if (isNativeCapacitor()) {
       getCurrentWebVersion().then(v => setWebVersion(v)).catch(() => {});
+      getInstalledApkVersion().then(v => setApkVersion(v)).catch(() => {});
     }
   }, []);
 
@@ -383,7 +387,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-base font-black text-slate-900 dark:text-white">Finly</h4>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                      {isNativeCapacitor() ? `APK v${APP_VERSION}` : `v${APP_VERSION}`}
+                      {isNativeCapacitor() ? `APK v${apkVersion}` : `v${APP_VERSION}`}
                     </span>
                     {isNativeCapacitor() && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
@@ -397,10 +401,17 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
                     <span>{getPlatformLabel()}</span>
                     <span>•</span>
-                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Sincronizado
-                    </span>
+                    {isNativeCapacitor() && (updateResult?.hasUpdate || isNewerVersion(webVersion.split('.').slice(0, 3).join('.'), apkVersion)) ? (
+                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Atualização de APK pendente
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Sincronizado
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -413,10 +424,14 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     try {
                       const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: true });
                       setUpdateResult(res);
+                      if (res?.currentVersion) {
+                        setApkVersion(res.currentVersion);
+                      }
                     } catch (e) {
                       setUpdateResult({
                         hasUpdate: false,
                         failedCheck: true,
+                        currentVersion: apkVersion,
                         latestVersion: APP_VERSION,
                         notes: 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.',
                       });
@@ -474,8 +489,8 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     {updateResult.failedCheck
                       ? (updateResult.notes || 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.')
                       : updateResult.hasUpdate
-                      ? `Nova versão disponível na nuvem: v${updateResult.latestVersion}`
-                      : `Você já está utilizando a versão mais recente (v${APP_VERSION}).`}
+                      ? `Nova versão do APK disponível: v${updateResult.latestVersion} (Instalada: v${apkVersion})`
+                      : `Você já está utilizando a versão mais recente (${isNativeCapacitor() ? `APK v${apkVersion}` : `v${APP_VERSION}`}).`}
                   </span>
                 </div>
                 {updateResult.hasUpdate && (
@@ -483,7 +498,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     onClick={() => openExternalUrl(updateResult.downloadUrl || GITHUB_RELEASES_URL)}
                     className="underline font-black text-[11px] cursor-pointer shrink-0"
                   >
-                    Baixar APK
+                    Baixar APK v{updateResult.latestVersion}
                   </button>
                 )}
               </div>

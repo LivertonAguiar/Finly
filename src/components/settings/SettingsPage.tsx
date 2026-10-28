@@ -52,6 +52,15 @@ import {
   NotificationPreferences,
   isNativePlatform,
 } from '../../utils/notificationEngine';
+import { syncNativeWidget } from '../../utils/widgetBridge';
+import { getCurrentMonth } from '../../utils/formatters';
+import { isIncludedInPersonalAnalytics } from '../../utils/transactionImpact';
+import {
+  getInstalledApkVersion,
+  isNewerVersion,
+  openExternalUrl,
+  APP_VERSION,
+} from '../../utils/appUpdateService';
 
 export const SettingsPage: React.FC = () => {
   const {
@@ -65,6 +74,8 @@ export const SettingsPage: React.FC = () => {
     clearAppCache,
     resetAllUserData,
     toggleHideValues,
+    transactions,
+    metrics,
   } = useFinancial();
   const { currentUser, updateUserAccount, deleteUserAccount, logout } = useAuth();
   const { confirm } = useConfirm();
@@ -141,6 +152,50 @@ export const SettingsPage: React.FC = () => {
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(getNotificationPermission);
   const [testSending, setTestSending] = useState(false);
   const [testSuccess, setTestSuccess] = useState(false);
+
+  // Native Widget state & synchronization
+  const [installedApkVer, setInstalledApkVer] = useState<string>(APP_VERSION);
+  const [isSyncingWidget, setIsSyncingWidget] = useState(false);
+  const [widgetSyncSuccess, setWidgetSyncSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isNativePlatform()) {
+      getInstalledApkVersion().then(setInstalledApkVer).catch(() => {});
+    }
+  }, []);
+
+  const handleSyncWidgetNow = async () => {
+    setIsSyncingWidget(true);
+    try {
+      const curMonth = getCurrentMonth();
+      const currentMonthExpenses = transactions
+        .filter(t => t.type === 'expense' && t.status === 'completed' && t.date.startsWith(curMonth) && isIncludedInPersonalAnalytics(t))
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const pendingCount = transactions.filter(
+        t => t.type === 'expense' && t.status === 'pending' && !t.ignored
+      ).length;
+
+      const [y, m] = curMonth.split('-').map(Number);
+      const dateForMonth = new Date(y, m - 1, 1);
+      const monthLabel = dateForMonth.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+
+      await syncNativeWidget({
+        balance: metrics.totalBalance,
+        monthlyExpenses: currentMonthExpenses,
+        pendingBillsCount: pendingCount,
+        monthName: monthLabel,
+        currency: user.currency || 'BRL',
+      });
+
+      setWidgetSyncSuccess(true);
+      setTimeout(() => setWidgetSyncSuccess(false), 4000);
+    } catch (err) {
+      console.error('Erro ao sincronizar widget:', err);
+    } finally {
+      setIsSyncingWidget(false);
+    }
+  };
 
   // Account details state
   const [name, setName] = useState(currentUser?.name || user.name || '');
@@ -313,7 +368,8 @@ export const SettingsPage: React.FC = () => {
   const showLang = !q || 'idioma language moeda currency real dolar euro privacidade privacy ocultar saldos'.includes(q);
   const showAppearance = !q || 'aparencia appearance tema theme presets cores accent destaque arredondamento radius squircle'.includes(q);
   const showNotif = !q || 'notificacoes notifications central alertas faturas contas orcamento budget metas digest horario chime som'.includes(q);
-  const showDashboard = !q || 'dashboard painel customizar cards widgets visao geral'.includes(q);
+  const showDashboard = !q || 'dashboard painel customizar cards visao geral'.includes(q);
+  const showWidget = !q || 'widget tela inicial android celular atalho saldo resumo'.includes(q);
 
   const showAccount = !q || 'conta account titular nome name email phone telefone dados cadastrais login'.includes(q);
   const showSecurity = !q || 'segurança security senha password pin biometria fingerprint bloqueio lock inatividade'.includes(q);
@@ -321,8 +377,8 @@ export const SettingsPage: React.FC = () => {
   const showSystem = !q || 'dados data sistema system cache limpar reset apagar excluir conta delete'.includes(q);
   const showSession = !q || 'sessao session sair logout encerrar'.includes(q);
 
-  const hasAnyMatch = showLang || showAppearance || showNotif || showDashboard || showAccount || showSecurity || showBackup || showSystem || showSession;
-  const showCol1 = showLang || showAppearance || showNotif || showDashboard;
+  const hasAnyMatch = showLang || showAppearance || showNotif || showDashboard || showWidget || showAccount || showSecurity || showBackup || showSystem || showSession;
+  const showCol1 = showLang || showAppearance || showNotif || showDashboard || showWidget;
   const showCol2 = showAccount || showSecurity || showBackup || showSystem || showSession;
 
   return (
@@ -901,6 +957,98 @@ export const SettingsPage: React.FC = () => {
                   <span>Abrir Gerenciador de Cards</span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 5. WIDGET DA TELA INICIAL (ANDROID) */}
+        {showWidget && (
+          <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                      5. Widget da Tela Inicial (Android)
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                      Nativo
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Acompanhe seu saldo em contas, despesas do mês e crie despesas com 1 toque
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3.5">
+              {/* Instruções de uso */}
+              <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                <p className="font-bold text-slate-800 dark:text-slate-200 text-[11px] uppercase tracking-wider">
+                  Como adicionar o widget no seu celular:
+                </p>
+                <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <li>Vá para a tela inicial do seu celular Android.</li>
+                  <li>Mantenha pressionado qualquer espaço vazio da tela.</li>
+                  <li>No menu que surgir, toque em <strong>Widgets</strong>.</li>
+                  <li>Role a lista até encontrar <strong>Finly</strong> e selecione o card <strong>Finly - Resumo Financeiro</strong>.</li>
+                  <li>Posicione o widget onde desejar na tela inicial.</li>
+                </ol>
+              </div>
+
+              {/* Status do APK no Android */}
+              {isNativePlatform() && (
+                <div>
+                  {isNewerVersion('1.1.81', installedApkVer) ? (
+                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] space-y-2">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Instalação do APK v1.1.81 Necessária</span>
+                      </div>
+                      <p className="text-amber-700 dark:text-amber-300 leading-relaxed text-[10px]">
+                        Seu app recebeu a atualização interna via OTA, mas o APK físico instalado no seu celular é a versão <strong>v{installedApkVer}</strong>. Como widgets exigem arquivos nativos do sistema Android, eles só aparecem na lista de widgets do celular após instalar o arquivo APK baixado.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openExternalUrl(`https://github.com/LivertonAguiar/Finly/releases/download/v${APP_VERSION}/finly-v${APP_VERSION}.apk`)}
+                        className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Baixar APK v{APP_VERSION}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-[11px] flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="font-semibold text-emerald-800 dark:text-emerald-200">
+                          APK v{installedApkVer} instalado (suporte nativo ativo)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSyncWidgetNow}
+                        disabled={isSyncingWidget}
+                        className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] flex items-center gap-1 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isSyncingWidget ? 'animate-spin' : ''}`} />
+                        <span>{widgetSyncSuccess ? 'Sincronizado!' : isSyncingWidget ? 'Sincronizando...' : 'Sincronizar Agora'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isNativePlatform() && (
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700/40 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 shrink-0 text-slate-400" />
+                  <span>Você está no navegador. Os widgets nativos da tela inicial funcionam exclusivamente no app Android (APK).</span>
+                </div>
+              )}
             </div>
           </div>
         )}

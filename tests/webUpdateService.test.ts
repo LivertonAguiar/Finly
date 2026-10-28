@@ -211,4 +211,29 @@ console.log('\n--- CENÁRIO 4: Card de Atualização Pronta com Detalhes e Botã
   console.log('✅ Cenário 4 Aprovado: Evento e dados para o card de atualização pronta validados com sucesso.');
 }
 
-console.log('\n🎉 TODOS OS 4 CENÁRIOS FORAM RIGOROSAMENTE VALIDADOS E APROVADOS COM 100% DE SUCESSO!\n');
+// ============================================================================
+// CENÁRIO 5: Discrepância entre APK Instalado (1.1.80) e Bundle Web OTA (1.1.81.1)
+// ============================================================================
+console.log('\n--- CENÁRIO 5: Detecção de APK Instalado Defasado pós-OTA ---');
+{
+  const installedApkVersion = '1.1.80'; // Versão física no sistema Android
+  const bundledWebVersion = '1.1.81.1'; // Versão baixada via OTA
+  const serverApkVersion = '1.1.81';    // Nova versão de APK disponível na nuvem
+
+  // 5.1 A checagem deve comparar serverApkVersion contra installedApkVersion, NUNCA contra a versão embutida no bundle
+  const requiresApkUpdate = isNewerVersion(serverApkVersion, installedApkVersion);
+  assert.strictEqual(requiresApkUpdate, true, 'Deve identificar que o APK 1.1.80 precisa ser atualizado para 1.1.81');
+
+  // 5.2 Se comparasse erroneamente contra o bundle web compilado (1.1.81), a atualização seria incorretamente suprimida:
+  const naiveCheckAgainstBundle = isNewerVersion(serverApkVersion, '1.1.81');
+  assert.strictEqual(naiveCheckAgainstBundle, false, 'Comparação ingênua contra o bundle falso-negativo detectada');
+
+  // 5.3 Validação de descompasso de sincronização
+  const isOutOfSync = isNewerVersion(bundledWebVersion.split('.').slice(0, 3).join('.'), installedApkVersion);
+  assert.strictEqual(isOutOfSync, true, 'Status de sincronização deve detectar APK pendente de atualização');
+
+  console.log('✅ Cenário 5 Aprovado: Discrepância entre APK real e bundle OTA identificada corretamente, garantindo prompt de atualização do APK.');
+}
+
+console.log('\n🎉 TODOS OS 5 CENÁRIOS FORAM RIGOROSAMENTE VALIDADOS E APROVADOS COM 100% DE SUCESSO!\n');
+

@@ -36,7 +36,7 @@ import {
   HelpCategoryDef,
   GuideStep,
 } from '../../data/helpCenterData';
-import { APP_VERSION, isNativeCapacitor, isMobileDevice } from '../../utils/appUpdateService';
+import { APP_VERSION, isNativeCapacitor, isMobileDevice, getCachedApkVersion } from '../../utils/appUpdateService';
 import { useAuth } from '../../context/AuthContext';
 import { FinlyAndroidMockup } from './FinlyAndroidMockup';
 import { FinlyWebMockup } from './FinlyWebMockup';
@@ -122,7 +122,7 @@ export const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ onNavigateToTab 
   };
 
   const handleCopyDiagnostics = () => {
-    const diag = `=== DIAGNÓSTICO FINLY ===\nVersão do App: v${APP_VERSION}\nPlataforma: ${isNativeCapacitor() ? 'Android Nativo (APK)' : 'Navegador Web / PWA'
+    const diag = `=== DIAGNÓSTICO FINLY ===\nVersão do App: ${isNativeCapacitor() ? `APK v${getCachedApkVersion()} (Bundle v${APP_VERSION})` : `v${APP_VERSION}`}\nPlataforma: ${isNativeCapacitor() ? 'Android Nativo (APK)' : 'Navegador Web / PWA'
       }\nUsuário: ${currentUser?.email || 'Anônimo'}\nNavegador: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'
       }\nData: ${new Date().toISOString()}`;
 

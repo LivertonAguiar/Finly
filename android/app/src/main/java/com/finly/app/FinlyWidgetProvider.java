@@ -26,7 +26,14 @@ public class FinlyWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    @Override
+    public void onEnabled(Context context) {
+        super.onEnabled(context);
+        updateAllWidgets(context);
+    }
+
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        try {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String balance = prefs.getString(KEY_BALANCE, "R$ 0,00");
         String expenses = prefs.getString(KEY_EXPENSES, "R$ 0,00");
@@ -69,7 +76,10 @@ public class FinlyWidgetProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widget_btn_add, pendingAdd);
 
-        appWidgetManager.updateAppWidget(appWidgetId, views);
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+        } catch (Exception e) {
+            android.util.Log.e("FinlyWidget", "Erro ao atualizar widget " + appWidgetId, e);
+        }
     }
 
     public static void updateAllWidgets(Context context) {

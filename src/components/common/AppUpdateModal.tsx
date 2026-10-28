@@ -21,6 +21,7 @@ import {
   isNativeCapacitor,
   getPlatformLabel,
   UpdateCheckResult,
+  getInstalledApkVersion,
 } from '../../utils/appUpdateService';
 import { CURRENT_RELEASE } from '../../data/releases';
 import { useBackButton } from '../../hooks/useBackButton';
@@ -34,6 +35,13 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState<UpdateCheckResult | null>(null);
   const [isReloading, setIsReloading] = useState(false);
+  const [installedApkVersion, setInstalledApkVersion] = useState<string>(APP_VERSION);
+
+  useEffect(() => {
+    if (isNativeCapacitor()) {
+      getInstalledApkVersion().then(setInstalledApkVersion).catch(() => {});
+    }
+  }, []);
 
   // Close modal on Android physical back gesture
   useBackButton(isOpen, onClose);
@@ -43,9 +51,13 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
     try {
       const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: false });
       setResult(res);
+      if (res?.currentVersion) {
+        setInstalledApkVersion(res.currentVersion);
+      }
     } catch (e) {
       setResult({
         hasUpdate: false,
+        currentVersion: installedApkVersion,
         latestVersion: APP_VERSION,
         notes: 'Não foi possível contatar o servidor de atualizações no momento.',
       });
@@ -106,7 +118,7 @@ export const AppUpdateModal: React.FC<AppUpdateModalProps> = ({ isOpen, onClose 
                 Versão Instalada
               </p>
               <p className="text-sm font-black text-slate-800 dark:text-slate-100">
-                v{APP_VERSION} <span className="text-[10px] text-slate-400 font-normal">({APP_BUILD_DATE})</span>
+                {isNativeCapacitor() ? `APK v${installedApkVersion}` : `v${APP_VERSION}`} <span className="text-[10px] text-slate-400 font-normal">({APP_BUILD_DATE})</span>
               </p>
             </div>
           </div>

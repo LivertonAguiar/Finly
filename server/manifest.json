@@ -1,16 +1,16 @@
 {
   "native": {
-    "version": "1.1.81",
+    "version": "1.1.82",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.81/finly-v1.1.81.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.82/finly-v1.1.82.apk"
   },
   "web": {
-    "version": "1.1.81.1",
+    "version": "1.1.82.1",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.81.1.zip",
-    "sha256": "b3ccfa4b9f83115828387ec3456057fae24f9d8fe7fab14d760e6c9e2ef4ba20",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.82.1.zip",
+    "sha256": "353ca54430edf2e68b310e79cb1bac71a1aecc3cd9eceb830aaa7eebe60daf92",
     "mandatory": true,
-    "releaseDate": "2026-10-27",
-    "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável."
+    "releaseDate": "2026-10-28",
+    "notes": "Painel do Widget nas Configuracoes, correcao de RemoteViews no Android e deteccao de APK pendente"
   }
 }

@@ -6,7 +6,7 @@
  */
 import { LiveUpdate, ReadyResult } from '@capawesome/capacitor-live-update';
 import { getApiUrl, PRODUCTION_API_URL } from './apiConfig';
-import { APP_VERSION, isNewerVersion, isNativeCapacitor } from '../utils/appUpdateService';
+import { APP_VERSION, isNewerVersion, isNativeCapacitor, getInstalledApkVersion } from '../utils/appUpdateService';
 
 export interface NativeManifestInfo {
   version: string;
@@ -49,10 +49,10 @@ const STORAGE_KEYS = {
 };
 
 /**
- * Returns the native APK version (from package.json / Capacitor build)
+ * Returns the native APK version (queried from Android OS via @capacitor/app, or fallback)
  */
-export const getNativeVersion = (): string => {
-  return APP_VERSION;
+export const getNativeVersion = async (): Promise<string> => {
+  return await getInstalledApkVersion();
 };
 
 /**
@@ -111,7 +111,7 @@ export const fetchAppManifest = async (): Promise<AppManifestResponse | null> =>
  */
 export const checkForWebUpdate = async (): Promise<WebUpdateCheckResult> => {
   const currentWebVersion = await getCurrentWebVersion();
-  const nativeVersion = getNativeVersion();
+  const nativeVersion = await getNativeVersion();
 
   const manifest = await fetchAppManifest();
   if (!manifest || !manifest.web || !manifest.web.version) {
