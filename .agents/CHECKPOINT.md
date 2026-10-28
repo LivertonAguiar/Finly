@@ -95,4 +95,8 @@ Se uma sessão anterior foi interrompida abruptamente:
 - [x] Compilação e publicação do APK Android oficial (`finly-v1.1.80.apk`) no GitHub Actions.
 - [x] Deploy completo da aplicação na VPS Oracle Cloud (`deploy-vps.ps1`).
 - [x] Publicação do pacote de Live Update OTA (`v1.1.80.1`) com distribuição pública ativa.
+- [x] Suporte a widgets nativos e notificações com app fechado (`v1.1.81`).
+- [x] Correção de layout RemoteViews no Android, painel de Widget nas Configurações e detecção de APK defasado pós-OTA (`v1.1.82`).
+- [x] Compilação e assinatura do APK Android oficial `finly-v1.1.82.apk` no GitHub Actions.
+- [x] Deploy completo na VPS Oracle Cloud e publicação do pacote OTA `v1.1.82.1` com distribuição pública ativa.
 - [x] Resumo final estruturado entregue ao usuário.
