@@ -55,6 +55,10 @@ const FamilyPage = lazy(() => import('./components/familia/FamilyPage').then(mod
 const WhatsAppPage = lazy(() => import('./components/whatsapp/WhatsAppPage').then(module => ({ default: module.WhatsAppPage })));
 const FinancialSkillsPage = lazy(() => import('./components/skills/FinancialSkillsPage').then(module => ({ default: module.FinancialSkillsPage })));
 const HelpCenterPage = lazy(() => import('./components/help/HelpCenterPage').then(module => ({ default: module.HelpCenterPage })));
+const AccountsAndCardsPage = lazy(() => import('./components/accounts-cards/AccountsAndCardsPage').then(module => ({ default: module.AccountsAndCardsPage })));
+const PlanejarPage = lazy(() => import('./components/planejamento/PlanejarPage').then(module => ({ default: module.PlanejarPage })));
+const PatrimonioPage = lazy(() => import('./components/patrimonio/PatrimonioPage').then(module => ({ default: module.PatrimonioPage })));
+const AssistentePage = lazy(() => import('./components/assistente/AssistentePage').then(module => ({ default: module.AssistentePage })));
 const TransactionModal = lazy(() => import('./components/transactions/TransactionModal').then(module => ({ default: module.TransactionModal })));
 const CardModal = lazy(() => import('./components/cadastros/CardModal').then(module => ({ default: module.CardModal })));
 
@@ -88,6 +92,10 @@ const TAB_TO_PATH: Record<string, string> = {
   cadastro: '/cadastro',
   perfil: '/perfil',
   ajuda: '/ajuda',
+  'contas-cartoes': '/contas-cartoes',
+  planejar: '/planejar',
+  patrimonio: '/patrimonio',
+  assistente: '/assistente',
 };
 
 const getInitialTabFromPath = (): string => {
@@ -111,6 +119,10 @@ const getInitialTabFromPath = (): string => {
   if (path === 'cadastro') return 'cadastro';
   if (path === 'perfil' || path === 'profile' || path === 'seguranca' || path === 'security') return 'perfil';
   if (path === 'ajuda' || path === 'help') return 'ajuda';
+  if (path === 'contas-cartoes' || path === 'contas-e-cartoes') return 'contas-cartoes';
+  if (path === 'planejar') return 'planejar';
+  if (path === 'patrimonio') return 'patrimonio';
+  if (path === 'assistente') return 'assistente';
   return 'dashboard';
 };
 
@@ -573,6 +585,17 @@ const AppContent: React.FC = () => {
                 onOpenNewCard={() => setIsNewCardOpen(true)}
               />
             )}
+            {activeTab === 'contas-cartoes' && (
+              <AccountsAndCardsPage
+                key={cardsNavKey}
+                initialCardDetailId={selectedCardIdForDetail}
+                onOpenNewCard={() => setIsNewCardOpen(true)}
+                setActiveTab={handleSelectTab}
+              />
+            )}
+            {activeTab === 'planejar' && <PlanejarPage />}
+            {activeTab === 'patrimonio' && <PatrimonioPage />}
+            {activeTab === 'assistente' && <AssistentePage />}
             {activeTab === 'contas' && <AccountsPage setActiveTab={handleSelectTab} />}
             {(activeTab === 'planejamento' || activeTab === 'orcamento') && <BudgetPage />}
             {activeTab === 'relatorios' && <ReportsPage />}
