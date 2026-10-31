@@ -107,7 +107,12 @@ const getInitialTabFromPath = (): string => {
   if (path === 'cartoes' || path === 'cartoescredito' || path === 'cards') return 'cartoes';
   if (path === 'planejamento' || path === 'orcamentos' || path === 'criarnovoplanejamento' || path === 'budgets') return 'planejamento';
   if (path === 'relatorios' || path === 'reports') return 'relatorios';
-  if (path === 'calendario' || path === 'calendar') return 'calendario';
+  if (path === 'calendario' || path === 'calendar') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'transacoes', view: 'calendario' }, '', '/transacoes?view=calendario');
+    }
+    return 'transacoes';
+  }
   if (path === 'settings' || path === 'configuracoes' || path === 'config') return 'settings';
   if (path === 'mais' || path === 'more') return 'mais';
   if (path === 'metas' || path === 'objetivos' || path === 'goals') return 'metas';
@@ -308,6 +313,15 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleSelectTab = useCallback((tab: string) => {
+    if (tab === 'calendario') {
+      setActiveTab('transacoes');
+      const targetPath = '/transacoes?view=calendario';
+      if (window.location.pathname + window.location.search !== targetPath) {
+        window.history.pushState({ tab: 'transacoes', view: 'calendario' }, '', targetPath);
+      }
+      return;
+    }
+
     if (tab === 'sobre') {
       setActiveTab('mais');
       const targetPath = '/mais';

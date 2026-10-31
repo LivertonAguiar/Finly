@@ -42,6 +42,8 @@ import { TransactionModal } from './TransactionModal';
 import { TransactionDetailModal } from './TransactionDetailModal';
 import { SeriesDeleteModal } from './SeriesDeleteModal';
 import { ReimbursementModal } from './ReimbursementModal';
+import { CalendarPage } from '../calendario/CalendarPage';
+import { TabNavigation, TabItem } from '../common/TabNavigation';
 import { downloadCSV } from '../../utils/reportExportService';
 import { exportTransactionsToExcel } from '../../utils/excelExportService';
 import { getFamilyMemberList, getMemberDisplayNameById } from '../../utils/familyUtils';
@@ -79,6 +81,40 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   } = useFinancial();
 
   const allFamilyMembers = useMemo(() => getFamilyMemberList(user, familyMembers), [user, familyMembers]);
+
+    const getViewFromUrl = (): 'lista' | 'calendario' => {
+    if (typeof window === 'undefined') return 'lista';
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get('view')?.toLowerCase();
+    if (v === 'calendario' || v === 'calendar') return 'calendario';
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('/calendario')) return 'calendario';
+    return 'lista';
+  };
+
+  const [activeView, setActiveView] = useState<'lista' | 'calendario'>(getViewFromUrl);
+
+  const handleViewChange = (viewId: string) => {
+    const nextView = viewId === 'calendario' ? 'calendario' : 'lista';
+    setActiveView(nextView);
+    const targetUrl = nextView === 'calendario' ? '/transacoes?view=calendario' : '/transacoes';
+    if (window.location.pathname + window.location.search !== targetUrl) {
+      window.history.replaceState({ tab: 'transacoes', view: nextView }, '', targetUrl);
+    }
+  };
+
+  const navigationTabs: TabItem[] = [
+    {
+      id: 'lista',
+      label: 'Lista de Transações',
+      icon: <ListIcon className="w-4 h-4" />,
+    },
+    {
+      id: 'calendario',
+      label: 'Calendário Mensal',
+      icon: <Calendar className="w-4 h-4" />,
+    },
+  ];
 
   const [internalMonthOffset, setInternalMonthOffset] = useState<number>(() => {
     if (initialNavParams?.monthOffset !== undefined) return initialNavParams.monthOffset;
@@ -588,6 +624,20 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in pb-16">
+      {/* View Switcher: Lista vs Calendario */}
+      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
+        <TabNavigation
+          tabs={navigationTabs}
+          activeTab={activeView}
+          onChange={handleViewChange}
+          size="md"
+        />
+      </div>
+
+      {activeView === 'calendario' ? (
+        <CalendarPage />
+      ) : (
+        <>
       {/* 1. TOPBAR HEADER (FINLY HEADER LAYOUT) */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Left: Type Dropdown Popover */}
@@ -1266,6 +1316,9 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             </tbody>
           </table>
         </div>
+      )}
+
+      </>
       )}
 
       {/* Transaction Modal for Add/Edit */}
