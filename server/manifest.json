@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.2",
+    "version": "1.1.83.3",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.2.zip",
-    "sha256": "7b5323599644dae64f8f0d8c1fc62a52eb8a2ae84d8406e18cac1a02c5da6fb7",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.3.zip",
+    "sha256": "0342556998607b654d0cc7e4f6588da46f46a3fb8d7c52ce0f7dd7d38c63ef26",
     "mandatory": true,
     "releaseDate": "2026-10-31",
-    "notes": "Balanco do Mes (Receitas - Despesas) em destaque no Hero Bento Card"
+    "notes": "Botao direto de download de APK e reconciliacao de versao com o manifesto oficial"
   }
 }

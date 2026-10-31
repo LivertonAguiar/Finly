@@ -279,6 +279,13 @@ const getAppVersionInfo = () => {
     }
   } catch (_) {}
 
+  let manifest = {};
+  try {
+    if (fs.existsSync(MANIFEST_FILE)) {
+      manifest = JSON.parse(fs.readFileSync(MANIFEST_FILE, 'utf8'));
+    }
+  } catch (_) {}
+
   let metadata = {};
   try {
     if (fs.existsSync(VERSION_FILE)) {
@@ -286,13 +293,17 @@ const getAppVersionInfo = () => {
     }
   } catch (_) {}
 
+  // Prioriza a versao nativa do manifesto oficial montado (manifest.json)
+  const baseVersion = manifest?.native?.version || appVersion.split('.').slice(0, 3).join('.');
+  const downloadUrl = manifest?.native?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${baseVersion}/finly-v${baseVersion}.apk`;
+
   return {
     ...metadata,
-    version: appVersion,
-    latestVersion: appVersion,
-    releaseDate: metadata.releaseDate || '2026-09-08',
-    notes: metadata.notes || `Atualização do Finly v${appVersion} disponível.`,
-    downloadUrl: `https://github.com/LivertonAguiar/Finly/releases/download/v${appVersion}/finly-v${appVersion}.apk`,
+    version: baseVersion,
+    latestVersion: baseVersion,
+    releaseDate: manifest?.web?.releaseDate || metadata.releaseDate || '2026-10-31',
+    notes: manifest?.web?.notes || metadata.notes || `Atualização do Finly v${baseVersion} disponível.`,
+    downloadUrl,
     isLatest: true,
   };
 };

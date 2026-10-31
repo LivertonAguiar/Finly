@@ -194,51 +194,99 @@ const performCheck = async (options?: {
   isManualCheck?: boolean;
 }): Promise<UpdateCheckResult> => {
   const notifyIfFound = options?.notifyIfFound ?? false;
+  const nativeVer = isNativeCapacitor() ? await getInstalledApkVersion() : APP_VERSION;
+  const cleanNativeVer = nativeVer.replace(/^v/, '');
+  const bundleBaseVer = APP_VERSION.split('.').slice(0, 3).join('.').replace(/^v/, '');
 
   try {
-    // 1. Check server API first with primary and fallback endpoints
-    let apiRes: Response | null = null;
+    // 1. Consulta primeiro o manifesto oficial e a API de versão com fallback em produção
+    let serverInfo: any = null;
+
+    // Tenta obter dados oficiais do manifesto OTA / Nativo
     try {
-      const apiEndpoint = getApiUrl('/api/app/version');
+      const manifestEndpoint = getApiUrl('/api/app/manifest');
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 7000);
-      apiRes = await fetch(apiEndpoint, { signal: controller.signal });
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const mRes = await fetch(manifestEndpoint, { signal: controller.signal });
       clearTimeout(timeoutId);
-    } catch (primaryErr) {
-      console.warn('Primary version check failed, attempting direct production fallback:', primaryErr);
+      if (mRes.ok) {
+        const mData = await mRes.json();
+        if (mData?.native?.version) {
+          serverInfo = {
+            version: mData.native.version,
+            latestVersion: mData.native.version,
+            downloadUrl: mData.native.downloadUrl,
+            releaseDate: mData.web?.releaseDate,
+            notes: mData.web?.notes,
+          };
+        }
+      }
+    } catch (_) {}
+
+    // Fallback para /api/app/version
+    if (!serverInfo) {
       try {
-        const fallbackUrl = `${PRODUCTION_API_URL}/api/app/version`;
-        const controller2 = new AbortController();
-        const timeoutId2 = setTimeout(() => controller2.abort(), 7000);
-        apiRes = await fetch(fallbackUrl, { signal: controller2.signal });
-        clearTimeout(timeoutId2);
-      } catch (_) {}
+        const apiEndpoint = getApiUrl('/api/app/version');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
+        const apiRes = await fetch(apiEndpoint, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (apiRes.ok) {
+          serverInfo = await apiRes.json();
+        }
+      } catch (primaryErr) {
+        console.warn('Primary version check failed, attempting direct production fallback:', primaryErr);
+        try {
+          const fallbackUrl = `${PRODUCTION_API_URL}/api/app/manifest`;
+          const controller2 = new AbortController();
+          const timeoutId2 = setTimeout(() => controller2.abort(), 7000);
+          const fallbackRes = await fetch(fallbackUrl, { signal: controller2.signal });
+          clearTimeout(timeoutId2);
+          if (fallbackRes.ok) {
+            const fbData = await fallbackRes.json();
+            if (fbData?.native?.version) {
+              serverInfo = {
+                version: fbData.native.version,
+                latestVersion: fbData.native.version,
+                downloadUrl: fbData.native.downloadUrl,
+                releaseDate: fbData.web?.releaseDate,
+                notes: fbData.web?.notes,
+              };
+            }
+          }
+        } catch (_) {}
+      }
     }
 
-    if (apiRes && apiRes.ok) {
-      const serverInfo = await apiRes.json();
+    if (serverInfo) {
       const serverVer = (serverInfo.latestVersion || serverInfo.version || '').replace(/^v/, '');
-      const nativeVer = isNativeCapacitor() ? await getInstalledApkVersion() : APP_VERSION;
-      const hasNewVersion = isNewerVersion(serverVer, nativeVer);
-      const downloadUrl = serverInfo.downloadUrl || GITHUB_RELEASES_URL;
+      
+      // Se o bundle ativo no app for mais novo que a resposta do servidor, usa a versão do bundle
+      let targetVer = serverVer;
+      if (!targetVer || isNewerVersion(bundleBaseVer, targetVer)) {
+        targetVer = bundleBaseVer;
+      }
 
-      // Verify if APK is actually ready on GitHub before declaring update ready on Android
+      const hasNewVersion = isNewerVersion(targetVer, cleanNativeVer);
+      const downloadUrl = serverInfo.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetVer}/finly-v${targetVer}.apk`;
+
+      // Verifica se o APK está realmente pronto para download no GitHub Releases
       let apkReady = true;
       if (hasNewVersion && isNativeCapacitor()) {
-        apkReady = await verifyApkReady(serverVer);
+        apkReady = await verifyApkReady(targetVer);
       }
 
       const isCompiling = hasNewVersion && isNativeCapacitor() && !apkReady;
       const effectiveHasUpdate = hasNewVersion && (!isNativeCapacitor() || apkReady);
-      const matchingRelease = RELEASES.find(r => r.version === serverVer) || CURRENT_RELEASE;
+      const matchingRelease = RELEASES.find(r => r.version.startsWith(targetVer)) || CURRENT_RELEASE;
       const latestNotes = serverInfo.notes || matchingRelease?.summary || CURRENT_RELEASE.summary;
 
       const result: UpdateCheckResult = {
         hasUpdate: effectiveHasUpdate,
         currentVersion: nativeVer,
-        latestVersion: serverVer || APP_VERSION,
+        latestVersion: targetVer || APP_VERSION,
         notes: isCompiling
-          ? `A nova versão v${serverVer} está sendo compilada no GitHub Actions (~1 a 2 min). O download e a notificação serão liberados automaticamente assim que o APK estiver pronto.`
+          ? `A nova versão v${targetVer} está sendo compilada no GitHub Actions (~1 a 2 min). O download e a notificação serão liberados automaticamente assim que o APK estiver pronto.`
           : latestNotes,
         summary: latestNotes,
         releaseDate: serverInfo.releaseDate || matchingRelease?.releaseDate || CURRENT_RELEASE.releaseDate,
@@ -252,20 +300,19 @@ const performCheck = async (options?: {
         isCompiling,
       };
 
-      // Only notify when update exists AND the APK is actually ready for download!
+      // Notifica quando a atualização existir e o APK estiver pronto
       if (effectiveHasUpdate) {
-        if (notifyIfFound && isNativeCapacitor() && shouldNotifyVersion(serverVer)) {
-          markVersionNotified(serverVer);
+        if (notifyIfFound && isNativeCapacitor() && shouldNotifyVersion(targetVer)) {
+          markVersionNotified(targetVer);
           sendLocalNotification('🚀 Nova Atualização do Finly Disponível!', {
-            body: `A versão v${serverVer} está pronta para download. Toque para atualizar o app.`,
+            body: `A versão v${targetVer} está pronta para download. Toque para atualizar o app.`,
             tag: 'app_update',
             id: 99999,
             force: false,
-            data: { url: downloadUrl, version: serverVer },
+            data: { url: downloadUrl, version: targetVer },
           }).catch(() => {});
         }
 
-        // Dispara evento de atualização de APK exclusivamente no app Android nativo
         if (isNativeCapacitor() && typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('finly_app_update_available', { detail: result }));
         }
@@ -357,7 +404,23 @@ const performCheck = async (options?: {
     }
   } catch (_) {}
 
-  const nativeVer = isNativeCapacitor() ? await getInstalledApkVersion() : APP_VERSION;
+  const hasLocalNewerVersion = isNewerVersion(bundleBaseVer, cleanNativeVer);
+  if (hasLocalNewerVersion) {
+    const isReady = await verifyApkReady(bundleBaseVer);
+    return {
+      hasUpdate: isReady,
+      currentVersion: nativeVer,
+      latestVersion: bundleBaseVer,
+      notes: CURRENT_RELEASE.summary,
+      summary: CURRENT_RELEASE.summary,
+      releaseDate: CURRENT_RELEASE.releaseDate,
+      highlights: CURRENT_RELEASE.highlights,
+      downloadUrl: `https://github.com/LivertonAguiar/Finly/releases/download/v${bundleBaseVer}/finly-v${bundleBaseVer}.apk`,
+      source: 'local',
+      apkReady: isReady,
+    };
+  }
+
   return {
     hasUpdate: false,
     failedCheck: options?.isManualCheck ? true : false,

@@ -1,35 +1,38 @@
 {
-  "minSupportedVersion": "1.0.0",
-  "releaseDate": "2026-09-14",
-  "notes": "Lançamento de despesa simplificado, seletor completo de subcategorias, logs protegidos e publicação de APK verificável.",
+  "minSupportedVersion": "1.1.0",
+  "version": "1.1.83",
+  "latestVersion": "1.1.83",
+  "releaseDate": "2026-10-31",
+  "notes": "Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas.",
   "isLatest": true,
+  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk",
   "sections": {
     "features": [
-      "Seletor visual com busca, contador e todas as subcategorias acessíveis"
+      "Três Novos Formatos de Widgets Android: Bento Dashboard 4x2, Barra Compacta 4x1 e Mini Resumo 2x2"
     ],
     "fixes": [
-      "Remoção de conteúdo financeiro sensível dos logs da API",
-      "Workflow do APK agora valida a presença real da release e do arquivo publicado"
+      "Balanço Mensal em destaque no Hero Card sem ambiguidade com saldos acumulados de contas",
+      "Sincronização do widget excluindo pagamentos de fatura das despesas comuns"
     ],
     "improvements": [
-      "Formulário sem controles manuais de natureza contábil, propriedades especiais, necessidade e escopo",
-      "Classificação analítica mantida automaticamente sem exigir decisões técnicas"
+      "Design Visual Bento Grid Premium com drawables nativos",
+      "Interatividade nativa com deep links para transações e faturas"
     ]
   },
   "highlights": [
     {
-      "title": "Todas as Subcategorias em uma Lista Melhor",
-      "description": "Busque e selecione qualquer subcategoria em uma folha visual com rolagem confortável e nomes completos.",
-      "type": "visual"
+      "title": "Três Novos Formatos de Widgets Android",
+      "description": "Bento Dashboard 4x2 com dados completos, Barra Compacta 4x1 e Mini Resumo 2x2 com redimensionamento livre no launcher.",
+      "type": "feature"
     },
     {
-      "title": "Lançamento Mais Simples",
-      "description": "O Finly cuida das classificações técnicas automaticamente e mantém o formulário focado nas informações financeiras.",
+      "title": "Balanço do Mês em Destaque",
+      "description": "Diferença direta entre Receitas e Despesas do mês no topo da Dashboard para clareza absoluta.",
       "type": "improvement"
     },
     {
-      "title": "Privacidade e Publicação Confiável",
-      "description": "Dados financeiros não são gravados nos logs e o APK só é considerado publicado depois da confirmação do arquivo oficial.",
+      "title": "Ponte Nativa Otimizada",
+      "description": "Atualização instantânea dos widgets e sem duplicações nas despesas ao liquidar faturas de cartão.",
       "type": "fix"
     }
   ]

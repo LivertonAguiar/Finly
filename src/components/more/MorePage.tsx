@@ -398,111 +398,153 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                       ({APP_BUILD_DATE})
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
-                    <span>{getPlatformLabel()}</span>
-                    <span>•</span>
-                    {isNativeCapacitor() && (updateResult?.hasUpdate || isNewerVersion(webVersion.split('.').slice(0, 3).join('.'), apkVersion)) ? (
-                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Atualização de APK pendente
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Sincronizado
-                      </span>
-                    )}
-                  </p>
+                  {(() => {
+                    const webBaseVer = webVersion.split('.').slice(0, 3).join('.');
+                    const isApkUpdatePending = isNativeCapacitor() && (
+                      updateResult?.hasUpdate || isNewerVersion(webBaseVer, apkVersion)
+                    );
+                    const targetApkVersion = updateResult?.latestVersion || webBaseVer || APP_VERSION.split('.').slice(0, 3).join('.');
+                    const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
+
+                    return (
+                      <>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
+                          <span>{getPlatformLabel()}</span>
+                          <span>•</span>
+                          {isApkUpdatePending ? (
+                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              Atualização de APK pendente
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Sincronizado
+                            </span>
+                          )}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap shrink-0">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsCheckingUpdate(true);
-                    try {
-                      const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: true });
-                      setUpdateResult(res);
-                      if (res?.currentVersion) {
-                        setApkVersion(res.currentVersion);
-                      }
-                    } catch (e) {
-                      setUpdateResult({
-                        hasUpdate: false,
-                        failedCheck: true,
-                        currentVersion: apkVersion,
-                        latestVersion: APP_VERSION,
-                        notes: 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.',
-                      });
-                    } finally {
-                      setIsCheckingUpdate(false);
-                    }
-                  }}
-                  disabled={isCheckingUpdate}
-                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
-                  <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
-                </button>
+              {(() => {
+                const webBaseVer = webVersion.split('.').slice(0, 3).join('.');
+                const isApkUpdatePending = isNativeCapacitor() && (
+                  updateResult?.hasUpdate || isNewerVersion(webBaseVer, apkVersion)
+                );
+                const targetApkVersion = updateResult?.latestVersion || webBaseVer || APP_VERSION.split('.').slice(0, 3).join('.');
+                const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
 
-                {(!isNativeCapacitor() || updateResult?.hasUpdate) && (
-                <button
-                  type="button"
-                  onClick={() => openExternalUrl(updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${updateResult?.latestVersion || APP_VERSION}/finly-v${updateResult?.latestVersion || APP_VERSION}.apk` || GITHUB_RELEASES_URL)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                    updateResult?.hasUpdate
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 animate-pulse'
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  }`}
-                  title="Baixar pacote APK do aplicativo para Android"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>
-                    {updateResult?.hasUpdate
-                      ? `Baixar Atualização v${updateResult.latestVersion}`
-                      : `Baixar APK Android`}
-                  </span>
-                </button>
-                )}
-              </div>
+                return (
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsCheckingUpdate(true);
+                        try {
+                          const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: true });
+                          setUpdateResult(res);
+                          if (res?.currentVersion) {
+                            setApkVersion(res.currentVersion);
+                          }
+                        } catch (e) {
+                          setUpdateResult({
+                            hasUpdate: false,
+                            failedCheck: true,
+                            currentVersion: apkVersion,
+                            latestVersion: APP_VERSION,
+                            notes: 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.',
+                          });
+                        } finally {
+                          setIsCheckingUpdate(false);
+                        }
+                      }}
+                      disabled={isCheckingUpdate}
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                      <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openExternalUrl(directApkUrl)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                        isApkUpdatePending
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 animate-pulse'
+                          : 'bg-purple-600 hover:bg-purple-700 text-white'
+                      }`}
+                      title={isApkUpdatePending ? `Baixar atualização do APK v${targetApkVersion}` : 'Baixar pacote APK para Android'}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>
+                        {isApkUpdatePending
+                          ? `Baixar Atualização v${targetApkVersion}`
+                          : `Baixar APK v${targetApkVersion}`}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Banner de Atualização Sutil */}
-            {updateResult && (
-              <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
-                updateResult.failedCheck
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
-                  : updateResult.hasUpdate
-                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-300'
-                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-              }`}>
-                <div className="flex items-center gap-2">
-                  {updateResult.failedCheck ? (
-                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                  ) : updateResult.hasUpdate ? (
-                    <Sparkles className="w-4 h-4 text-purple-500 shrink-0" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            {/* Banner de Atualização */}
+            {(() => {
+              const webBaseVer = webVersion.split('.').slice(0, 3).join('.');
+              const isApkUpdatePending = isNativeCapacitor() && (
+                updateResult?.hasUpdate || isNewerVersion(webBaseVer, apkVersion)
+              );
+              const targetApkVersion = updateResult?.latestVersion || webBaseVer || APP_VERSION.split('.').slice(0, 3).join('.');
+              const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
+
+              if (!isApkUpdatePending && !updateResult) return null;
+
+              return (
+                <div className={`p-3.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  updateResult?.failedCheck && !isApkUpdatePending
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                    : isApkUpdatePending
+                    ? 'bg-gradient-to-r from-purple-500/15 to-emerald-500/15 border-emerald-500/40 text-slate-800 dark:text-slate-100'
+                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  <div className="flex items-center gap-2.5">
+                    {updateResult?.failedCheck && !isApkUpdatePending ? (
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                    ) : isApkUpdatePending ? (
+                      <Sparkles className="w-4 h-4 text-emerald-500 shrink-0 animate-pulse" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    )}
+                    <div className="space-y-0.5">
+                      <span className="font-black text-xs block">
+                        {isApkUpdatePending
+                          ? `Nova versão nativa disponível: APK v${targetApkVersion}`
+                          : updateResult?.failedCheck
+                          ? (updateResult.notes || 'Não foi possível verificar atualizações no momento.')
+                          : `Você já está utilizando a versão mais recente (${isNativeCapacitor() ? `APK v${apkVersion}` : `v${APP_VERSION}`}).`}
+                      </span>
+                      {isApkUpdatePending && (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Instalada: <strong className="text-slate-700 dark:text-slate-200">v{apkVersion}</strong> • Baixe o APK para instalar os novos widgets e melhorias nativas.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {isApkUpdatePending && (
+                    <button
+                      type="button"
+                      onClick={() => openExternalUrl(directApkUrl)}
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer shrink-0 transition-all shadow-md shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-1.5 self-start sm:self-auto"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Baixar APK v{targetApkVersion}</span>
+                    </button>
                   )}
-                  <span className="font-bold">
-                    {updateResult.failedCheck
-                      ? (updateResult.notes || 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.')
-                      : updateResult.hasUpdate
-                      ? `Nova versão do APK disponível: v${updateResult.latestVersion} (Instalada: v${apkVersion})`
-                      : `Você já está utilizando a versão mais recente (${isNativeCapacitor() ? `APK v${apkVersion}` : `v${APP_VERSION}`}).`}
-                  </span>
                 </div>
-                {updateResult.hasUpdate && (
-                  <button
-                    onClick={() => openExternalUrl(updateResult.downloadUrl || GITHUB_RELEASES_URL)}
-                    className="underline font-black text-[11px] cursor-pointer shrink-0"
-                  >
-                    Baixar APK v{updateResult.latestVersion}
-                  </button>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* 2. Notas da Versão */}
             <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
