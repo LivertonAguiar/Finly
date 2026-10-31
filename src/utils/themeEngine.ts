@@ -8,7 +8,22 @@ export type ThemePreset =
   | 'finly-deep-dark'
   | 'midnight-oled'
   | 'emerald-slate'
-  | 'clean-light';
+  | 'clean-light'
+  | 'teal-terracotta'
+  | 'forest-ochre'
+  | 'spruce-olive'
+  | 'mocha-caramel'
+  | 'midnight-amber'
+  | 'amethyst-coral'
+  | 'nightshade-gold'
+  | 'cyber-fuchsia';
+
+export interface ThemePresetDetails {
+  id: ThemePreset;
+  label: string;
+  desc: string;
+  palette: string[]; // [bg, cardBg, midtone, highlight, neutral, accent]
+}
 
 export type CardRadius = 'squircle' | 'rounded' | 'medium' | 'sharp';
 
@@ -103,7 +118,162 @@ export const PRESET_COLORS: Record<
     mode: 'light',
     defaultAccent: '#0284C7',
   },
+  'teal-terracotta': {
+    bg: '#0A0F14',
+    cardBg: '#0F3D3E',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#C6601F',
+  },
+  'forest-ochre': {
+    bg: '#0B0F0D',
+    cardBg: '#1F2A1F',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#B08D57',
+  },
+  'spruce-olive': {
+    bg: '#0F1F17',
+    cardBg: '#1E3A2E',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#8CA98C',
+  },
+  'mocha-caramel': {
+    bg: '#1A120E',
+    cardBg: '#3A2418',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#A88462',
+  },
+  'midnight-amber': {
+    bg: '#0B132B',
+    cardBg: '#1C2541',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#D97706',
+  },
+  'amethyst-coral': {
+    bg: '#1A0F2E',
+    cardBg: '#3B1B4F',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#FF6B6B',
+  },
+  'nightshade-gold': {
+    bg: '#1A1A1F',
+    cardBg: '#2D2B55',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#F4A62A',
+  },
+  'cyber-fuchsia': {
+    bg: '#121212',
+    cardBg: '#1F2937',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#EC4899',
+  },
 };
+
+export const THEME_PRESET_DETAILS: ThemePresetDetails[] = [
+  {
+    id: 'teal-terracotta',
+    label: 'Teal & Terracota',
+    desc: 'Teal nobre e Âmbar Terracota vibrante',
+    palette: ['#0A0F14', '#0F3D3E', '#2E6F73', '#7FB3B8', '#EADCC8', '#C6601F'],
+  },
+  {
+    id: 'forest-ochre',
+    label: 'Forest & Ochre',
+    desc: 'Verde floresta nobre e Ocre Dourado',
+    palette: ['#0B0F0D', '#1F2A1F', '#3E5A3F', '#8CA98C', '#D9C7A3', '#B08D57'],
+  },
+  {
+    id: 'spruce-olive',
+    label: 'Nordic Spruce',
+    desc: 'Pinho nórdico e Sálvia Suave',
+    palette: ['#0F1F17', '#1E3A2E', '#3E5A3F', '#6B7F67', '#C7CBB8', '#8CA98C'],
+  },
+  {
+    id: 'mocha-caramel',
+    label: 'Mocha & Caramel',
+    desc: 'Expresso aveludado e Caramelo Avelã',
+    palette: ['#1A120E', '#3A2418', '#6B4A2E', '#A88462', '#D5C4AE', '#A88462'],
+  },
+  {
+    id: 'midnight-amber',
+    label: 'Midnight & Amber',
+    desc: 'Azul meia-noite e Âmbar Solar',
+    palette: ['#0B132B', '#1C2541', '#3A506B', '#5BC0DE', '#F4D6B0', '#D97706'],
+  },
+  {
+    id: 'amethyst-coral',
+    label: 'Amethyst & Coral',
+    desc: 'Ametista púrpura e Coral Neon',
+    palette: ['#1A0F2E', '#3B1B4F', '#7A2E6F', '#D6598F', '#F4D7D4', '#FF6B6B'],
+  },
+  {
+    id: 'nightshade-gold',
+    label: 'Nightshade & Gold',
+    desc: 'Violeta noturno e Ouro Açafrão',
+    palette: ['#1A1A1F', '#2D2B55', '#6A5ACD', '#A678B9', '#F0D9B5', '#F4A62A'],
+  },
+  {
+    id: 'cyber-fuchsia',
+    label: 'Cyber Slate & Pink',
+    desc: 'Grafite cyber e Rosa Neon elétrico',
+    palette: ['#121212', '#1F2937', '#334155', '#64748B', '#F1F5F9', '#EC4899'],
+  },
+  {
+    id: 'sleek-neo-glass',
+    label: 'Sleek Neo-Glass',
+    desc: 'Vidro translúcido espacial e Ciano Neon',
+    palette: ['#080B14', '#121826', '#1A233A', '#06B6D4', '#E2E8F0', '#06B6D4'],
+  },
+  {
+    id: 'sleek-obsidian',
+    label: 'Sleek Obsidian',
+    desc: 'Preto nobre e Âmbar Elétrico',
+    palette: ['#07080A', '#14151B', '#232530', '#FF8A00', '#F8FAFC', '#FF8A00'],
+  },
+  {
+    id: 'tech-green',
+    label: 'Tech Green',
+    desc: 'Preto fosco e Esmeralda Neon',
+    palette: ['#0A0D0C', '#121714', '#1B241E', '#00FF88', '#F0FDF4', '#00FF88'],
+  },
+  {
+    id: 'swiss-navy',
+    label: 'Swiss Luxury',
+    desc: 'Azul marinho nobre e Ouro Champanhe',
+    palette: ['#071026', '#0D1B3E', '#16285A', '#D4AF37', '#F8FAFC', '#D4AF37'],
+  },
+  {
+    id: 'linear-mono',
+    label: 'Linear Mono',
+    desc: 'Preto absoluto e alto contraste puro',
+    palette: ['#000000', '#121215', '#27272A', '#A1A1AA', '#FFFFFF', '#FFFFFF'],
+  },
+  {
+    id: 'finly-dark',
+    label: 'Finly Dark',
+    desc: 'Preto suave padrão e Púrpura Finly',
+    palette: ['#121214', '#18181B', '#27272A', '#7C4DFF', '#F4F4F5', '#7C4DFF'],
+  },
+  {
+    id: 'midnight-oled',
+    label: 'Midnight OLED',
+    desc: 'Preto absoluto para economia máxima',
+    palette: ['#000000', '#101012', '#1E1E22', '#7C4DFF', '#FFFFFF', '#7C4DFF'],
+  },
+  {
+    id: 'clean-light',
+    label: 'Clean Light',
+    desc: 'Branco puro e minimalista clássico',
+    palette: ['#F8FAFC', '#FFFFFF', '#E2E8F0', '#0284C7', '#0F172A', '#0284C7'],
+  },
+];
 
 const RADIUS_MAP: Record<CardRadius, string> = {
   squircle: '36px',

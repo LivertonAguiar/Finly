@@ -42,8 +42,18 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Acesso completo a detalhes da fatura em Faturas, aba de cartões focada em gestão, widget enxuto no dashboard e fluxo de pagamento de faturas em 2 toques.',
+    summary: 'Novas paletas de cores designer com Scroll Picker horizontal de temas e cores de destaque, detalhes da fatura em Faturas e modo enxuto no dashboard.',
     highlights: [
+      {
+        title: '8 Novas Paletas Designer & Scroll Picker',
+        description: 'Inclusão de 8 temas profissionais (Teal & Terracota, Forest & Ochre, Nordic Spruce, Mocha & Caramel, Midnight & Amber, Amethyst & Coral, Nightshade & Gold, Cyber Slate & Pink) com seletor horizontal estilo Scroll Picker e prévia de cápsulas empilhadas.',
+        type: 'visual',
+      },
+      {
+        title: 'Scroll Picker de Cores de Destaque',
+        description: 'Seletor horizontal com navegação por setas, amostras ampliadas de cor com código HEX e suporte a cor personalizada.',
+        type: 'improvement',
+      },
       {
         title: 'Detalhes Completos da Fatura em Faturas',
         description: 'Ao clicar em qualquer cartão na aba Faturas, abre a visão detalhada com extrato de lançamentos, parcelas, exportação CSV/PDF, controle de limites e navegação mensal.',

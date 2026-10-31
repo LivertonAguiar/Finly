@@ -22,6 +22,16 @@ const ACCOUNT_COLOR_PRESETS = [
   { name: 'Ciano Neon', color: '#00e5ff' },
   { name: 'Rosa Magenta', color: '#ec4899' },
   { name: 'Preto Obsidian', color: '#1e293b' },
+  // Paletas Designer
+  { name: 'Âmbar Terracota', color: '#C6601F' },
+  { name: 'Ocre Dourado', color: '#B08D57' },
+  { name: 'Sálvia Suave', color: '#8CA98C' },
+  { name: 'Caramelo Avelã', color: '#A88462' },
+  { name: 'Âmbar Solar', color: '#D97706' },
+  { name: 'Coral Neon', color: '#FF6B6B' },
+  { name: 'Ouro Açafrão', color: '#F4A62A' },
+  { name: 'Aqua Oceano', color: '#7FB3B8' },
+  { name: 'Lavanda Índigo', color: '#6A5ACD' },
 ];
 
 export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, editingAccount }) => {

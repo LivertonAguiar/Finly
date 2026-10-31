@@ -372,7 +372,15 @@ export interface UserProfile {
     | 'midnight-oled'
     | 'emerald-slate'
     | 'clean-light'
-    | 'warm-sand';
+    | 'warm-sand'
+    | 'teal-terracotta'
+    | 'forest-ochre'
+    | 'spruce-olive'
+    | 'mocha-caramel'
+    | 'midnight-amber'
+    | 'amethyst-coral'
+    | 'nightshade-gold'
+    | 'cyber-fuchsia';
   accentColor?: string;
   cardRadius?: 'sharp' | 'medium' | 'rounded' | 'squircle';
   name: string;

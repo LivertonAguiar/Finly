@@ -5,6 +5,22 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-10-31
 
+### Novas Paletas Designer & Scroll Pickers de Aparência
+- **8 Novas Paletas de Cores de Alta Densidade Visual**:
+  - `Teal & Terracota`: Fundo `#0A0F14`, cartões `#0F3D3E`, destaque `#C6601F`.
+  - `Forest & Ochre`: Fundo `#0B0F0D`, cartões `#1F2A1F`, destaque `#B08D57`.
+  - `Nordic Spruce`: Fundo `#0F1F17`, cartões `#1E3A2E`, destaque `#8CA98C`.
+  - `Mocha & Caramel`: Fundo `#1A120E`, cartões `#3A2418`, destaque `#A88462`.
+  - `Midnight & Amber`: Fundo `#0B132B`, cartões `#1C2541`, destaque `#D97706`.
+  - `Amethyst & Coral`: Fundo `#1A0F2E`, cartões `#3B1B4F`, destaque `#FF6B6B`.
+  - `Nightshade & Gold`: Fundo `#1A1A1F`, cartões `#2D2B55`, destaque `#F4A62A`.
+  - `Cyber Slate & Pink`: Fundo `#121212`, cartões `#1F2937`, destaque `#EC4899`.
+- **Seletores em Modo Scroll Picker**:
+  - **Scroll Picker de Temas**: Carrossel horizontal snap com setas `<` e `>`, indicador de tema ativo e cápsulas empilhadas inspiradas nas paletas de design.
+  - **Scroll Picker de Cores de Destaque**: Seleção horizontal fluida com amostra de cor, código HEX e seletor nativo para cores personalizadas.
+- **Cores Expandidas em Cartões e Contas**:
+  - Inclusão de todas as novas tonalidades nos seletores de cor de cartões de crédito e contas bancárias.
+
 ### Detalhes da Fatura em Faturas, Gestão em Cartões e Dashboard Enxuto
 - **Visão Detalhada da Fatura (`InvoiceDetailView`) na Aba Faturas**:
   - Ao tocar em qualquer linha de cartão ou no botão "Ver detalhes", abre a tela completa de extrato da fatura.
