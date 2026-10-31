@@ -9,9 +9,107 @@
 
 ---
 
-## 📑 Sumário
+## 🗺️ Mapa Completo de Menus, Submenus e Caminhos
 
-- [Visão Geral](#-visão-geral)
+O Finly dispõe de navegação fluida, moderna e de alta densidade adaptada à plataforma de uso:
+- **Desktop (Web)**: Barra lateral expansível (`Sidebar`) compacta com **7 itens principais essenciais** + botão fixo de **Ajustes** na base, com reordenação personalizada.
+- **Mobile (App / PWA)**: Barra inferior fixa (`BottomNav`) com **5 posições ergonômicas** (`Início`, `Transações`, `[+] Central FAB`, `Contas & Cartões`, `Planejar`) + Hub mobile complementar (`MorePage`).
+
+```text
+FINLY NAVIGATION ARCHITECTURE
+├── 🏠 1. Início (/dashboard)
+│   ├── Topo: Boas-vindas, Avatar do Perfil, Notificações, Seletor de Mês/Ano (Jan - Dez)
+│   ├── Hero Card: Saldo Geral em Contas (Saldo Líquido Real) + Modo Privacidade (Olho Ocultar Valores)
+│   ├── Twin Cards: Receitas (Recebidas vs A Receber) & Despesas (Realizadas vs Pendentes vs Cartão)
+│   └── Grid de 15 Bento Widgets reordenáveis (Pendências, Gráficos Donut, Autonomia de Reserva, etc.)
+│
+├── 📋 2. Transações & Calendário (/transacoes)
+│   ├── Alternador de Visualização em Abas:
+│   │   ├── 📑 Aba 1: Lista de Transações (Timeline cronológica diária, filtros avançados, regime de caixa/competência)
+│   │   └── 📅 Aba 2: Calendário Mensal (/transacoes?view=calendario ou /calendario) com grade interativa de vencimentos
+│   └── Modal Detalhado de Transação com atalho direto "Gerenciar categorias"
+│
+├── 💳 3. Contas & Cartões (/contas-cartoes)
+│   ├── 🏛️ Aba 1: Contas Bancárias & Carteiras (?tab=contas ou /contas) com saldo real e saldo projetado
+│   └── 💳 Aba 2: Cartões de Crédito & Faturas (?tab=cartoes ou /cartoes) com limites, faturas e parcelamentos
+│
+├── 🎯 4. Planejar (/planejar)
+│   ├── 📊 Aba 1: Orçamento Mensal (?tab=orcamento ou /planejamento) com wizard e matriz 12 meses
+│   └── 🚩 Aba 2: Metas & Objetivos (?tab=metas ou /metas) com reserva de emergência e aportes
+│
+├── 📈 5. Patrimônio (/patrimonio)
+│   ├── 📈 Aba 1: Investimentos & Proventos (?tab=investimentos ou /investimentos) com patrimônio líquido e rentabilidade
+│   └── 📉 Aba 2: Dívidas & Financiamentos (?tab=dividas ou /dividas) com sistemas SAC/Price e amortização extraordinária
+│
+├── 📊 6. Relatórios & BI (/relatorios)
+│   ├── Gráficos de Evolução Financeira, Donut de Categorias e Tabela Analítica
+│   └── Exportação Instantânea nos formatos Excel (.xlsx) e PDF
+│
+├── 🤖 7. Assistente IA (/assistente)
+│   ├── 💬 Aba 1: WhatsApp com IA (?tab=whatsapp ou /whatsapp) com OCR de cupons e transcrição de áudios
+│   └── ✨ Aba 2: Skills de IA (?tab=skills ou /skills) com auditoria de recorrências e otimizador de custos
+│
+├── ⚙️ Ajustes Unificados (/settings)
+│   ├── Navegação Integrada por Abas:
+│   │   ├── 👤 Perfil (?section=perfil ou /perfil)
+│   │   ├── 👥 Família (?section=familia ou /familia)
+│   │   ├── 🏷️ Categorias & Tags (?section=categorias ou /cadastro)
+│   │   ├── 🎨 Aparência & Preferências (?section=preferencias) com 10 presets de tema
+│   │   ├── 🛡️ Segurança (?section=seguranca) com PIN de 4 dígitos e biometria
+│   │   ├── 💾 Dados & Backup (?section=dados) com exportação JSON/ZIP e importação segura
+│   │   ├── 💡 Ajuda (?section=ajuda ou /ajuda) com tutoriais e FAQ
+│   │   └── ℹ️ Sobre (?section=sobre ou /sobre) com status OTA, versão APK e changelog
+│
+└── 📱 Mobile Hub Complementar (/mais)
+    ├── Sub-aba Menu Rápido: Atalhos diretos para Patrimônio, Relatórios, Assistente IA e Ajustes
+    └── Sub-aba Sobre & Versão: Informações do aplicativo, atualização e changelog
+```
+
+---
+
+## 🧭 Tabela Geral de Rotas da Aplicação
+
+| Rota URL | Componente Principal | Tipo / Abas | Descrição Principal |
+| :--- | :--- | :--- | :--- |
+| `/dashboard` | `DashboardPage` | Principal | Visão geral dos saldos, indicadores e 15 widgets modulares. |
+| `/transacoes` | `TransactionsPage` | Principal (`lista` \| `calendario`) | Extrato completo, alternador de lista timeline e calendário mensal integrado. |
+| `/contas-cartoes` | `AccountsAndCardsPage` | Agregador (`contas` \| `cartoes`) | Gestão unificada de contas bancárias, carteiras, cartões de crédito e faturas. |
+| `/planejar` | `PlanejarPage` | Agregador (`orcamento` \| `metas`) | Planejamento orçamentário mensal e metas financeiras com acompanhamento. |
+| `/patrimonio` | `PatrimonioPage` | Agregador (`investimentos` \| `dividas`) | Painel patrimonial completo: ativos, proventos, dívidas e financiamentos. |
+| `/relatorios` | `ReportsPage` | Principal | BI visual, gráficos donut/evolução e exportação XLSX/PDF. |
+| `/assistente` | `AssistentePage` | Agregador (`whatsapp` \| `skills`) | Inteligência artificial: chat financeiro WhatsApp e skills autônomas. |
+| `/settings` | `SettingsPage` | Gestão (8 Seções em Abas) | Perfil, Família, Categorias & Tags, Temas, Segurança, Backup, Ajuda e Sobre. |
+| `/mais` | `MorePage` | Mobile Hub | Menu mobile curto para módulos secundários e aba Sobre. |
+
+### 🔄 Redirecionamentos Retrocompatíveis (URLs Legadas)
+Todas as rotas antigas são interceptadas e redirecionadas automaticamente pelo motor de roteamento sem quebra de favoritos ou links diretos:
+- `/contas` ➔ `/contas-cartoes?tab=contas`
+- `/cartoes` ➔ `/contas-cartoes?tab=cartoes`
+- `/planejamento` ou `/orcamento` ➔ `/planejar?tab=orcamento`
+- `/metas` ➔ `/planejar?tab=metas`
+- `/investimentos` ➔ `/patrimonio?tab=investimentos`
+- `/dividas` ➔ `/patrimonio?tab=dividas`
+- `/whatsapp` ➔ `/assistente?tab=whatsapp`
+- `/skills` ➔ `/assistente?tab=skills`
+- `/calendario` ➔ `/transacoes?view=calendario`
+- `/cadastro` ➔ `/settings?section=categorias`
+- `/familia` ➔ `/settings?section=familia`
+- `/perfil` ➔ `/settings?section=perfil`
+- `/ajuda` ➔ `/settings?section=ajuda`
+- `/sobre` ➔ `/settings?section=sobre`
+
+---
+
+## ✨ Recursos Recentes e Destaques
+
+### 🧭 Nova Arquitetura de Navegação Simplificada (v1.1.83.9)
+- **Sidebar de 7 Menus Principais + Ajustes**: Eliminação dos grupos "Mais" e "Ferramentas", proporcionando um design executivo de alta densidade bancária.
+- **Páginas Agregadoras com Abas**: Contas & Cartões, Planejar (Orçamento & Metas), Patrimônio (Investimentos & Dívidas) e Assistente IA (WhatsApp & Skills) unificados em abas modernas e fluidas.
+- **Transações com Visão Calendário**: Alternador integrado Lista ⇄ Calendário no extrato financeiro.
+- **Ajustes Unificados**: Gestão centralizada de Perfil, Família, Categorias, Temas (10 presets), Segurança, Dados, Ajuda e Sobre em abas dedicadas.
+- **Paridade Mobile**: BottomNav de 5 posições com FAB central Speed Dial e suporte a gestos/botão voltar nativo Android.
+
+são-geral)
 - [Galeria Visual (Web & Mobile)](#-galeria-visual-web--mobile)
 - [Stack Tecnológica](#-stack-tecnológica)
 - [Estrutura de Pastas e Arquitetura](#-estrutura-de-pastas-e-arquitetura)

@@ -3,6 +3,31 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.83.9] - 2026-10-31
+
+### Nova Arquitetura de Navega??o do Finly
+- **Menu Lateral (Sidebar) Simplificado**:
+  - Redu??o dr?stica do menu de 17 itens para 7 itens principais essenciais (`In?cio`, `Transa??es`, `Contas & Cart?es`, `Planejar`, `Patrim?nio`, `Relat?rios`, `Assistente IA`) + bot?o `Ajustes` isolado na base da barra lateral.
+  - Elimina??o completa dos grupos gen?ricos "Mais" e "Ferramentas", proporcionando uma interface banc?ria moderna, limpa e de alta densidade de informa??o.
+- **P?ginas Agregadoras com Abas**:
+  - **Contas & Cart?es (`/contas-cartoes`)**: aba de Contas Banc?rias & Carteiras e aba de Cart?es de Cr?dito com atalho direto para fatura.
+  - **Planejar (`/planejar`)**: aba de Or?amento Mensal e aba de Metas & Objetivos.
+  - **Patrim?nio (`/patrimonio`)**: aba de Investimentos/Ativos e aba de D?vidas/Financiamentos.
+  - **Assistente IA (`/assistente`)**: aba de Conversas no WhatsApp e aba de Skills & Automa??es Financeiras.
+- **Transa??es com Vis?o Integrada de Calend?rio**:
+  - Inclus?o do alternador de visualiza??o `Lista de Transa??es` ? `Calend?rio Mensal` diretamente na p?gina de transa??es (`/transacoes?view=calendario`).
+- **Ajustes Unificados & Hub Sobre**:
+  - Centraliza??o de Perfil, Fam?lia, Categorias & Tags, Apar?ncia/Temas (10 presets), Seguran?a, Dados & Backup, Ajuda e Sobre em abas unificadas (`/settings?section=...`).
+  - Atalho direto "Gerenciar categorias" no modal de cria??o/edi??o de transa??es.
+  - Novo painel `AboutSection` exibindo vers?o web, vers?o APK instalada, verifica??o de atualiza??es, download do APK e hist?rico do changelog.
+- **Paridade Mobile com BottomNav de 5 Posi??es**:
+  - Barra inferior mobile reformulada com 5 posi??es equilibradas: `In?cio`, `Transa??es`, `[+] Central (FAB Speed Dial)`, `Contas & Cart?es` e `Planejar`.
+  - Menu m?vel secund?rio enxuto (`MorePage`) com atalhos diretos e aba Sobre.
+- **Retrocompatibilidade de URLs e Sincroniza??o**:
+  - Redirecionamento transparente e sem quebra de hist?rico de todas as URLs legadas (`/contas`, `/cartoes`, `/planejamento`, `/metas`, `/investimentos`, `/dividas`, `/whatsapp`, `/skills`, `/calendario`, `/cadastro`, `/familia`, `/ajuda`, `/sobre`).
+  - Sincroniza??o bidirecional via `popstate` com suporte nativo ao bot?o voltar f?sico e gestos do Android.
+  - Suporte completo de internacionaliza??o (i18n) em Portugu?s (pt-BR), Ingl?s (en-US) e Espanhol (es-ES).
+
 ## [1.1.83.8] - 2026-10-31
 
 ### Proteção de Despesas Futuras e Saldo em Contas

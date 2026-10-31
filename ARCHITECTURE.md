@@ -79,9 +79,24 @@ export interface Transaction {
 
 ---
 
-## 3. Motor de Roteamento (`App.tsx`)
+## 3. Motor de Roteamento e Navegação (`App.tsx`)
 
-O Finly utiliza o **HTML5 History API (`pushState` e `popstate`)** com mapeamento bidirecional:
-- Rota para Tab: `/dashboard` -> `activeTab = 'dashboard'`
-- Tab para Rota: Clicar em uma aba dispara `window.history.pushState(..., '', '/transacoes')`
-- Suporte a navegação por histórico do navegador (botões Voltar/Avançar).
+O Finly adota uma arquitetura de navegação limpa, hierárquica e de alta densidade baseada no **HTML5 History API (`pushState` e `popstate`)** com paridade entre Web e Mobile:
+
+### 3.1. 7 Módulos Agregadores Principais
+1. **`/dashboard`**: Visão executiva de saldos, indicadores e bento grid de widgets.
+2. **`/transacoes`**: Extrato analítico com alternador integrado de abas (`lista` vs `calendario` via `?view=`).
+3. **`/contas-cartoes`**: Módulo agregador de Contas Bancárias e Cartões de Crédito (`?tab=contas` | `?tab=cartoes`).
+4. **`/planejar`**: Gestão orçamentária mensal e metas de curto/médio/longo prazo (`?tab=orcamento` | `?tab=metas`).
+5. **`/patrimonio`**: Painel de Investimentos, ativos e Dívidas/Financiamentos (`?tab=investimentos` | `?tab=dividas`).
+6. **`/relatorios`**: Relatórios gerenciais, gráficos de evolução e BI.
+7. **`/assistente`**: Inteligência artificial: Assistente WhatsApp e Skills autônomas (`?tab=whatsapp` | `?tab=skills`).
+8. **`/settings`**: Ajustes unificados com 8 subseções em abas (`?section=perfil|familia|categorias|preferencias|seguranca|dados|ajuda|sobre`).
+9. **`/mais`**: Hub complementar móvel com menu curto de atalhos e aba Sobre.
+
+### 3.2. Sub-rotas e Sincronização via Query Parameters
+- Cada página agregadora gerencia sua sub-aba ativa via parâmetros de URL (`?tab=`, `?view=` ou `?section=`).
+- Ouvintes de evento `popstate` sincronizam instantaneamente a sub-aba ativa com os botões Voltar/Avançar do navegador e o botão físico/gesto de retorno do Android (`useBackButton`).
+
+### 3.3. Redirecionamento Retrocompatível Transparente
+- O mapa `TAB_TO_PATH` e o interceptador `getInitialTabFromPath()` capturam links legados (`/contas`, `/cartoes`, `/planejamento`, `/metas`, `/investimentos`, `/dividas`, `/whatsapp`, `/skills`, `/calendario`, `/cadastro`, `/familia`, `/perfil`, `/ajuda`, `/sobre`) e executam `replaceState` transparente para as novas URLs com parâmetros preservando favoritos e histórico.

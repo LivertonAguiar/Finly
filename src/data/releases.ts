@@ -40,6 +40,43 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 
 export const RELEASES: ReleaseInfo[] = [
   {
+    version: '1.1.83.9',
+    releaseDate: '2026-10-31',
+    summary: 'Nova arquitetura de navega??o do Finly: menu lateral simplificado com 7 itens principais, p?ginas agregadoras com abas, vis?o de calend?rio integrada e ajustes unificados.',
+    highlights: [
+      {
+        title: 'Navega??o Simplificada com 7 Menus Principais',
+        description: 'Redu??o da Sidebar de 17 itens para 7 itens essenciais + Ajustes na base, eliminando os grupos gen?ricos "Mais" e "Ferramentas".',
+        type: 'feature',
+      },
+      {
+        title: 'P?ginas Agregadoras com Abas',
+        description: 'Unifica??o em abas: Contas & Cart?es (?tab=contas|cartoes), Planejar (?tab=orcamento|metas), Patrim?nio (?tab=investimentos|dividas) e Assistente IA (?tab=whatsapp|skills).',
+        type: 'feature',
+      },
+      {
+        title: 'Vis?o Integrada de Calend?rio em Transa??es',
+        description: 'Alternador Lista ? Calend?rio diretamente no extrato de transa??es com persist?ncia e sincroniza??o de hist?rico via URL.',
+        type: 'feature',
+      },
+      {
+        title: 'Ajustes Unificados & Hub Sobre',
+        description: 'Centraliza??o de Perfil, Fam?lia, Categorias, Apar?ncia, Seguran?a, Dados, Ajuda e Sobre em abas unificadas com atalhos diretos.',
+        type: 'feature',
+      },
+      {
+        title: 'BottomNav Mobile de 5 Posi??es & Menu Curto',
+        description: 'Barra inferior com In?cio, Transa??es, [+] Central (Speed Dial FAB), Contas & Cart?es e Planejar, al?m de menu mobile enxuto.',
+        type: 'visual',
+      },
+      {
+        title: 'Retrocompatibilidade Total de Rotas & i18n',
+        description: 'Redirecionamento transparente de todas as URLs legadas, suporte ao bot?o voltar/gesto do Android e tradu??o completa em pt-BR, en-US e es-ES.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
     version: '1.1.83.8',
     releaseDate: '2026-10-31',
     summary: 'Proteção contra dedução de despesas futuras no Saldo em Contas, correção de overflow no seletor de meses e melhorias no Hero Card.',
