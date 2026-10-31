@@ -505,7 +505,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
       )}
 
       {/* Tabs de Ajustes */}
-      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.06] overflow-x-auto no-scrollbar">
+      <div className="flex items-center justify-center pb-1 border-b border-slate-200/60 dark:border-white/[0.06] overflow-x-auto no-scrollbar w-full">
         <TabNavigation
           tabs={settingsTabs}
           activeTab={activeSection}

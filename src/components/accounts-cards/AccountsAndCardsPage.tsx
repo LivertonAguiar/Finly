@@ -22,14 +22,14 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
 
   const getSubTabFromUrl = (): 'contas' | 'cartoes' => {
     if (initialSubTab) return initialSubTab;
-    if (typeof window === 'undefined') return 'contas';
+    if (typeof window === 'undefined') return 'cartoes';
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab')?.toLowerCase();
-    if (tabParam === 'cartoes' || tabParam === 'cartao' || tabParam === 'cards') return 'cartoes';
     if (tabParam === 'contas' || tabParam === 'conta' || tabParam === 'accounts') return 'contas';
+    if (tabParam === 'cartoes' || tabParam === 'cartao' || tabParam === 'cards') return 'cartoes';
     const path = window.location.pathname.toLowerCase();
-    if (path.includes('/cartoes')) return 'cartoes';
-    return 'contas';
+    if (path.includes('/contas') && !path.includes('/contas-cartoes') && !path.includes('/cartoes')) return 'contas';
+    return 'cartoes';
   };
 
   const [activeSubTab, setActiveSubTab] = useState<'contas' | 'cartoes'>(getSubTabFromUrl);
@@ -49,7 +49,7 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   }, []);
 
   const handleTabChange = (tabId: string) => {
-    const nextTab = tabId === 'cartoes' ? 'cartoes' : 'contas';
+    const nextTab = tabId === 'contas' ? 'contas' : 'cartoes';
     setActiveSubTab(nextTab);
     const targetUrl = `/contas-cartoes?tab=${nextTab}`;
     if (window.location.pathname + window.location.search !== targetUrl) {
@@ -59,21 +59,21 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
 
   const tabs: TabItem[] = [
     {
-      id: 'contas',
-      label: t('tab.accounts', 'Contas'),
-      icon: <Building2 className="w-4 h-4" />,
-    },
-    {
       id: 'cartoes',
       label: t('tab.cards', 'Cartões de Crédito'),
       icon: <CreditCard className="w-4 h-4" />,
+    },
+    {
+      id: 'contas',
+      label: t('tab.accounts', 'Contas'),
+      icon: <Building2 className="w-4 h-4" />,
     },
   ];
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Top Floating Tab Switcher */}
-      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
+      <div className="flex items-center justify-center pb-1 border-b border-slate-200/60 dark:border-white/[0.06] w-full max-w-2xl mx-auto">
         <TabNavigation
           tabs={tabs}
           activeTab={activeSubTab}

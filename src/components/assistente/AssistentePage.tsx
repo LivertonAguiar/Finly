@@ -65,7 +65,7 @@ export const AssistentePage: React.FC<AssistentePageProps> = ({ initialSubTab })
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Top Floating Tab Switcher */}
-      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
+      <div className="flex items-center justify-center pb-1 border-b border-slate-200/60 dark:border-white/[0.06] w-full max-w-2xl mx-auto">
         <TabNavigation
           tabs={tabs}
           activeTab={activeSubTab}

@@ -637,7 +637,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in pb-16">
       {/* View Switcher: Lista vs Calendario */}
-      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
+      <div className="flex items-center justify-center pb-1 border-b border-slate-200/60 dark:border-white/[0.06] w-full max-w-2xl mx-auto">
         <TabNavigation
           tabs={navigationTabs}
           activeTab={activeView}

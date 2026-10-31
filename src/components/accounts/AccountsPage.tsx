@@ -182,14 +182,156 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in pb-16">
       {/* 1. TOPBAR (FINLY ACCOUNTS HEADER) */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Left: Heading */}
-        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Contas
-        </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        {/* Row 1 no Mobile / Esquerda no Desktop: Título & Ações Principais */}
+        <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Contas
+          </h2>
 
-        {/* Center: Month Dropdown Pill */}
-        <div className="flex items-center gap-2">
+          {/* Mobile Actions Bar */}
+          <div className="flex sm:hidden items-center gap-1.5 shrink-0">
+            {/* Unified + Novo Button */}
+            <div className="relative">
+              <button
+                onClick={() => setIsNovoMenuOpen(!isNovoMenuOpen)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer"
+                title="Novo Lançamento"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Novo</span>
+              </button>
+
+              {/* Dark Popover Menu */}
+              {isNovoMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsNovoMenuOpen(false)}
+                  />
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    className="absolute right-0 top-11 z-50 w-52 rounded-2xl bg-[#28282b] dark:bg-[#1E1E20] border border-slate-700/80 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-slate-100 overflow-hidden divide-y divide-slate-700/40"
+                  >
+                    <div className="py-1">
+                      {/* 1. Despesa */}
+                      <button
+                        onClick={() => {
+                          setIsNovoMenuOpen(false);
+                          setTxModalState({ isOpen: true, type: 'expense', paymentMethod: 'account' });
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                      >
+                        <TrendingDown className="w-4 h-4 text-[#ef5350]" />
+                        <span>Despesa</span>
+                      </button>
+
+                      {/* 2. Receita */}
+                      <button
+                        onClick={() => {
+                          setIsNovoMenuOpen(false);
+                          setTxModalState({ isOpen: true, type: 'income' });
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                      >
+                        <TrendingUp className="w-4 h-4 text-[#66bb6a]" />
+                        <span>Receita</span>
+                      </button>
+
+                      {/* 3. Despesa cartão */}
+                      <button
+                        onClick={() => {
+                          setIsNovoMenuOpen(false);
+                          setTxModalState({ isOpen: true, type: 'expense', paymentMethod: 'card' });
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                      >
+                        <CreditCard className="w-4 h-4 text-[#26a69a]" />
+                        <span>Despesa Cartão</span>
+                      </button>
+
+                      {/* 4. Transferência */}
+                      <button
+                        onClick={() => {
+                          setIsNovoMenuOpen(false);
+                          setIsTransferOpen(true);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-slate-200 hover:text-white"
+                      >
+                        <ArrowLeftRight className="w-4 h-4 text-[#42a5f5]" />
+                        <span>Transferência</span>
+                      </button>
+                    </div>
+
+                    <div className="py-1">
+                      {/* 5. Nova Conta */}
+                      <button
+                        onClick={() => {
+                          setIsNovoMenuOpen(false);
+                          setEditingAccount(null);
+                          setIsAccountModalOpen(true);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer text-purple-400 hover:text-purple-300"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Nova Conta</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <ViewModeToggle
+              mode={viewMode}
+              onChange={(m) => {
+                setViewMode(m);
+                try { localStorage.setItem('finly_accounts_view_mode', m); } catch (e) {}
+              }}
+            />
+
+            {/* Projeção de Saldo Button */}
+            <button
+              onClick={() => setIsProjectionOpen(true)}
+              className="w-8 h-8 rounded-full bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0"
+              title="Projeção de saldo"
+            >
+              <LineChart className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Mais Opções (⋮) */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
+                className="w-8 h-8 rounded-full bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                title="Mais opções"
+              >
+                <MoreVertical className="w-3.5 h-3.5" />
+              </button>
+
+              {isHeaderMenuOpen && (
+                <div
+                  onClick={e => e.stopPropagation()}
+                  className="absolute right-0 top-10 z-40 w-48 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-700 dark:text-slate-200"
+                >
+                  <button
+                    onClick={async () => {
+                      setIsTransferOpen(true);
+                      setIsHeaderMenuOpen(false);
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-2 cursor-pointer"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Transferência entre contas</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Linha 2 no Mobile / Centro no Desktop: Seletor de Mês Centralizado */}
+        <div className="flex items-center justify-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setSelectedMonthOffset(prev => prev - 1)}
             className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
@@ -210,8 +352,8 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
           </button>
         </div>
 
-        {/* Right: Single Unified + Novo Button with Menu Popover */}
-        <div className="flex items-center gap-2">
+        {/* Ações no Desktop (Lado Direito) */}
+        <div className="hidden sm:flex items-center gap-2">
           {/* Unified + Novo Button */}
           <div className="relative">
             <button
