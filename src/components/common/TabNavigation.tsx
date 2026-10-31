@@ -5,6 +5,7 @@ export interface TabItem {
   label: string;
   icon?: React.ReactNode;
   badge?: string | number;
+  badgeVariant?: 'default' | 'danger';
 }
 
 interface TabNavigationProps {
@@ -58,7 +59,9 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             {tab.badge !== undefined && (
               <span
                 style={
-                  isActive
+                  tab.badgeVariant === 'danger'
+                    ? undefined
+                    : isActive
                     ? {
                         backgroundColor: 'color-mix(in srgb, var(--primary-accent, #7C4DFF) 15%, transparent)',
                         color: 'var(--primary-accent, #7C4DFF)',
@@ -66,7 +69,9 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                     : undefined
                 }
                 className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ${
-                  isActive
+                  tab.badgeVariant === 'danger'
+                    ? 'bg-rose-500 text-white shadow-xs animate-pulse'
+                    : isActive
                     ? ''
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                 }`}

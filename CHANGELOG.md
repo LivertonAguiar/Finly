@@ -5,6 +5,27 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-10-31
 
+### Arquitetura de Faturas e Pagamento em 2 Toques
+- **Aba "Faturas" dentro de Contas & Cartões (a principal)**:
+  - Fica como a primeira aba: **Faturas | Cartões | Contas** (`faturas`, `cartoes`, `contas`), centralizada e proporcionalmente distribuída.
+  - Seletor de mês no topo com navegação mês a mês e botão de retorno rápido "Hoje".
+  - Resumo de métricas KPI: total "A pagar nos próximos 30 dias", total de "Faturas Vencidas" e total de "Faturas Pagas".
+  - Filtros rápidos em pills: "Todas", "A pagar", "Vencidas" e "Pagas".
+  - Lista de faturas por cartão com logotipos do emissor e bandeira, valor da fatura, dia de fechamento, vencimento e contador dinâmico ("Vence hoje!", "Vence em X dias", "Venceu há X dias").
+  - Botão direto **Pagar Fatura** na própria linha do cartão para liquidação imediata.
+  - Menu discreto "⋯" para faturas pagas com opção de estorno ("Estornar Pagamento"), preservando a interface limpa.
+  - **Selo visual de alerta**: Badge numérico vermelho na aba "Faturas" indicando faturas vencidas ou vencendo nos próximos 3 dias.
+- **Atalhos Rápidos na Tela Início (Dashboard)**:
+  - Widget "Pendências e Alertas": inclusão de botão direto **Pagar** nas linhas de alertas de faturas vencidas e abertas.
+  - Widget "Resumo de Cartões": toque nos cartões e no botão "VER MAIS" redireciona diretamente para a aba Faturas.
+- **Atalho no Botão [+] (Ação Rápida Mobile)**:
+  - Inclusão do botão de ação rápida **Pagar fatura** no menu Speed Dial do mobile, acionando o fluxo de quitação com 1 clique.
+- **Fluxo de Pagamento em 2 Toques (`PayInvoiceSheet`)**:
+  - Toque 1: Clicar em "Pagar" (na aba Faturas, nos alertas da tela Início ou no Speed Dial).
+  - Toque 2: Bottom sheet já vem pré-preenchido com a conta de débito mais recente (via `localStorage`), valor integral da fatura e data de hoje. Basta tocar em "Confirmar Pagamento".
+  - Opções avançadas recolhidas em sanfona: troca da conta de saída com visualização de saldo, pagamento parcial e data retroativa (`paidAt`).
+
+
 ### Nova Arquitetura de Navegação do Finly
 - **Menu Lateral (Sidebar) Simplificado**:
   - Redução drástica do menu de 17 itens para 7 itens principais essenciais (`Início`, `Transações`, `Contas & Cartões`, `Planejar`, `Patrimônio`, `Relatórios`, `Assistente IA`) + botão `Ajustes` isolado na base da barra lateral.

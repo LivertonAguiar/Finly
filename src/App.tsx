@@ -61,6 +61,7 @@ const PatrimonioPage = lazy(() => import('./components/patrimonio/PatrimonioPage
 const AssistentePage = lazy(() => import('./components/assistente/AssistentePage').then(module => ({ default: module.AssistentePage })));
 const TransactionModal = lazy(() => import('./components/transactions/TransactionModal').then(module => ({ default: module.TransactionModal })));
 const CardModal = lazy(() => import('./components/cadastros/CardModal').then(module => ({ default: module.CardModal })));
+const PayInvoiceSheet = lazy(() => import('./components/invoices/PayInvoiceSheet').then(module => ({ default: module.PayInvoiceSheet })));
 
 const PageLoadingFallback: React.FC = () => (
   <div className="min-h-[45vh] flex items-center justify-center" role="status" aria-live="polite">
@@ -412,6 +413,14 @@ const AppContent: React.FC = () => {
       }
       return;
     }
+    if (tab === 'faturas') {
+      setActiveTab('contas-cartoes');
+      const target = '/contas-cartoes?tab=faturas';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', target);
+      }
+      return;
+    }
     if (tab === 'cartoes') {
       setSelectedCardIdForDetail(null);
       setCardsNavKey(prev => prev + 1);
@@ -631,6 +640,24 @@ const AppContent: React.FC = () => {
   const [newTxPaymentMethod, setNewTxPaymentMethod] = useState<'account' | 'card'>('account');
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isNewCardOpen, setIsNewCardOpen] = useState(false);
+  const [payInvoiceSheetState, setPayInvoiceSheetState] = useState<{
+    isOpen: boolean;
+    cardId?: string | null;
+    month?: string | null;
+  }>({ isOpen: false, cardId: null, month: null });
+
+  // Global listener to trigger 2-touch PayInvoiceSheet
+  useEffect(() => {
+    const handleOpenPayInvoice = (e: any) => {
+      setPayInvoiceSheetState({
+        isOpen: true,
+        cardId: e.detail?.cardId || null,
+        month: e.detail?.month || null,
+      });
+    };
+    window.addEventListener('finly_open_pay_invoice', handleOpenPayInvoice);
+    return () => window.removeEventListener('finly_open_pay_invoice', handleOpenPayInvoice);
+  }, []);
   const [pendingWebUpdate, setPendingWebUpdate] = useState<{ version: string; notes?: string } | null>(null);
 
   // Global listener to trigger web update notification when a new bundle is ready

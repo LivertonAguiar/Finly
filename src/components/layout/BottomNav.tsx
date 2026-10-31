@@ -10,6 +10,7 @@ import {
   TrendingUp,
   TrendingDown,
   CreditCard,
+  Receipt,
 } from 'lucide-react';
 import { useTranslation } from '../../utils/i18n';
 import { useFinancial } from '../../context/FinancialContext';
@@ -138,6 +139,36 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               </span>
               <span className="text-sm leading-tight font-black text-white text-center drop-shadow-sm">
                 {t('action.transfer', 'Transferência')}
+              </span>
+            </button>
+          </div>
+
+          {/* Ação Rápida: Pagar fatura */}
+          <div className="mt-3 w-full max-w-[360px] px-4 select-none">
+            <button
+              type="button"
+              data-invoice-action="pay_invoice"
+              onClick={() => {
+                setIsSpeedDialOpen(false);
+                window.dispatchEvent(new CustomEvent('finly_open_pay_invoice', { detail: {} }));
+              }}
+              className="w-full min-h-[52px] rounded-2xl px-4 py-2.5 bg-gradient-to-r from-emerald-600/30 via-teal-600/20 to-emerald-600/30 hover:from-emerald-600/40 border border-emerald-400/40 shadow-xl flex items-center justify-between text-emerald-300 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="w-9 h-9 rounded-xl bg-emerald-400/15 border border-emerald-300/30 flex items-center justify-center text-emerald-300 shadow-inner">
+                  <Receipt className="w-5 h-5 stroke-[2.2]" />
+                </span>
+                <div className="text-left">
+                  <span className="text-sm font-black text-white block leading-tight">
+                    Pagar fatura
+                  </span>
+                  <span className="text-[10px] text-emerald-300/80 font-medium">
+                    Liquidação rápida em 2 toques
+                  </span>
+                </div>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                2 toques
               </span>
             </button>
           </div>

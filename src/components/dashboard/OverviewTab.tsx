@@ -2231,7 +2231,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             return (
             <div
               key={card.id}
-              onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', '/contas-cartoes?tab=faturas');
+                }
+                setActiveTab('contas-cartoes');
+              }}
               className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] hover:bg-slate-50/90 dark:hover:bg-[#242428] border border-slate-200/90 dark:border-white/[0.08] transition-all duration-150 cursor-pointer group/card space-y-3 shadow-2xs relative overflow-hidden"
               title="Clique para ver extrato e composição da fatura"
             >
@@ -2334,7 +2339,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <div className="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2 pl-1.5" onClick={e => e.stopPropagation()}>
                 <button
                   type="button"
-                  onClick={() => onOpenCardDetail ? onOpenCardDetail(card.id) : setActiveTab('cartoes')}
+                  onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', '/contas-cartoes?tab=faturas');
+                }
+                setActiveTab('contas-cartoes');
+              }}
                   className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-1 active:scale-95"
                 >
                   <span>Ver Composição</span>
@@ -2348,10 +2358,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (card.invoiceTotal > 0) {
-                        setSelectedCardForPay(card.id);
-                        setIsInvoiceModalOpen(true);
+                        window.dispatchEvent(new CustomEvent('finly_open_pay_invoice', {
+                          detail: { cardId: card.id }
+                        }));
                       } else {
                         onOpenNewTransaction();
                       }
@@ -2382,7 +2394,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
 
         <button
-          onClick={() => setActiveTab('cartoes')}
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', '/contas-cartoes?tab=faturas');
+            }
+            setActiveTab('contas-cartoes');
+          }}
           className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 uppercase tracking-wider cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
         >
           <span>VER MAIS</span>
@@ -2745,11 +2762,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           {/* Alert 2: Faturas vencidas */}
           <div
             onClick={() => {
-              if (overdueInvoices.length > 0 && onOpenCardDetail) {
-                onOpenCardDetail(overdueInvoices[0].id);
-              } else {
-                setActiveTab('cartoes');
+              if (typeof window !== 'undefined') {
+                window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', '/contas-cartoes?tab=faturas');
               }
+              setActiveTab('contas-cartoes');
             }}
             className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
           >
@@ -2771,16 +2787,30 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 {formatCurrency(overdueInvoicesTotal, user.currency, !user.showValues)}
               </span>
             </div>
+            {overdueInvoices.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('finly_open_pay_invoice', {
+                    detail: { cardId: overdueInvoices[0]?.id }
+                  }));
+                }}
+                className="mt-1 w-full py-1.5 px-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[10px] font-black shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <DollarSign className="w-3 h-3 stroke-[2.5]" />
+                <span>Pagar</span>
+              </button>
+            )}
           </div>
 
           {/* Alert 3: Faturas abertas */}
           <div
             onClick={() => {
-              if (openInvoices.length > 0 && onOpenCardDetail) {
-                onOpenCardDetail(openInvoices[0].id);
-              } else {
-                setActiveTab('cartoes');
+              if (typeof window !== 'undefined') {
+                window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', '/contas-cartoes?tab=faturas');
               }
+              setActiveTab('contas-cartoes');
             }}
             className="min-w-[160px] sm:min-w-[190px] p-4 rounded-[22px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-xs cursor-pointer hover:border-purple-500/50 transition-all space-y-2 snap-start flex-1"
           >
@@ -2797,6 +2827,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 {formatCurrency(openInvoicesTotal, user.currency, !user.showValues)}
               </span>
             </div>
+            {openInvoicesTotal > 0 && openInvoices.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('finly_open_pay_invoice', {
+                    detail: { cardId: openInvoices[0]?.id }
+                  }));
+                }}
+                className="mt-1 w-full py-1.5 px-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[10px] font-black shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <DollarSign className="w-3 h-3 stroke-[2.5]" />
+                <span>Pagar</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -42,8 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Nova arquitetura de navegação do Finly: menu lateral simplificado com 7 itens principais, páginas agregadoras com abas, visão de calendário integrada e ajustes unificados.',
+    summary: 'Nova arquitetura de faturas e liquidação em 2 toques: aba Faturas em Contas & Cartões, atalhos na tela Início e no botão [+] de ações rápidas, KPIs a pagar e selo de vencimento.',
     highlights: [
+      {
+        title: 'Aba Faturas & Pagamento em 2 Toques',
+        description: 'Primeira aba dentro de Contas & Cartões (Faturas | Cartões | Contas), com resumo KPI dos próximos 30 dias, filtros rápidos, botão Pagar direto e estorno discreto no menu ⋯.',
+        type: 'feature',
+      },
+      {
+        title: 'Fluxo de Liquidação em 2 Toques',
+        description: 'Bottom sheet pré-preenchido com a conta de débito mais recente, valor integral da fatura e data de hoje, com opções avançadas recolhidas em sanfona.',
+        type: 'improvement',
+      },
+      {
+        title: 'Atalhos Rápidos na Tela Início & Mobile FAB',
+        description: 'Botão Pagar direto nas linhas do widget Pendências e Alertas, toque no Resumo de Cartões direto para Faturas e atalho Pagar fatura no botão [+] do mobile.',
+        type: 'feature',
+      },
+      {
+        title: 'Selo Visual de Alerta na Aba Faturas',
+        description: 'Indicador numérico em vermelho com animação suave quando houver faturas vencidas ou vencendo nos próximos 3 dias.',
+        type: 'visual',
+      },
       {
         title: 'Navegação Simplificada com 7 Menus Principais',
         description: 'Redução da Sidebar de 17 itens para 7 itens essenciais + Ajustes na base, eliminando os grupos genéricos "Mais" e "Ferramentas".',
