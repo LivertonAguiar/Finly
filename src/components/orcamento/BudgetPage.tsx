@@ -64,9 +64,8 @@ export const BudgetPage: React.FC = () => {
 
   // Month navigation
   const viewDate = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + selectedMonthOffset);
-    return d;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + selectedMonthOffset, 1);
   }, [selectedMonthOffset]);
 
   const monthName = viewDate.toLocaleDateString('pt-BR', { month: 'long' });
@@ -76,9 +75,7 @@ export const BudgetPage: React.FC = () => {
 
   // Previous month prefix for benchmark / copying
   const prevDate = useMemo(() => {
-    const d = new Date(viewDate);
-    d.setMonth(d.getMonth() - 1);
-    return d;
+    return new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
   }, [viewDate]);
   const prevMonthPrefix = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
   const prevMonthName = prevDate.toLocaleDateString('pt-BR', { month: 'short' });

@@ -499,17 +499,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     } catch (e) {}
   };
 
-  // Month calculations
+  // Month calculations (Fixed: anchor on day 1 to avoid month overflow on day 31)
   const viewDate = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + selectedMonthOffset);
-    return d;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + selectedMonthOffset, 1);
   }, [selectedMonthOffset]);
 
   const monthName = viewDate.toLocaleDateString(lang || 'pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const yearNum = viewDate.getFullYear();
-  const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
+  const currentMonthPrefix = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
 
   // Transações de despesas econômicas do mês:
   // - Despesas comuns pagas ou pendentes daquele mês (por data)
@@ -829,9 +828,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const semestralData = useMemo(() => {
     const list: { month: string; receitas: number; despesas: number; saldo: number }[] = [];
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(viewDate);
-      d.setMonth(d.getMonth() - i);
-      const prefix = d.toISOString().substring(0, 7);
+      const d = new Date(viewDate.getFullYear(), viewDate.getMonth() - i, 1);
+      const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const mName = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
 
       const inc = transactions

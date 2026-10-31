@@ -140,17 +140,16 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   const [isNovoMenuOpen, setIsNovoMenuOpen] = useState(false);
   const [viewRegime, setViewRegime] = useState<ViewRegime>('invoice_month');
 
-  // Month navigation
+  // Month navigation (Fixed: anchor on day 1 to avoid month overflow on day 31)
   const viewDate = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + selectedMonthOffset);
-    return d;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + selectedMonthOffset, 1);
   }, [selectedMonthOffset]);
 
   const monthName = viewDate.toLocaleDateString('pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const yearNum = viewDate.getFullYear();
-  const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
+  const currentMonthPrefix = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
 
   // Filtered transactions based on unified filters period
   const monthTransactions = useMemo(() => {

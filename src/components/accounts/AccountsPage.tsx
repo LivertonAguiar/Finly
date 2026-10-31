@@ -84,15 +84,14 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
 
   // Month calculation
   const viewDate = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + selectedMonthOffset);
-    return d;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + selectedMonthOffset, 1);
   }, [selectedMonthOffset]);
 
   const monthName = viewDate.toLocaleDateString('pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const yearNum = viewDate.getFullYear();
-  const currentMonthPrefix = viewDate.toISOString().substring(0, 7);
+  const currentMonthPrefix = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
 
   // Balances calculation
   const totalActualBalance = useMemo(() => {

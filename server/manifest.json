@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.4",
+    "version": "1.1.83.5",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.4.zip",
-    "sha256": "dee7b8a40a12eb3aca0bb5111b97d3be9220d8706018509d9108acc07aad429f",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.5.zip",
+    "sha256": "a955796837c8341bf04cf370bd6de9c901900576f5fd2a7149931c4ec9432dbb",
     "mandatory": true,
     "releaseDate": "2026-10-31",
-    "notes": "Botao permanente de download do APK v1.1.83 e deteccao robusta de atualizacao nativa"
+    "notes": "Correcao de transbordo de mes no dia 31 ancoragem no primeiro dia do mes"
   }
 }
