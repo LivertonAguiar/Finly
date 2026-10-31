@@ -601,7 +601,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const monthlyIncome = incomeBreakdown.total;
   const monthlyExpense = expenseBreakdown.total;
   const monthlyBalance = Math.round((monthlyIncome - monthlyExpense) * 100) / 100;
-  const monthlyRealizedBalance = Math.round((incomeBreakdown.received - expenseBreakdown.realized) * 100) / 100;
 
   // 1. Expense by Category Donut Data (utiliza todas as compras individuais do cartão mantendo suas categorias)
   const categoryChartData = useMemo(() => {

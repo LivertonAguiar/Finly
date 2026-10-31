@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.7",
+    "version": "1.1.83.8",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.7.zip",
-    "sha256": "a9f927ca18a5083ee802d30fb4432e149e7efc10138e471618a49e8719bbab80",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.8.zip",
+    "sha256": "1793e21987bb55b07cc561933925489e0606f970caa68522e5ecac80cf94dfc2",
     "mandatory": true,
     "releaseDate": "2026-10-31",
-    "notes": "Restaurar Saldo em contas como destaque principal no Hero Card"
+    "notes": "Corrigir status de despesas pendentes futuras e trava de saldo geral"
   }
 }

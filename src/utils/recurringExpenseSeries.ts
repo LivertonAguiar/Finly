@@ -253,6 +253,10 @@ export const reconcileRecurringExpenseSeries = ({
         updated.status = 'pending';
         changed = true;
       }
+      if (existing.status === 'completed' && date > today && !existing.paidAt) {
+        updated.status = 'scheduled';
+        changed = true;
+      }
 
       const hasSeriesTemplates = Array.isArray(series.componentTemplates) && series.componentTemplates.length > 0;
       // Reconciliar componentes em ocorrências existentes não concluídas e que não sejam exceções manuais

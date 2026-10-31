@@ -2676,8 +2676,16 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev =>
       prev.map(t => {
         if (t.id !== id) return t;
-        const nextStatus: TransactionStatus = t.status === 'completed' ? 'pending' : 'completed';
-        const updated: Transaction = { ...t, status: nextStatus };
+        const todayStr = getTodayString();
+        const isFuture = (t.date > todayStr) || (t.dueDate ? t.dueDate > todayStr : false);
+        const nextStatus: TransactionStatus = t.status === 'completed'
+          ? (isFuture ? 'scheduled' : 'pending')
+          : 'completed';
+        const updated: Transaction = {
+          ...t,
+          status: nextStatus,
+          paidAt: nextStatus === 'completed' ? (t.paidAt || todayStr) : undefined,
+        };
         queueTransactionUpsert(updated);
         if (currentUser && !isDemoUser() && isSupabaseConfigured()) {
           void supabaseDb.upsertTransaction(currentUser.id, updated).catch(() => {});
