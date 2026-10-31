@@ -798,7 +798,7 @@ const AppContent: React.FC = () => {
             {(activeTab === 'planejamento' || activeTab === 'orcamento') && <BudgetPage />}
             {activeTab === 'relatorios' && <ReportsPage />}
             {activeTab === 'calendario' && <CalendarPage />}
-            {activeTab === 'settings' && <SettingsPage />}
+            {activeTab === 'settings' && <SettingsPage onNavigateToTab={handleSelectTab} />}
             {(activeTab === 'mais' || activeTab === 'sobre') && (
               <MorePage
                 setActiveTab={handleSelectTab}

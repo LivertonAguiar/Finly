@@ -458,9 +458,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
   const showSystem = !q || 'dados data sistema system cache limpar reset apagar excluir conta delete'.includes(q);
   const showSession = !q || 'sessao session sair logout encerrar'.includes(q);
 
-  const hasAnyMatch = showLang || showAppearance || showNotif || showDashboard || showWidget || showAccount || showSecurity || showBackup || showSystem || showSession;
+  const isSegurancaSection = activeSection === 'seguranca';
+  const isDadosSection = activeSection === 'dados';
+
+  const canShowAccount = showAccount && (Boolean(searchQuery) || isSegurancaSection);
+  const canShowSecurity = showSecurity && (Boolean(searchQuery) || isSegurancaSection);
+  const canShowSession = showSession && (Boolean(searchQuery) || isSegurancaSection);
+
+  const canShowBackup = showBackup && (Boolean(searchQuery) || isDadosSection);
+  const canShowSystem = showSystem && (Boolean(searchQuery) || isDadosSection);
+
+  const canShowCol2 = canShowAccount || canShowSecurity || canShowSession || canShowBackup || canShowSystem;
   const showCol1 = showLang || showAppearance || showNotif || showDashboard || showWidget;
   const showCol2 = showAccount || showSecurity || showBackup || showSystem || showSession;
+  const hasAnyMatch = showCol1 || canShowCol2;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-20">
@@ -476,12 +487,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
           </p>
         </div>
 
-        <button
-          onClick={handleSaveAll}
-          className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-        >
-          {t('settings.save', selectedLang)}
-        </button>
+        {(activeSection === 'preferencias' || searchQuery) && (
+          <button
+            onClick={handleSaveAll}
+            className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            {t('settings.save', selectedLang)}
+          </button>
+        )}
       </div>
 
       {successMsg && (
@@ -491,28 +504,47 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
         </div>
       )}
 
-      {/* Quick Search Bar (C-02) */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar nas configurações (idioma, moeda, privacidade, temas, notificações, cards, segurança, backup, cache...)"
-          className="w-full pl-11 pr-20 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#2C2C2E] text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 shadow-xs transition-all"
+      {/* Tabs de Ajustes */}
+      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.06] overflow-x-auto no-scrollbar">
+        <TabNavigation
+          tabs={settingsTabs}
+          activeTab={activeSection}
+          onChange={handleSectionChange}
+          size="md"
         />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 cursor-pointer"
-          >
-            Limpar
-          </button>
-        )}
       </div>
 
-      {!hasAnyMatch ? (
+      {/* Subpáginas dedicadas */}
+      {!searchQuery && activeSection === 'perfil' && <ProfilePage />}
+      {!searchQuery && activeSection === 'familia' && <FamilyPage />}
+      {!searchQuery && activeSection === 'categorias' && <CadastrosPage />}
+      {!searchQuery && activeSection === 'ajuda' && <HelpCenterPage onNavigateToTab={onNavigateToTab} />}
+      {!searchQuery && activeSection === 'sobre' && <AboutSection />}
+
+      {/* Quick Search Bar (C-02) */}
+      {(['preferencias', 'seguranca', 'dados'].includes(activeSection) || searchQuery) && (
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar nas configurações (idioma, moeda, privacidade, temas, notificações, cards, segurança, backup, cache...)"
+            className="w-full pl-11 pr-20 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#2C2C2E] text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 shadow-xs transition-all"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 cursor-pointer"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+      )}
+
+      {(searchQuery || ['preferencias', 'seguranca', 'dados'].includes(activeSection)) && (!hasAnyMatch ? (
         <div className="p-8 sm:p-12 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 text-center space-y-3 shadow-xs animate-in fade-in">
           <Sliders className="w-10 h-10 text-purple-600 dark:text-purple-400 mx-auto" />
           <h4 className="text-sm font-black text-slate-900 dark:text-white">Nenhuma configuração encontrada</h4>
@@ -528,8 +560,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
           </button>
         </div>
       ) : (
-        /* TWO-COLUMN LAYOUT */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        /* LAYOUT DA SEÇÃO */
+        <div className={`grid grid-cols-1 ${searchQuery ? 'lg:grid-cols-2' : 'max-w-4xl mx-auto'} gap-6 items-start`}>
           {/* ========================================================================= */}
           {/* COLUNA 1: PREFERÊNCIAS (IDIOMA -> APARÊNCIA -> NOTIFICAÇÕES -> DASHBOARD) */}
           {/* ========================================================================= */}
@@ -1137,22 +1169,28 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
     )}
 
     {/* ========================================================================= */}
-    {/* COLUNA 2: SEGURANÇA E LOGIN (SEPARADO) */}
+    {/* COLUNA 2: SEGURANÇA E LOGIN / DADOS */}
     {/* ========================================================================= */}
-    {(searchQuery || activeSection === 'dados') && showCol2 && (
+    {(searchQuery || isSegurancaSection || isDadosSection) && canShowCol2 && (
       <div className="space-y-6">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            {isDadosSection ? (
+              <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            )}
             <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-              Segurança & Login
+              {isDadosSection ? 'Dados & Backup' : 'Segurança & Login'}
             </h3>
           </div>
-          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Proteção Ativa</span>
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+            {isDadosSection ? 'Gerenciamento e Cópias' : 'Proteção Ativa'}
+          </span>
         </div>
 
         {/* 1. DADOS CADASTRAIS & LOGIN */}
-        {showAccount && (
+        {canShowAccount && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -1237,12 +1275,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
         )}
 
         {/* 2. SEGURANÇA AVANÇADA (SENHA, PIN PBKDF2 & BIOMETRIA UNIFICADA) */}
-        {showSecurity && (
+        {canShowSecurity && (
           <SecuritySettingsSection />
         )}
 
         {/* 3. CÓPIAS DE SEGURANÇA & DADOS */}
-        {showBackup && (
+        {canShowBackup && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -1318,7 +1356,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
         )}
 
         {/* 4. DADOS & SISTEMA */}
-        {showSystem && (
+        {canShowSystem && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -1408,7 +1446,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
         )}
 
         {/* 5. SESSÃO & LOGOUT */}
-        {showSession && (
+        {canShowSession && (
           <div className="p-5 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl flex items-center justify-between">
             <div>
               <span className="text-xs font-black text-slate-900 dark:text-white block">Sessão Atual</span>
@@ -1428,7 +1466,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
       </div>
     )}
   </div>
-)}
+)
+      )}
 
       {/* Confirm Reset Data Modal */}
       <Modal
