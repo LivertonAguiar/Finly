@@ -8,7 +8,7 @@
     "version": "1.1.83.1",
     "minNativeVersion": "1.1.0",
     "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.1.zip",
-    "sha256": "9d47968ab7c9dcb167121150d4c39a438d2d1fd9f4b3de1fbcef592fbc4ca216",
+    "sha256": "264013cdc27a7da93e769e1cc197a24ce532d9065e0a797e0592e5c7eaad3a9e",
     "mandatory": true,
     "releaseDate": "2026-10-30",
     "notes": "Multiplos formatos de Widgets Android (4x2, 4x1 e 2x2), design Bento Grid e correcao de metricas"
