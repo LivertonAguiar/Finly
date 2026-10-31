@@ -2563,32 +2563,19 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       {/* 2. HERO BALANCE BENTO CARD (FIKRI STUDIO SIGNATURE) */}
       <div className="bento-card ambient-glow-purple p-4 sm:p-6 lg:p-7 space-y-4 sm:space-y-5 text-left relative overflow-hidden">
         {/* Top Meta Bar */}
-        <div className="relative z-10 flex items-start justify-between gap-3">
-          <div className="space-y-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-slate-400 dark:text-slate-300 font-bold block">
-                {lang === 'en-US' ? `Net Balance (${capitalizedMonth})` : lang === 'es-ES' ? `Balance del Mes (${capitalizedMonth})` : `Balanço Previsto (${capitalizedMonth})`}
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">
-                (Receitas − Despesas)
-              </span>
-            </div>
-
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-slate-400 font-bold block">
+              {t('common.total_balance', 'Saldo em contas')}
+            </span>
             <div className="flex items-center gap-2 pt-0.5">
-              <h1 className={`text-2xl min-[360px]:text-3xl sm:text-4xl font-black tracking-tight mono-metric break-words ${
-                monthlyBalance > 0
-                  ? 'text-emerald-600 dark:text-[#34D399]'
-                  : monthlyBalance < 0
-                  ? 'text-rose-600 dark:text-[#FB7185]'
-                  : 'text-slate-900 dark:text-white'
-              }`}>
-                {monthlyBalance > 0 ? '+' : ''}
-                {formatCurrency(monthlyBalance, user.currency, !user.showValues)}
+              <h1 className="text-2xl min-[360px]:text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white mono-metric break-words">
+                {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
               </h1>
               <button
                 type="button"
                 onClick={toggleHideValues}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                 title={user.showValues ? t('common.hide_values', 'Ocultar valores') : t('common.hide_values', 'Mostrar valores')}
               >
                 {user.showValues ? (
@@ -2598,49 +2585,19 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 )}
               </button>
             </div>
-
-            {/* Saldo Total em Contas Bancárias (Patrimônio em Caixa) e Realizado no Mês */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
-                <span>{t('common.total_balance', 'Saldo em contas')}:</span>
-                <strong className="text-slate-700 dark:text-slate-200 font-bold mono-metric">
-                  {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
-                </strong>
-              </div>
-              <span className="hidden min-[420px]:inline text-slate-300 dark:text-slate-700">•</span>
-              <div className="flex items-center gap-1">
-                <span>Realizado no mês:</span>
-                <strong className={`font-bold mono-metric ${
-                  monthlyRealizedBalance > 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : monthlyRealizedBalance < 0
-                    ? 'text-rose-600 dark:text-rose-400'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}>
-                  {monthlyRealizedBalance > 0 ? '+' : ''}
-                  {formatCurrency(monthlyRealizedBalance, user.currency, !user.showValues)}
-                </strong>
-              </div>
-            </div>
           </div>
 
           {/* Floating Pill Tag Indicator */}
-          <div className="shrink-0 pt-0.5">
+          <div className="shrink-0">
             {monthlyIncome > 0 && (monthlyIncome - monthlyExpense) > 0 ? (
               <span className="pill-tag-mint" title="Taxa de poupança no mês">
                 <TrendingUp className="w-3 h-3" />
-                <span>+{Math.round(((monthlyIncome - monthlyExpense) / monthlyIncome) * 100)}% sobra</span>
+                <span>+{Math.round(((monthlyIncome - monthlyExpense) / monthlyIncome) * 100)}% este mês</span>
               </span>
             ) : monthlyIncome > 0 && monthlyExpense > monthlyIncome ? (
               <span className="pill-tag-rose" title="Despesas superiores às receitas">
                 <TrendingDown className="w-3 h-3" />
                 <span>{Math.round((monthlyExpense / monthlyIncome) * 100)}% consumo</span>
-              </span>
-            ) : monthlyIncome > 0 && monthlyBalance === 0 ? (
-              <span className="pill-tag-mint" title="Orçamento 100% equilibrado">
-                <Check className="w-3 h-3" />
-                <span>100% equilibrado</span>
               </span>
             ) : (
               <span className="pill-tag-purple">
