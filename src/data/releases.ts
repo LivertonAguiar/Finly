@@ -40,38 +40,38 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 
 export const RELEASES: ReleaseInfo[] = [
   {
-    version: '1.1.83.9',
+    version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Nova arquitetura de navega??o do Finly: menu lateral simplificado com 7 itens principais, p?ginas agregadoras com abas, vis?o de calend?rio integrada e ajustes unificados.',
+    summary: 'Nova arquitetura de navegação do Finly: menu lateral simplificado com 7 itens principais, páginas agregadoras com abas, visão de calendário integrada e ajustes unificados.',
     highlights: [
       {
-        title: 'Navega??o Simplificada com 7 Menus Principais',
-        description: 'Redu??o da Sidebar de 17 itens para 7 itens essenciais + Ajustes na base, eliminando os grupos gen?ricos "Mais" e "Ferramentas".',
+        title: 'Navegação Simplificada com 7 Menus Principais',
+        description: 'Redução da Sidebar de 17 itens para 7 itens essenciais + Ajustes na base, eliminando os grupos genéricos "Mais" e "Ferramentas".',
         type: 'feature',
       },
       {
-        title: 'P?ginas Agregadoras com Abas',
-        description: 'Unifica??o em abas: Contas & Cart?es (?tab=contas|cartoes), Planejar (?tab=orcamento|metas), Patrim?nio (?tab=investimentos|dividas) e Assistente IA (?tab=whatsapp|skills).',
+        title: 'Páginas Agregadoras com Abas',
+        description: 'Unificação em abas: Contas & Cartões (?tab=contas|cartoes), Planejar (?tab=orcamento|metas), Patrimônio (?tab=investimentos|dividas) e Assistente IA (?tab=whatsapp|skills).',
         type: 'feature',
       },
       {
-        title: 'Vis?o Integrada de Calend?rio em Transa??es',
-        description: 'Alternador Lista ? Calend?rio diretamente no extrato de transa??es com persist?ncia e sincroniza??o de hist?rico via URL.',
+        title: 'Visão Integrada de Calendário em Transações',
+        description: 'Alternador Lista ⇄ Calendário diretamente no extrato de transações com persistência e sincronização de histórico via URL.',
         type: 'feature',
       },
       {
         title: 'Ajustes Unificados & Hub Sobre',
-        description: 'Centraliza??o de Perfil, Fam?lia, Categorias, Apar?ncia, Seguran?a, Dados, Ajuda e Sobre em abas unificadas com atalhos diretos.',
+        description: 'Centralização de Perfil, Família, Categorias, Aparência, Segurança, Dados, Ajuda e Sobre em abas unificadas com atalhos diretos.',
         type: 'feature',
       },
       {
-        title: 'BottomNav Mobile de 5 Posi??es & Menu Curto',
-        description: 'Barra inferior com In?cio, Transa??es, [+] Central (Speed Dial FAB), Contas & Cart?es e Planejar, al?m de menu mobile enxuto.',
+        title: 'BottomNav Mobile de 5 Posições & Menu Curto',
+        description: 'Barra inferior com Início, Transações, [+] Central (Speed Dial FAB), Contas & Cartões e Planejar, além de menu mobile enxuto.',
         type: 'visual',
       },
       {
         title: 'Retrocompatibilidade Total de Rotas & i18n',
-        description: 'Redirecionamento transparente de todas as URLs legadas, suporte ao bot?o voltar/gesto do Android e tradu??o completa em pt-BR, en-US e es-ES.',
+        description: 'Redirecionamento transparente de todas as URLs legadas, suporte ao botão voltar/gesto do Android e tradução completa em pt-BR, en-US e es-ES.',
         type: 'improvement',
       },
     ],
@@ -104,7 +104,7 @@ export const RELEASES: ReleaseInfo[] = [
     ],
   },
   {
-    version: CURRENT_VERSION,
+    version: '1.1.83.0',
     releaseDate: '2026-10-30',
     summary: 'Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas.',
     highlights: [

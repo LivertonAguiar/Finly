@@ -1,11 +1,8 @@
 {
   "minSupportedVersion": "1.1.0",
-  "version": "1.1.83",
-  "latestVersion": "1.1.83",
   "releaseDate": "2026-10-31",
   "notes": "Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas.",
   "isLatest": true,
-  "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk",
   "sections": {
     "features": [
       "Três Novos Formatos de Widgets Android: Bento Dashboard 4x2, Barra Compacta 4x1 e Mini Resumo 2x2"
