@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   CreditCard as CreditCardIcon,
   ChevronLeft,
@@ -24,27 +24,45 @@ import { formatCurrency, formatDate, getTodayString } from '../../utils/formatte
 import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import {
   calculateCardInvoiceStatus,
-  isCardInvoicePaid,
   getCardInvoicePaymentDetails,
   getCardTransactionInvoiceMonth,
   InvoiceStatusInfo,
 } from '../../utils/invoiceCalculator';
 import { PayInvoiceSheet } from './PayInvoiceSheet';
+import { InvoiceDetailView } from './InvoiceDetailView';
 import { CreditCard as CreditCardType, Transaction } from '../../types';
 
 interface InvoicesTabProps {
   onOpenNewCard?: () => void;
-  onNavigateToCardDetail?: (cardId: string) => void;
+  initialCardId?: string | null;
+  onClearCardDetail?: () => void;
 }
 
 type InvoiceFilter = 'all' | 'pending' | 'overdue' | 'paid';
 
 export const InvoicesTab: React.FC<InvoicesTabProps> = ({
   onOpenNewCard,
-  onNavigateToCardDetail,
+  initialCardId,
+  onClearCardDetail,
 }) => {
   const { cards, transactions, accounts, user, unpayCardInvoice } = useFinancial();
   const { confirm } = useConfirm();
+
+  // Active Card Detail (opens the full invoice extrato screen)
+  const [activeDetailCardId, setActiveDetailCardId] = useState<string | null>(() => {
+    if (initialCardId) return initialCardId;
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('cardId') || null;
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (initialCardId !== undefined) {
+      setActiveDetailCardId(initialCardId);
+    }
+  }, [initialCardId]);
 
   // Navigation Month Offset
   const [selectedMonthOffset, setSelectedMonthOffset] = useState<number>(0);
@@ -57,9 +75,6 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 
   // Active Menu for "⋯"
   const [openMenuCardId, setOpenMenuCardId] = useState<string | null>(null);
-
-  // Expanded card transaction preview
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
   // Calculate current viewing date and month
   const viewDate = useMemo(() => {
@@ -242,6 +257,41 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
       unpayCardInvoice(cardId, currentMonthPrefix);
     }
   };
+
+  // Open Invoice Detail View
+  const handleOpenDetail = (cardId: string) => {
+    setActiveDetailCardId(cardId);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'faturas');
+      url.searchParams.set('cardId', cardId);
+      window.history.pushState({ tab: 'contas-cartoes', subTab: 'faturas', cardId }, '', url.pathname + url.search);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setActiveDetailCardId(null);
+    onClearCardDetail?.();
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'faturas');
+      url.searchParams.delete('cardId');
+      window.history.pushState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', url.pathname + url.search);
+    }
+  };
+
+  // If a card's detail is open, render the full InvoiceDetailView!
+  if (activeDetailCardId) {
+    return (
+      <div className="w-full max-w-5xl mx-auto pb-16">
+        <InvoiceDetailView
+          cardId={activeDetailCardId}
+          onBack={handleCloseDetail}
+          initialMonthOffset={selectedMonthOffset}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-5 animate-in fade-in pb-16">
@@ -473,12 +523,13 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
           filteredInvoices.map(item => {
             const cardColor = item.card.color || '#7c4dff';
             const isMenuOpen = openMenuCardId === item.card.id;
-            const isExpanded = expandedCardId === item.card.id;
 
             return (
               <div
                 key={item.card.id}
-                className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-xs hover:border-purple-500/30 transition-all overflow-hidden relative"
+                onClick={() => handleOpenDetail(item.card.id)}
+                className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-white/[0.08] shadow-xs hover:border-purple-500/40 hover:shadow-md transition-all overflow-hidden relative cursor-pointer group"
+                title="Clique para ver o extrato detalhado desta fatura"
               >
                 {/* Brand color strip on left border */}
                 <div
@@ -491,7 +542,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-10 h-10 rounded-2xl flex items-center justify-center p-2 shrink-0 border"
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center p-2 shrink-0 border group-hover:scale-105 transition-transform"
                         style={{
                           backgroundColor: `${cardColor}15`,
                           borderColor: `${cardColor}30`,
@@ -502,7 +553,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase truncate">
+                          <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                             {item.card.name}
                           </h3>
                           {item.card.last4Digits && (
@@ -520,13 +571,13 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                       {/* Status Badge */}
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-black border ${item.statusInfo.badgeColor}`}>
                         {item.statusInfo.statusLabel}
                       </span>
 
-                      {/* ⋯ Menu for Paid Invoices (to keep UI clean) */}
+                      {/* ⋯ Menu for Paid Invoices */}
                       {item.isPaid && (
                         <div className="relative">
                           <button
@@ -586,26 +637,25 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
                       </div>
                     </div>
 
-                    {/* Direct Action Button */}
-                    <div className="flex items-center gap-2">
-                      {/* Accordion toggle to inspect transactions */}
-                      {item.invoiceTransactions.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setExpandedCardId(isExpanded ? null : item.card.id)}
-                          className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <span>{item.invoiceTransactions.length} {item.invoiceTransactions.length === 1 ? 'compra' : 'compras'}</span>
-                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        </button>
-                      )}
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      {/* Button: Ver Detalhes (Opens Extrato) */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetail(item.card.id)}
+                        className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/30 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border border-purple-200 dark:border-purple-800/40"
+                        title="Abrir o extrato detalhado desta fatura"
+                      >
+                        <span>Ver detalhes</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
 
                       {/* Direct "Pagar" Button (Unpaid) */}
                       {!item.isPaid && item.invoiceTotal > 0 ? (
                         <button
                           type="button"
                           onClick={() => handleOpenPaySheet(item.card.id)}
-                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                         >
                           <DollarSign className="w-4 h-4 stroke-[2.5]" />
                           <span>Pagar Fatura</span>
@@ -615,53 +665,9 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
                           <CheckCircle2 className="w-4 h-4" />
                           <span>{item.paidAccountName ? `Paga via ${item.paidAccountName}` : 'Paga'}</span>
                         </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 font-medium">
-                          Nenhum gasto registrado
-                        </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
-
-                  {/* Expanded Transaction Preview */}
-                  {isExpanded && item.invoiceTransactions.length > 0 && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-2 animate-in slide-in-from-top-2 duration-150">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase">
-                        <span>Extrato da Fatura</span>
-                        {onNavigateToCardDetail && (
-                          <button
-                            type="button"
-                            onClick={() => onNavigateToCardDetail(item.card.id)}
-                            className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
-                          >
-                            <span>Ver detalhe completo</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
-                        {item.invoiceTransactions.map(t => (
-                          <div
-                            key={t.id}
-                            className="p-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.04] flex items-center justify-between text-xs"
-                          >
-                            <div className="min-w-0 pr-2">
-                              <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
-                                {t.description}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-medium">
-                                {formatDate(t.date)}
-                              </span>
-                            </div>
-                            <span className="font-black text-slate-900 dark:text-white shrink-0">
-                              {formatCurrency(t.amount, user.currency, !user.showValues)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );

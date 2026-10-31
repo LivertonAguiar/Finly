@@ -42,8 +42,23 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Nova arquitetura de faturas e liquidação em 2 toques: aba Faturas em Contas & Cartões, atalhos na tela Início e no botão [+] de ações rápidas, KPIs a pagar e selo de vencimento.',
+    summary: 'Acesso completo a detalhes da fatura em Faturas, aba de cartões focada em gestão, widget enxuto no dashboard e fluxo de pagamento de faturas em 2 toques.',
     highlights: [
+      {
+        title: 'Detalhes Completos da Fatura em Faturas',
+        description: 'Ao clicar em qualquer cartão na aba Faturas, abre a visão detalhada com extrato de lançamentos, parcelas, exportação CSV/PDF, controle de limites e navegação mensal.',
+        type: 'feature',
+      },
+      {
+        title: 'Aba Cartões Focada em Gestão',
+        description: 'A aba Cartões agora é dedicada exclusivamente à adição, edição de configurações e limites dos cartões de crédito, eliminando telas duplicadas de extrato.',
+        type: 'improvement',
+      },
+      {
+        title: 'Widget de Cartões Mais Enxuto no Dashboard',
+        description: 'Visual minimalista em lista compacta com status, vencimento, limites, botão de liquidação rápida e navegação direta para o detalhe da fatura.',
+        type: 'visual',
+      },
       {
         title: 'Aba Faturas & Pagamento em 2 Toques',
         description: 'Primeira aba dentro de Contas & Cartões (Faturas | Cartões | Contas), com resumo KPI dos próximos 30 dias, filtros rápidos, botão Pagar direto e estorno discreto no menu ⋯.',

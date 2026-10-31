@@ -24,16 +24,23 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   const { t } = useTranslation();
   const { cards, transactions } = useFinancial();
 
-  const [cardDetailId, setCardDetailId] = useState<string | null>(initialCardDetailId || null);
+  const getCardIdFromUrl = (): string | null => {
+    if (initialCardDetailId) return initialCardDetailId;
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('cardId') || null;
+  };
+
+  const [cardDetailId, setCardDetailId] = useState<string | null>(getCardIdFromUrl);
 
   const getSubTabFromUrl = (): 'faturas' | 'cartoes' | 'contas' => {
     if (initialSubTab) return initialSubTab;
     if (typeof window === 'undefined') return 'faturas';
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab')?.toLowerCase();
-    if (tabParam === 'faturas' || tabParam === 'fatura' || tabParam === 'invoices') return 'faturas';
     if (tabParam === 'cartoes' || tabParam === 'cartao' || tabParam === 'cards') return 'cartoes';
     if (tabParam === 'contas' || tabParam === 'conta' || tabParam === 'accounts') return 'contas';
+    if (tabParam === 'faturas' || tabParam === 'fatura' || tabParam === 'invoices') return 'faturas';
     const path = window.location.pathname.toLowerCase();
     if (path.includes('/contas') && !path.includes('/contas-cartoes') && !path.includes('/cartoes')) return 'contas';
     if (path.includes('/cartoes')) return 'cartoes';
@@ -52,7 +59,8 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
     if (initialCardDetailId !== undefined) {
       setCardDetailId(initialCardDetailId);
       if (initialCardDetailId) {
-        setActiveSubTab('cartoes');
+        // Ao abrir detalhe de fatura, vai direto para a aba faturas com o cartão selecionado
+        setActiveSubTab('faturas');
       }
     }
   }, [initialCardDetailId]);
@@ -60,6 +68,7 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   useEffect(() => {
     const handlePopState = () => {
       setActiveSubTab(getSubTabFromUrl());
+      setCardDetailId(getCardIdFromUrl());
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -74,11 +83,11 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
     }
   };
 
-  const handleNavigateToCardDetail = (id: string) => {
+  const handleNavigateToInvoiceDetail = (id: string) => {
     setCardDetailId(id);
-    setActiveSubTab('cartoes');
-    const targetUrl = `/contas-cartoes?tab=cartoes`;
-    window.history.replaceState({ tab: 'contas-cartoes', subTab: 'cartoes' }, '', targetUrl);
+    setActiveSubTab('faturas');
+    const targetUrl = `/contas-cartoes?tab=faturas&cardId=${id}`;
+    window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas', cardId: id }, '', targetUrl);
   };
 
   // Bonus: Selo vermelho de alerta quando houver fatura vencida ou vencendo em até 3 dias
@@ -144,12 +153,13 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
         {activeSubTab === 'faturas' ? (
           <InvoicesTab
             onOpenNewCard={onOpenNewCard}
-            onNavigateToCardDetail={handleNavigateToCardDetail}
+            initialCardId={cardDetailId}
+            onClearCardDetail={() => setCardDetailId(null)}
           />
         ) : activeSubTab === 'cartoes' ? (
           <CreditTab
             onOpenNewCard={onOpenNewCard || (() => {})}
-            initialCardDetailId={cardDetailId}
+            onNavigateToInvoices={handleNavigateToInvoiceDetail}
           />
         ) : (
           <AccountsPage setActiveTab={setActiveTab} />

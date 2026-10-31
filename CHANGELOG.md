@@ -5,6 +5,22 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-10-31
 
+### Detalhes da Fatura em Faturas, Gestão em Cartões e Dashboard Enxuto
+- **Visão Detalhada da Fatura (`InvoiceDetailView`) na Aba Faturas**:
+  - Ao tocar em qualquer linha de cartão ou no botão "Ver detalhes", abre a tela completa de extrato da fatura.
+  - Navegador mensal dedicado (`< FATURA DE [MÊS] [ANO] >`), hero do cartão com cores dinâmicas, banner de status quitado/aberto, progresso do limite (fatura atual vs. parcelas futuras).
+  - Listagem completa de lançamentos da fatura com ícone da categoria, identificador de parcelas (`Parcela X/Y`), valor e ações de edição/exclusão (com suporte a séries).
+  - Exportação de extrato em **CSV** e **PDF**.
+  - Botão de retorno rápido `← Voltar para Faturas`.
+- **Aba Cartões de Crédito Focada em Gestão**:
+  - Remoção de telas de extrato duplicadas da aba Cartões de Crédito.
+  - Foco total em cadastro de novos cartões (`+ Novo Cartão`), edição de parâmetros (limite, datas de fechamento/vencimento, cor, bandeira) e exclusão.
+  - Atalho "Ver Fatura" em cada cartão redireciona suavemente para a visão de detalhes na aba Faturas.
+- **Widget de Cartões no Dashboard Mais Enxuto**:
+  - Redesenho do card de cartões da tela inicial para um formato horizontal minimalista e limpo.
+  - Exibe logo do banco, nome do cartão, status ("Fatura aberta", "Fatura paga"), dia de vencimento, limite disponível e valor da fatura.
+  - Botão direto "Pagar" (aciona o modal de pagamento em 2 toques) e botão/link "Ver detalhes" para navegação direta ao extrato.
+
 ### Arquitetura de Faturas e Pagamento em 2 Toques
 - **Aba "Faturas" dentro de Contas & Cartões (a principal)**:
   - Fica como a primeira aba: **Faturas | Cartões | Contas** (`faturas`, `cartoes`, `contas`), centralizada e proporcionalmente distribuída.

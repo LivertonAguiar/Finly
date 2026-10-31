@@ -44,9 +44,10 @@ import { getCardTransactionInvoiceMonth, isCardInvoicePaid, getCardInvoicePaymen
 interface CreditTabProps {
   onOpenNewCard: () => void;
   initialCardDetailId?: string | null;
+  onNavigateToInvoices?: (cardId: string) => void;
 }
 
-export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCardDetailId }) => {
+export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCardDetailId, onNavigateToInvoices }) => {
   const { cards, user, transactions, accounts, categories, payCardInvoice, unpayCardInvoice, toggleTransactionStatus, reimburseThirdPartyTransaction, deleteCard, addTransaction, deleteTransaction } = useFinancial();
   const { confirm } = useConfirm();
 
@@ -65,10 +66,10 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
   const [reimbursementCandidate, setReimbursementCandidate] = useState<Transaction | null>(null);
 
   useEffect(() => {
-    if (initialCardDetailId !== undefined) {
-      setActiveCardDetailId(initialCardDetailId);
+    if (initialCardDetailId && onNavigateToInvoices) {
+      onNavigateToInvoices(initialCardDetailId);
     }
-  }, [initialCardDetailId]);
+  }, [initialCardDetailId, onNavigateToInvoices]);
 
   const handleOpenNewCard = () => {
     setActiveCardDetailId(null);
@@ -371,499 +372,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
       {/* ========================================================================= */}
       {/* CASE 1: DETALHE DA FATURA DO CARTÃO (INVOICE EXTRATO SCREEN) */}
       {/* ========================================================================= */}
-      {activeCardDetail ? (
-        <div className="space-y-6 animate-in fade-in">
-          {/* Back button & Action Buttons Bar */}
-          <div className="flex items-center justify-between gap-2">
-            <button
-              onClick={() => setActiveCardDetailId(null)}
-              className="h-10 px-3 sm:px-4 rounded-xl bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5 shrink-0"
-              title="Voltar para a lista de cartões"
-            >
-              <ArrowLeft className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-              <span className="whitespace-nowrap">
-                Voltar <span className="hidden sm:inline">para Cartões</span>
-              </span>
-            </button>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  setSelectedCardForExpense(activeCardDetail.id);
-                  setIsAddExpenseModalOpen(true);
-                }}
-                className="h-10 px-3 sm:px-4 rounded-xl bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
-              >
-                <Plus className="w-4 h-4 shrink-0" />
-                <span>Nova Despesa</span>
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
-                  className="h-10 w-10 rounded-xl bg-white dark:bg-[#1E1E20] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-center shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
-                  title="Mais opções"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-
-                {isHeaderMenuOpen && (
-                  <div
-                    onClick={e => e.stopPropagation()}
-                    className="absolute right-0 top-12 z-50 w-56 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-slate-200 dark:border-slate-700 shadow-2xl py-2 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-800 dark:text-slate-100"
-                  >
-                    {activeCardDetail.isPaid ? (
-                      <button
-                        onClick={async () => {
-                          setIsHeaderMenuOpen(false);
-                          const ok = await confirm({
-                            title: 'Reabrir Fatura?',
-                            message: `Deseja reabrir a fatura de ${activeCardDetail.name} e estornar o pagamento?`,
-                            confirmText: 'Reabrir Fatura',
-                            type: 'warning'
-                          });
-                          if (ok) {
-                            unpayCardInvoice(activeCardDetail.id, currentMonthPrefix);
-                          }
-                        }}
-                        className="w-full px-4 py-2.5 text-left text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <RotateCcw className="w-4 h-4 text-amber-500" />
-                        <span>Reabrir fatura</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setIsHeaderMenuOpen(false);
-                          handleOpenPayModal(activeCardDetail);
-                        }}
-                        className="w-full px-4 py-2.5 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <CardIcon className="w-4 h-4 text-emerald-500" />
-                        <span>Pagar fatura</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => {
-                        setIsHeaderMenuOpen(false);
-                        setEditingCard(activeCardDetail);
-                        setIsEditModalOpen(true);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <Edit2 className="w-4 h-4 text-purple-600" />
-                      <span>Editar cartão</span>
-                    </button>
-
-                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
-                    <button
-                      onClick={() => {
-                        setIsHeaderMenuOpen(false);
-                        handleExportInvoiceCSV(activeCardDetail);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer transition-colors"
-                    >
-                      <Download className="w-4 h-4 text-emerald-500" />
-                      <span>Exportar fatura para CSV</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsHeaderMenuOpen(false);
-                        handleViewInvoicePDF(activeCardDetail);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:text-purple-600 flex items-center gap-2.5 cursor-pointer transition-colors"
-                    >
-                      <FileText className="w-4 h-4 text-rose-500" />
-                      <span>Baixar fatura em PDF</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Card Invoice Header Summary */}
-          <div
-            className="p-4 sm:p-6 rounded-[25px] border shadow-sm dark:shadow-2xl space-y-4 transition-all"
-            style={{
-              background: user.theme === 'dark'
-                ? `radial-gradient(120% 120% at 0% 0%, ${activeCardDetail.color || '#7c4dff'}25 0%, rgba(36, 36, 40, 0.98) 55%, #1C1C1E 100%)`
-                : `radial-gradient(120% 120% at 0% 0%, ${activeCardDetail.color || '#7c4dff'}15 0%, #FFFFFF 65%)`,
-              borderColor: `${activeCardDetail.color || '#7c4dff'}40`,
-              boxShadow: `0 8px 30px -4px ${activeCardDetail.color || '#7c4dff'}20`,
-            }}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center p-2 shadow-sm shrink-0 border"
-                  style={{
-                    backgroundColor: activeCardDetail.color ? activeCardDetail.color + '25' : '#7c4dff25',
-                    borderColor: activeCardDetail.color ? activeCardDetail.color + '55' : '#7c4dff55',
-                  }}
-                >
-                  <BankLogo nameOrId={activeCardDetail.bankId || getCardBankInfo(activeCardDetail)?.id || activeCardDetail.name} size={28} radius={10} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
-                      {activeCardDetail.name}
-                    </h3>
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      • {getCardBankInfo(activeCardDetail)?.name || 'Cartão'}
-                    </span>
-                  </div>
-                  <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border inline-block mt-0.5 ${activeCardDetail.statusColor}`}>
-                    {activeCardDetail.statusLabel}
-                  </span>
-                </div>
-              </div>
-
-              {/* Month Selector for Invoice */}
-              <div className="flex items-center justify-center gap-2 self-center sm:self-auto">
-                <button
-                  onClick={() => setSelectedMonthOffset(prev => prev - 1)}
-                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                  title="Mês anterior"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full bg-slate-50 dark:bg-[#343437] border border-slate-200 dark:border-slate-700">
-                  Fatura de {capitalizedMonth} {yearNum}
-                </span>
-                <button
-                  onClick={() => setSelectedMonthOffset(prev => prev + 1)}
-                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                  title="Próximo mês"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Invoice Total + Pay CTA */}
-              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
-                <div className="text-left sm:text-right">
-                  <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold block">Valor da Fatura</span>
-                  <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                    {formatCurrency(activeCardDetail.invoiceTotal, user.currency, !user.showValues)}
-                  </span>
-                </div>
-
-                {activeCardDetail.invoiceTotal > 0 && !activeCardDetail.isPaid ? (
-                  <button
-                    onClick={async () => {
-                      handleOpenPayModal(activeCardDetail);
-                    }}
-                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-emerald-500/50 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap shrink-0"
-                  >
-                    Pagar Fatura
-                  </button>
-                ) : activeCardDetail.isPaid ? (
-                  <button
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: 'Marcar Fatura como Não Paga?',
-                        message: `Deseja marcar a fatura de ${capitalizedMonth} do cartão ${activeCardDetail.name} como NÃO PAGA e reabrir os lançamentos?`,
-                        confirmText: 'Sim, Marcar Não Paga',
-                        cancelText: 'Cancelar',
-                        type: 'warning'
-                      });
-                      if (ok) {
-                        unpayCardInvoice(activeCardDetail.id, currentMonthPrefix);
-                      }
-                    }}
-                    className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                    title="Desfazer pagamento e marcar fatura como pendente"
-                  >
-                    Marcar como não paga
-                  </button>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      handleOpenPayModal(activeCardDetail);
-                    }}
-                    className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    Pagar Fatura
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Informação de Fatura Paga com Data de Quitação */}
-            {activeCardDetail.isPaid && (
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
-                <div className="flex-1">
-                  <span>Esta fatura já consta como PAGA neste mês. Nenhuma cobrança pendente.</span>
-                  {activeCardDetail.paymentDate && (
-                    <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                      ✓ Quitada em {formatDate(activeCardDetail.paymentDate)}
-                      {activeCardDetail.paymentAccountId && accounts.find(a => a.id === activeCardDetail.paymentAccountId)
-                        ? ` via ${accounts.find(a => a.id === activeCardDetail.paymentAccountId)?.name}`
-                        : ''}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Sub-info: Closing & Due dates + Dynamic Limit Progress Bar */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              {/* Dynamic Limit Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between text-xs font-bold gap-2">
-                  <span className="text-slate-600 dark:text-slate-300">
-                    Limite Utilizado: <strong className="text-rose-600 dark:text-rose-400">{formatCurrency(activeCardDetail.totalCommitted, user.currency, !user.showValues)}</strong> ({activeCardDetail.usedPercentage.toFixed(1).replace('.', ',')}%)
-                  </span>
-                  <span className="text-slate-600 dark:text-slate-300">
-                    Limite Disponível: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(activeCardDetail.available, user.currency, !user.showValues)}</strong> de {formatCurrency(activeCardDetail.limit, user.currency, !user.showValues)}
-                  </span>
-                </div>
-
-                {/* Multi-segment Progress Bar */}
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex shadow-inner">
-                  {/* Segment 1: Fatura Atual Aberta */}
-                  {activeCardDetail.currentInvoicePercent > 0 && (
-                    <div
-                      style={{
-                        width: `${Math.min(100, activeCardDetail.currentInvoicePercent)}%`,
-                        backgroundColor: activeCardDetail.color || '#7c4dff',
-                      }}
-                      className="h-full transition-all duration-500"
-                      title={`Fatura deste mês: ${formatCurrency(activeCardDetail.currentOpenInvoice, user.currency)}`}
-                    />
-                  )}
-                  {/* Segment 2: Parcelas Futuras */}
-                  {activeCardDetail.futureInstallmentsPercent > 0 && (
-                    <div
-                      style={{ width: `${Math.min(100 - Math.min(100, activeCardDetail.currentInvoicePercent), activeCardDetail.futureInstallmentsPercent)}%` }}
-                      className="h-full bg-[#ff8a00] transition-all duration-500"
-                      title={`Parcelas futuras: ${formatCurrency(activeCardDetail.futureInstallmentsTotal, user.currency)}`}
-                    />
-                  )}
-                </div>
-
-                {/* Limit Breakdown Chips */}
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 flex-wrap gap-2 pt-0.5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5" style={{ color: activeCardDetail.color || '#7c4dff' }}>
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: activeCardDetail.color || '#7c4dff' }} />
-                      Fatura de {capitalizedMonth}: {formatCurrency(activeCardDetail.invoiceTotal, user.currency, !user.showValues)}
-                    </span>
-                    {activeCardDetail.futureInstallmentsTotal > 0 && (
-                      <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ff8a00]" />
-                        Parcelas Futuras: {formatCurrency(activeCardDetail.futureInstallmentsTotal, user.currency, !user.showValues)}
-                      </span>
-                    )}
-                  </div>
-
-                  {activeCardDetail.isOverLimit && (
-                    <span className="text-rose-600 dark:text-rose-400 font-black">
-                      ⚠️ Limite Excedido em {formatCurrency(activeCardDetail.overLimitAmount, user.currency, !user.showValues)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 text-xs font-bold pt-1">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Fechamento da Fatura</span>
-                  <span className="text-slate-800 dark:text-slate-200">Todo dia {activeCardDetail.closingDay}</span>
-                </div>
-
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Vencimento da Fatura</span>
-                  <span className="text-slate-800 dark:text-slate-200">Todo dia {activeCardDetail.dueDay}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* List of Invoice Expenses */}
-          <div className="p-4 sm:p-6 rounded-[25px] bg-white dark:bg-[#2C2C2E] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Lançamentos desta Fatura ({activeCardDetail.monthTxs.length})
-              </h4>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleExportInvoiceCSV(activeCardDetail)}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-600 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-300 text-[11px] font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
-                  title="Exportar lançamentos desta fatura para planilha CSV"
-                >
-                  <Download className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Exportar CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleViewInvoicePDF(activeCardDetail)}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-600 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-300 text-[11px] font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
-                  title="Baixar fatura em documento PDF (com pré-visualização)"
-                >
-                  <FileText className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Baixar PDF</span>
-                </button>
-                <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border ${activeCardDetail.statusColor}`}>
-                  {activeCardDetail.isPaid && <CheckCircle2 className="w-3 h-3 shrink-0" />}
-                  {activeCardDetail.statusLabel}
-                </span>
-              </div>
-            </div>
-
-            {activeCardDetail.monthTxs.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 text-xs space-y-2">
-                <CardIcon className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
-                <p>Nenhuma despesa nesta fatura.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {activeCardDetail.monthTxs.map(t => {
-                  const cat = resolveCategory(categories, t.categoryId, t.subcategoryId, t.type || 'expense');
-                  return (
-                    <div
-                      key={t.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedDetailTx(t);
-                      }}
-                      className="py-3 sm:py-3.5 flex items-center justify-between gap-3 group hover:bg-slate-50 dark:hover:bg-[#343437]/40 px-2 sm:px-3 rounded-2xl transition-colors cursor-pointer"
-                    >
-                      {/* Left: Category Icon + Description + Metadata */}
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-xs"
-                          style={{
-                            backgroundColor: (cat?.color || '#7c4dff') + '20',
-                            color: cat?.color || '#7c4dff',
-                          }}
-                        >
-                          {cat?.icon || '💳'}
-                        </div>
-                        <div className="min-w-0 flex-1 pr-1">
-                          <p className="tx-description text-[14.5px] sm:text-[15.5px] font-bold text-slate-900 dark:text-white leading-snug break-words">
-                            {t.description}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                            <span className="shrink-0">{formatDate(t.date)}</span>
-                            <span>•</span>
-                            <span className="shrink-0 text-slate-600 dark:text-slate-300 font-bold">{cat?.name || 'Geral'}</span>
-                            {t.installments && (
-                              <>
-                                <span>•</span>
-                                <span className="shrink-0 text-purple-600 dark:text-purple-400 font-bold">
-                                  Parcela {t.installments.current}/{t.installments.total}
-                                </span>
-                              </>
-                            )}
-                            {t.components && t.components.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
-                                  <Layers className="w-2.5 h-2.5" />
-                                  {t.components.length} itens
-                                </span>
-                              </>
-                            )}
-                            {t.isThirdParty && (
-                              <>
-                                <span>•</span>
-                                <span className={`shrink-0 font-bold ${t.reimbursed ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
-                                  👤 {t.thirdPartyName || 'Terceiro'}{t.reimbursed ? ' (Reembolsado)' : ''}
-                                </span>
-                              </>
-                            )}
-                            {t.ignored && (
-                              <>
-                                <span>•</span>
-                                <span className="shrink-0 text-slate-500 font-bold">Ignorada</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right: Amount + Actions */}
-                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                        {t.isThirdParty && !t.reimbursed && (
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              setReimbursementCandidate(t);
-                              return;
-                              const ok = await confirm({
-                                title: 'Registrar Reembolso',
-                                message: `Confirmar que ${t.thirdPartyName || 'a pessoa'} pagou o reembolso de ${formatCurrency(t.amount, user.currency)}? Será criada uma receita na sua conta bancária.`,
-                                confirmText: 'Receber Reembolso',
-                                type: 'info'
-                              });
-                              if (ok) {
-                                reimburseThirdPartyTransaction(t.id, accounts[0]?.id || 'acc-carteira-padrao');
-                              }
-                            }}
-                            className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0"
-                            title="Registrar recebimento do valor emprestado"
-                          >
-                            + Receber
-                          </button>
-                        )}
-
-                        <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                          -{formatCurrency(t.amount, user.currency, !user.showValues)}
-                        </span>
-
-                        <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingInvoiceTx(t);
-                              setIsAddExpenseModalOpen(true);
-                            }}
-                            className="p-1 rounded-lg text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
-                            title="Editar lançamento"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              setDeleteCandidate(t);
-                              return;
-                              const ok = await confirm({
-                                title: 'Excluir Lançamento',
-                                message: `Deseja realmente excluir "${t.description}" de ${formatCurrency(t.amount, user.currency)}?`,
-                                confirmText: 'Excluir',
-                                type: 'danger',
-                              });
-                              if (ok) {
-                                setDeleteCandidate(t);
-                              }
-                            }}
-                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Excluir lançamento"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* ========================================================================= */
-        /* CASE 2: VISÃO GERAL DE TODOS OS CARTÕES (FINLY OVERVIEW) */
-        /* ========================================================================= */
+      
         <div className="space-y-6">
           {/* Topbar: Title, Month Selector & Action Buttons */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
@@ -1154,7 +663,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 return (
                 <div
                   key={card.id}
-                  onClick={() => setActiveCardDetailId(card.id)}
+                  onClick={() => onNavigateToInvoices ? onNavigateToInvoices(card.id) : null}
                   className="p-3.5 sm:p-4 rounded-2xl hover:bg-slate-50/90 dark:hover:bg-[#202024] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative cursor-pointer"
                   style={{
                     backgroundColor: user.theme === 'dark' ? '#18181B' : '#FFFFFF',
@@ -1257,7 +766,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveCardDetailId(card.id);
+                          onNavigateToInvoices ? onNavigateToInvoices(card.id) : null;
                         }}
                         className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-wider hover:bg-purple-100 transition-colors cursor-pointer"
                       >
@@ -1292,7 +801,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 return (
                 <div
                   key={card.id}
-                  onClick={() => setActiveCardDetailId(card.id)}
+                  onClick={() => onNavigateToInvoices ? onNavigateToInvoices(card.id) : null}
                   className="p-5 rounded-[25px] border hover:-translate-y-0.5 transition-all duration-200 space-y-4 relative group flex flex-col justify-between cursor-pointer"
                   style={user.theme === 'dark' ? {
                     background: `radial-gradient(130% 130% at 0% 0%, ${cardColor}18 0%, rgba(24, 24, 27, 0.98) 55%, #121215 100%)`,
@@ -1354,7 +863,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                       >
                         <button
                           onClick={async () => {
-                            setActiveCardDetailId(card.id);
+                            onNavigateToInvoices ? onNavigateToInvoices(card.id) : null;
                             setOpenMenuCardId(null);
                           }}
                           className="w-full px-3.5 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 flex items-center gap-2 cursor-pointer"
@@ -1483,7 +992,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 {/* Footer Buttons: Pagar Fatura & Ver Fatura */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <button
-                    onClick={() => setActiveCardDetailId(card.id)}
+                    onClick={() => onNavigateToInvoices ? onNavigateToInvoices(card.id) : null}
                     className="text-[10px] font-black hover:underline uppercase tracking-wider cursor-pointer"
                     style={{ color: cardColor }}
                   >
@@ -1548,7 +1057,6 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           </div>
         )}
       </div>
-    )}
 
       {/* MODAL: EDITAR CARTÃO */}
       {isEditModalOpen && (
@@ -1867,20 +1375,9 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           }}
         />
       )}
-      <SeriesDeleteModal transaction={deleteCandidate} onClose={() => setDeleteCandidate(null)} />
-      <ReimbursementModal transaction={reimbursementCandidate} onClose={() => setReimbursementCandidate(null)} />
+      
+      
 
-      {/* In-Memory Temporary PDF Preview Modal */}
-      <PdfViewerModal
-        isOpen={pdfPreview.isOpen}
-        onClose={() => setPdfPreview(prev => ({ ...prev, isOpen: false, blob: null }))}
-        title={pdfPreview.title}
-        subtitle={pdfPreview.subtitle}
-        blob={pdfPreview.blob}
-        filename={pdfPreview.filename}
-        dialogTitle={pdfPreview.dialogTitle}
-        isLoading={pdfPreview.isLoading}
-      />
-    </div>
+      </div>
   );
 };

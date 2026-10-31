@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 // 1. Validar TabNavigation
@@ -20,6 +20,7 @@ assert.match(accountsAndCards, /return 'faturas'/u, 'Aba padrão inicial deve se
 assert.match(accountsAndCards, /overdueOrDueSoonCount/u, 'Deve calcular faturas vencidas ou a vencer em até 3 dias');
 assert.match(accountsAndCards, /badgeVariant:\s*'danger'/u, 'Aba faturas deve receber badgeVariant danger');
 assert.match(accountsAndCards, /<InvoicesTab/u, 'Deve renderizar InvoicesTab');
+assert.match(accountsAndCards, /onNavigateToInvoices/u, 'CreditTab deve poder navegar para faturas');
 
 // 3. Validar InvoicesTab
 const invoicesTab = readFileSync(path.join(process.cwd(), 'src/components/invoices/InvoicesTab.tsx'), 'utf8');
@@ -32,10 +33,22 @@ assert.match(invoicesTab, /activeFilter === 'pending'/u, 'Deve ter filtro A paga
 assert.match(invoicesTab, /activeFilter === 'overdue'/u, 'Deve ter filtro Vencidas');
 assert.match(invoicesTab, /activeFilter === 'paid'/u, 'Deve ter filtro Pagas');
 assert.match(invoicesTab, /Pagar Fatura/u, 'Deve ter botão direto Pagar Fatura');
+assert.match(invoicesTab, /Ver detalhes/u, 'Deve ter botão para abrir detalhes completos da fatura');
+assert.match(invoicesTab, /<InvoiceDetailView/u, 'Deve renderizar InvoiceDetailView quando um cartão for selecionado');
 assert.match(invoicesTab, /Estornar Pagamento/u, 'Menu ⋯ deve ter opção de estornar pagamento');
 assert.match(invoicesTab, /unpayCardInvoice/u, 'Deve chamar unpayCardInvoice no estorno');
 
-// 4. Validar PayInvoiceSheet (Fluxo de pagamento em 2 toques)
+// 4. Validar InvoiceDetailView
+assert.ok(existsSync(path.join(process.cwd(), 'src/components/invoices/InvoiceDetailView.tsx')), 'InvoiceDetailView deve existir');
+const invoiceDetail = readFileSync(path.join(process.cwd(), 'src/components/invoices/InvoiceDetailView.tsx'), 'utf8');
+assert.match(invoiceDetail, /Voltar para Faturas/u, 'Deve ter botão para voltar para Faturas');
+assert.match(invoiceDetail, /FATURA DE/u, 'Deve ter seletor de mês de fatura');
+assert.match(invoiceDetail, /Limite Utilizado/u, 'Deve exibir limite utilizado e disponível');
+assert.match(invoiceDetail, /Lançamentos desta Fatura/u, 'Deve exibir os lançamentos da fatura');
+assert.match(invoiceDetail, /Exportar CSV/u, 'Deve suportar exportação CSV');
+assert.match(invoiceDetail, /Baixar PDF/u, 'Deve suportar download PDF');
+
+// 5. Validar PayInvoiceSheet (Fluxo de pagamento em 2 toques)
 const paySheet = readFileSync(path.join(process.cwd(), 'src/components/invoices/PayInvoiceSheet.tsx'), 'utf8');
 assert.match(paySheet, /finly_last_pay_invoice_account_id/u, 'Deve ler e persistir a última conta usada');
 assert.match(paySheet, /payCardInvoice/u, 'Deve chamar payCardInvoice da FinancialContext');
@@ -43,21 +56,21 @@ assert.match(paySheet, /Confirmar Pagamento/u, 'Deve ter botão direto de confir
 assert.match(paySheet, /Opções avançadas/u, 'Opções avançadas devem ficar recolhidas');
 assert.match(paySheet, /useBackButton/u, 'Deve ter suporte ao botão voltar do Android');
 
-// 5. Validar OverviewTab (Atalho na tela Início)
+// 6. Validar OverviewTab (Atalho na tela Início - Versão Enxuta)
 const overviewTab = readFileSync(path.join(process.cwd(), 'src/components/dashboard/OverviewTab.tsx'), 'utf8');
 assert.match(overviewTab, /finly_open_pay_invoice/u, 'OverviewTab deve emitir finly_open_pay_invoice');
 assert.match(overviewTab, /contas-cartoes\?tab=faturas/u, 'Resumo de Cartões e alertas devem redirecionar para tab=faturas');
+assert.match(overviewTab, /cardId=\$\{card\.id\}/u, 'Toque no cartão deve abrir o detalhe da fatura');
 
-// 6. Validar BottomNav (Ação rápida mobile)
+// 7. Validar BottomNav (Ação rápida mobile)
 const bottomNav = readFileSync(path.join(process.cwd(), 'src/components/layout/BottomNav.tsx'), 'utf8');
 assert.match(bottomNav, /Pagar fatura/u, 'BottomNav deve ter atalho Pagar fatura');
 assert.match(bottomNav, /finly_open_pay_invoice/u, 'Atalho do BottomNav deve disparar finly_open_pay_invoice');
 
-// 7. Validar App.tsx
+// 8. Validar App.tsx
 const appTsx = readFileSync(path.join(process.cwd(), 'src/App.tsx'), 'utf8');
 assert.match(appTsx, /PayInvoiceSheet/u, 'App.tsx deve importar e montar PayInvoiceSheet');
 assert.match(appTsx, /finly_open_pay_invoice/u, 'App.tsx deve escutar o evento finly_open_pay_invoice');
 assert.match(appTsx, /tab === 'faturas'/u, 'App.tsx deve rotear tab=faturas para contas-cartoes');
 
-console.log('✅ Todos os testes da arquitetura de faturas e fluxo de pagamento em 2 toques passaram com 100% de sucesso!');
-
+console.log('✅ Todos os testes da arquitetura de faturas, detalhes da fatura e modo enxuto passaram com 100% de sucesso!');
