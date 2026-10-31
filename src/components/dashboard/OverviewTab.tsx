@@ -601,6 +601,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const monthlyIncome = incomeBreakdown.total;
   const monthlyExpense = expenseBreakdown.total;
   const monthlyBalance = Math.round((monthlyIncome - monthlyExpense) * 100) / 100;
+  const monthlyRealizedBalance = Math.round((incomeBreakdown.received - expenseBreakdown.realized) * 100) / 100;
 
   // 1. Expense by Category Donut Data (utiliza todas as compras individuais do cartão mantendo suas categorias)
   const categoryChartData = useMemo(() => {
@@ -2566,7 +2567,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <div className="space-y-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-slate-400 dark:text-slate-300 font-bold block">
-                {lang === 'en-US' ? `Net Balance (${capitalizedMonth})` : lang === 'es-ES' ? `Balance del Mes (${capitalizedMonth})` : `Balanço de ${capitalizedMonth}`}
+                {lang === 'en-US' ? `Net Balance (${capitalizedMonth})` : lang === 'es-ES' ? `Balance del Mes (${capitalizedMonth})` : `Balanço Previsto (${capitalizedMonth})`}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
                 (Receitas − Despesas)
@@ -2598,13 +2599,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </button>
             </div>
 
-            {/* Saldo Total em Contas Bancárias (Patrimônio em Caixa) */}
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-0.5">
-              <Wallet className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
-              <span>{t('common.total_balance', 'Saldo em contas')}:</span>
-              <strong className="text-slate-700 dark:text-slate-200 font-bold mono-metric">
-                {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
-              </strong>
+            {/* Saldo Total em Contas Bancárias (Patrimônio em Caixa) e Realizado no Mês */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-0.5">
+              <div className="flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
+                <span>{t('common.total_balance', 'Saldo em contas')}:</span>
+                <strong className="text-slate-700 dark:text-slate-200 font-bold mono-metric">
+                  {formatCurrency(metrics.totalBalance, user.currency, !user.showValues)}
+                </strong>
+              </div>
+              <span className="hidden min-[420px]:inline text-slate-300 dark:text-slate-700">•</span>
+              <div className="flex items-center gap-1">
+                <span>Realizado no mês:</span>
+                <strong className={`font-bold mono-metric ${
+                  monthlyRealizedBalance > 0
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : monthlyRealizedBalance < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-slate-600 dark:text-slate-300'
+                }`}>
+                  {monthlyRealizedBalance > 0 ? '+' : ''}
+                  {formatCurrency(monthlyRealizedBalance, user.currency, !user.showValues)}
+                </strong>
+              </div>
             </div>
           </div>
 
