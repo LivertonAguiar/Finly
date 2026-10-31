@@ -1,64 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Target,
-  CreditCard,
   TrendingUp,
-  FolderTree,
-  Upload,
-  Download,
-  Bot,
-  Users,
-  Sparkles,
-  Info,
-  ChevronRight,
-  HelpCircle,
-  FileText,
-  SlidersHorizontal,
-  BadgePercent,
-  Flag,
   BarChart3,
-  Calendar as CalendarIcon,
-  Building2,
-  List,
+  Bot,
   Settings,
-  RefreshCw,
-  CheckCircle2,
-  ExternalLink,
-  Smartphone,
-  Send,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  History,
-  LifeBuoy,
-  AlertCircle,
-  Search,
+  ChevronRight,
+  Info,
+  SlidersHorizontal,
 } from 'lucide-react';
-import { useFinancial } from '../../context/FinancialContext';
-import { FinlyLogo } from '../ui/FinlyLogo';
-import {
-  ALL_SIDEBAR_ITEMS,
-  getStoredSidebarItems,
-  getSidebarItemLabel,
-} from '../../utils/sidebarConfig';
-import { SidebarCustomizerModal } from '../layout/SidebarCustomizerModal';
+import { AboutSection } from '../settings/AboutSection';
 import { useTranslation } from '../../utils/i18n';
-import { CURRENT_RELEASE, RELEASES } from '../../data/releases';
-import { HELP_GUIDES, HELP_FAQS } from '../../data/helpCenterData';
-import {
-  APP_VERSION,
-  APP_BUILD_DATE,
-  checkForAppUpdates,
-  openExternalUrl,
-  GITHUB_RELEASES_URL,
-  isNativeCapacitor,
-  isMobileDevice,
-  getPlatformLabel,
-  UpdateCheckResult,
-  getInstalledApkVersion,
-  isNewerVersion,
-} from '../../utils/appUpdateService';
-import { getCurrentWebVersion } from '../../services/webUpdateService';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
@@ -66,205 +17,74 @@ interface MorePageProps {
 }
 
 export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab }) => {
-  const { user, updateUser, exportBackupJSON } = useFinancial();
-  const { lang, t } = useTranslation();
+  const { t } = useTranslation();
   const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'SOBRE'>(initialSubTab || 'GERAL');
-  const [activeSidebarIds, setActiveSidebarIds] = useState<string[]>(getStoredSidebarItems);
-  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
-  );
 
   useEffect(() => {
-    const handleResize = () => setIsSmallScreen(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Update check states
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
-  const [apkVersion, setApkVersion] = useState<string>(APP_VERSION);
-  const [webVersion, setWebVersion] = useState<string>(APP_VERSION);
-
-  useEffect(() => {
-    if (isNativeCapacitor()) {
-      getCurrentWebVersion().then(v => setWebVersion(v)).catch(() => {});
-      getInstalledApkVersion().then(v => setApkVersion(v)).catch(() => {});
-    }
-  }, []);
-
-  const [showChangelogHistory, setShowChangelogHistory] = useState(false);
-  const [isHelpExpanded, setIsHelpExpanded] = useState(false);
-  const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialSubTab) {
+    if (initialSubTab && initialSubTab !== segmentedTab) {
       setSegmentedTab(initialSubTab);
     }
   }, [initialSubTab]);
 
   useEffect(() => {
     const handleOpenSobre = () => setSegmentedTab('SOBRE');
-    const handleOpenSeguranca = () => setActiveTab('perfil');
     window.addEventListener('finly_open_sobre', handleOpenSobre);
-    window.addEventListener('finly_open_seguranca', handleOpenSeguranca);
-    return () => {
-      window.removeEventListener('finly_open_sobre', handleOpenSobre);
-      window.removeEventListener('finly_open_seguranca', handleOpenSeguranca);
-    };
-  }, [setActiveTab]);
+    return () => window.removeEventListener('finly_open_sobre', handleOpenSobre);
+  }, []);
 
-  // Define potential items for Geral in MorePage (Zero duplication with sidebar)
-  const generalMoreItems = [
+  // Menu curto e agrupado conforme o plano aprovado
+  const shortMenuItems = [
     {
-      id: 'dividas',
-      label: getSidebarItemLabel('dividas', lang),
-      description: 'Controle de parcelamentos, juros e amortizações',
-      icon: BadgePercent,
-      colorClass: 'bg-rose-50 dark:bg-rose-600/20 text-rose-600 dark:text-rose-400',
-    },
-    {
-      id: 'investimentos',
-      label: getSidebarItemLabel('investimentos', lang),
-      description: 'Ações, FIIs, Renda Fixa e rendimentos',
+      id: 'patrimonio',
+      label: 'Patrimônio',
+      description: 'Investimentos, ativos, dívidas e financiamentos',
       icon: TrendingUp,
       colorClass: 'bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400',
     },
     {
-      id: 'whatsapp',
-      label: getSidebarItemLabel('whatsapp', lang),
-      description: 'Lançamentos via áudio, comprovantes e fotos',
-      icon: Bot,
-      colorClass: 'bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400',
-    },
-    {
-      id: 'skills',
-      label: getSidebarItemLabel('skills', lang),
-      description: 'Automações, milhas e otimização tributária',
-      icon: Sparkles,
-      colorClass: 'bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400',
-    },
-    {
-      id: 'metas',
-      label: getSidebarItemLabel('metas', lang),
-      description: 'Objetivos de curto e longo prazo',
-      icon: Target,
-      colorClass: 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400',
-    },
-    {
-      id: 'planejamento',
-      label: getSidebarItemLabel('planejamento', lang),
-      description: 'Teto de gastos e matriz de 12 meses',
-      icon: Flag,
-      colorClass: 'bg-amber-50 dark:bg-amber-600/20 text-amber-600 dark:text-amber-400',
-    },
-    {
       id: 'relatorios',
-      label: getSidebarItemLabel('relatorios', lang),
-      description: 'Análise detalhada de evolução e fluxo',
+      label: 'Relatórios',
+      description: 'Gráficos de evolução, fluxo de caixa e categorias',
       icon: BarChart3,
-      colorClass: 'bg-cyan-50 dark:bg-cyan-600/20 text-cyan-600 dark:text-cyan-400',
-    },
-    {
-      id: 'calendario',
-      label: getSidebarItemLabel('calendario', lang),
-      description: 'Visão mensal de lançamentos e contas',
-      icon: CalendarIcon,
       colorClass: 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400',
     },
     {
-      id: 'contas',
-      label: getSidebarItemLabel('contas', lang),
-      description: 'Gestão de contas correntes e carteiras',
-      icon: Building2,
-      colorClass: 'bg-teal-50 dark:bg-teal-600/20 text-teal-600 dark:text-teal-400',
-    },
-    {
-      id: 'cartoes',
-      label: getSidebarItemLabel('cartoes', lang),
-      description: 'Limites, faturas e parcelamentos',
-      icon: CreditCard,
+      id: 'assistente',
+      label: 'Assistente IA',
+      description: 'WhatsApp e Skills financeiras inteligentes',
+      icon: Bot,
       colorClass: 'bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400',
-    },
-    {
-      id: 'transacoes',
-      label: getSidebarItemLabel('transacoes', lang),
-      description: 'Extrato completo e lançamentos',
-      icon: List,
-      colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
-    },
-    {
-      id: 'cadastro',
-      label: getSidebarItemLabel('cadastro', lang),
-      description: 'Personalizar categorias pai e subcategorias',
-      icon: FolderTree,
-      colorClass: 'bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400',
-    },
-    {
-      id: 'familia',
-      label: getSidebarItemLabel('familia', lang),
-      description: 'Compartilhar controle com múltiplos membros',
-      icon: Users,
-      colorClass: 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400',
-    },
-    {
-      id: 'ajuda',
-      label: 'Central de Ajuda',
-      description: 'Guias práticos, tutoriais passo a passo e dúvidas frequentes',
-      icon: LifeBuoy,
-      colorClass: 'bg-amber-50 dark:bg-amber-600/20 text-amber-600 dark:text-amber-400',
     },
     {
       id: 'settings',
-      label: getSidebarItemLabel('settings', lang),
-      description: 'Preferências gerais, tema, moeda e dados',
+      label: 'Ajustes',
+      description: 'Perfil, família, categorias, temas, dados e ajuda',
       icon: Settings,
-      colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+      colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
     },
   ];
 
-  // Filter out items: if searching or on mobile/small screens, display all matching items so mobile users have full access (M-01 & M-03)
-  const visibleGeneralItems = generalMoreItems.filter(item => {
-    const q = searchQuery.toLowerCase().trim();
-    const matchesSearch = !q || 
-      item.label.toLowerCase().includes(q) ||
-      item.description.toLowerCase().includes(q) ||
-      item.id.toLowerCase().includes(q);
-
-    if (!matchesSearch) return false;
-    if (q || isSmallScreen) return true;
-    return !activeSidebarIds.includes(item.id);
-  });
-
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in pb-16">
+    <div className="max-w-3xl mx-auto space-y-5 animate-in fade-in pb-16">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white">{t('more.title', 'Mais opções')}</h2>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">
+            {segmentedTab === 'GERAL' ? 'Mais Módulos' : 'Sobre o Finly'}
+          </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {t('more.subtitle', 'Ferramentas adicionais, segurança da conta e dados do sistema')}
+            {segmentedTab === 'GERAL'
+              ? 'Acesse os módulos complementares e recursos do sistema'
+              : 'Versão do aplicativo, notas de atualização e changelog'}
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsCustomizerOpen(true)}
-          className="px-4 py-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-xs self-start sm:self-auto"
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          <span>{t('more.customize_sidebar', 'Personalizar Menu Lateral')}</span>
-        </button>
       </div>
 
-      {/* Segmented Switcher - SOMENTE GERAL E SOBRE */}
+      {/* Segmented Switcher */}
       <div className="p-1 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 flex items-center gap-1 shadow-xs">
         {[
-          { id: 'GERAL' as const, label: 'Geral', icon: SlidersHorizontal },
-          { id: 'SOBRE' as const, label: 'Sobre', icon: Info },
+          { id: 'GERAL' as const, label: 'Menu Rápido', icon: SlidersHorizontal },
+          { id: 'SOBRE' as const, label: 'Sobre & Versão', icon: Info },
         ].map(tab => {
           const TabIcon = tab.icon;
           return (
@@ -285,471 +105,38 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
         })}
       </div>
 
-      {/* List Container */}
-      <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl overflow-hidden">
-        {/* ========================================================================= */}
-        {/* 1. ABA GERAL */}
-        {/* ========================================================================= */}
-        {segmentedTab === 'GERAL' && (
-          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-            {/* Quick Search Bar (M-03) */}
-            <div className="p-3.5 bg-slate-50/70 dark:bg-[#1C1C1F] border-b border-slate-100 dark:border-slate-800/80">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Buscar módulos, ferramentas e recursos..."
-                  className="w-full pl-10 pr-20 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#2C2C2E] text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 shadow-xs transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 cursor-pointer"
-                  >
-                    Limpar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {visibleGeneralItems.length === 0 ? (
-              <div className="p-8 text-center space-y-2">
-                {searchQuery ? (
-                  <>
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Nenhuma ferramenta encontrada para "{searchQuery}"
-                    </p>
-                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Verifique a ortografia ou limpe o filtro para ver todas as ferramentas disponíveis.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="mt-2 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-                    >
-                      Limpar Busca
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Todos os módulos principais já estão fixados na sua barra lateral!
-                    </p>
-                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Você pode reorganizar ou mover itens de volta para cá clicando em "Personalizar Menu Lateral".
-                    </p>
-                  </>
-                )}
-              </div>
-            ) : (
-              visibleGeneralItems.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#1E1E22] transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className={`w-10 h-10 rounded-2xl ${item.colorClass} flex items-center justify-center shrink-0`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-900 dark:text-white block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                          {item.label}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {item.description}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors shrink-0" />
-                  </button>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* 2. ABA SOBRE */}
-        {/* ========================================================================= */}
-        {segmentedTab === 'SOBRE' && (
-          <div className="p-4 sm:p-6 space-y-4">
-            {/* 1. Header Sucinto do Finly */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <FinlyLogo size="md" showText={false} />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-base font-black text-slate-900 dark:text-white">Finly</h4>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                      {isNativeCapacitor() ? `APK v${apkVersion}` : `v${APP_VERSION}`}
-                    </span>
-                    {isNativeCapacitor() && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                        Web v{webVersion}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      ({APP_BUILD_DATE})
-                    </span>
-                  </div>
-                  {(() => {
-                    const cleanApkVersion = apkVersion.replace(/^v/, '');
-                    const targetApkVersion = (updateResult?.latestVersion || '1.1.83').replace(/^v/, '');
-                    const isApkUpdatePending = isNativeCapacitor() && (
-                      updateResult?.hasUpdate || isNewerVersion(targetApkVersion, cleanApkVersion)
-                    );
-
-                    return (
-                      <>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
-                          <span>{getPlatformLabel()}</span>
-                          <span>•</span>
-                          {isApkUpdatePending ? (
-                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              Atualização de APK pendente (v{targetApkVersion})
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Sincronizado
-                            </span>
-                          )}
-                        </p>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {(() => {
-                const cleanApkVersion = apkVersion.replace(/^v/, '');
-                const targetApkVersion = (updateResult?.latestVersion || '1.1.83').replace(/^v/, '');
-                const isApkUpdatePending = isNativeCapacitor() && (
-                  updateResult?.hasUpdate || isNewerVersion(targetApkVersion, cleanApkVersion)
-                );
-                const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
-
-                return (
-                  <div className="flex items-center gap-2 flex-wrap shrink-0">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setIsCheckingUpdate(true);
-                        try {
-                          const res = await checkForAppUpdates({ notifyIfFound: false, isManualCheck: true });
-                          setUpdateResult(res);
-                          if (res?.currentVersion) {
-                            setApkVersion(res.currentVersion);
-                          }
-                        } catch (e) {
-                          setUpdateResult({
-                            hasUpdate: false,
-                            failedCheck: true,
-                            currentVersion: apkVersion,
-                            latestVersion: '1.1.83',
-                            notes: 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.',
-                          });
-                        } finally {
-                          setIsCheckingUpdate(false);
-                        }
-                      }}
-                      disabled={isCheckingUpdate}
-                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
-                      <span>{isCheckingUpdate ? 'Verificando...' : 'Verificar Atualização'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => openExternalUrl(directApkUrl)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                        isApkUpdatePending
-                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 animate-pulse'
-                          : 'bg-purple-600 hover:bg-purple-700 text-white'
-                      }`}
-                      title={isApkUpdatePending ? `Baixar atualização do APK v${targetApkVersion}` : 'Baixar pacote APK para Android'}
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>
-                        {isApkUpdatePending
-                          ? `Baixar Atualização v${targetApkVersion}`
-                          : `Baixar APK v${targetApkVersion}`}
-                      </span>
-                    </button>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Banner de Atualização com Destaque Máximo */}
-            {(() => {
-              const cleanApkVersion = apkVersion.replace(/^v/, '');
-              const targetApkVersion = (updateResult?.latestVersion || '1.1.83').replace(/^v/, '');
-              const isApkUpdatePending = isNativeCapacitor() && (
-                updateResult?.hasUpdate || isNewerVersion(targetApkVersion, cleanApkVersion)
-              );
-              const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
-
-              if (!isApkUpdatePending && !updateResult) return null;
-
-              return (
-                <div className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm ${
-                  isApkUpdatePending
-                    ? 'bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-purple-500/15 border-emerald-500/40 text-slate-800 dark:text-slate-100'
-                    : updateResult?.failedCheck
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
-                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    {isApkUpdatePending ? (
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
-                      </div>
-                    ) : updateResult?.failedCheck ? (
-                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    )}
-                    <div className="space-y-0.5">
-                      <span className="font-black text-sm block">
-                        {isApkUpdatePending
-                          ? `Nova versão do APK disponível: v${targetApkVersion}`
-                          : updateResult?.failedCheck
-                          ? (updateResult.notes || 'Não foi possível verificar atualizações no momento.')
-                          : `Você já está utilizando a versão mais recente (${isNativeCapacitor() ? `APK v${cleanApkVersion}` : `v${APP_VERSION}`}).`}
-                      </span>
-                      {isApkUpdatePending && (
-                        <p className="text-xs text-slate-600 dark:text-slate-300">
-                          Versão instalada: <strong className="text-slate-900 dark:text-white font-bold">v{cleanApkVersion}</strong> • Baixe o APK oficial para ter suporte completo aos novos widgets nativos do Android.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {isApkUpdatePending && (
-                    <button
-                      type="button"
-                      onClick={() => openExternalUrl(directApkUrl)}
-                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs cursor-pointer shrink-0 transition-all shadow-md shadow-emerald-600/30 active:scale-95 flex items-center justify-center gap-2 self-start sm:self-auto"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Baixar Atualização (APK v${targetApkVersion})</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* 2. Notas da Versão */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    Novidades da Versão v{CURRENT_RELEASE.version}
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    • {CURRENT_RELEASE.releaseDate}
-                  </span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  Atual
-                </span>
-              </div>
-
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                {CURRENT_RELEASE.summary}
-              </p>
-
-              {/* Destaques em linha única */}
-              <div className="space-y-2 pt-1">
-                {CURRENT_RELEASE.highlights.map((h, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs">
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 mt-0.5 ${
-                      h.type === 'feature'
-                        ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
-                        : h.type === 'fix'
-                        ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
-                        : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                    }`}>
-                      {h.type === 'feature' ? 'Novo' : h.type === 'fix' ? 'Fix' : 'Melhoria'}
-                    </span>
-                    <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-snug">
-                      <strong className="font-semibold text-slate-900 dark:text-slate-100">{h.title}:</strong>{' '}
-                      <span className="text-slate-500 dark:text-slate-400">{h.description}</span>
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Histórico Anterior */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowChangelogHistory(!showChangelogHistory)}
-                  className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold transition-all flex items-center justify-between cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <History className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Versões Anteriores ({RELEASES.length - 1})</span>
-                  </div>
-                  {showChangelogHistory ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                </button>
-
-                {showChangelogHistory && (
-                  <div className="mt-2.5 divide-y divide-slate-100 dark:divide-slate-800/60 text-xs animate-in fade-in duration-150">
-                    {RELEASES.slice(1).map(rel => (
-                      <div key={rel.version} className="py-2 space-y-0.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-slate-800 dark:text-slate-200">v{rel.version}</span>
-                          <span className="text-[10px] text-slate-400">{rel.releaseDate}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
-                          {rel.summary}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 3. Central de Ajuda & Tutoriais */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden transition-all">
+      {/* Conteúdo da Aba */}
+      {segmentedTab === 'GERAL' ? (
+        <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/60">
+          {shortMenuItems.map(item => {
+            const Icon = item.icon;
+            return (
               <button
-                type="button"
-                onClick={() => setIsHelpExpanded(!isHelpExpanded)}
-                className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className="w-full p-4.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-[#1E1E22] transition-colors cursor-pointer group"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                    <LifeBuoy className="w-4 h-4" />
+                <div className="flex items-center gap-3.5">
+                  <div className={`w-11 h-11 rounded-2xl ${item.colorClass} flex items-center justify-center shrink-0 shadow-xs`}>
+                    <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h5 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                        Central de Ajuda & Tutoriais
-                      </h5>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-                        {HELP_GUIDES.length} Guias • FAQ
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      {isHelpExpanded ? 'Toque para recolher' : 'Tutoriais passo a passo, simulador interativo e perguntas frequentes'}
-                    </p>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      {item.label}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {item.description}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 text-slate-400 shrink-0 ml-2">
-                  <span className="text-[11px] font-bold hidden sm:inline">
-                    {isHelpExpanded ? 'Recolher' : 'Expandir'}
-                  </span>
-                  {isHelpExpanded ? <ChevronUp className="w-4 h-4 text-purple-600" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors shrink-0" />
               </button>
-
-              {isHelpExpanded && (
-                <div className="p-4 sm:p-5 pt-0 border-t border-slate-100 dark:border-slate-800/80 space-y-4 animate-in fade-in duration-150">
-                  <div className="pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('ajuda')}
-                      className="w-full p-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/20 transition-all flex items-center justify-between cursor-pointer active:scale-98"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-purple-200" />
-                        <span>Abrir Central de Ajuda Completa & Simulador</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-purple-200" />
-                    </button>
-                  </div>
-
-                  {/* Guias Populares */}
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                      Principais Tutoriais Passo a Passo
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {HELP_GUIDES.slice(0, 4).map(guide => (
-                        <button
-                          key={guide.id}
-                          type="button"
-                          onClick={() => setActiveTab('ajuda')}
-                          className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-slate-200/60 dark:border-slate-800 text-left transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-1">
-                              {guide.title}
-                            </span>
-                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 shrink-0 ml-1" />
-                          </div>
-                          <span className="text-[10px] text-slate-400 mt-1 block">
-                            {guide.steps.length} passos • {guide.readTime}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* FAQ */}
-                  <div className="space-y-2 pt-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                      Dúvidas Frequentes Rápidas
-                    </span>
-                    <div className="space-y-1.5">
-                      {HELP_FAQS.slice(0, 3).map(faq => {
-                        const isOpen = expandedFaqId === faq.id;
-                        return (
-                          <div
-                            key={faq.id}
-                            className="rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 overflow-hidden"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setExpandedFaqId(isOpen ? null : faq.id)}
-                              className="w-full p-2.5 flex items-center justify-between text-left text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-purple-600 transition-colors cursor-pointer"
-                            >
-                              <span className="line-clamp-1 pr-2">{faq.question}</span>
-                              {isOpen ? (
-                                <ChevronUp className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              ) : (
-                                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              )}
-                            </button>
-                            {isOpen && (
-                              <p className="px-2.5 pb-2.5 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 pt-2 animate-in fade-in duration-100">
-                                {faq.answer}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 4. Rodapé */}
-            <div className="flex items-center justify-center px-2 pt-1 text-[11px] text-slate-400 dark:text-slate-500">
-              <span>Finly © 2026</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Sidebar Customizer Modal */}
-      <SidebarCustomizerModal
-        isOpen={isCustomizerOpen}
-        onClose={() => setIsCustomizerOpen(false)}
-        onItemsChange={items => setActiveSidebarIds(items)}
-      />
+            );
+          })}
+        </div>
+      ) : (
+        <AboutSection />
+      )}
     </div>
   );
 };

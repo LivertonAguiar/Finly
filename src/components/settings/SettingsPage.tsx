@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Sliders,
+  Users,
+  Tag,
+  HelpCircle,
+  Info,
   Bell,
   Layout,
   Shield,
@@ -38,6 +42,12 @@ import {
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { SecuritySettingsSection } from './SecuritySettingsSection';
+import { ProfilePage } from '../perfil/ProfilePage';
+import { FamilyPage } from '../familia/FamilyPage';
+import { CadastrosPage } from '../cadastros/CadastrosPage';
+import { HelpCenterPage } from '../help/HelpCenterPage';
+import { AboutSection } from './AboutSection';
+import { TabNavigation, TabItem } from '../common/TabNavigation';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -62,7 +72,12 @@ import {
   APP_VERSION,
 } from '../../utils/appUpdateService';
 
-export const SettingsPage: React.FC = () => {
+interface SettingsPageProps {
+  initialSection?: string;
+  onNavigateToTab?: (tab: string) => void;
+}
+
+export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNavigateToTab }) => {
   const {
     user,
     updateUser,
@@ -79,6 +94,61 @@ export const SettingsPage: React.FC = () => {
   } = useFinancial();
   const { currentUser, updateUserAccount, deleteUserAccount, logout } = useAuth();
   const { confirm } = useConfirm();
+
+    const getSectionFromUrl = (): string => {
+    if (initialSection) return initialSection;
+    if (typeof window === 'undefined') return 'perfil';
+    const params = new URLSearchParams(window.location.search);
+    const sec = params.get('section')?.toLowerCase();
+    if (sec && ['perfil', 'familia', 'categorias', 'preferencias', 'seguranca', 'dados', 'ajuda', 'sobre'].includes(sec)) {
+      return sec;
+    }
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('/perfil')) return 'perfil';
+    if (path.includes('/familia')) return 'familia';
+    if (path.includes('/cadastro')) return 'categorias';
+    if (path.includes('/ajuda')) return 'ajuda';
+    if (path.includes('/sobre')) return 'sobre';
+    return 'perfil';
+  };
+
+  const [activeSection, setActiveSection] = useState<string>(getSectionFromUrl);
+
+  useEffect(() => {
+    if (initialSection && initialSection !== activeSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
+
+  useEffect(() => {
+    const handleOpenSobre = () => setActiveSection('sobre');
+    const handleOpenSeguranca = () => setActiveSection('seguranca');
+    window.addEventListener('finly_open_sobre', handleOpenSobre);
+    window.addEventListener('finly_open_seguranca', handleOpenSeguranca);
+    return () => {
+      window.removeEventListener('finly_open_sobre', handleOpenSobre);
+      window.removeEventListener('finly_open_seguranca', handleOpenSeguranca);
+    };
+  }, []);
+
+  const handleSectionChange = (tabId: string) => {
+    setActiveSection(tabId);
+    const targetUrl = `/settings?section=${tabId}`;
+    if (window.location.pathname + window.location.search !== targetUrl) {
+      window.history.replaceState({ tab: 'settings', section: tabId }, '', targetUrl);
+    }
+  };
+
+  const settingsTabs: TabItem[] = [
+    { id: 'perfil', label: 'Perfil', icon: <User className="w-4 h-4" /> },
+    { id: 'familia', label: 'Família', icon: <Users className="w-4 h-4" /> },
+    { id: 'categorias', label: 'Categorias & Tags', icon: <Tag className="w-4 h-4" /> },
+    { id: 'preferencias', label: 'Aparência & Preferências', icon: <Sliders className="w-4 h-4" /> },
+    { id: 'seguranca', label: 'Segurança', icon: <Shield className="w-4 h-4" /> },
+    { id: 'dados', label: 'Dados & Backup', icon: <Database className="w-4 h-4" /> },
+    { id: 'ajuda', label: 'Ajuda', icon: <HelpCircle className="w-4 h-4" /> },
+    { id: 'sobre', label: 'Sobre', icon: <Info className="w-4 h-4" /> },
+  ];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [hasRollback, setHasRollback] = useState(false);
@@ -452,7 +522,7 @@ export const SettingsPage: React.FC = () => {
           {/* ========================================================================= */}
           {/* COLUNA 1: PREFERÊNCIAS (IDIOMA -> APARÊNCIA -> NOTIFICAÇÕES -> DASHBOARD) */}
           {/* ========================================================================= */}
-          {showCol1 && (
+          {(searchQuery || activeSection === 'preferencias') && showCol1 && (
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2">
@@ -1058,7 +1128,7 @@ export const SettingsPage: React.FC = () => {
     {/* ========================================================================= */}
     {/* COLUNA 2: SEGURANÇA E LOGIN (SEPARADO) */}
     {/* ========================================================================= */}
-    {showCol2 && (
+    {(searchQuery || activeSection === 'dados') && showCol2 && (
       <div className="space-y-6">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">

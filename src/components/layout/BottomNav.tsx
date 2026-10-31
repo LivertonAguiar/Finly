@@ -241,8 +241,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 ? 'font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title={t('nav.dashboard', 'Início')}
-            aria-label={t('nav.dashboard', 'Início')}
+            title="Início"
+            aria-label="Início"
           >
             {activeTab === 'dashboard' && (
               <span
@@ -251,12 +251,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               />
             )}
             <Home className="w-5 h-5 stroke-[2]" />
-            <span className="text-[10px] leading-none tracking-tight">
-              {t('nav.dashboard', 'Início')}
-            </span>
+            <span className="text-[10px] leading-none tracking-tight">Início</span>
           </button>
 
-          {/* 2. Extrato */}
+          {/* 2. Transações */}
           <button
             type="button"
             onClick={() => {
@@ -269,8 +267,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 ? 'font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title={t('nav.transactions', 'Extrato')}
-            aria-label={t('nav.transactions', 'Extrato')}
+            title="Transações"
+            aria-label="Transações"
           >
             {activeTab === 'transacoes' && (
               <span
@@ -279,95 +277,82 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               />
             )}
             <ArrowLeftRight className="w-5 h-5 stroke-[2]" />
-            <span className="text-[10px] leading-none tracking-tight">
-              {t('nav.transactions', 'Extrato')}
-            </span>
+            <span className="text-[10px] leading-none tracking-tight">Transações</span>
           </button>
 
-          {/* 3. Cartões */}
+          {/* 3. Botão Central FAB (+) */}
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              data-testid="bottom-nav-fab-center"
+              onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
+              style={{
+                backgroundColor: accentColor,
+                color: '#FFFFFF',
+              }}
+              className="w-11 h-11 rounded-full shadow-lg active:scale-90 transition-all flex items-center justify-center cursor-pointer -mt-4 border-2 border-white dark:border-[#1E1E22]"
+              title="Ações Rápidas"
+              aria-label="Ações Rápidas"
+            >
+              {isSpeedDialOpen ? (
+                <X className="w-5 h-5 stroke-[2.5]" />
+              ) : (
+                <Plus className="w-5 h-5 stroke-[2.5]" />
+              )}
+            </button>
+          </div>
+
+          {/* 4. Contas & Cartões */}
           <button
             type="button"
             onClick={() => {
               setIsSpeedDialOpen(false);
-              setActiveTab('cartoes');
+              setActiveTab('contas-cartoes');
             }}
-            style={activeTab === 'cartoes' ? { color: accentColor } : undefined}
+            style={activeTab === 'contas-cartoes' || activeTab === 'contas' || activeTab === 'cartoes' ? { color: accentColor } : undefined}
             className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'cartoes'
+              activeTab === 'contas-cartoes' || activeTab === 'contas' || activeTab === 'cartoes'
                 ? 'font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title={t('nav.cards_short', 'Cartões')}
-            aria-label={t('nav.cards_short', 'Cartões')}
+            title="Contas & Cartões"
+            aria-label="Contas & Cartões"
           >
-            {activeTab === 'cartoes' && (
+            {(activeTab === 'contas-cartoes' || activeTab === 'contas' || activeTab === 'cartoes') && (
               <span
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
                 style={{ backgroundColor: accentColor }}
               />
             )}
             <CreditCard className="w-5 h-5 stroke-[2]" />
-            <span className="text-[10px] leading-none tracking-tight">
-              {t('nav.cards_short', 'Cartões')}
-            </span>
+            <span className="text-[10px] leading-none tracking-tight">Contas & Cartões</span>
           </button>
 
-          {/* 4. Planejamento / Metas */}
+          {/* 5. Planejar */}
           <button
             type="button"
             onClick={() => {
               setIsSpeedDialOpen(false);
-              setActiveTab('metas');
+              setActiveTab('planejar');
             }}
-            style={activeTab === 'metas' ? { color: accentColor } : undefined}
+            style={activeTab === 'planejar' || activeTab === 'planejamento' || activeTab === 'orcamento' || activeTab === 'metas' ? { color: accentColor } : undefined}
             className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'metas'
+              activeTab === 'planejar' || activeTab === 'planejamento' || activeTab === 'orcamento' || activeTab === 'metas'
                 ? 'font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title={t('nav.goals', 'Planejar')}
-            aria-label={t('nav.goals', 'Planejar')}
+            title="Planejar"
+            aria-label="Planejar"
           >
-            {activeTab === 'metas' && (
+            {(activeTab === 'planejar' || activeTab === 'planejamento' || activeTab === 'orcamento' || activeTab === 'metas') && (
               <span
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
                 style={{ backgroundColor: accentColor }}
               />
             )}
             <TrendingUp className="w-5 h-5 stroke-[2]" />
-            <span className="text-[10px] leading-none tracking-tight">
-              {t('nav.planning', 'Planejar')}
-            </span>
-          </button>
-
-          {/* 5. Mais / Menu */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsSpeedDialOpen(false);
-              setActiveTab('mais');
-            }}
-            style={activeTab === 'mais' ? { color: accentColor } : undefined}
-            className={`relative flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'mais'
-                ? 'font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-            title={t('nav.more', 'Mais')}
-            aria-label={t('nav.more', 'Mais')}
-          >
-            {activeTab === 'mais' && (
-              <span
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-full"
-                style={{ backgroundColor: accentColor }}
-              />
-            )}
-            <MoreHorizontal className="w-5 h-5 stroke-[2]" />
-            <span className="text-[10px] leading-none tracking-tight">
-              {t('nav.more', 'Mais')}
-            </span>
-          </button>
-        </div>
+            <span className="text-[10px] leading-none tracking-tight">Planejar</span>
+          </button>        </div>
       </nav>
     </>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+  Settings,
   MoreHorizontal,
   Plus,
   SlidersHorizontal,
@@ -175,18 +176,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <hr />
 
-          {/* Always accessible: Mais Opções */}
+          {/* Botão Fixo de Ajustes */}
           <button
             type="button"
             onClick={() => {
-              setActiveTab('mais');
+              setActiveTab('settings');
               setMobileOpen(false);
             }}
-            className={`nav-item ${activeTab === 'mais' ? 'is-active' : ''}`}
-            title={t('nav.more', 'Mais opções')}
+            className={`nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}
+            title={t('nav.settings', 'Ajustes')}
           >
-            <MoreHorizontal className="icon" />
-            <p>{t('nav.more', 'Mais opções')}</p>
+            <Settings className="icon" />
+            <p>{t('nav.settings', 'Ajustes')}</p>
           </button>
         </nav>
 

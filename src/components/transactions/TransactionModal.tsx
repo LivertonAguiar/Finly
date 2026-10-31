@@ -721,6 +721,20 @@ const LegacyTransactionModal: React.FC<TransactionModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Categoria *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (onNavigateToTab) {
+                      onNavigateToTab('cadastro');
+                    } else {
+                      window.location.href = '/settings?section=categorias';
+                    }
+                  }}
+                  className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer ml-auto mr-2"
+                >
+                  Gerenciar categorias
+                </button>
                 {autoPredictedBadge && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 font-bold flex items-center gap-1 animate-in fade-in">
                     <Sparkles className="w-3 h-3 text-purple-500" />
