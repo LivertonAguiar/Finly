@@ -74,60 +74,150 @@ const PageLoadingFallback: React.FC = () => (
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: '/dashboard',
   transacoes: '/transacoes',
-  contas: '/contas',
-  cartoes: '/cartoes',
-  planejamento: '/planejamento',
-  orcamento: '/planejamento',
-  relatorios: '/relatorios',
-  calendario: '/calendario',
-  settings: '/settings',
-  mais: '/mais',
-  sobre: '/mais',
-  metas: '/metas',
-  dividas: '/dividas',
-  investimentos: '/investimentos',
-  whatsapp: '/whatsapp',
-  skills: '/skills',
-  familia: '/familia',
-  cadastro: '/cadastro',
-  perfil: '/perfil',
-  ajuda: '/ajuda',
   'contas-cartoes': '/contas-cartoes',
   planejar: '/planejar',
   patrimonio: '/patrimonio',
+  relatorios: '/relatorios',
   assistente: '/assistente',
+  settings: '/settings',
+  mais: '/mais',
+  // Compatibilidade retroativa com rotas antigas
+  contas: '/contas-cartoes?tab=contas',
+  cartoes: '/contas-cartoes?tab=cartoes',
+  planejamento: '/planejar?tab=orcamento',
+  orcamento: '/planejar?tab=orcamento',
+  metas: '/planejar?tab=metas',
+  investimentos: '/patrimonio?tab=investimentos',
+  dividas: '/patrimonio?tab=dividas',
+  whatsapp: '/assistente?tab=whatsapp',
+  skills: '/assistente?tab=skills',
+  calendario: '/transacoes?view=calendario',
+  perfil: '/settings?section=perfil',
+  cadastro: '/settings?section=categorias',
+  familia: '/settings?section=familia',
+  ajuda: '/settings?section=ajuda',
+  sobre: '/settings?section=sobre',
 };
 
 const getInitialTabFromPath = (): string => {
   if (typeof window === 'undefined') return 'dashboard';
   const path = window.location.pathname.replace(/^\/+/, '').toLowerCase();
   if (!path || path === 'dashboard' || path === 'principal') return 'dashboard';
-  if (path === 'transacoes' || path === 'transacoes' || path === 'transactions') return 'transacoes';
-  if (path === 'contas' || path === 'accounts') return 'contas';
-  if (path === 'cartoes' || path === 'cartoescredito' || path === 'cards') return 'cartoes';
-  if (path === 'planejamento' || path === 'orcamentos' || path === 'criarnovoplanejamento' || path === 'budgets') return 'planejamento';
-  if (path === 'relatorios' || path === 'reports') return 'relatorios';
+
+  // Transações & Calendário
+  if (path === 'transacoes' || path === 'transactions') return 'transacoes';
   if (path === 'calendario' || path === 'calendar') {
     if (typeof window !== 'undefined') {
       window.history.replaceState({ tab: 'transacoes', view: 'calendario' }, '', '/transacoes?view=calendario');
     }
     return 'transacoes';
   }
-  if (path === 'settings' || path === 'configuracoes' || path === 'config') return 'settings';
-  if (path === 'mais' || path === 'more') return 'mais';
-  if (path === 'metas' || path === 'objetivos' || path === 'goals') return 'metas';
-  if (path === 'dividas' || path === 'debts') return 'dividas';
-  if (path === 'investimentos' || path === 'investments') return 'investimentos';
-  if (path === 'whatsapp') return 'whatsapp';
-  if (path === 'skills') return 'skills';
-  if (path === 'familia' || path === 'family') return 'familia';
-  if (path === 'cadastro') return 'cadastro';
-  if (path === 'perfil' || path === 'profile' || path === 'seguranca' || path === 'security') return 'perfil';
-  if (path === 'ajuda' || path === 'help') return 'ajuda';
+
+  // Contas & Cartões
+  if (path === 'contas' || path === 'accounts') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'contas-cartoes', subTab: 'contas' }, '', '/contas-cartoes?tab=contas');
+    }
+    return 'contas-cartoes';
+  }
+  if (path === 'cartoes' || path === 'cards' || path === 'cartoescredito') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'contas-cartoes', subTab: 'cartoes' }, '', '/contas-cartoes?tab=cartoes');
+    }
+    return 'contas-cartoes';
+  }
   if (path === 'contas-cartoes' || path === 'contas-e-cartoes') return 'contas-cartoes';
+
+  // Planejar (Orçamento & Metas)
+  if (path === 'planejamento' || path === 'orcamento' || path === 'orcamentos' || path === 'budgets' || path === 'criarnovoplanejamento') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'planejar', subTab: 'orcamento' }, '', '/planejar?tab=orcamento');
+    }
+    return 'planejar';
+  }
+  if (path === 'metas' || path === 'objetivos' || path === 'goals') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'planejar', subTab: 'metas' }, '', '/planejar?tab=metas');
+    }
+    return 'planejar';
+  }
   if (path === 'planejar') return 'planejar';
+
+  // Patrimônio (Investimentos & Dívidas)
+  if (path === 'investimentos' || path === 'investments') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'patrimonio', subTab: 'investimentos' }, '', '/patrimonio?tab=investimentos');
+    }
+    return 'patrimonio';
+  }
+  if (path === 'dividas' || path === 'debts') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'patrimonio', subTab: 'dividas' }, '', '/patrimonio?tab=dividas');
+    }
+    return 'patrimonio';
+  }
   if (path === 'patrimonio') return 'patrimonio';
+
+  // Assistente IA (WhatsApp & Skills)
+  if (path === 'whatsapp' || path === 'chat' || path === 'zap') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'assistente', subTab: 'whatsapp' }, '', '/assistente?tab=whatsapp');
+    }
+    return 'assistente';
+  }
+  if (path === 'skills' || path === 'habilidades') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'assistente', subTab: 'skills' }, '', '/assistente?tab=skills');
+    }
+    return 'assistente';
+  }
   if (path === 'assistente') return 'assistente';
+
+  // Relatórios
+  if (path === 'relatorios' || path === 'reports') return 'relatorios';
+
+  // Ajustes (Perfil, Família, Categorias, Segurança, Dados, Ajuda, Sobre)
+  if (path === 'perfil' || path === 'profile') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'settings', section: 'perfil' }, '', '/settings?section=perfil');
+    }
+    return 'settings';
+  }
+  if (path === 'cadastro' || path === 'cadastros' || path === 'categorias' || path === 'tags') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'settings', section: 'categorias' }, '', '/settings?section=categorias');
+    }
+    return 'settings';
+  }
+  if (path === 'familia' || path === 'family') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'settings', section: 'familia' }, '', '/settings?section=familia');
+    }
+    return 'settings';
+  }
+  if (path === 'ajuda' || path === 'help') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'settings', section: 'ajuda' }, '', '/settings?section=ajuda');
+    }
+    return 'settings';
+  }
+  if (path === 'sobre') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'settings', section: 'sobre' }, '', '/settings?section=sobre');
+    }
+    return 'settings';
+  }
+  if (path === 'seguranca' || path === 'security') {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ tab: 'settings', section: 'seguranca' }, '', '/settings?section=seguranca');
+    }
+    return 'settings';
+  }
+  if (path === 'settings' || path === 'configuracoes' || path === 'config') return 'settings';
+
+  // Mais / Menu Rápido
+  if (path === 'mais' || path === 'more') return 'mais';
+
   return 'dashboard';
 };
 
@@ -313,20 +403,118 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleSelectTab = useCallback((tab: string) => {
-    if (tab === 'calendario') {
-      setActiveTab('transacoes');
-      const targetPath = '/transacoes?view=calendario';
-      if (window.location.pathname + window.location.search !== targetPath) {
-        window.history.pushState({ tab: 'transacoes', view: 'calendario' }, '', targetPath);
+    // Redirecionamentos para rotas agrupadas com tabs
+    if (tab === 'contas') {
+      setActiveTab('contas-cartoes');
+      const target = '/contas-cartoes?tab=contas';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'contas-cartoes', subTab: 'contas' }, '', target);
       }
       return;
     }
-
+    if (tab === 'cartoes') {
+      setSelectedCardIdForDetail(null);
+      setCardsNavKey(prev => prev + 1);
+      setActiveTab('contas-cartoes');
+      const target = '/contas-cartoes?tab=cartoes';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'contas-cartoes', subTab: 'cartoes' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'planejamento' || tab === 'orcamento') {
+      setActiveTab('planejar');
+      const target = '/planejar?tab=orcamento';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'planejar', subTab: 'orcamento' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'metas') {
+      setActiveTab('planejar');
+      const target = '/planejar?tab=metas';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'planejar', subTab: 'metas' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'investimentos') {
+      setActiveTab('patrimonio');
+      const target = '/patrimonio?tab=investimentos';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'patrimonio', subTab: 'investimentos' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'dividas') {
+      setActiveTab('patrimonio');
+      const target = '/patrimonio?tab=dividas';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'patrimonio', subTab: 'dividas' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'whatsapp') {
+      setActiveTab('assistente');
+      const target = '/assistente?tab=whatsapp';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'assistente', subTab: 'whatsapp' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'skills') {
+      setActiveTab('assistente');
+      const target = '/assistente?tab=skills';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'assistente', subTab: 'skills' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'calendario') {
+      setActiveTab('transacoes');
+      const target = '/transacoes?view=calendario';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'transacoes', view: 'calendario' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'perfil') {
+      setActiveTab('settings');
+      const target = '/settings?section=perfil';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'settings', section: 'perfil' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'cadastro') {
+      setActiveTab('settings');
+      const target = '/settings?section=categorias';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'settings', section: 'categorias' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'familia') {
+      setActiveTab('settings');
+      const target = '/settings?section=familia';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'settings', section: 'familia' }, '', target);
+      }
+      return;
+    }
+    if (tab === 'ajuda') {
+      setActiveTab('settings');
+      const target = '/settings?section=ajuda';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'settings', section: 'ajuda' }, '', target);
+      }
+      return;
+    }
     if (tab === 'sobre') {
-      setActiveTab('mais');
-      const targetPath = '/mais';
-      if (window.location.pathname !== targetPath) {
-        window.history.pushState({ tab: 'mais' }, '', targetPath);
+      setActiveTab('settings');
+      const target = '/settings?section=sobre';
+      if (window.location.pathname + window.location.search !== target) {
+        window.history.pushState({ tab: 'settings', section: 'sobre' }, '', target);
       }
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('finly_open_sobre'));
@@ -334,10 +522,6 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    if (tab === 'cartoes') {
-      setSelectedCardIdForDetail(null);
-      setCardsNavKey(prev => prev + 1);
-    }
     setActiveTab(tab);
     const targetPath = TAB_TO_PATH[tab] || `/${tab}`;
     if (window.location.pathname !== targetPath) {
@@ -356,10 +540,10 @@ const AppContent: React.FC = () => {
   const handleOpenCardDetail = useCallback((cardId: string) => {
     setSelectedCardIdForDetail(cardId);
     setCardsNavKey(prev => prev + 1);
-    setActiveTab('cartoes');
-    const targetPath = TAB_TO_PATH['cartoes'] || '/cartoes';
-    if (window.location.pathname !== targetPath) {
-      window.history.pushState({ tab: 'cartoes' }, '', targetPath);
+    setActiveTab('contas-cartoes');
+    const targetPath = '/contas-cartoes?tab=cartoes';
+    if (window.location.pathname + window.location.search !== targetPath) {
+      window.history.pushState({ tab: 'contas-cartoes', subTab: 'cartoes' }, '', targetPath);
     }
   }, []);
 
