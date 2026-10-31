@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.82.1",
+    "version": "1.1.83.1",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.82.1.zip",
-    "sha256": "353ca54430edf2e68b310e79cb1bac71a1aecc3cd9eceb830aaa7eebe60daf92",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.1.zip",
+    "sha256": "9d47968ab7c9dcb167121150d4c39a438d2d1fd9f4b3de1fbcef592fbc4ca216",
     "mandatory": true,
-    "releaseDate": "2026-10-28",
-    "notes": "Painel do Widget nas Configuracoes, correcao de RemoteViews no Android e deteccao de APK pendente"
+    "releaseDate": "2026-10-30",
+    "notes": "Multiplos formatos de Widgets Android (4x2, 4x1 e 2x2), design Bento Grid e correcao de metricas"
   }
 }
