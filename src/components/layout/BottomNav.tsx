@@ -351,7 +351,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               />
             )}
             <TrendingUp className="w-5 h-5 stroke-[2]" />
-            <span className="text-[10px] leading-none tracking-tight">Planejar</span>
+            <span className="text-[10px] leading-none tracking-tight">{t('nav.plan', 'Planejar')}</span>
           </button>        </div>
       </nav>
     </>

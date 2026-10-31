@@ -32,6 +32,14 @@ export const PlanejarPage: React.FC<PlanejarPageProps> = ({ initialSubTab }) => 
     }
   }, [initialSubTab]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveSubTab(getSubTabFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleTabChange = (tabId: string) => {
     const nextTab = tabId === 'metas' ? 'metas' : 'orcamento';
     setActiveSubTab(nextTab);
@@ -44,12 +52,12 @@ export const PlanejarPage: React.FC<PlanejarPageProps> = ({ initialSubTab }) => 
   const tabs: TabItem[] = [
     {
       id: 'orcamento',
-      label: t('nav.planning', 'Orçamento'),
+      label: t('tab.budget', 'Orçamento'),
       icon: <Flag className="w-4 h-4" />,
     },
     {
       id: 'metas',
-      label: t('nav.goals', 'Metas'),
+      label: t('tab.goals', 'Metas'),
       icon: <Target className="w-4 h-4" />,
     },
   ];

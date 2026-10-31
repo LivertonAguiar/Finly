@@ -40,6 +40,14 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
     }
   }, [initialSubTab]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveSubTab(getSubTabFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleTabChange = (tabId: string) => {
     const nextTab = tabId === 'cartoes' ? 'cartoes' : 'contas';
     setActiveSubTab(nextTab);
@@ -52,12 +60,12 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   const tabs: TabItem[] = [
     {
       id: 'contas',
-      label: t('nav.accounts', 'Contas'),
+      label: t('tab.accounts', 'Contas'),
       icon: <Building2 className="w-4 h-4" />,
     },
     {
       id: 'cartoes',
-      label: t('nav.cards', 'Cartões de Crédito'),
+      label: t('tab.cards', 'Cartões de Crédito'),
       icon: <CreditCard className="w-4 h-4" />,
     },
   ];

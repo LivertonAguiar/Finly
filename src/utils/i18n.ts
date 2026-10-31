@@ -5,8 +5,17 @@ export type SupportedLanguage = 'pt-BR' | 'en-US' | 'es-ES';
 export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
   'pt-BR': {
     // Navigation
-    'nav.dashboard': 'Dashboard',
+    'nav.dashboard': 'Início',
     'nav.transactions': 'Transações',
+    'nav.accounts_and_cards': 'Contas & Cartões',
+    'nav.accounts_and_cards_short': 'Contas & Cartões',
+    'nav.plan': 'Planejar',
+    'nav.wealth': 'Patrimônio',
+    'nav.assistant': 'Assistente IA',
+    'nav.settings': 'Ajustes',
+    'nav.more': 'Mais opções',
+    'nav.customize_menu': 'Personalizar menu',
+    'nav.home': 'Início',
     'nav.accounts': 'Contas',
     'nav.cards': 'Cartões de crédito',
     'nav.cards_short': 'Cartões',
@@ -20,9 +29,30 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'nav.skills': 'Skills IA',
     'nav.categories': 'Categorias & Tags',
     'nav.family': 'Finanças da Família',
-    'nav.settings': 'Configurações',
-    'nav.more': 'Mais opções',
-    'nav.customize_menu': 'Personalizar menu',
+
+    // Abas de páginas agregadoras
+    'tab.accounts': 'Contas',
+    'tab.cards': 'Cartões de Crédito',
+    'tab.budget': 'Orçamento',
+    'tab.goals': 'Metas',
+    'tab.investments': 'Investimentos',
+    'tab.debts': 'Dívidas & Financiamentos',
+    'tab.whatsapp': 'WhatsApp',
+    'tab.skills': 'Skills & Agentes',
+
+    // Visão de transações
+    'view.list': 'Lista',
+    'view.calendar': 'Calendário',
+
+    // Seções de Ajustes
+    'settings.section.profile': 'Perfil',
+    'settings.section.family': 'Família',
+    'settings.section.categories': 'Categorias & Tags',
+    'settings.section.appearance': 'Aparência & Preferências',
+    'settings.section.security': 'Segurança',
+    'settings.section.data': 'Dados & Backup',
+    'settings.section.help': 'Ajuda',
+    'settings.section.about': 'Sobre',
 
     // Quick Actions & BottomNav
     'action.new_transaction': 'Nova Transação',
@@ -111,8 +141,17 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
   },
   'en-US': {
     // Navigation
-    'nav.dashboard': 'Dashboard',
+    'nav.dashboard': 'Home',
     'nav.transactions': 'Transactions',
+    'nav.accounts_and_cards': 'Accounts & Cards',
+    'nav.accounts_and_cards_short': 'Accounts & Cards',
+    'nav.plan': 'Plan',
+    'nav.wealth': 'Wealth',
+    'nav.assistant': 'AI Assistant',
+    'nav.settings': 'Settings',
+    'nav.more': 'More Options',
+    'nav.customize_menu': 'Customize Menu',
+    'nav.home': 'Home',
     'nav.accounts': 'Accounts',
     'nav.cards': 'Credit Cards',
     'nav.cards_short': 'Cards',
@@ -126,9 +165,30 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'nav.skills': 'AI Skills',
     'nav.categories': 'Categories & Tags',
     'nav.family': 'Family Finances',
-    'nav.settings': 'Settings',
-    'nav.more': 'More Options',
-    'nav.customize_menu': 'Customize Menu',
+
+    // Aggregator Sub-tabs
+    'tab.accounts': 'Accounts',
+    'tab.cards': 'Credit Cards',
+    'tab.budget': 'Budget',
+    'tab.goals': 'Goals',
+    'tab.investments': 'Investments',
+    'tab.debts': 'Debts & Loans',
+    'tab.whatsapp': 'WhatsApp',
+    'tab.skills': 'Skills & Agents',
+
+    // Transactions Views
+    'view.list': 'List',
+    'view.calendar': 'Calendar',
+
+    // Settings Sections
+    'settings.section.profile': 'Profile',
+    'settings.section.family': 'Family',
+    'settings.section.categories': 'Categories & Tags',
+    'settings.section.appearance': 'Appearance & Preferences',
+    'settings.section.security': 'Security',
+    'settings.section.data': 'Data & Backup',
+    'settings.section.help': 'Help',
+    'settings.section.about': 'About',
 
     // Quick Actions & BottomNav
     'action.new_transaction': 'New Transaction',
@@ -217,8 +277,17 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
   },
   'es-ES': {
     // Navigation
-    'nav.dashboard': 'Panel Principal',
+    'nav.dashboard': 'Inicio',
     'nav.transactions': 'Transacciones',
+    'nav.accounts_and_cards': 'Cuentas y Tarjetas',
+    'nav.accounts_and_cards_short': 'Cuentas y Tarjetas',
+    'nav.plan': 'Planificar',
+    'nav.wealth': 'Patrimonio',
+    'nav.assistant': 'Asistente IA',
+    'nav.settings': 'Ajustes',
+    'nav.more': 'Más opciones',
+    'nav.customize_menu': 'Personalizar menú',
+    'nav.home': 'Inicio',
     'nav.accounts': 'Cuentas',
     'nav.cards': 'Tarjetas de crédito',
     'nav.cards_short': 'Tarjetas',
@@ -232,9 +301,30 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'nav.skills': 'Skills de IA',
     'nav.categories': 'Categorías y Etiquetas',
     'nav.family': 'Finanzas de la Familia',
-    'nav.settings': 'Configuración',
-    'nav.more': 'Más opciones',
-    'nav.customize_menu': 'Personalizar menú',
+
+    // Subpestañas agregadoras
+    'tab.accounts': 'Cuentas',
+    'tab.cards': 'Tarjetas de Crédito',
+    'tab.budget': 'Presupuesto',
+    'tab.goals': 'Metas',
+    'tab.investments': 'Inversiones',
+    'tab.debts': 'Deudas y Financiación',
+    'tab.whatsapp': 'WhatsApp',
+    'tab.skills': 'Skills y Agentes',
+
+    // Vistas de transacciones
+    'view.list': 'Lista',
+    'view.calendar': 'Calendario',
+
+    // Secciones de Ajustes
+    'settings.section.profile': 'Perfil',
+    'settings.section.family': 'Familia',
+    'settings.section.categories': 'Categorías y Etiquetas',
+    'settings.section.appearance': 'Apariencia y Preferencias',
+    'settings.section.security': 'Seguridad',
+    'settings.section.data': 'Datos y Respaldo',
+    'settings.section.help': 'Ayuda',
+    'settings.section.about': 'Acerca de',
 
     // Quick Actions & BottomNav
     'action.new_transaction': 'Nueva Transacción',

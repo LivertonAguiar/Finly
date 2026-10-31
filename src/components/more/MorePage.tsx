@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { AboutSection } from '../settings/AboutSection';
 import { useTranslation } from '../../utils/i18n';
+import { getSidebarItemLabel } from '../../utils/sidebarConfig';
 
 interface MorePageProps {
   setActiveTab: (tab: string) => void;
@@ -17,7 +18,7 @@ interface MorePageProps {
 }
 
 export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab }) => {
-  const { t } = useTranslation();
+  const { lang, t } = useTranslation();
   const [segmentedTab, setSegmentedTab] = useState<'GERAL' | 'SOBRE'>(initialSubTab || 'GERAL');
 
   useEffect(() => {
@@ -32,33 +33,32 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
     return () => window.removeEventListener('finly_open_sobre', handleOpenSobre);
   }, []);
 
-  // Menu curto e agrupado conforme o plano aprovado
   const shortMenuItems = [
     {
       id: 'patrimonio',
-      label: 'Patrimônio',
-      description: 'Investimentos, ativos, dívidas e financiamentos',
+      label: getSidebarItemLabel('patrimonio', lang),
+      description: t('more.patrimonio_desc', 'Investimentos, ativos, dívidas e financiamentos'),
       icon: TrendingUp,
       colorClass: 'bg-emerald-50 dark:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400',
     },
     {
       id: 'relatorios',
-      label: 'Relatórios',
-      description: 'Gráficos de evolução, fluxo de caixa e categorias',
+      label: getSidebarItemLabel('relatorios', lang),
+      description: t('more.relatorios_desc', 'Gráficos de evolução, fluxo de caixa e categorias'),
       icon: BarChart3,
       colorClass: 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400',
     },
     {
       id: 'assistente',
-      label: 'Assistente IA',
-      description: 'WhatsApp e Skills financeiras inteligentes',
+      label: getSidebarItemLabel('assistente', lang),
+      description: t('more.assistente_desc', 'WhatsApp e Skills financeiras inteligentes'),
       icon: Bot,
       colorClass: 'bg-purple-50 dark:bg-purple-600/20 text-purple-600 dark:text-purple-400',
     },
     {
       id: 'settings',
-      label: 'Ajustes',
-      description: 'Perfil, família, categorias, temas, dados e ajuda',
+      label: getSidebarItemLabel('settings', lang),
+      description: t('more.settings_desc', 'Perfil, família, categorias, temas, dados e ajuda'),
       icon: Settings,
       colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
     },
@@ -70,12 +70,12 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white">
-            {segmentedTab === 'GERAL' ? 'Mais Módulos' : 'Sobre o Finly'}
+            {segmentedTab === 'GERAL' ? t('more.modules_title', 'Mais Módulos') : t('settings.section.about', 'Sobre o Finly')}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {segmentedTab === 'GERAL'
-              ? 'Acesse os módulos complementares e recursos do sistema'
-              : 'Versão do aplicativo, notas de atualização e changelog'}
+              ? t('more.modules_subtitle', 'Acesse os módulos complementares e recursos do sistema')
+              : t('more.about_subtitle', 'Versão do aplicativo, notas de atualização e changelog')}
           </p>
         </div>
       </div>
@@ -83,8 +83,8 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
       {/* Segmented Switcher */}
       <div className="p-1 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800/80 flex items-center gap-1 shadow-xs">
         {[
-          { id: 'GERAL' as const, label: 'Menu Rápido', icon: SlidersHorizontal },
-          { id: 'SOBRE' as const, label: 'Sobre & Versão', icon: Info },
+          { id: 'GERAL' as const, label: t('more.quick_menu', 'Menu Rápido'), icon: SlidersHorizontal },
+          { id: 'SOBRE' as const, label: t('more.about_version', 'Sobre & Versão'), icon: Info },
         ].map(tab => {
           const TabIcon = tab.icon;
           return (

@@ -51,7 +51,7 @@ import { TabNavigation, TabItem } from '../common/TabNavigation';
 import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { t, SupportedLanguage } from '../../utils/i18n';
+import { useTranslation, SupportedLanguage } from '../../utils/i18n';
 import { applyTheme, ThemePreset, CardRadius, PRESET_COLORS } from '../../utils/themeEngine';
 import {
   getStoredNotificationPrefs,
@@ -93,6 +93,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
     metrics,
   } = useFinancial();
   const { currentUser, updateUserAccount, deleteUserAccount, logout } = useAuth();
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
 
     const getSectionFromUrl = (): string => {
@@ -113,6 +114,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
   };
 
   const [activeSection, setActiveSection] = useState<string>(getSectionFromUrl);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveSection(getSectionFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+
 
   useEffect(() => {
     if (initialSection && initialSection !== activeSection) {

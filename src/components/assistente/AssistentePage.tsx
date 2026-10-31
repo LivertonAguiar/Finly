@@ -32,6 +32,14 @@ export const AssistentePage: React.FC<AssistentePageProps> = ({ initialSubTab })
     }
   }, [initialSubTab]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveSubTab(getSubTabFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleTabChange = (tabId: string) => {
     const nextTab = tabId === 'skills' ? 'skills' : 'whatsapp';
     setActiveSubTab(nextTab);
@@ -44,12 +52,12 @@ export const AssistentePage: React.FC<AssistentePageProps> = ({ initialSubTab })
   const tabs: TabItem[] = [
     {
       id: 'whatsapp',
-      label: t('nav.whatsapp', 'WhatsApp'),
+      label: t('tab.whatsapp', 'WhatsApp'),
       icon: <MessageSquare className="w-4 h-4" />,
     },
     {
       id: 'skills',
-      label: t('nav.skills', 'Skills & Agentes'),
+      label: t('tab.skills', 'Skills & Agentes'),
       icon: <Bot className="w-4 h-4" />,
     },
   ];

@@ -32,6 +32,14 @@ export const PatrimonioPage: React.FC<PatrimonioPageProps> = ({ initialSubTab })
     }
   }, [initialSubTab]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveSubTab(getSubTabFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleTabChange = (tabId: string) => {
     const nextTab = tabId === 'dividas' ? 'dividas' : 'investimentos';
     setActiveSubTab(nextTab);
@@ -44,12 +52,12 @@ export const PatrimonioPage: React.FC<PatrimonioPageProps> = ({ initialSubTab })
   const tabs: TabItem[] = [
     {
       id: 'investimentos',
-      label: t('nav.investments', 'Investimentos'),
+      label: t('tab.investments', 'Investimentos'),
       icon: <TrendingUp className="w-4 h-4" />,
     },
     {
       id: 'dividas',
-      label: t('nav.debts', 'Dívidas & Financiamentos'),
+      label: t('tab.debts', 'Dívidas & Financiamentos'),
       icon: <Landmark className="w-4 h-4" />,
     },
   ];

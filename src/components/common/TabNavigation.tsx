@@ -37,11 +37,12 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             type="button"
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
+            style={isActive ? { color: 'var(--primary-accent, #7C4DFF)' } : undefined}
             className={`flex items-center justify-center gap-2 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm'
             } ${
               isActive
-                ? 'bg-white dark:bg-[#1E1E24] text-purple-600 dark:text-purple-300 shadow-xs border border-slate-200/80 dark:border-white/10'
+                ? 'bg-white dark:bg-[#1E1E24] shadow-xs border border-slate-200/80 dark:border-white/10'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/[0.02]'
             }`}
           >
@@ -49,9 +50,17 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
               <span
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: 'color-mix(in srgb, var(--primary-accent, #7C4DFF) 15%, transparent)',
+                        color: 'var(--primary-accent, #7C4DFF)',
+                      }
+                    : undefined
+                }
                 className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
                   isActive
-                    ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
+                    ? ''
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                 }`}
               >

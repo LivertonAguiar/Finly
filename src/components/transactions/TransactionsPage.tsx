@@ -47,6 +47,7 @@ import { TabNavigation, TabItem } from '../common/TabNavigation';
 import { downloadCSV } from '../../utils/reportExportService';
 import { exportTransactionsToExcel } from '../../utils/excelExportService';
 import { getFamilyMemberList, getMemberDisplayNameById } from '../../utils/familyUtils';
+import { useTranslation } from '../../utils/i18n';
 
 export interface TransactionsNavParams {
   monthOffset?: number;
@@ -80,6 +81,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
     familyMembers,
   } = useFinancial();
 
+  const { t } = useTranslation();
   const allFamilyMembers = useMemo(() => getFamilyMemberList(user, familyMembers), [user, familyMembers]);
 
     const getViewFromUrl = (): 'lista' | 'calendario' => {
@@ -93,6 +95,16 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   };
 
   const [activeView, setActiveView] = useState<'lista' | 'calendario'>(getViewFromUrl);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveView(getViewFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+
 
   const handleViewChange = (viewId: string) => {
     const nextView = viewId === 'calendario' ? 'calendario' : 'lista';
