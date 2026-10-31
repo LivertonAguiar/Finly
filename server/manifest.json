@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.8",
+    "version": "1.1.83.9",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.8.zip",
-    "sha256": "1793e21987bb55b07cc561933925489e0606f970caa68522e5ecac80cf94dfc2",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.9.zip",
+    "sha256": "1a28ea32987afbe2df4e38e1fa7ff5e8f3058835473b31b6dcb9c87ebbe1a32e",
     "mandatory": true,
     "releaseDate": "2026-10-31",
-    "notes": "Corrigir status de despesas pendentes futuras e trava de saldo geral"
+    "notes": "Sincronização de documentação de rotas e notas de release"
   }
 }
