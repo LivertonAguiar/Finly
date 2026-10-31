@@ -4,6 +4,10 @@
     <string name="title_activity_main">Finly</string>
     <string name="package_name">com.finly.app</string>
     <string name="custom_url_scheme">com.finly.app</string>
-    <string name="widget_name">Finly - Resumo Financeiro</string>
-    <string name="widget_description">Acompanhe seu saldo disponível, despesas mensais e contas pendentes direto na tela inicial.</string>
+    <string name="widget_name">Finly - Bento Dashboard (4x2)</string>
+    <string name="widget_description">Visão completa: saldo, receitas, despesas, fatura de cartão e atalhos rápidos.</string>
+    <string name="widget_compact_name">Finly - Barra Rápida (4x1)</string>
+    <string name="widget_compact_description">Barra horizontal compacta com saldo, receitas, despesas e atalho rápido.</string>
+    <string name="widget_mini_name">Finly - Mini Resumo (2x2)</string>
+    <string name="widget_mini_description">Card compacto quadrado com saldo, receitas e despesas.</string>
 </resources>

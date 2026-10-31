@@ -41,6 +41,29 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
+    releaseDate: '2026-10-30',
+    summary: 'Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas.',
+    highlights: [
+      {
+        title: 'Três Novos Formatos de Widgets Android',
+        description: 'Bento Dashboard 4x2 com dados completos, Barra Compacta 4x1 e Mini Resumo 2x2 com redimensionamento livre no launcher.',
+        type: 'feature',
+      },
+      {
+        title: 'Design Visual Bento Grid Premium',
+        description: 'Cards translúcidos coloridos, novos ícones vetoriais e acabamento estético sem espaços vazios.',
+        type: 'visual',
+      },
+      {
+        title: 'Cálculo Econômico e Interatividade Total',
+        description: 'Valores 100% alinhados à Dashboard e toque direto para abrir Nova Despesa, Nova Receita ou navegação filtrada.',
+        type: 'fix',
+      },
+    ],
+  },
+
+  {
+    version: '1.1.82',
     releaseDate: '2026-10-28',
     summary: 'Painel dedicado do Widget nas Configurações, correção de compatibilidade de RemoteViews no Android e detecção inteligente de APK pendente pós-OTA.',
     highlights: [

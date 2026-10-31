@@ -448,31 +448,46 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('finly_open_update_modal', handleOpenUpdate);
   }, [handleSelectTab]);
 
-  // Listener para Ações Rápidas disparadas pelo Widget da Tela Inicial do Android
+  // Listener para Ações Rápidas disparadas pelos Widgets da Tela Inicial do Android
   useEffect(() => {
     if (!currentUser) return;
 
-    // 1. Inicialização a frio (app aberto pelo botão + do widget)
-    void checkNativeQuickAction().then(action => {
-      if (action === 'new_transaction') {
+    const executeAction = (action?: string | null) => {
+      if (!action) return;
+      if (action === 'new_transaction' || action === 'new_expense') {
         setNewTxInitialType('expense');
         setNewTxPaymentMethod('account');
         setIsNewTxOpen(true);
+      } else if (action === 'new_income') {
+        setNewTxInitialType('income');
+        setNewTxPaymentMethod('account');
+        setIsNewTxOpen(true);
+      } else if (action === 'open_incomes') {
+        handleOpenTransactions({ filterType: 'income' });
+      } else if (action === 'open_expenses') {
+        handleOpenTransactions({ filterType: 'expense' });
+      } else if (action === 'open_pending') {
+        handleOpenTransactions({ filterType: 'expense', status: 'pending' });
+      } else if (action === 'open_cards') {
+        handleSelectTab('cartoes');
+      } else if (action === 'open_dashboard') {
+        handleSelectTab('dashboard');
+      } else if (action === 'refresh_data') {
+        void refreshData();
       }
-    });
+    };
 
-    // 2. Retorno do segundo plano (app já estava em memória)
+    // 1. Inicialização a frio (app aberto a partir do widget)
+    void checkNativeQuickAction().then(executeAction);
+
+    // 2. Retorno do segundo plano (app já estava ativo em memória)
     const handleQuickAction = (e: any) => {
-      if (e.detail?.action === 'new_transaction') {
-        setNewTxInitialType('expense');
-        setNewTxPaymentMethod('account');
-        setIsNewTxOpen(true);
-      }
+      executeAction(e.detail?.action);
     };
 
     window.addEventListener('finly_quick_action', handleQuickAction);
     return () => window.removeEventListener('finly_quick_action', handleQuickAction);
-  }, [currentUser]);
+  }, [currentUser, handleOpenTransactions, handleSelectTab, refreshData]);
 
   const handleOpenSpeedDialAction = (actionType: 'income' | 'expense' | 'transfer' | 'card_expense') => {
     if (actionType === 'income') {

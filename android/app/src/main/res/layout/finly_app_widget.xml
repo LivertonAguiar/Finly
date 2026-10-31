@@ -5,9 +5,9 @@
     android:layout_height="match_parent"
     android:background="@drawable/finly_widget_background"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:padding="12dp">
 
-    <!-- Top Header Bar -->
+    <!-- 1. Header Bar: Logo, Month, Refresh & Quick Add -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -31,114 +31,13 @@
 
         <TextView
             android:id="@+id/widget_month"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:text="Resumo"
-            android:textColor="#8E8E93"
+            android:text="out. de 2026"
+            android:textColor="#A1A1AA"
             android:textSize="10sp"
             android:singleLine="true" />
-
-        <ImageView
-            android:id="@+id/widget_btn_add"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/finly_widget_btn_bg"
-            android:padding="5dp"
-            android:src="@drawable/ic_finly_add"
-            android:contentDescription="Nova Despesa" />
-    </LinearLayout>
-
-    <!-- Main Balance Section -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="2dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="SALDO DISPONÍVEL"
-            android:textColor="#8E8E93"
-            android:textSize="9sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/widget_balance"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="R$ 0,00"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:singleLine="true" />
-    </LinearLayout>
-
-    <!-- Bottom Metrics & Status Bar -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <!-- Monthly Expenses Pill -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/finly_widget_badge_bg"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="7dp"
-            android:paddingTop="3dp"
-            android:paddingEnd="7dp"
-            android:paddingBottom="3dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Despesas: "
-                android:textColor="#8E8E93"
-                android:textSize="10sp" />
-
-            <TextView
-                android:id="@+id/widget_expenses"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="R$ 0,00"
-                android:textColor="#FB7185"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:singleLine="true" />
-        </LinearLayout>
-
-        <!-- Pending Bills Pill -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:background="@drawable/finly_widget_badge_bg"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="7dp"
-            android:paddingTop="3dp"
-            android:paddingEnd="7dp"
-            android:paddingBottom="3dp">
-
-            <TextView
-                android:id="@+id/widget_pending"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0 pendentes"
-                android:textColor="#FBBF24"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:singleLine="true" />
-        </LinearLayout>
 
         <FrameLayout
             android:layout_width="0dp"
@@ -149,8 +48,327 @@
             android:id="@+id/widget_updated_at"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textColor="#636366"
-            android:textSize="9sp" />
+            android:layout_marginEnd="6dp"
+            android:text="23:00"
+            android:textColor="#71717A"
+            android:textSize="9sp"
+            android:singleLine="true" />
+
+        <ImageView
+            android:id="@+id/widget_btn_refresh"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:background="@drawable/finly_widget_icon_btn_bg"
+            android:padding="5dp"
+            android:layout_marginEnd="5dp"
+            android:src="@drawable/ic_finly_refresh"
+            android:contentDescription="Atualizar Dados" />
+
+        <ImageView
+            android:id="@+id/widget_btn_add_quick"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:background="@drawable/finly_widget_btn_action_bg"
+            android:padding="5dp"
+            android:src="@drawable/ic_finly_add"
+            android:contentDescription="Nova Transação" />
+    </LinearLayout>
+
+    <!-- 2. Hero Balance Row: Saldo em Contas + Resultado do Mês Badge -->
+    <LinearLayout
+        android:id="@+id/widget_balance_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SALDO EM CONTAS"
+                android:textColor="#A1A1AA"
+                android:textSize="8.5sp"
+                android:letterSpacing="0.08"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_balance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- Resultado Líquido do Mês Pill (Superávit / Balanço) -->
+        <LinearLayout
+            android:id="@+id/widget_monthly_balance_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/finly_widget_pill_mint_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="3dp">
+
+            <TextView
+                android:id="@+id/widget_monthly_balance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+R$ 35,00"
+                android:textColor="#34D399"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 3. Tri-Cards Bento Grid: Receitas, Despesas, Cartão -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <!-- Card Receitas -->
+        <LinearLayout
+            android:id="@+id/widget_card_income"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/finly_widget_card_income_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_finly_arrow_up"
+                    android:contentDescription="Receitas" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:text="RECEITAS"
+                    android:textColor="#6EE7B7"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/widget_income"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#34D399"
+                android:textSize="12.5sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No mês"
+                android:textColor="#94A3B8"
+                android:textSize="7.5sp" />
+        </LinearLayout>
+
+        <!-- Card Despesas -->
+        <LinearLayout
+            android:id="@+id/widget_card_expense"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/finly_widget_card_expense_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_finly_arrow_down"
+                    android:contentDescription="Despesas" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:text="DESPESAS"
+                    android:textColor="#FDA4AF"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/widget_expenses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#FB7185"
+                android:textSize="12.5sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total realizadas"
+                android:textColor="#94A3B8"
+                android:textSize="7.5sp" />
+        </LinearLayout>
+
+        <!-- Card Cartão -->
+        <LinearLayout
+            android:id="@+id/widget_card_card"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/finly_widget_card_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_finly_card"
+                    android:contentDescription="Cartão" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:text="CARTÃO"
+                    android:textColor="#C4B5FD"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/widget_card_expenses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#C084FC"
+                android:textSize="12.5sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fatura atual"
+                android:textColor="#94A3B8"
+                android:textSize="7.5sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 4. Footer: Pendências reais do mês + Ações Rápidas -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Pendências Pill -->
+        <TextView
+            android:id="@+id/widget_pending"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/finly_widget_badge_bg"
+            android:paddingStart="7dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="7dp"
+            android:paddingBottom="3dp"
+            android:text="✓ Em dia no mês"
+            android:textColor="#34D399"
+            android:textSize="9.5sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- Botão + Receita -->
+        <TextView
+            android:id="@+id/widget_btn_add_income"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/finly_widget_btn_action_income_bg"
+            android:paddingStart="9dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="9dp"
+            android:paddingBottom="4dp"
+            android:layout_marginEnd="5dp"
+            android:text="+ Receita"
+            android:textColor="#FFFFFF"
+            android:textSize="9.5sp"
+            android:textStyle="bold" />
+
+        <!-- Botão + Despesa -->
+        <TextView
+            android:id="@+id/widget_btn_add_expense"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/finly_widget_btn_action_bg"
+            android:paddingStart="9dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="9dp"
+            android:paddingBottom="4dp"
+            android:text="+ Despesa"
+            android:textColor="#FFFFFF"
+            android:textSize="9.5sp"
+            android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>

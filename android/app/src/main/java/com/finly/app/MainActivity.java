@@ -34,14 +34,17 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (intent != null && "new_transaction".equals(intent.getStringExtra("quick_action"))) {
-            if (getBridge() != null && getBridge().getWebView() != null) {
-                getBridge().getWebView().post(() -> {
-                    getBridge().getWebView().evaluateJavascript(
-                        "window.dispatchEvent(new CustomEvent('finly_quick_action', { detail: { action: 'new_transaction' } }));",
-                        null
-                    );
-                });
+        if (intent != null && intent.hasExtra("quick_action")) {
+            String action = intent.getStringExtra("quick_action");
+            if (action != null && !action.isEmpty()) {
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                    getBridge().getWebView().post(() -> {
+                        getBridge().getWebView().evaluateJavascript(
+                            "window.dispatchEvent(new CustomEvent('finly_quick_action', { detail: { action: '" + action + "' } }));",
+                            null
+                        );
+                    });
+                }
             }
         }
     }

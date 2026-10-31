@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_mini_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/finly_widget_background"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <!-- Top: Logo + Month + Quick Add -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:src="@drawable/ic_stat_finly_purple"
+            android:contentDescription="@string/app_name" />
+
+        <TextView
+            android:id="@+id/widget_mini_month"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:text="out. de 2026"
+            android:textColor="#A1A1AA"
+            android:textSize="9.5sp"
+            android:singleLine="true" />
+
+        <ImageView
+            android:id="@+id/widget_mini_btn_add"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/finly_widget_btn_action_bg"
+            android:padding="5dp"
+            android:src="@drawable/ic_finly_add"
+            android:contentDescription="Nova Despesa" />
+    </LinearLayout>
+
+    <!-- Center: Saldo Geral -->
+    <LinearLayout
+        android:id="@+id/widget_mini_balance_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SALDO DISPONÍVEL"
+            android:textColor="#A1A1AA"
+            android:textSize="8sp"
+            android:letterSpacing="0.08"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_mini_balance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="R$ 0,00"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <!-- Bottom: Receitas e Despesas lado a lado -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Mini Receitas -->
+        <LinearLayout
+            android:id="@+id/widget_mini_income_section"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/finly_widget_card_income_bg"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RECEITAS"
+                android:textColor="#6EE7B7"
+                android:textSize="7.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_mini_income"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#34D399"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- Mini Despesas -->
+        <LinearLayout
+            android:id="@+id/widget_mini_expense_section"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/finly_widget_card_expense_bg"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DESPESAS"
+                android:textColor="#FDA4AF"
+                android:textSize="7.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_mini_expenses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#FB7185"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
+

@@ -20,9 +20,14 @@ public class FinlyWidgetPlugin extends Plugin {
     public void updateWidgetData(PluginCall call) {
         try {
             String balance = call.getString("balance", "R$ 0,00");
+            String monthlyIncome = call.getString("monthlyIncome", "R$ 0,00");
             String monthlyExpenses = call.getString("monthlyExpenses", "R$ 0,00");
+            String monthlyBalance = call.getString("monthlyBalance", "R$ 0,00");
+            String savingsRate = call.getString("savingsRate", "+0%");
+            String cardExpenses = call.getString("cardExpenses", "R$ 0,00");
             int pendingCount = call.getInt("pendingCount", 0);
-            String monthName = call.getString("monthName", "Resumo");
+            String pendingAmount = call.getString("pendingAmount", "R$ 0,00");
+            String monthName = call.getString("monthName", "out. de 2026");
 
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
             String updatedAt = call.getString("updatedAt", sdf.format(new Date()));
@@ -32,13 +37,18 @@ public class FinlyWidgetPlugin extends Plugin {
             SharedPreferences.Editor editor = prefs.edit();
 
             editor.putString(FinlyWidgetProvider.KEY_BALANCE, balance);
+            editor.putString(FinlyWidgetProvider.KEY_INCOME, monthlyIncome);
             editor.putString(FinlyWidgetProvider.KEY_EXPENSES, monthlyExpenses);
+            editor.putString(FinlyWidgetProvider.KEY_MONTHLY_BALANCE, monthlyBalance);
+            editor.putString(FinlyWidgetProvider.KEY_SAVINGS_RATE, savingsRate);
+            editor.putString(FinlyWidgetProvider.KEY_CARD_EXPENSES, cardExpenses);
             editor.putInt(FinlyWidgetProvider.KEY_PENDING_COUNT, pendingCount);
+            editor.putString(FinlyWidgetProvider.KEY_PENDING_AMOUNT, pendingAmount);
             editor.putString(FinlyWidgetProvider.KEY_MONTH_NAME, monthName);
             editor.putString(FinlyWidgetProvider.KEY_UPDATED_AT, updatedAt);
             editor.apply();
 
-            // Atualiza os widgets na tela inicial imediatamente
+            // Atualiza todos os widgets na tela inicial imediatamente
             FinlyWidgetProvider.updateAllWidgets(context);
 
             JSObject ret = new JSObject();
@@ -57,9 +67,14 @@ public class FinlyWidgetPlugin extends Plugin {
 
             JSObject ret = new JSObject();
             ret.put("balance", prefs.getString(FinlyWidgetProvider.KEY_BALANCE, "R$ 0,00"));
+            ret.put("monthlyIncome", prefs.getString(FinlyWidgetProvider.KEY_INCOME, "R$ 0,00"));
             ret.put("monthlyExpenses", prefs.getString(FinlyWidgetProvider.KEY_EXPENSES, "R$ 0,00"));
+            ret.put("monthlyBalance", prefs.getString(FinlyWidgetProvider.KEY_MONTHLY_BALANCE, "R$ 0,00"));
+            ret.put("savingsRate", prefs.getString(FinlyWidgetProvider.KEY_SAVINGS_RATE, "+0%"));
+            ret.put("cardExpenses", prefs.getString(FinlyWidgetProvider.KEY_CARD_EXPENSES, "R$ 0,00"));
             ret.put("pendingCount", prefs.getInt(FinlyWidgetProvider.KEY_PENDING_COUNT, 0));
-            ret.put("monthName", prefs.getString(FinlyWidgetProvider.KEY_MONTH_NAME, "Resumo"));
+            ret.put("pendingAmount", prefs.getString(FinlyWidgetProvider.KEY_PENDING_AMOUNT, "R$ 0,00"));
+            ret.put("monthName", prefs.getString(FinlyWidgetProvider.KEY_MONTH_NAME, "out. de 2026"));
             ret.put("updatedAt", prefs.getString(FinlyWidgetProvider.KEY_UPDATED_AT, "--:--"));
 
             call.resolve(ret);
@@ -74,7 +89,7 @@ public class FinlyWidgetPlugin extends Plugin {
         try {
             if (getActivity() != null && getActivity().getIntent() != null) {
                 String action = getActivity().getIntent().getStringExtra("quick_action");
-                if (action != null) {
+                if (action != null && !action.isEmpty()) {
                     ret.put("quickAction", action);
                     getActivity().getIntent().removeExtra("quick_action");
                 }

@@ -3,6 +3,26 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.83] - 2026-10-30
+
+### Novos Widgets Nativos com Múltiplos Tamanhos (Android)
+- **3 Opções no Seletor de Widgets**:
+  - **Bento Dashboard (4x2 / 4x3)**: visão completa de Saldo em Contas, Resultado Líquido do Mês (+sobra), Cards de Receitas e Despesas discriminadas, Fatura do Cartão e botões de ação rápida (+ Despesa, + Receita).
+  - **Barra Compacta (4x1)**: barra horizontal discreta e elegante para topo/rodapé da tela inicial.
+  - **Mini Resumo (2x2)**: card quadrado compacto e sem espaços vazios.
+
+### Design Visual Moderno e Alinhado ao App
+- **Estética Bento Grid Premium**:
+  - Fundo escuro (#12131A) com cantos arredondados de 22dp e bordas sutis (#2A2D3D).
+  - Cards internos translúcidos com destaque em esmeralda (#34D399), rose (#FB7185) e violeta (#C084FC).
+  - Novos ícones vetoriais em XML e eliminação de vazios.
+
+### Correção de Dados e Interatividade Total
+- **Cálculo Econômico Alinhado à Dashboard**:
+  - Eliminação da duplicidade de faturas de cartão e contagem exclusiva de pendências do mês corrente.
+- **Deep Links e Ações Rápidas**:
+  - Toque em + ou botões de ação abre imediatamente o modal com o tipo correto pré-selecionado, em cold start e warm start.
+
 ## [1.1.82] - 2026-10-28
 
 ### Painel do Widget nas Configurações

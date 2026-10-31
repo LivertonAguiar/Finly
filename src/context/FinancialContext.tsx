@@ -3755,13 +3755,44 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     if (Array.isArray(accounts) && accounts.length > 0) {
       const curMonth = getCurrentMonth();
-      const currentMonthExpenses = transactions
-        .filter(t => t.type === 'expense' && t.status === 'completed' && t.date.startsWith(curMonth) && isIncludedInPersonalAnalytics(t))
-        .reduce((sum, t) => sum + t.amount, 0);
 
-      const pendingCount = transactions.filter(
-        t => t.type === 'expense' && t.status === 'pending' && !t.ignored
-      ).length;
+      // 1. Despesas econômicas do mês (exclui pagamento de fatura para não duplicar, inclui compras de cartão da fatura)
+      const monthExpensesList = transactions.filter(t => {
+        if (t.type !== 'expense' || t.ignored || isInvoicePaymentTransaction(t)) return false;
+        if (t.cardId) {
+          const card = cards.find(c => c.id === t.cardId);
+          const invMonth = getCardTransactionInvoiceMonth(t, card);
+          return invMonth === curMonth;
+        }
+        return t.date.startsWith(curMonth);
+      });
+
+      const totalMonthlyExpenses = Math.round(monthExpensesList.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+
+      // Compras de cartão pertencentes à competência da fatura do mês
+      const cardExpenses = Math.round(
+        monthExpensesList.filter(t => !!t.cardId).reduce((sum, t) => sum + t.amount, 0) * 100
+      ) / 100;
+
+      // 2. Receitas do mês
+      const totalMonthlyIncome = Math.round(
+        transactions
+          .filter(t => t.type === 'income' && !t.ignored && t.date.startsWith(curMonth))
+          .reduce((sum, t) => sum + t.amount, 0) * 100
+      ) / 100;
+
+      // 3. Resultado líquido e taxa de economia do mês
+      const monthlyBalance = Math.round((totalMonthlyIncome - totalMonthlyExpenses) * 100) / 100;
+      const savingsRate = totalMonthlyIncome > 0 && monthlyBalance > 0
+        ? `+${Math.round((monthlyBalance / totalMonthlyIncome) * 100)}% este mês`
+        : totalMonthlyIncome > 0 && totalMonthlyExpenses > totalMonthlyIncome
+        ? `${Math.round((totalMonthlyExpenses / totalMonthlyIncome) * 100)}% consumo`
+        : undefined;
+
+      // 4. Pendências REAIS pertencentes ao mês atual (evita somar parcelas de anos futuros)
+      const pendingMonthTransactions = monthExpensesList.filter(t => t.status === 'pending');
+      const pendingCount = pendingMonthTransactions.length;
+      const pendingAmount = Math.round(pendingMonthTransactions.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
 
       const [y, m] = curMonth.split('-').map(Number);
       const dateForMonth = new Date(y, m - 1, 1);
@@ -3769,13 +3800,18 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       void syncNativeWidget({
         balance: metrics.totalBalance,
-        monthlyExpenses: currentMonthExpenses,
+        monthlyIncome: totalMonthlyIncome,
+        monthlyExpenses: totalMonthlyExpenses,
+        monthlyBalance,
+        savingsRate,
+        cardExpenses,
         pendingBillsCount: pendingCount,
+        pendingBillsAmount: pendingAmount,
         monthName: monthLabel,
         currency: user.currency || 'BRL',
       });
     }
-  }, [metrics.totalBalance, transactions, accounts, user.currency]);
+  }, [metrics.totalBalance, transactions, accounts, cards, user.currency]);
 
   return (
     <FinancialContext.Provider

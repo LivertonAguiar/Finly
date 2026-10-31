@@ -1,8 +1,8 @@
 {
   "native": {
-    "version": "1.1.82",
+    "version": "1.1.83",
     "minimumVersion": "1.1.0",
-    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.82/finly-v1.1.82.apk"
+    "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
     "version": "1.1.82.1",
