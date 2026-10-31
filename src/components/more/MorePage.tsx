@@ -399,12 +399,11 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     </span>
                   </div>
                   {(() => {
-                    const webBaseVer = webVersion.split('.').slice(0, 3).join('.');
+                    const cleanApkVersion = apkVersion.replace(/^v/, '');
+                    const targetApkVersion = (updateResult?.latestVersion || '1.1.83').replace(/^v/, '');
                     const isApkUpdatePending = isNativeCapacitor() && (
-                      updateResult?.hasUpdate || isNewerVersion(webBaseVer, apkVersion)
+                      updateResult?.hasUpdate || isNewerVersion(targetApkVersion, cleanApkVersion)
                     );
-                    const targetApkVersion = updateResult?.latestVersion || webBaseVer || APP_VERSION.split('.').slice(0, 3).join('.');
-                    const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
 
                     return (
                       <>
@@ -414,7 +413,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                           {isApkUpdatePending ? (
                             <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              Atualização de APK pendente
+                              Atualização de APK pendente (v{targetApkVersion})
                             </span>
                           ) : (
                             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -430,11 +429,11 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               </div>
 
               {(() => {
-                const webBaseVer = webVersion.split('.').slice(0, 3).join('.');
+                const cleanApkVersion = apkVersion.replace(/^v/, '');
+                const targetApkVersion = (updateResult?.latestVersion || '1.1.83').replace(/^v/, '');
                 const isApkUpdatePending = isNativeCapacitor() && (
-                  updateResult?.hasUpdate || isNewerVersion(webBaseVer, apkVersion)
+                  updateResult?.hasUpdate || isNewerVersion(targetApkVersion, cleanApkVersion)
                 );
-                const targetApkVersion = updateResult?.latestVersion || webBaseVer || APP_VERSION.split('.').slice(0, 3).join('.');
                 const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
 
                 return (
@@ -454,7 +453,7 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                             hasUpdate: false,
                             failedCheck: true,
                             currentVersion: apkVersion,
-                            latestVersion: APP_VERSION,
+                            latestVersion: '1.1.83',
                             notes: 'Não foi possível verificar atualizações no momento. Verifique sua conexão com a internet.',
                           });
                         } finally {
@@ -490,44 +489,46 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
               })()}
             </div>
 
-            {/* Banner de Atualização */}
+            {/* Banner de Atualização com Destaque Máximo */}
             {(() => {
-              const webBaseVer = webVersion.split('.').slice(0, 3).join('.');
+              const cleanApkVersion = apkVersion.replace(/^v/, '');
+              const targetApkVersion = (updateResult?.latestVersion || '1.1.83').replace(/^v/, '');
               const isApkUpdatePending = isNativeCapacitor() && (
-                updateResult?.hasUpdate || isNewerVersion(webBaseVer, apkVersion)
+                updateResult?.hasUpdate || isNewerVersion(targetApkVersion, cleanApkVersion)
               );
-              const targetApkVersion = updateResult?.latestVersion || webBaseVer || APP_VERSION.split('.').slice(0, 3).join('.');
               const directApkUrl = updateResult?.downloadUrl || `https://github.com/LivertonAguiar/Finly/releases/download/v${targetApkVersion}/finly-v${targetApkVersion}.apk`;
 
               if (!isApkUpdatePending && !updateResult) return null;
 
               return (
-                <div className={`p-3.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                  updateResult?.failedCheck && !isApkUpdatePending
+                <div className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm ${
+                  isApkUpdatePending
+                    ? 'bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-purple-500/15 border-emerald-500/40 text-slate-800 dark:text-slate-100'
+                    : updateResult?.failedCheck
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
-                    : isApkUpdatePending
-                    ? 'bg-gradient-to-r from-purple-500/15 to-emerald-500/15 border-emerald-500/40 text-slate-800 dark:text-slate-100'
                     : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
                 }`}>
-                  <div className="flex items-center gap-2.5">
-                    {updateResult?.failedCheck && !isApkUpdatePending ? (
+                  <div className="flex items-center gap-3">
+                    {isApkUpdatePending ? (
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
+                      </div>
+                    ) : updateResult?.failedCheck ? (
                       <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                    ) : isApkUpdatePending ? (
-                      <Sparkles className="w-4 h-4 text-emerald-500 shrink-0 animate-pulse" />
                     ) : (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     )}
                     <div className="space-y-0.5">
-                      <span className="font-black text-xs block">
+                      <span className="font-black text-sm block">
                         {isApkUpdatePending
-                          ? `Nova versão nativa disponível: APK v${targetApkVersion}`
+                          ? `Nova versão do APK disponível: v${targetApkVersion}`
                           : updateResult?.failedCheck
                           ? (updateResult.notes || 'Não foi possível verificar atualizações no momento.')
-                          : `Você já está utilizando a versão mais recente (${isNativeCapacitor() ? `APK v${apkVersion}` : `v${APP_VERSION}`}).`}
+                          : `Você já está utilizando a versão mais recente (${isNativeCapacitor() ? `APK v${cleanApkVersion}` : `v${APP_VERSION}`}).`}
                       </span>
                       {isApkUpdatePending && (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Instalada: <strong className="text-slate-700 dark:text-slate-200">v{apkVersion}</strong> • Baixe o APK para instalar os novos widgets e melhorias nativas.
+                        <p className="text-xs text-slate-600 dark:text-slate-300">
+                          Versão instalada: <strong className="text-slate-900 dark:text-white font-bold">v{cleanApkVersion}</strong> • Baixe o APK oficial para ter suporte completo aos novos widgets nativos do Android.
                         </p>
                       )}
                     </div>
@@ -536,10 +537,10 @@ export const MorePage: React.FC<MorePageProps> = ({ setActiveTab, initialSubTab 
                     <button
                       type="button"
                       onClick={() => openExternalUrl(directApkUrl)}
-                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer shrink-0 transition-all shadow-md shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-1.5 self-start sm:self-auto"
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs cursor-pointer shrink-0 transition-all shadow-md shadow-emerald-600/30 active:scale-95 flex items-center justify-center gap-2 self-start sm:self-auto"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Baixar APK v{targetApkVersion}</span>
+                      <Download className="w-4 h-4" />
+                      <span>Baixar Atualização (APK v${targetApkVersion})</span>
                     </button>
                   )}
                 </div>

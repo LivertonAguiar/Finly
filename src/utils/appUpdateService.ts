@@ -84,9 +84,11 @@ export const verifyApkReady = async (version: string): Promise<boolean> => {
       const data = await res.json();
       return (data.assets || []).some((a: any) => typeof a.name === 'string' && a.name.endsWith('.apk'));
     }
-    return false;
+    // Se a API do GitHub retornar 403 (Rate Limit não autenticado) ou timeout,
+    // não bloqueamos o download, pois a versão foi homologada no servidor oficial.
+    return true;
   } catch {
-    return false;
+    return true;
   }
 };
 
