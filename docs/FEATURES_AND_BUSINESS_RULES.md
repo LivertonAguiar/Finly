@@ -94,3 +94,79 @@ Ao clicar em qualquer linha ou card de transação:
 * **Fatura de Cartão**: Exibe a composição completa de itens, ranking por categoria e totalizadores.
 * **Compra Parcelada**: Exibe barra de progresso (X de Y), histórico pago antes do Finly, chips com status individual de cada parcela e fatura correspondente.
 * **Ações**: Alternar status (Paga/Pendente), Editar, Registrar Reembolso e Excluir por Escopo.
+
+
+---
+
+## 8. Dívidas, Financiamentos e Amortizações
+
+* **Sistemas de Amortização**:
+  * **SAC (Sistema de Amortização Constante)**: Parcelas decrescentes onde a amortização é fixa e os juros diminuem ao longo do tempo.
+  * **Tabela Price (Sistema Francês)**: Parcelas de valor fixo onde a composição de juros é maior no início e a amortização cresce ao longo das parcelas.
+* **Composição Detalhada da Parcela (`debtBreakdown`)**:
+  * Cada parcela é rigorosamente decomposta em 5 parcelas contábeis:
+    1. Amortização real do saldo devedor
+    2. Juros contratuais
+    3. Correção monetária (TR / IPCA)
+    4. Seguros obrigatórios (MIP - Morte/Invalidez Permanente e DFI - Danos Físicos ao Imóvel)
+    5. Taxa de administração mensal
+* **Sincronização Bidirecional**:
+  * Ao cadastrar um financiamento, o sistema materializa automaticamente as parcelas no extrato (`transactions`) com o status `pending`.
+  * Ao marcar a parcela como paga no extrato ou na tela de Dívidas, o saldo devedor principal é recalculado atomicamente e o pagamento registrado.
+* **Amortização Extraordinária**:
+  * Suporte a abatimentos extraordinários com duas opções de recálculo: **Redução do Prazo** (mantém o valor da parcela) ou **Redução da Parcela** (mantém o prazo contratado).
+
+---
+
+## 9. Metas Financeiras e Reservas
+
+* **Gestão de Objetivos**:
+  * Categorização por horizonte: Curto Prazo (< 1 ano), Médio Prazo (1 a 5 anos), Longo Prazo (> 5 anos) e Reserva de Emergência.
+* **Aportes e Resgates**:
+  * Registro de transações vinculadas à meta com acompanhamento visual da barra de preenchimento percentual.
+* **Celebração Visual**:
+  * Ao atingir 100% da meta, o motor gráfico dispara animação festiva de confetti (`canvas-confetti`) e emite badge de conquista.
+
+---
+
+## 10. Divisão de Despesas (Splits & Componentes Multidimensionais)
+
+* **Multi-Categoria em Transação Única**:
+  * Permite dividir compras complexas (ex: compras de supermercado com itens de alimentação, higiene e artigos para casa) em múltiplos sub-itens com categorias e valores próprios.
+* **Precisão de Centavos Sem Erro Flutuante**:
+  * A soma dos componentes fecha exatamente no valor global da despesa.
+* **Anti-Dupla Contabilização**:
+  * Gráficos analíticos e orçamentos leem os componentes analíticos (`transaction_components`), garantindo que a transação pai sirva como totalizador financeiro sem inflar relatórios.
+
+---
+
+## 11. Assistente WhatsApp com IA
+
+* **Lançamentos Multimodais**:
+  * Suporte a mensagens de texto em linguagem natural (ex: "gastei 55 reais no posto shell").
+  * Processamento de mensagens de áudio com transcrição inteligente e extração de entidade (valor, data, categoria e meio de pagamento).
+  * OCR e leitura de fotos de cupons fiscais e recibos via modelos de visão computacional.
+* **Categorização Preditiva**:
+  * Inteligência contextual que mapeia o histórico de descrições e sugere a categoria e subcategoria mais provável para cada transação.
+
+---
+
+## 12. Widgets Nativos Android & AlarmManager
+
+* **Múltiplos Tamanhos**:
+  * **Bento Dashboard (4x2 / 4x3)**: Saldo em Contas, Resultado Líquido do Mês, Fatura e atalhos rápidos (+ Despesa, + Receita).
+  * **Barra Compacta (4x1)**: Resumo discreto com indicadores essenciais.
+  * **Mini Resumo (2x2)**: Card quadrado com métricas principais.
+* **AlarmManager com `allowWhileIdle: true`**:
+  * Notificações nativas que tocam no horário programado mesmo com o smartphone em modo de economia profunda de bateria (*Doze Mode*) ou app encerrado.
+
+---
+
+## 13. Sincronização Híbrida & Live Update OTA
+
+* **Supabase PostgreSQL & Cache Local**:
+  * Persistência em nuvem com isolamento estrito via Row Level Security (`user_id = auth.uid()`).
+  * Cache em armazenamento local (`localStorage` / SQLite) para operação resiliente em baixa conectividade.
+* **Live Update Over-The-Air (OTA)**:
+  * Empacotamento de bundles Web (`.zip`) assinados com hash SHA-256 e manifesto de versão (`manifest.json`), permitindo atualizações automáticas e instantâneas do frontend sem necessidade de reinstalação do APK.
+  * Guarda de inicialização com detecção de erros em tempo de carregamento e rollback automático para a versão anterior em caso de falha.

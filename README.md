@@ -1,9 +1,10 @@
-# 🚀 Finly `v1.1.83`
+# 🚀 Finly `v1.1.83` (Web Bundle `v1.1.83.8`)
 
-> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa e inteligência analítica com paridade Web e Mobile Android.
+> Plataforma completa de gestão financeira pessoal, planejamento orçamentário, controle de faturas de cartões, fluxo de caixa, investimentos e inteligência analítica com paridade total Web e Mobile Android.
 
 [![Build Android APK & Release](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml/badge.svg)](https://github.com/LivertonAguiar/Finly/actions/workflows/build-apk.yml)
 [![Version](https://img.shields.io/badge/version-1.1.83-purple.svg)](package.json)
+[![Web Bundle OTA](https://img.shields.io/badge/OTA%20Bundle-v1.1.83.8-emerald.svg)](server/manifest.json)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
@@ -14,7 +15,8 @@
 - [Galeria Visual (Web & Mobile)](#-galeria-visual-web--mobile)
 - [Stack Tecnológica](#-stack-tecnológica)
 - [Estrutura de Pastas e Arquitetura](#-estrutura-de-pastas-e-arquitetura)
-- [Rotas & Mapa do Aplicativo](#-rotas--mapa-do-aplicativo)
+- [Mapa Completo de Menus, Submenus e Caminhos](#-mapa-completo-de-menus-submenus-e-caminhos)
+- [Tabela Geral de Rotas da Aplicação](#-tabela-geral-de-rotas-da-aplicação)
 - [Recursos Recentes e Destaques](#-recursos-recentes-e-destaques)
 - [Personalização Visual & Theme Engine](#-personalização-visual--theme-engine)
 - [Motor de Internacionalização (i18n)](#-motor-de-internacionalização-i18n)
@@ -27,7 +29,7 @@
 
 ## 🌟 Visão Geral
 
-O **Finly** é um sistema financeiro moderno construído para alta performance e responsividade tanto na Web quanto no aplicativo nativo Android. Ele combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito, central de ajuda com simulador interativo Android e persistência segura em nuvem.
+O **Finly** é um sistema financeiro moderno construído para altíssima performance, responsividade e robustez na Web e no aplicativo nativo Android. Combina controle transacional em tempo real, visualização de extratos bancários, previsão de fluxo de caixa, gestão de faturas de múltiplos cartões de crédito, amortização inteligente de financiamentos (SAC/Price), controle de patrimônio, central de ajuda com simulador interativo Android e persistência segura em nuvem com sincronização híbrida e suporte a atualizações instantâneas Over-The-Air (OTA).
 
 ---
 
@@ -45,124 +47,205 @@ O Finly foi concebido com foco total em **UX/UI premium**, alta densidade de inf
 
 ---
 
+## 🗺️ Mapa Completo de Menus, Submenus e Caminhos
+
+O Finly dispõe de navegação fluida adaptada à plataforma de uso:
+- **Desktop**: Barra lateral expansível (`Sidebar`) customizável pelo usuário, agrupada por relevância (*Principal*, *Ferramentas*, *Gestão*).
+- **Mobile**: Barra inferior fixa (`BottomNav`) com as 5 principais rotas + Botão de Ação Rápida Flutuante (`Speed Dial FAB`) + Hub centralizador (`MorePage`).
+
+```text
+FINLY NAVIGATION ARCHITECTURE
+├── 🏠 1. Dashboard (/dashboard)
+│   ├── Topo: Boas-vindas, Avatar do Perfil, Notificações, Seletor de Mês/Ano (Jan - Dez)
+│   ├── Hero Card: Saldo Geral em Contas (Saldo Líquido Real) + Olho Ocultar Valores
+│   ├── Twin Cards: Receitas (Recebidas vs A Receber) & Despesas (Realizadas vs Pendentes vs Cartão)
+│   ├── Grid de 15 Bento Widgets (reordenáveis via Drag-and-Drop / Personalizáveis):
+│   │   ├── Pendências e Alertas (Despesas pendentes, Faturas vencidas, Faturas abertas)
+│   │   ├── Despesas por Categoria (Gráfico Donut com filtro Todas / Fixas / Variáveis)
+│   │   ├── Autonomia de Reserva (Runway / Burn Rate em dias e data de esgotamento)
+│   │   ├── Fluxo de Caixa Semestral (Barras comparativas de 6 meses)
+│   │   ├── Resumo de Cartões (Limite disponível, faturas e vencimentos)
+│   │   ├── Extrato de Lançamentos Recentes
+│   │   └── Indicadores de Metas e Patrimônio
+│
+├── 🏛️ 2. Contas (/contas)
+│   ├── Grid de Contas Bancárias & Carteiras (Saldo Real, Cor e Banco)
+│   ├── Saldo Previsto por Conta (com projeção de lançamentos agendados)
+│   ├── Inclusão/Exclusão da Conta no Saldo Geral
+│   ├── Ações: Nova Conta, Editar Conta, Ajuste Rápido de Saldo e Exclusão
+│   └── Extrato Filtrado Individual por Instituição
+│
+├── 📋 3. Transações (/transacoes)
+│   ├── Barra Superior de Filtros: Tipo (Todas/Receitas/Despesas), Contas, Cartões, Categorias
+│   ├── Seletor de Período (Mês Corrente, Intervalo Customizado, Ano)
+│   ├── Alternador de Regime: "Por Competência/Fatura" vs "Por Data da Compra"
+│   ├── Busca Textual Preditiva por Descrição, Tag ou Valor
+│   ├── Timeline Diária Agrupada com Totais por Data
+│   ├── Alternância Rápida de Status em 1 Toque (Pendente ⇄ Paga / Agendada)
+│   └── Modal Detalhado de Transação:
+│       ├── Edição de Valores, Datas (Data do Pagamento / Data de Vencimento)
+│       ├── Gestão de Parcelas (X de Y) e Escopo de Alteração (Esta / Próximas / Todas)
+│       ├── Divisão de Despesa por Múltiplas Categorias (Splits & Componentes)
+│       ├── Marcação de Terceiros e Registro de Reembolso Parcial ou Integral
+│       └── Upload de Anexos (Comprovantes / Recibos) e Lembretes Programados
+│
+├── 💳 4. Cartões de Crédito (/cartoes)
+│   ├── Carrossel/Grid de Cartões Físicos e Virtuais com Bandeira e Cores
+│   ├── Métricas de Cartão: Limite Total, Limite Comprometido e Limite Disponível
+│   ├── Seletor de Mês da Fatura (Faturas Abertas, Fechadas e Pagas)
+│   ├── Compras Parceladas atreladas ao cartão com contagem de parcelas restantes
+│   ├── Modal de Quitação de Fatura com Seleção de Data Retroativa/Efetiva (`paidAt`)
+│   └── Estorno Seguro de Pagamento de Fatura (Reabertura)
+│
+├── 🎯 5. Planejamento & Orçamento (/planejamento ou /orcamento)
+│   ├── Wizard de Planejamento Mensal em 3 Etapas (`criarNovoPlanejamento`)
+│   ├── Matriz Anual de Orçamento (12 meses com projeção e histórico)
+│   ├── Definição de Teto de Gastos por Categoria
+│   └── Acompanhamento de Aderência em Tempo Real com Barras Percentuais
+│
+├── 🚩 6. Metas & Objetivos (/metas)
+│   ├── Categorias de Metas: Curto Prazo, Médio Prazo, Longo Prazo e Reserva de Emergência
+│   ├── Configuração: Valor Alvo, Data Limite, Ícone e Cor
+│   ├── Histórico de Aportes e Retiradas com Saldo Atual
+│   └── Barra de Progresso com Porcentagem e Animação de Confetti ao completar
+│
+├── 📊 7. Relatórios & BI (/relatorios)
+│   ├── Gráfico de Evolução Financeira (Receitas x Despesas x Saldo Líquido)
+│   ├── Gráficos de Donut/Pizza para Composição de Despesas e Receitas
+│   ├── Tabela Analítica de Distribuição por Categoria e Subcategoria
+│   ├── Filtros Temporais (Mês, Trimestre, Semestre, Ano e Customizado)
+│   └── Exportação Instantânea nos formatos Excel (.xlsx) e PDF
+│
+├── 📅 8. Calendário Financeiro (/calendario)
+│   ├── Grid Mensal com Indicadores Semânticos de Vencimentos (Verde = Receita, Vermelho = Despesa)
+│   ├── Resumo de Receitas e Despesas Previstas para o Mês Selecionado
+│   └── Drawer Lateral Interativo ao clicar no dia: Extrato detalhado com baixa de status
+│
+├── 📉 9. Dívidas & Financiamentos (/dividas)
+│   ├── Gestão de Empréstimos Pessoais, Consignados e Financiamentos Imobiliários
+│   ├── Sistemas de Amortização Suportados: SAC e Tabela Price
+│   ├── Breakdown Preciso de Parcelas: Amortização, Juros, Seguros (DFI/MIP) e Taxas Administrativas
+│   ├── Amortização Extraordinária com Recálculo de Prazo ou Parcela
+│   └── Sincronização Automática com o Extrato Diário do Finly
+│
+├── 📈 10. Investimentos & Patrimônio (/investimentos)
+│   ├── Classes de Ativos: Renda Fixa (CDB/Tesouro), Ações, Fundos Imobiliários (FIIs), Criptomoedas
+│   ├── Patrimônio Líquido Consolidado (`Net Worth`)
+│   ├── Rendimento Mensal Acumulado e Histórico de Rentabilidade
+│   └── Registro de Proventos e Aportes
+│
+├── 🤖 11. Assistente WhatsApp com IA (/whatsapp)
+│   ├── Lançamento Inteligente de Despesas e Receitas via Conversa de WhatsApp
+│   ├── Reconhecimento de Áudios de Voz via Transcrição
+│   ├── Leitura e OCR de Fotos de Cupons Fiscais e Comprovantes
+│   └── Confirmação e Conciliação Automática no App
+│
+├── ✨ 12. Skills Financeiras de IA (/skills)
+│   ├── Otimizador de Milhas e Programas de Fidelidade
+│   ├── Rastreador de Assinaturas e Recorrências Esquecidas
+│   └── Auditoria Tributária e Dicas de Redução de Gastos Fixos
+│
+├── 🗂️ 13. Categorias & Tags (/cadastro)
+│   ├── Gestão de Categorias Pai (Receitas e Despesas) com Paleta Hexadecimal e Ícones
+│   ├── Árvore de Subcategorias com Configuração Analítica
+│   └── Painel Centralizado de Tags: Grid de tags com contagem de uso, renomeação e exclusão em lote
+│
+├── 👥 14. Finanças da Família (/familia)
+│   ├── Compartilhamento de Finanças Multiusuário
+│   ├── Perfis de Acesso: Titular (Admin) e Dependentes
+│   └── Filtro de Lançamentos e Gastos por Membro Familiar
+│
+├── ⚙️ 15. Configurações (/settings)
+│   ├── Sub-aba 1: Perfil (Nome, E-mail, Telefone, Avatar e Moeda Oficial BRL/USD/EUR)
+│   ├── Sub-aba 2: Aparência & Tema:
+│   │   ├── 10 Presets (Sleek Obsidian, Swiss Navy, Tech Green, Emerald Slate, Clean Light, etc.)
+│   │   ├── 6 Cores de Acento Primário (Púrpura, Verde, Azul, Laranja, Rosa, Vermelho)
+│   │   └── 3 Raio de Bordas (Ultra-Redondo 25px, Moderno 16px, Reto 8px)
+│   ├── Sub-aba 3: Notificações & Alarmes (Lembretes com antecedência e integração AlarmManager)
+│   ├── Sub-aba 4: Segurança (Bloqueio por PIN de 4 dígitos, Biometria e PBKDF2)
+│   └── Sub-aba 5: Dados & Backup (Backup em JSON/ZIP, Importação com mesclagem e Zona de Perigo)
+│
+├── 💡 16. Central de Ajuda (/ajuda)
+│   ├── Base de Conhecimento com Tutoriais Passo a Passo
+│   ├── FAQ Interativo e Dúvidas Frequentes
+│   └── Finly Web Mockup: Simulador Visual Interativo com Tela de Celular Android
+│
+└── ➕ 17. Mais Opções & Sobre (/mais ou /sobre)
+    ├── Sub-aba Geral: Hub de Acesso Rápido a todos os módulos secundários
+    └── Sub-aba Sobre:
+        ├── Exibição da Versão Nativa do APK instalada
+        ├── Exibição da Versão do Pacote Web OTA ativo
+        ├── Botão "Verificar Atualizações"
+        ├── Botão Permanente "Baixar APK Nativo Android"
+        └── Histórico Completo de Versões e Changelog
+```
+
+---
+
+## 🧭 Tabela Geral de Rotas da Aplicação
+
+| Rota URL | Componente Principal | Categoria | Descrição Principal |
+| :--- | :--- | :--- | :--- |
+| `/dashboard` | `DashboardPage` | Principal | Visão geral dos saldos, indicadores e 15 widgets modulares. |
+| `/contas` | `AccountsPage` | Principal | Saldos bancários, carteiras em dinheiro e extrato individual. |
+| `/transacoes` | `TransactionsPage` | Principal | Extrato completo, timeline cronológica e filtros avançados. |
+| `/cartoes` | `CreditTab` | Principal | Gestão de faturas, limites e compras parceladas no crédito. |
+| `/planejamento` | `BudgetPage` | Principal | Orçamento mensal, metas por categoria e matriz 12 meses. |
+| `/orcamento` | `BudgetPage` | Principal | Alias direto da rota de planejamento orçamentário. |
+| `/metas` | `GoalsPage` | Principal | Metas de curto/longo prazo e comemoração de conclusão. |
+| `/relatorios` | `ReportsPage` | Principal | BI visual, gráficos donut/evolução e exportação XLSX/PDF. |
+| `/calendario` | `CalendarPage` | Principal | Grade mensal com marcações e drawer lateral de lançamentos. |
+| `/dividas` | `DebtsPage` | Ferramentas | Controle de dívidas, financiamentos (SAC/Price) e amortização. |
+| `/investimentos` | `InvestmentsTab` | Ferramentas | Renda fixa, fundos, ações, proventos e patrimônio líquido. |
+| `/whatsapp` | `WhatsAppPage` | Ferramentas | Assistente virtual de IA para lançamentos via WhatsApp. |
+| `/skills` | `FinancialSkillsPage` | Ferramentas | Skills de IA (auditoria de custos, milhas e otimização). |
+| `/cadastro` | `CadastrosPage` | Gestão | Gerenciador de Categorias, Subcategorias e Painel de Tags. |
+| `/familia` | `FamilyPage` | Gestão | Finanças compartilhadas com múltiplos membros familiares. |
+| `/settings` | `SettingsPage` | Gestão | Perfil, Temas (10 presets), Notificações, PIN e Backup. |
+| `/perfil` | `ProfilePage` | Gestão | Visualização de dados cadastrais e segurança da conta. |
+| `/ajuda` | `HelpCenterPage` | Gestão | Central de tutoriais e Simulador Web Mockup do Finly. |
+| `/mais` | `MorePage` | Navegação | Hub mobile com atalhos gerais e aba Sobre/Download de APK. |
+| `/sobre` | `MorePage` (subtab SOBRE) | Navegação | Informações de versão, status OTA e changelog interativo. |
+
+---
+
+## ✨ Recursos Recentes e Destaques
+
+### 🔒 Proteção de Despesas Futuras & Saldo em Contas (v1.1.83.8)
+- **Não Comprometimento de Saldo Antecipado**: Despesas recorrentes e parcelas em meses futuros nascem estritamente como `scheduled` (agendadas), garantindo que o **Saldo Geral em Contas** reflita exclusivamente valores já liquidados e pagos.
+- **Alternância Segura de Status**: Ao desmarcar uma despesa futura paga por engano, o sistema reverte com inteligência para `scheduled` (evitando ficar como pendente vencida).
+- **Hero Card Focado em Liquidez**: Exibição prioritária do Saldo Real Disponível em Contas, com pílulas informativas de taxa de poupança ou consumo econômico do mês.
+
+### 🗓️ Seletor de Meses à Prova de Overflow (v1.1.83.5)
+- **Ancoragem Determinística no Dia 1**: Resolução do bug de overflow em meses de 30/31 dias (ex: selecionar Novembro no dia 31 de Outubro não pula mais para Dezembro).
+
+### 📱 Múltiplos Tamanhos de Widgets Nativos para Android (v1.1.83)
+- **3 Opções no Launcher Android**:
+  - **Bento Dashboard (4x2 / 4x3)**: Saldo em Contas, Resultado do Mês, Fatura e botões rápidos (+ Despesa, + Receita).
+  - **Barra Compacta (4x1)**: Resumo horizontal elegante para o topo da tela inicial.
+  - **Mini Resumo (2x2)**: Card quadrado compacto com métricas essenciais.
+- **AlarmManager com allowWhileIdle**: Notificações sonoras e alertas que disparam pontualmente mesmo com o aparelho em repouso profundo (*Doze Mode*) ou app fechado.
+
+### ⚡ Atualizações Over-The-Air (Live Update OTA)
+- **Distribuição Instantânea**: Atualização do frontend React sem necessidade de reinstalar o APK Android.
+- **Proteção Anti-Rollback e Guardas de Inicialização**: Verificação rigorosa de SHA-256 e teste de integridade antes de confirmar o novo pacote ativo.
+
+---
+
 ## 🛠️ Stack Tecnológica
 
 | Camada | Tecnologia | Descrição |
 | :--- | :--- | :--- |
 | **Frontend Framework** | **React 18** (TypeScript) | Interface declarativa com tipagem estrita |
 | **Mobile Runtime** | **Capacitor 8** (Android) | Empacotamento nativo Android com suporte a hardware back button e safe-area |
-| **Build & Bundler** | **Vite 5** | Compilação ultra-rápida e hot reload |
+| **Build & Bundler** | **Vite 5** | Compilação ultra-rápida e empacotamento modular de bundles |
 | **Estilização** | **Tailwind CSS + CSS Variables** | Design responsivo com motor de temas dinâmico |
-| **Banco de Dados & Nuvem** | **Supabase (PostgreSQL + RLS)** | Banco relacional na nuvem com autenticação segura e Row Level Security |
+| **Banco de Dados & Nuvem** | **Supabase (PostgreSQL + RLS)** | Banco relacional na nuvem com isolamento estrito via Row Level Security |
 | **Ícones** | **Lucide React** | Conjunto completo de ícones minimalistas |
 | **Efeitos Visuais** | **Canvas Confetti** | Animações de metas e marcos financeiros |
 | **Roteamento** | **HTML5 History API** | Sincronização em tempo real da URL (`/dashboard`, `/contas`, etc.) |
-| **Backend API & Sync** | **Node.js / Express** | Serviço de sincronização multi-usuário e envio de relatórios |
+| **Backend API & Sync** | **Node.js / Express** | Serviço de sincronização multi-usuário, manifesto OTA e envio de relatórios |
 | **Internacionalização** | **i18n Custom Engine** | Suporte a pt-BR, en-US e es-ES + multi-moedas |
-
----
-
-## 📁 Estrutura de Pastas e Arquitetura
-
-```text
-finly/
-├── .agents/                      # Definições de Skills e Automações
-│   └── skills/                   # Skills especializadas para engenharia e produto
-├── android/                      # Projeto nativo Android (Capacitor)
-├── dist/                         # Build de produção otimizado
-├── docs/                         # Arquitetura, regras de negócio e ADRs
-├── public/                       # Favicons, manifests e assets estáticos
-├── scripts/                      # Scripts de automação, deploy e migração
-│   ├── deploy-vps.ps1            # Deploy automatizado na VPS Docker
-│   └── migrate-stores-to-supabase.js # Migração de dados locais para o Supabase
-├── server/                       # Backend Express Mail & Sync Service
-│   ├── apiServer.js              # Servidor API REST
-│   └── data/version.json         # Manifesto dinâmico de versão e updates
-├── src/
-│   ├── components/
-│   │   ├── accounts/             # Contas Bancárias (AccountsPage)
-│   │   ├── auth/                 # Login e Autenticação (AuthPage)
-│   │   ├── cadastros/            # Categorias, Tags, Modais de Contas e Cartões
-│   │   ├── calendario/           # Calendário Mensal e Detalhes do Dia (CalendarPage)
-│   │   ├── common/               # Modais compartilhados (AppUpdateModal, etc.)
-│   │   ├── dashboard/            # Visão Geral, 15 Widgets, CreditTab, InvestmentsTab
-│   │   ├── dividas/              # Gestão de Dívidas e Amortizações (DebtsPage)
-│   │   ├── familia/              # Finanças Compartilhadas (FamilyPage)
-│   │   ├── help/                 # Central de Ajuda com Simulador Android
-│   │   ├── layout/               # Sidebar, Header e BottomNav
-│   │   ├── metas/                # Objetivos e Metas Financeiras (GoalsPage)
-│   │   ├── mobile/               # Componentes exclusivos da experiência mobile
-│   │   ├── more/                 # Hub de Mais Opções (MorePage)
-│   │   ├── orcamento/            # Wizard de Planejamento 3 Passos (BudgetPage)
-│   │   ├── perfil/               # Perfil do Usuário e Segurança (ProfilePage)
-│   │   ├── relatorios/           # Gráficos Analíticos e BI (ReportsPage)
-│   │   ├── settings/             # Abas de Configurações (SettingsPage)
-│   │   ├── transactions/         # Timeline e Filtros de Transações (TransactionsPage)
-│   │   ├── ui/                   # Modal, EmojiPicker e Componentes Base
-│   │   └── whatsapp/             # Assistente WhatsApp IA (WhatsAppPage)
-│   ├── context/
-│   │   ├── AuthContext.tsx       # Sessão, Usuários e Integração Supabase Auth
-│   │   └── FinancialContext.tsx  # Estado Global Financeiro (CRUD, Cálculos e Sincronização)
-│   ├── services/
-│   │   ├── supabaseClient.ts     # Cliente Supabase inicializado
-│   │   └── supabaseDb.ts         # Camada de Repositório e Sincronização SQL
-│   ├── types/
-│   │   └── index.ts              # Interfaces TypeScript de todo o sistema
-│   ├── utils/
-│   │   ├── bankLogos.tsx         # Logotipos de bancos e bandeiras
-│   │   ├── defaultCategories.ts  # Categorias padrão com cores e ícones
-│   │   ├── formatters.ts         # Formatação de moedas, datas e números
-│   │   ├── i18n.ts               # Dicionário de tradução e idiomas
-│   │   └── themeEngine.ts        # Motor de temas em tempo real
-│   ├── App.tsx                   # Roteador central e provedores
-│   ├── index.css                 # Estilos globais e variáveis de tema
-│   └── main.tsx                  # Ponto de entrada React com inicialização de tema
-├── supabase/
-│   └── migrations/               # Scripts SQL de schema e Row Level Security
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
-```
-
----
-
-## 🧭 Rotas & Mapa do Aplicativo
-
-| Rota | Componente | Descrição |
-| :--- | :--- | :--- |
-| `/dashboard` | `DashboardPage` | Painel principal com KPIs, gráficos e widgets configuráveis em grade responsiva com encaixe automático conforme o espaço útil. |
-| `/transacoes` | `TransactionsPage` | Extrato diário com filtros, busca e parcelas sincronizadas de dívidas/financiamentos. |
-| `/contas` | `AccountsPage` | Grid compacto de contas bancárias, saldos reais, saldos previstos e menu de reajuste. |
-| `/cartoes` | `CreditTab` | Gestão de múltiplos cartões, limites disponíveis, faturas abertas/fechadas e pagamento. |
-| `/planejamento` | `BudgetPage` | Wizard de 3 etapas (`criarNovoPlanejamento`), teto de gastos por categoria e comparativos. |
-| `/relatorios` | `ReportsPage` | BI visual com Donut/Pizza interativo, filtros por período e exportação. |
-| `/calendario` | `CalendarPage` | Grade mensal com lançamentos diários e painel lateral de detalhes ao clicar no dia. |
-| `/settings` | `SettingsPage` | Configurações gerais: Perfil, Aparência (10 presets de tema e cores de acento), Notificações, Segurança e Gestão de Dados (backup e zona de perigo protegida). |
-| `/ajuda` | `HelpPage` | Central de Ajuda interativa com simulador visual fiel do app Android. |
-| `/mais` | `MorePage` | Hub de ferramentas adicionais exclusivas (sem duplicatas da barra lateral) e download de APK. |
-| `/metas` | `GoalsPage` | Objetivos financeiros com barras de progresso, aportes e comemoração visual. |
-| `/dividas` | `DebtsPage` | Controle de dívidas e financiamentos, cronograma Price/SAC, amortização e integração com o Extrato. |
-| `/investimentos` | `InvestmentsTab` | Consolidação patrimonial por classe de ativos e rendimento mensal. |
-| `/whatsapp` | `WhatsAppPage` | Integração de assistente virtual para lançamentos via chat. |
-| `/familia` | `FamilyPage` | Controle financeiro compartilhado multi-usuário com permissões. |
-
----
-
-## ✨ Recursos Recentes e Destaques
-
-### 🌅 Saudação Personalizada & Header Adaptativo
-- **Boas-Vindas Contextuais**: Mensagem inteligente no topo do Dashboard ("Bom dia", "Boa tarde", "Boa noite") acompanhada pelo primeiro nome do usuário em gradiente da marca, data por extenso formatada e animação sutil de aceno (`wave-hand`).
-- **Cabeçalho com Blending Dinâmico**: Transparência fluida com `backdrop-filter: blur(20px)` adaptada a qualquer um dos 10 presets de tema, eliminando faixas rígidas em temas escuros alternativos.
-- **Blindagem e Proteção de Dados (Conta Demo)**: Proteção em nível de contexto contra limpeza destrutiva no Supabase/servidor em sessões de demonstração, além de confirmação obrigatória por digitação (`LIMPAR`) e oferta de exportação prévia de backup.
-
-### 💳 Gestão Inteligente e Quitação de Faturas de Cartão
-- **Seleção da Data Exata do Pagamento**: Permite definir livremente a data de quitação (na data de hoje, no vencimento exato ou em datas passadas/retroativas para manter o histórico financeiro fidedigno).
-- **Rastreabilidade Transacional (`paidAt`)**: Ao registrar o pagamento da fatura, as despesas do período são marcadas como `completed` com a respectiva data de liquidação e o débito é lançado atômica e confiavelmente na conta bancária selecionada.
-- **Transparência e Badges Visuais**: Exibição imediata na fatura e no detalhe dos cartões: `✓ Quitada em DD/MM/AAAA via [Conta]`, além da opção segura de estorno/reabertura quando necessário.
-
-### 🏷️ Sugestões Dinâmicas de Tags & Gestão Centralizada em Cadastros
-- **Inteligência Contextual**: Sugestões automáticas e preditivas de tags durante o preenchimento de transações, correlacionadas com a categoria e palavras-chave da descrição.
-- **Painel de Gestão de Tags**: Seção dedicada na página de Cadastros para visualização em grade, contagem de transações atreladas, renomeação rápida e exclusão em lote.
 
 ---
 
@@ -190,22 +273,9 @@ O sistema possui um motor dinâmico em `src/utils/themeEngine.ts` que manipula o
 * 🌸 **Rosa Neon** (`#EC4899`)
 * 🔴 **Vermelho Carmim** (`#EF4444`)
 
-### 3. Geometria das Bordas (`--card-radius`)
-* **Ultra-Redondo**: `25px` (Padrão Finly)
-* **Moderno**: `16px`
-* **Reto**: `8px`
-
-### 4. Tipografia de Alta Precisão & Nitidez WCAG
-* **Fontes Oficiais**: `Plus Jakarta Sans` e `Inter` nativamente integradas com suporte a dígitos tabulares (`tnum`).
-* **Contraste no Modo Claro**: Textos secundários e terciários elevados para Slate 700 (`#334155`) e Slate 800 (`#1E293B`) com contraste 8.5:1.
-* **Contraste nos 9 Modos Escuros**: Textos secundários em Slate 200 (`#E2E8F0`) e terciários em Slate 300 (`#CBD5E1`), com gráficos e eixos SVG 100% legíveis.
-* **Tracking Positivo**: Fontes compactas (9px a 11px) com tracking balanceado para leitura limpa em qualquer resolução de display.
-
 ---
 
 ## 🌍 Motor de Internacionalização (i18n)
-
-Implementado em `src/utils/i18n.ts`:
 
 * **Idiomas Suportados**:
   * 🇧🇷 Português (Brasil) - `pt-BR`
@@ -220,12 +290,6 @@ Implementado em `src/utils/i18n.ts`:
 
 ## ⚙️ Instalação, Execução e Build
 
-### Requisitos:
-* **Node.js**: Versão 18.x ou superior.
-* **NPM**: Versão 9.x ou superior.
-
-### Comandos de Desenvolvimento:
-
 ```bash
 # 1. Instalar dependências
 npm install
@@ -236,15 +300,17 @@ npm run dev
 # 3. Compilar para produção Web
 npm run build
 
-# 4. Sincronizar com Android (Capacitor)
+# 4. Executar testes de transações e regras de negócio
+npm run test:transactions
+
+# 5. Sincronizar com Android (Capacitor)
 npm run cap:sync
 
-# 5. Abrir no Android Studio
+# 6. Abrir no Android Studio
 npm run cap:open
 ```
 
 ### Serviço Backend API (`server/apiServer.js`):
-
 ```bash
 npm run server
 ```
@@ -253,40 +319,25 @@ npm run server
 
 ## 🚀 Guia de Deploy & Produção
 
-### 1. Deploy Automático na VPS (Docker):
-O projeto conta com script PowerShell pronto para empacotar e atualizar o container Docker em produção:
-
+### 1. Deploy Live Update OTA na VPS:
+Para atualizar o frontend instantaneamente em produção:
 ```powershell
-npm run deploy:vps
-# Executa: powershell -ExecutionPolicy Bypass -File ./scripts/deploy-vps.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy-web-ota.ps1 -WebVersion "1.1.83.X" -Notes "Descrição da release"
 ```
 
-### 2. CI/CD no GitHub Actions (Android APK Release):
-A cada push na branch `main`, o fluxo automatizado:
-- Compila a aplicação Web (`npm run build`).
-- Sincroniza os assets no Capacitor Android (`npx cap sync android`).
-- Gera e valida o arquivo `.apk` dentro do GitHub Actions.
-- Cria uma release oficial no GitHub com download direto do APK e notas de versão.
+### 2. Deploy Completo de Containers na VPS (Docker):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy-vps.ps1
+```
 
-> Regra operacional: a build/publicação do APK é feita somente pelo GitHub Actions. A máquina local pode sincronizar o Capacitor (`npm run cap:sync`), mas não deve ser usada como fonte oficial para gerar APK de release.
-
-### 3. Hospedagem Web (Vercel / Netlify / Cloudflare Pages):
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-- **Rewrite Rules**: Regra `/* -> /index.html` para suporte a rotas SPA diretas.
-
----
-
-## 🧩 Arquitetura de Dados & Supabase
-
-O estado global em `FinancialContext.tsx` opera com uma arquitetura híbrida e resiliente:
-
-1. **Supabase PostgreSQL & RLS**: Banco de dados relacional na nuvem com isolamento estrito multiusuário via políticas de Row Level Security (`auth.uid() = user_id`).
-2. **Resiliência Offline & Modo Demonstração**: Suporte imediato ao usuário de testes (`demo@finly.com`) e retenção em cache local para estabilidade de navegação offline.
-3. **Migração Progressiva**: Script automatizado (`scripts/migrate-stores-to-supabase.js`) para migração de dados locais anteriores para as tabelas relacionais do Supabase sem perdas.
+### 3. CI/CD no GitHub Actions (Android APK Release):
+A cada push na branch `main`:
+- O GitHub Actions compila o bundle Web e os testes unitários.
+- Gera o binário nativo assinado `finly-vX.X.XX.apk`.
+- Cria a release oficial no GitHub com download público direto.
 
 ---
 
 ## 📋 Changelog e Versões
 
-Consulte o arquivo [`CHANGELOG.md`](CHANGELOG.md) para o histórico completo de novidades, melhorias e correções a cada versão.
+Consulte o arquivo [`CHANGELOG.md`](CHANGELOG.md) para o histórico completo de novidades e versões.

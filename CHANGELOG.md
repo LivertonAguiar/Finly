@@ -3,6 +3,25 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.83.8] - 2026-10-31
+
+### Proteção de Despesas Futuras e Saldo em Contas
+- **Salvaguarda de Recorrências Futuras**:
+  - Implementada trava no motor de séries recorrentes (`recurringExpenseSeries.ts`) garantindo que despesas futuras (`date > today`) nunca permaneçam como `completed` sem quitação explícita (`paidAt`).
+  - Prevenção contra dedução prematura do saldo em contas bancárias por contas previstas de meses posteriores.
+- **Alternância Segura de Status de Transações**:
+  - Função `toggleTransactionStatus` no `FinancialContext.tsx` aprimorada para reverter inteligentemente transações futuras desmarcadas para o status `scheduled` (agendadas), em vez de `pending` (vencidas).
+
+### Hero Card do Dashboard e Seletor de Meses
+- **Saldo Geral em Contas como Métrica Central**:
+  - Saldo líquido disponível em contas fixado com destaque primordial no Hero Card, acompanhado por indicadores semânticos de taxa de poupança (+% este mês) ou consumo (-% consumo).
+- **Correção Definitiva de Overflow no Seletor de Meses**:
+  - Ancoragem no primeiro dia do mês (`new Date(year, month, 1)`) em todas as 7 telas que utilizam navegação mensal, eliminando o salto indevido de Outubro para Dezembro no dia 31.
+
+### Hub Mais Opções & Download de APK
+- **Detecção Resiliente de Atualizações**:
+  - Garantia de exibição permanente do botão de download do APK nativo em `MorePage.tsx` e tratamento defensivo no `appUpdateService.ts` contra rate-limit da API do GitHub.
+
 ## [1.1.83] - 2026-10-30
 
 ### Novos Widgets Nativos com Múltiplos Tamanhos (Android)

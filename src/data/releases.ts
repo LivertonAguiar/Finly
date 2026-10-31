@@ -40,6 +40,33 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 
 export const RELEASES: ReleaseInfo[] = [
   {
+    version: '1.1.83.8',
+    releaseDate: '2026-10-31',
+    summary: 'Proteção contra dedução de despesas futuras no Saldo em Contas, correção de overflow no seletor de meses e melhorias no Hero Card.',
+    highlights: [
+      {
+        title: 'Proteção de Despesas Futuras no Saldo',
+        description: 'Despesas recorrentes e parcelas em meses futuros nascem estritamente como agendadas, garantindo que o Saldo Geral reflita apenas pagamentos realizados.',
+        type: 'fix',
+      },
+      {
+        title: 'Seletor de Meses à Prova de Overflow',
+        description: 'Ancoragem determinística no dia 1 evitando que a troca de mês no dia 31 pule meses consecutivos.',
+        type: 'fix',
+      },
+      {
+        title: 'Saldo Geral em Destaque no Hero Card',
+        description: 'Restauração do Saldo em Contas como métrica central primária do Dashboard com pílulas informativas de taxa de poupança ou consumo.',
+        type: 'improvement',
+      },
+      {
+        title: 'Download Seguro de APK em Mais Opções',
+        description: 'Botão de download permanente no Hub Mais Opções com proteção contra limitações de taxa da API do GitHub.',
+        type: 'improvement',
+      },
+    ],
+  },
+  {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-30',
     summary: 'Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas.',
