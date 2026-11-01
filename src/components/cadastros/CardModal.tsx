@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
+import { ColorScrollPicker } from '../common/ColorScrollPicker';
 import { BankSelector } from '../ui/BankSelector';
 import { useFinancial } from '../../context/FinancialContext';
 import { CreditCard } from '../../types';
@@ -445,47 +446,12 @@ export const CardModal: React.FC<CardModalProps> = ({ isOpen, onClose, editingCa
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="relative">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={e => handleColorChange(e.target.value)}
-                  className="w-9 h-9 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 bg-transparent p-0.5 shadow-xs"
-                  title="Abrir seletor visual de cor"
-                />
-              </div>
-              <input
-                type="text"
-                value={color}
-                onChange={e => handleColorChange(e.target.value)}
-                placeholder="#820ad1"
-                className="w-24 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 shadow-xs uppercase"
-              />
-            </div>
-
-            {/* Paletas de Cor Rápidas */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-1">
-              {CARD_COLOR_PRESETS.map(p => {
-                const isSelected = color.toLowerCase() === p.color.toLowerCase();
-                return (
-                  <button
-                    key={p.color}
-                    type="button"
-                    onClick={() => handleColorChange(p.color)}
-                    className={`w-6 h-6 rounded-full shrink-0 transition-all cursor-pointer border ${
-                      isSelected
-                        ? 'scale-125 ring-2 ring-purple-500 border-white shadow-sm'
-                        : 'border-white/30 hover:scale-110 opacity-80 hover:opacity-100'
-                    }`}
-                    style={{ backgroundColor: p.color }}
-                    title={p.name}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          <ColorScrollPicker
+            selectedColor={color}
+            onChange={handleColorChange}
+            compact={true}
+            showCustom={true}
+          />
         </div>
 
         {/* Action Buttons */}
