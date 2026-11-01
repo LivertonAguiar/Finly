@@ -94,6 +94,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
     toggleHideValues,
     transactions,
     metrics,
+    notifications,
+    markNotificationRead,
   } = useFinancial();
   const { currentUser, updateUserAccount, deleteUserAccount, logout } = useAuth();
   const { t } = useTranslation();
@@ -145,6 +147,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
     };
   }, []);
 
+  useEffect(() => {
+    if (activeSection === 'sobre' && notifications) {
+      notifications
+        .filter(n => !n.read && (n.tag === 'app_update' || n.tag?.includes('update') || n.title.toLowerCase().includes('atualiza')))
+        .forEach(n => markNotificationRead(n.id));
+    }
+  }, [activeSection, notifications, markNotificationRead]);
+
   const handleSectionChange = (tabId: string) => {
     setActiveSection(tabId);
     const targetUrl = `/settings?section=${tabId}`;
@@ -161,7 +171,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
     { id: 'seguranca', label: 'Segurança', icon: <Shield className="w-4 h-4" /> },
     { id: 'dados', label: 'Dados & Backup', icon: <Database className="w-4 h-4" /> },
     { id: 'ajuda', label: 'Ajuda', icon: <HelpCircle className="w-4 h-4" /> },
-    { id: 'sobre', label: 'Sobre', icon: <Info className="w-4 h-4" /> },
+    {
+      id: 'sobre',
+      label: 'Sobre',
+      icon: <Info className="w-4 h-4" />,
+      badge: (notifications || []).some(n => !n.read && (n.tag === 'app_update' || n.tag?.includes('update') || n.title.toLowerCase().includes('atualiza'))) ? 1 : undefined,
+      badgeVariant: 'danger',
+    },
   ];
 
   const [searchQuery, setSearchQuery] = useState('');

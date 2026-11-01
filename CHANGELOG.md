@@ -5,6 +5,14 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-10-31
 
+### Correção da Exibição do Badge & Roteamento para Ajustes
+- **Posicionamento e Design do Badge Numérico**:
+  - No modo compacto da barra lateral, o badge numérico foi reposicionado para o canto superior direito do botão (`top: 4px; right: 6px`) com tamanho proporcional (17px) e borda de recorte (`border: 2px solid var(--finly-surface)`), sem cobrir ou bloquear a visão do ícone.
+  - No modo expandido ao passar o mouse, transita suavemente para a extremidade direita da linha (`right: 14px; top: 50%`).
+- **Roteamento de Notificações de Atualização para Ajustes**:
+  - As notificações de atualização e nova versão foram desacopladas de `Transações` e direcionadas exclusivamente para o item **`Ajustes`** (`settings`).
+  - Na tela de Configurações, a aba `Sobre` exibe o selo de atualização disponível e, ao ser acessada, limpa automaticamente a notificação pendente.
+
 ### Barra Lateral Fixa, Encolhível e Reordenação de Ajustes
 - **Ajustes no Menu Lateral (Engrenagem Ativa & Reordenável)**:
   - Inclusão oficial de `Ajustes` em `DEFAULT_SIDEBAR_ORDER` e na carga de itens ativos da barra lateral.

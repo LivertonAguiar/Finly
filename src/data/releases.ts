@@ -42,8 +42,18 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Barra lateral fixa com recolhimento/expansão suave, Ajustes reordenável e ativo por padrão, Scroll Picker com 55 cores individuais e 31 temas de fundo.',
+    summary: 'Notificações de atualização vinculadas a Ajustes com reposicionamento proporcional do badge sem obstruir ícones da barra lateral.',
     highlights: [
+      {
+        title: 'Badge Numérico Reposicionado',
+        description: 'No menu compacto, o badge foi ajustado para o canto superior direito do botão com borda de recorte, garantindo visibilidade 100% livre do ícone.',
+        type: 'fix',
+      },
+      {
+        title: 'Notificação de Atualização em Ajustes',
+        description: 'Notificações de novas versões agora são associadas exclusivamente a Ajustes (aba Sobre) em vez de aparecerem indevidamente em Transações.',
+        type: 'improvement',
+      },
       {
         title: 'Barra Lateral Fixa e Encolhível',
         description: 'Possibilidade de recolher a barra lateral para aproveitar 100% da largura da tela, com transição suave, aba rápida de reabertura e persistência de preferência.',

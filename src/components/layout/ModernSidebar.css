@@ -246,21 +246,39 @@ html:not(.dark) .finly-modern-sidebar .nav-item:not(.is-active):hover {
 /* Badges */
 .finly-modern-sidebar .badge {
   position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
+  top: 4px;
+  right: 6px;
+  transform: none;
   display: grid;
   place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 9999px;
   background: var(--finly-accent);
   color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-  transition: opacity 0.2s ease;
-  z-index: 2;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  border: 2px solid var(--finly-surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .finly-modern-sidebar:hover .badge {
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 10px;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .finly-modern-sidebar hr {
@@ -344,7 +362,8 @@ html:not(.dark) .finly-modern-sidebar .nav-item:not(.is-active):hover {
 
   .finly-modern-sidebar .badge {
     top: 50% !important;
-    right: 12px !important;
+    right: 14px !important;
     transform: translateY(-50%) !important;
+    border: none !important;
   }
 }

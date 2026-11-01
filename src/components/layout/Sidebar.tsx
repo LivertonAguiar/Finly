@@ -83,8 +83,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .filter((item): item is SidebarItemDef => !!item);
   }, [activeItemIds, itemMap]);
 
-  // Badge count for pending notifications
-  const unreadNotifs = notifications ? notifications.filter(n => !n.read).length : 0;
+  // Notificações de atualização direcionadas exclusivamente para a aba de Ajustes
+  const updateNotifsCount = useMemo(() => {
+    if (!notifications) return 0;
+    return notifications.filter(
+      n =>
+        !n.read &&
+        (n.tag === 'app_update' ||
+          n.tag === 'app_up_to_date' ||
+          n.tag?.includes('update') ||
+          n.title.toLowerCase().includes('atualiza') ||
+          n.message.toLowerCase().includes('atualiza'))
+    ).length;
+  }, [notifications]);
 
   return (
     <>
@@ -174,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             const translatedLabel = getSidebarItemLabel(item.id, lang);
-            const showBadge = item.id === 'transacoes' && unreadNotifs > 0;
+            const showBadge = item.id === 'settings' && updateNotifsCount > 0;
 
             return (
               <button
@@ -189,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <Icon className="icon" />
                 <p>{translatedLabel}</p>
-                {showBadge && <span className="badge">{unreadNotifs}</span>}
+                {showBadge && <span className="badge">{updateNotifsCount}</span>}
               </button>
             );
           })}
