@@ -5,6 +5,18 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-10-31
 
+### 55 Cores Individuais & 31 Temas de Fundo em Scroll Picker
+- **55 Cores Individuais Separadas no `ColorScrollPicker`**:
+  - Cada cor das 8 paletas de design foi desmembrada em uma opção individual com seu nome exclusivo e código HEX (ex: `#C6601F` Terracota Neon, `#7FB3B8` Aqua Oceano, `#8CA98C` Sálvia Menta, etc.).
+  - Filtros rápidos por paleta (`Todas`, `Teal & Terracota`, `Forest & Ocre`, `Nordic Spruce`, `Mocha & Caramelo`, etc.).
+  - Proteção de contraste automática: anéis reflexivos para tons escuros e bordas de contenção para tons claros.
+  - Integrado à Cor de Destaque do sistema, modal de Cartões de Crédito e modal de Contas Bancárias/Carteiras.
+- **31 Temas de Fundo no Sistema**:
+  - 16 fundos escuros profundos derivados dos tons escuros e médios das paletas (`teal-abyssal`, `forest-moss`, `spruce-black`, `mocha-espresso`, etc.).
+  - 7 fundos claros suaves e acolhedores (`sand-gold-light`, `wheat-soft-light`, `almond-soft-light`, `peach-soft-light`, etc.).
+  - 8 fundos clássicos Finly (`sleek-obsidian`, `sleek-neo-glass`, `tech-green`, `swiss-navy`, `linear-mono`, `finly-dark`, `midnight-oled`, `clean-light`).
+  - Filtros de categoria em pills (`Todos`, `🌙 Escuros`, `⚡ Clássicos`, `☀️ Claros`) e mini-cards de demonstração em tempo real com saldo e contraste garantido.
+
 ### Novas Paletas Designer & Scroll Pickers de Aparência
 - **8 Novas Paletas de Cores de Alta Densidade Visual**:
   - `Teal & Terracota`: Fundo `#0A0F14`, cartões `#0F3D3E`, destaque `#C6601F`.

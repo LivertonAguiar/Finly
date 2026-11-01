@@ -380,7 +380,32 @@ export interface UserProfile {
     | 'midnight-amber'
     | 'amethyst-coral'
     | 'nightshade-gold'
-    | 'cyber-fuchsia';
+    | 'cyber-fuchsia'
+    // Fundos / Temas Escuros Designer
+    | 'teal-abyssal'
+    | 'teal-night'
+    | 'forest-moss'
+    | 'forest-pine'
+    | 'spruce-black'
+    | 'spruce-nordic'
+    | 'mocha-espresso'
+    | 'mocha-warm'
+    | 'midnight-abyssal'
+    | 'midnight-blue'
+    | 'amethyst-deep'
+    | 'amethyst-imperial'
+    | 'nightshade-graphite'
+    | 'nightshade-violet'
+    | 'cyber-black'
+    | 'cyber-slate'
+    // Fundos / Temas Claros Designer
+    | 'sand-gold-light'
+    | 'wheat-soft-light'
+    | 'almond-soft-light'
+    | 'peach-soft-light'
+    | 'rose-pale-light'
+    | 'vanilla-soft-light'
+    | 'ice-white-light';
   accentColor?: string;
   cardRadius?: 'sharp' | 'medium' | 'rounded' | 'squircle';
   name: string;

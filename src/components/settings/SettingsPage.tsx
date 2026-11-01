@@ -233,6 +233,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
 
   // Horizontal Scroll Picker Refs
   const themeScrollRef = useRef<HTMLDivElement>(null);
+  const [themeCategoryFilter, setThemeCategoryFilter] = useState<'all' | 'dark' | 'classic' | 'light'>('all');
   const accentScrollRef = useRef<HTMLDivElement>(null);
 
   const scrollThemes = (dir: 'left' | 'right') => {
@@ -730,24 +731,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
               </div>
             </div>
 
-            {/* 1. Theme Presets Scroll Picker */}
+            {/* 1. Theme Presets & Backgrounds Scroll Picker - 31 Fundos / Temas Selecionáveis */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                    {t('settings.theme.title', selectedLang)}
+                    {t('settings.theme.title', selectedLang)} / Fundo do Sistema
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Tema selecionado: <strong className="text-purple-600 dark:text-purple-400">{THEME_PRESET_DETAILS.find(t => t.id === selectedThemePreset)?.label || selectedThemePreset}</strong>
+                    Tema ativo: <strong className="text-purple-600 dark:text-purple-400">{THEME_PRESET_DETAILS.find(t => t.id === selectedThemePreset)?.label || selectedThemePreset}</strong>
                   </span>
                 </div>
 
-                {/* Scroll Picker Nav Controls */}
-                <div className="flex items-center gap-1.5">
+                {/* Navigation Buttons (< / >) */}
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
                   <button
                     type="button"
                     onClick={() => scrollThemes('left')}
-                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
                     title="Rolar temas para a esquerda"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -755,7 +756,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                   <button
                     type="button"
                     onClick={() => scrollThemes('right')}
-                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
                     title="Rolar temas para a direita"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -763,62 +764,146 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                 </div>
               </div>
 
-              {/* Theme Scroll Track */}
+              {/* Category Filter Pills (Todos, Escuros, Clássicos, Claros) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[10px]">
+                {[
+                  { id: 'all', label: `Todos (${THEME_PRESET_DETAILS.length})` },
+                  { id: 'dark', label: `🌙 Escuros (${THEME_PRESET_DETAILS.filter(t => t.category === 'dark').length})` },
+                  { id: 'classic', label: `⚡ Clássicos (${THEME_PRESET_DETAILS.filter(t => t.category === 'classic').length})` },
+                  { id: 'light', label: `☀️ Claros (${THEME_PRESET_DETAILS.filter(t => t.category === 'light').length})` },
+                ].map(filter => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setThemeCategoryFilter(filter.id as any)}
+                    className={`px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                      themeCategoryFilter === filter.id
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Horizontal Scroll Track */}
               <div
                 ref={themeScrollRef}
                 className="flex items-stretch gap-3.5 overflow-x-auto pb-3 pt-1 px-1 snap-x snap-mandatory no-scrollbar scroll-smooth"
               >
-                {THEME_PRESET_DETAILS.map(tp => {
-                  const isSelected = selectedThemePreset === tp.id;
-                  return (
-                    <div
-                      key={tp.id}
-                      onClick={() => handleSelectPreset(tp.id)}
-                      className={`snap-start shrink-0 w-64 sm:w-72 p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-3 relative group select-none ${
-                        isSelected
-                          ? 'border-purple-600 ring-2 ring-purple-600/30 bg-purple-50/15 dark:bg-purple-950/25 shadow-md scale-[1.01]'
-                          : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-[#1E1E22] hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      {/* Active Indicator Badge */}
-                      {isSelected && (
-                        <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                          <span>Ativo</span>
-                        </div>
-                      )}
+                {THEME_PRESET_DETAILS
+                  .filter(tp => themeCategoryFilter === 'all' || tp.category === themeCategoryFilter)
+                  .map(tp => {
+                    const isSelected = selectedThemePreset === tp.id;
+                    const isLight = tp.category === 'light';
+                    return (
+                      <div
+                        key={tp.id}
+                        onClick={() => handleSelectPreset(tp.id)}
+                        className={`snap-start shrink-0 w-64 sm:w-72 p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-3 relative group select-none ${
+                          isSelected
+                            ? 'border-purple-600 ring-2 ring-purple-600/30 bg-purple-50/15 dark:bg-purple-950/25 shadow-md scale-[1.01]'
+                            : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-[#1E1E22] hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        {/* Active Indicator Badge */}
+                        {isSelected && (
+                          <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs z-10">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>Ativo</span>
+                          </div>
+                        )}
 
-                      {/* Stacked Capsule Palette Preview (Directly Inspired by UI Designer Images) */}
-                      <div className="p-2.5 rounded-xl bg-black/45 border border-white/5 space-y-1.5 shadow-inner">
-                        <div className="flex items-center gap-1 w-full h-8 rounded-lg overflow-hidden p-1 bg-black/40">
-                          {tp.palette.map((hex, idx) => (
-                            <div
-                              key={idx}
-                              className="h-full flex-1 rounded-md transition-transform hover:scale-110 shadow-xs"
-                              style={{ backgroundColor: hex }}
-                              title={hex}
+                        {/* Live Miniature App Preview with High Contrast Safeguard */}
+                        <div
+                          className="p-3 rounded-xl border flex flex-col gap-2 shadow-inner relative overflow-hidden transition-transform group-hover:scale-[1.02]"
+                          style={{
+                            backgroundColor: tp.bg,
+                            borderColor: isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.10)',
+                          }}
+                        >
+                          {/* Mini Card Header */}
+                          <div className="flex items-center justify-between">
+                            <span
+                              className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                              style={{
+                                backgroundColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.12)',
+                                color: isLight ? '#0F172A' : '#FFFFFF',
+                              }}
+                            >
+                              {tp.category === 'light' ? 'Tema Claro' : 'Tema Escuro'}
+                            </span>
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shadow-xs"
+                              style={{ backgroundColor: tp.accent }}
+                              title={`Destaque ${tp.accent}`}
                             />
-                          ))}
-                        </div>
-                        <div className="flex items-center justify-between px-1 text-[9px] font-mono text-slate-400">
-                          <span>Fundo {tp.palette[0]}</span>
-                          <span>Cards {tp.palette[1]}</span>
-                          <span className="font-bold text-white">Destaque {tp.palette[5]}</span>
-                        </div>
-                      </div>
+                          </div>
 
-                      {/* Label & Description */}
-                      <div>
-                        <h5 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                          <span>{tp.label}</span>
-                        </h5>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 line-clamp-2">
-                          {tp.desc}
-                        </p>
+                          {/* Mini Elevated Card */}
+                          <div
+                            className="p-2 rounded-lg border shadow-xs flex items-center justify-between"
+                            style={{
+                              backgroundColor: tp.cardBg,
+                              borderColor: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)',
+                            }}
+                          >
+                            <div className="space-y-0.5">
+                              <span
+                                className="block text-[8px] font-bold opacity-70"
+                                style={{ color: isLight ? '#475569' : '#CBD5E1' }}
+                              >
+                                Saldo disponível
+                              </span>
+                              <span
+                                className="block text-[11px] font-black tracking-tight"
+                                style={{ color: isLight ? '#0F172A' : '#FFFFFF' }}
+                              >
+                                R$ 14.850,00
+                              </span>
+                            </div>
+                            <div
+                              className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shadow-2xs"
+                              style={{
+                                backgroundColor: tp.accent,
+                                color: isLight && tp.accent === '#FFFFFF' ? '#000000' : '#FFFFFF',
+                              }}
+                            >
+                              ✓
+                            </div>
+                          </div>
+
+                          {/* Palette Capsule Swatch */}
+                          <div className="flex items-center gap-1 w-full h-2 rounded-full overflow-hidden opacity-90">
+                            {tp.palette.map((hex, idx) => (
+                              <div
+                                key={idx}
+                                className="h-full flex-1"
+                                style={{ backgroundColor: hex }}
+                                title={hex}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Title, Badge & Description */}
+                        <div>
+                          <div className="flex items-center justify-between gap-1">
+                            <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">
+                              {tp.label}
+                            </h5>
+                            <span className="text-[9px] font-mono font-bold text-slate-400">
+                              {tp.bg}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 line-clamp-2">
+                            {tp.desc}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
 

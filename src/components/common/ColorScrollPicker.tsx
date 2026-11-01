@@ -41,10 +41,13 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
     return SYSTEM_COLORS.filter(c => c.group === selectedGroup);
   }, [selectedGroup]);
 
+  const safeSelected = (selectedColor || '#7C4DFF').toLowerCase();
+
   const activeColorObj = useMemo(() => {
+    const safeHex = selectedColor || '#7C4DFF';
     return (
-      SYSTEM_COLORS.find(c => c.hex.toLowerCase() === selectedColor.toLowerCase()) || {
-        hex: selectedColor,
+      SYSTEM_COLORS.find(c => c.hex.toLowerCase() === safeHex.toLowerCase()) || {
+        hex: safeHex,
         name: 'Personalizada',
         group: 'Personalizada',
       }
@@ -153,7 +156,7 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
         className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 px-1 snap-x snap-mandatory no-scrollbar scroll-smooth"
       >
         {filteredColors.map(colorItem => {
-          const isSelected = selectedColor.toLowerCase() === colorItem.hex.toLowerCase();
+          const isSelected = safeSelected === colorItem.hex.toLowerCase();
           const contrastText = getContrastColor(colorItem.hex);
           const isLight = isLightColor(colorItem.hex);
           const isDark = isDarkColor(colorItem.hex);
@@ -210,7 +213,7 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
           <div className="snap-start shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-dashed border-slate-300 dark:border-white/20 bg-slate-50/50 dark:bg-white/[0.03]">
             <input
               type="color"
-              value={selectedColor}
+              value={selectedColor && selectedColor.startsWith('#') && selectedColor.length === 7 ? selectedColor : '#7C4DFF'}
               onChange={e => onChange(e.target.value)}
               className="w-6 h-6 rounded-lg cursor-pointer bg-transparent border-0 p-0"
               title="Personalizar cor via seletor nativo"
@@ -224,3 +227,4 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
     </div>
   );
 };
+

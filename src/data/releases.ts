@@ -42,17 +42,17 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Novas paletas de cores designer com Scroll Picker horizontal de temas e cores de destaque, detalhes da fatura em Faturas e modo enxuto no dashboard.',
+    summary: 'Scroll Picker com 55 cores individuais isoladas, 31 temas de fundo selecionáveis com filtros de categoria e miniaturas dinâmicas com proteção de contraste.',
     highlights: [
       {
-        title: '8 Novas Paletas Designer & Scroll Picker',
-        description: 'Inclusão de 8 temas profissionais (Teal & Terracota, Forest & Ochre, Nordic Spruce, Mocha & Caramel, Midnight & Amber, Amethyst & Coral, Nightshade & Gold, Cyber Slate & Pink) com seletor horizontal estilo Scroll Picker e prévia de cápsulas empilhadas.',
+        title: '55 Cores Individuais em Scroll Picker',
+        description: 'Todas as tonalidades das 8 paletas designer disponibilizadas individualmente para cores de destaque, cartões e contas, com filtros por grupo de paleta e anéis de contraste.',
         type: 'visual',
       },
       {
-        title: 'Scroll Picker de Cores de Destaque',
-        description: 'Seletor horizontal com navegação por setas, amostras ampliadas de cor com código HEX e suporte a cor personalizada.',
-        type: 'improvement',
+        title: '31 Temas de Fundo Selecionáveis',
+        description: 'Ampla variedade de planos de fundo (16 escuros imersivos, 7 tons claros suaves e 8 clássicos) com cards elevados e filtros rápidos (Todos, Escuros, Clássicos, Claros).',
+        type: 'feature',
       },
       {
         title: 'Detalhes Completos da Fatura em Faturas',
