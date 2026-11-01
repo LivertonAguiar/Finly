@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.24",
+    "version": "1.1.83.25",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.24.zip",
-    "sha256": "0633955fc275dd1bbe65b68512746cf05c7ef72d697d21dc9d2431fc5b631e61",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.25.zip",
+    "sha256": "c9b721c672c827695294f1659d40c463f3a669d4076079765f4cf47437e9ef95",
     "mandatory": true,
     "releaseDate": "2026-11-01",
-    "notes": "Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas."
+    "notes": "Padronizacao da aba Cartoes, preservacao de contexto de fatura e remocao de FAB redundante"
   }
 }
