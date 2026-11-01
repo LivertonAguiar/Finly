@@ -2226,7 +2226,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         {cardSummaries.length === 0 ? (
           <p className="py-6 text-center text-xs text-slate-400">Nenhum cartão cadastrado.</p>
         ) : (
-          cardSummaries.map(card => {
+                    cardSummaries.map(card => {
             const cardColor = card.color || '#7c4dff';
             return (
               <div
@@ -2242,97 +2242,117 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     setActiveTab('contas-cartoes');
                   }
                 }}
-                className="p-3 rounded-2xl bg-slate-50/60 dark:bg-[#1C1C1E] hover:bg-slate-100/80 dark:hover:bg-[#242428] border border-slate-200/70 dark:border-white/[0.06] transition-all duration-150 cursor-pointer group/card flex items-center justify-between gap-3 relative overflow-hidden"
+                className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-[#1C1C1E] hover:bg-slate-100/80 dark:hover:bg-[#242428] border border-slate-200/70 dark:border-white/[0.08] transition-all duration-150 cursor-pointer group/card relative overflow-hidden space-y-2.5"
                 title="Clique para ver o extrato e detalhes da fatura"
               >
-                {/* Filete lateral da cor */}
+                {/* Filete lateral da cor do cartão */}
                 <div
-                  className="absolute left-0 top-0 bottom-0 w-1"
+                  className="absolute left-0 top-0 bottom-0 w-1.5"
                   style={{ backgroundColor: cardColor }}
                 />
 
-                {/* Left: Avatar + Card Name & Dates */}
-                <div className="flex items-center gap-2.5 min-w-0 flex-1 pl-1">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center p-1.5 shrink-0 border group-hover/card:scale-105 transition-transform"
-                    style={{
-                      backgroundColor: `${cardColor}18`,
-                      borderColor: `${cardColor}35`,
-                    }}
-                  >
-                    <BankLogo nameOrId={card.bankId || getCardBankInfo(card)?.id || card.name} size={18} radius={5} />
-                  </div>
+                {/* Linha 1: Identificação (Logo + Nome + Vencimento) e Valores/Ações */}
+                <div className="flex items-center justify-between gap-2 pl-1.5">
+                  {/* Left: Avatar + Card Name & Due Date */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center p-1.5 shrink-0 border shadow-2xs group-hover/card:scale-105 transition-transform"
+                      style={{
+                        backgroundColor: `${cardColor}18`,
+                        borderColor: `${cardColor}35`,
+                      }}
+                    >
+                      <BankLogo nameOrId={card.bankId || getCardBankInfo(card)?.id || card.name} size={18} radius={5} />
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate uppercase group-hover/card:text-purple-600 dark:group-hover/card:text-purple-400 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover/card:text-purple-600 dark:group-hover/card:text-purple-400 transition-colors">
                         {card.name}
                       </h4>
-                      <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md border shrink-0 ${card.statusColor}`}>
-                        {card.statusLabel}
+                      <span className="text-[11px] text-slate-500 dark:text-slate-300 font-medium block leading-tight mt-0.5">
+                        Vence dia {card.dueDay}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right: Value + Actions */}
+                  <div className="flex items-center gap-2 shrink-0 text-right" onClick={e => e.stopPropagation()}>
+                    <div>
+                      <span className={`text-xs sm:text-sm font-black block tracking-tight ${card.isPaid ? 'text-emerald-500 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
+                        {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block leading-tight mt-0.5">
+                        {card.limitUsedPercent.toFixed(0)}% do limite
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 font-medium min-w-0">
-                      <span className="shrink-0">Vence dia {card.dueDay}</span>
-                      <span className="opacity-40">•</span>
-                      <span className="truncate">Disp: {formatCurrency(card.availableLimit, user.currency, !user.showValues)}</span>
+                    {card.isPaid ? (
+                      <span className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                        <CheckCircle2 className="w-3 h-3 stroke-[2.5]" /> Paga
+                      </span>
+                    ) : card.invoiceTotal > 0 ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.dispatchEvent(new CustomEvent('finly_open_pay_invoice', { detail: { cardId: card.id } }));
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-black shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                      >
+                        <DollarSign className="w-3 h-3 stroke-[2.5]" />
+                        <span>Pagar</span>
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06] shrink-0">
+                        Zerada
+                      </span>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetPath = `/contas-cartoes?tab=faturas&cardId=${card.id}`;
+                        if (typeof window !== 'undefined') {
+                          window.history.pushState({ tab: 'contas-cartoes', subTab: 'faturas', cardId: card.id }, '', targetPath);
+                        }
+                        if (onOpenCardDetail) {
+                          onOpenCardDetail(card.id);
+                        } else {
+                          setActiveTab('contas-cartoes');
+                        }
+                      }}
+                      className="p-1 text-slate-400 hover:text-purple-600 transition-colors cursor-pointer shrink-0"
+                      title="Ver detalhes da fatura"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Linha 2: Limite Disponível e Barra de Progresso */}
+                <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between text-[11px] pl-1.5 gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 shrink-0">Disp:</span>
+                    <strong className="text-slate-800 dark:text-slate-200 font-bold truncate">
+                      {formatCurrency(card.availableLimit, user.currency, !user.showValues)}
+                    </strong>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-20 sm:w-24 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, card.limitUsedPercent))}%`,
+                          backgroundColor: card.limitUsedPercent > 90 ? '#ef5350' : card.limitUsedPercent > 70 ? '#f59e0b' : cardColor,
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
-
-                {/* Right: Value + Actions */}
-                <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                  <div className="text-right">
-                    <span className={`text-xs sm:text-sm font-black block tracking-tight ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
-                      {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold block">
-                      {card.limitUsedPercent.toFixed(0)}% do limite
-                    </span>
-                  </div>
-
-                  {card.isPaid ? (
-                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <CheckCircle2 className="w-3 h-3" /> Paga
-                    </span>
-                  ) : card.invoiceTotal > 0 ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.dispatchEvent(new CustomEvent('finly_open_pay_invoice', { detail: { cardId: card.id } }));
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-black shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1"
-                    >
-                      <DollarSign className="w-3 h-3 stroke-[2.5]" />
-                      <span>Pagar</span>
-                    </button>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetPath = `/contas-cartoes?tab=faturas&cardId=${card.id}`;
-                      if (typeof window !== 'undefined') {
-                        window.history.pushState({ tab: 'contas-cartoes', subTab: 'faturas', cardId: card.id }, '', targetPath);
-                      }
-                      if (onOpenCardDetail) {
-                        onOpenCardDetail(card.id);
-                      } else {
-                        setActiveTab('contas-cartoes');
-                      }
-                    }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors cursor-pointer"
-                    title="Ver detalhes da fatura"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             );
-          })
-        )}
+          })        )}
       </div>
 
       <div className="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between">

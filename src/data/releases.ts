@@ -42,8 +42,18 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-        summary: 'Máxima nitidez e legibilidade de textos em todos os temas visuais (escuros e claros), correção de temas claros e responsividade nas abas.',
+            summary: 'Design em 2 níveis no widget de cartões do dashboard com exibição integral de nomes, limites e faturas sem colisões.',
     highlights: [
+      {
+        title: 'Design em 2 Níveis para Cartões no Dashboard',
+        description: 'Estruturação em dois níveis proporcionais no resumo de cartões: linha superior com nome completo do cartão, vencimento, valor e ação rápida (Pagar/Paga/Zerada); linha inferior dedicada com limite disponível e microbarra de progresso.',
+        type: 'visual',
+      },
+      {
+        title: 'Zero Truncamento e Fim de Colisões',
+        description: 'Eliminada a duplicação de selos de status que comprimia o nome para "C...", garantindo leitura límpida e visual profissional em todas as larguras de tela móvel.',
+        type: 'fix',
+      },
       {
         title: 'Nitidez e Alto Contraste Global de Textos',
         description: 'Textos secundários, legendas de temas, códigos hexadecimais, pílulas de filtros e badges receberam elevação de contraste (WCAG AAA) eliminando textos apagados ou embaçados.',
