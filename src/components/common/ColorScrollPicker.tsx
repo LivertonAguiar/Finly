@@ -137,10 +137,14 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
                 key={g}
                 type="button"
                 onClick={() => setSelectedGroup(g)}
-                className={`px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                style={isActive ? {
+                  backgroundColor: 'var(--primary-accent, #7C4DFF)',
+                  color: 'var(--primary-accent-foreground, #FFFFFF)',
+                } : undefined}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'shadow-xs font-black ring-1 ring-white/20'
+                    : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-bold'
                 }`}
               >
                 {labelText}
@@ -197,10 +201,10 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
 
               {/* Color Metadata */}
               <div className="flex flex-col text-left min-w-[70px]">
-                <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate leading-tight">
+                <span className="text-[11px] font-bold text-slate-900 dark:text-white truncate leading-tight">
                   {colorItem.name}
                 </span>
-                <span className="text-[9px] font-mono text-slate-400 uppercase leading-none mt-0.5">
+                <span className="text-[9.5px] font-mono font-bold text-slate-500 dark:text-slate-300 uppercase leading-none mt-0.5">
                   {colorItem.hex}
                 </span>
               </div>

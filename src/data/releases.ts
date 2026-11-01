@@ -42,8 +42,23 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Notificações de atualização vinculadas a Ajustes com reposicionamento proporcional do badge sem obstruir ícones da barra lateral.',
+        summary: 'Máxima nitidez e legibilidade de textos em todos os temas visuais (escuros e claros), correção de temas claros e responsividade nas abas.',
     highlights: [
+      {
+        title: 'Nitidez e Alto Contraste Global de Textos',
+        description: 'Textos secundários, legendas de temas, códigos hexadecimais, pílulas de filtros e badges receberam elevação de contraste (WCAG AAA) eliminando textos apagados ou embaçados.',
+        type: 'visual',
+      },
+      {
+        title: 'Temas Claros com Modo Claro Real',
+        description: 'Correção nos temas claros (Areia Dourada, Trigo Suave, Amêndoa, Pêssego, etc.) garantindo tipografia escura nítida e fundo temático fiel em vez de forçar modo escuro com texto branco.',
+        type: 'fix',
+      },
+      {
+        title: 'Responsividade e Alinhamento em Cartões e Contas',
+        description: 'Prevenção de colisão de textos no resumo de faturas de cartões e consolidação das ações da barra mobile de contas sem cortes de botões na lateral da tela.',
+        type: 'improvement',
+      },
       {
         title: 'Badge Numérico Reposicionado',
         description: 'No menu compacto, o badge foi ajustado para o canto superior direito do botão com borda de recorte, garantindo visibilidade 100% livre do ícone.',

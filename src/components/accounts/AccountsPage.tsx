@@ -19,6 +19,7 @@ import {
   Wallet,
   Info,
   Banknote,
+  LayoutGrid,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -282,24 +283,7 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
               )}
             </div>
 
-            <ViewModeToggle
-              mode={viewMode}
-              onChange={(m) => {
-                setViewMode(m);
-                try { localStorage.setItem('finly_accounts_view_mode', m); } catch (e) {}
-              }}
-            />
-
-            {/* Projeção de Saldo Button */}
-            <button
-              onClick={() => setIsProjectionOpen(true)}
-              className="w-8 h-8 rounded-full bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-purple-600 flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0"
-              title="Projeção de saldo"
-            >
-              <LineChart className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Mais Opções (⋮) */}
+            {/* Mais Opções (⋮) no Mobile consolidando Transferência, Projeção e Visualização sem corte */}
             <div className="relative shrink-0">
               <button
                 onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
@@ -312,18 +296,42 @@ export const AccountsPage: React.FC<AccountsPageProps> = ({ setActiveTab }) => {
               {isHeaderMenuOpen && (
                 <div
                   onClick={e => e.stopPropagation()}
-                  className="absolute right-0 top-10 z-40 w-48 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-700 dark:text-slate-200"
+                  className="absolute right-0 top-10 z-40 w-52 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-slate-800 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-bold text-slate-700 dark:text-slate-200 divide-y divide-slate-100 dark:divide-white/[0.06]"
                 >
-                  <button
-                    onClick={async () => {
-                      setIsTransferOpen(true);
-                      setIsHeaderMenuOpen(false);
-                    }}
-                    className="w-full px-3.5 py-2.5 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-2 cursor-pointer"
-                  >
-                    <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Transferência entre contas</span>
-                  </button>
+                  <div className="py-1">
+                    <button
+                      onClick={async () => {
+                        setIsTransferOpen(true);
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <ArrowLeftRight className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Transferência</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsProjectionOpen(true);
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <LineChart className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Projeção de saldo</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const next: CardViewMode = viewMode === 'grid' ? 'list' : 'grid';
+                        setViewMode(next);
+                        try { localStorage.setItem('finly_accounts_view_mode', next); } catch (e) {}
+                        setIsHeaderMenuOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <LayoutGrid className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Alternar para {viewMode === 'grid' ? 'Lista' : 'Cards'}</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

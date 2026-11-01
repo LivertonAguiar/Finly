@@ -2273,10 +2273,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                      <span>Vence dia {card.dueDay}</span>
-                      <span>•</span>
-                      <span>Disp: {formatCurrency(card.availableLimit, user.currency, !user.showValues)}</span>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 font-medium min-w-0">
+                      <span className="shrink-0">Vence dia {card.dueDay}</span>
+                      <span className="opacity-40">•</span>
+                      <span className="truncate">Disp: {formatCurrency(card.availableLimit, user.currency, !user.showValues)}</span>
                     </div>
                   </div>
                 </div>
@@ -2287,7 +2287,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     <span className={`text-xs sm:text-sm font-black block tracking-tight ${card.isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#ef5350]'}`}>
                       {formatCurrency(card.invoiceTotal, user.currency, !user.showValues)}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium block">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold block">
                       {card.limitUsedPercent.toFixed(0)}% do limite
                     </span>
                   </div>

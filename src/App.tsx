@@ -771,7 +771,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] dark:bg-transparent text-slate-900 dark:text-slate-100 flex flex-row">
+    <div className="min-h-screen bg-[var(--app-bg,#F1F5F9)] text-slate-900 dark:text-slate-100 flex flex-row">
       {/* Sidebar with Mobile Drawer & Unified Top-Right Toggle */}
       <Sidebar
         activeTab={activeTab}

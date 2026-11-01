@@ -345,7 +345,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
   const handleSelectPreset = (preset: ThemePreset) => {
     setSelectedThemePreset(preset);
     let defAccent = PRESET_COLORS[preset]?.defaultAccent || selectedAccentColor;
-    let targetMode: 'dark' | 'light' = preset === 'clean-light' ? 'light' : 'dark';
+    let targetMode: 'dark' | 'light' = PRESET_COLORS[preset]?.mode || (preset === 'clean-light' ? 'light' : 'dark');
 
     if (preset === 'linear-mono') {
       targetMode = user.theme === 'light' ? 'light' : 'dark';
@@ -372,9 +372,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
   };
 
   const handleSaveAll = () => {
-    const targetTheme: 'light' | 'dark' = selectedThemePreset === 'clean-light'
-      ? 'light'
-      : (selectedThemePreset === 'linear-mono' ? (user.theme === 'light' ? 'light' : 'dark') : 'dark');
+    const targetTheme: 'light' | 'dark' = PRESET_COLORS[selectedThemePreset]?.mode || (selectedThemePreset === 'clean-light' ? 'light' : (selectedThemePreset === 'linear-mono' ? (user.theme === 'light' ? 'light' : 'dark') : 'dark'));
 
     applyTheme({
       preset: selectedThemePreset,
@@ -794,8 +792,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                     onClick={() => setThemeCategoryFilter(filter.id as any)}
                     className={`px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                       themeCategoryFilter === filter.id
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'shadow-xs font-black ring-1 ring-white/20'
+                        : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
                     {filter.label}
@@ -909,11 +907,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                             <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">
                               {tp.label}
                             </h5>
-                            <span className="text-[9px] font-mono font-bold text-slate-400">
+                            <span className="text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-slate-700 dark:text-slate-200">
                               {tp.bg}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 line-clamp-2">
+                          <p className="text-[11px] text-slate-700 dark:text-slate-200 font-medium leading-tight mt-1 line-clamp-2">
                             {tp.desc}
                           </p>
                         </div>

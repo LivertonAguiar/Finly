@@ -714,7 +714,7 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
   const presetData = PRESET_COLORS[preset] || PRESET_COLORS['sleek-neo-glass'];
 
   // Determine dark/light mode
-  let mode: 'dark' | 'light' = config.mode || (preset === 'clean-light' ? 'light' : presetData.mode);
+  let mode: 'dark' | 'light' = config.mode || (presetData.mode ? presetData.mode : (preset === 'clean-light' ? 'light' : 'dark'));
   if (!config.mode && preset === 'linear-mono') {
     const storedMode = localStorage.getItem('finly_theme_mode') as 'dark' | 'light' | null;
     mode = storedMode || (root.classList.contains('dark') ? 'dark' : 'dark');
@@ -767,8 +767,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
 
   let darkBg = presetData.bg;
   let darkCardBg = presetData.cardBg;
-  let lightBg = '#F1F5F9';
-  let lightCardBg = '#FFFFFF';
+  let lightBg = presetData.mode === 'light' ? presetData.bg : '#F1F5F9';
+  let lightCardBg = presetData.mode === 'light' ? presetData.cardBg : '#FFFFFF';
 
   if (preset === 'linear-mono') {
     darkBg = '#000000';
@@ -815,8 +815,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       --finly-page: ${darkBg} !important;
       --finly-surface: ${darkCardBg} !important;
       --text-primary: #FFFFFF !important;
-      --text-secondary: #E2E8F0 !important;
-      --text-muted: #CBD5E1 !important;
+      --text-secondary: #F8FAFC !important;
+      --text-muted: #E2E8F0 !important;
     }
     html:not(.dark), :root:not(.dark) {
       --app-bg: ${lightBg} !important;
@@ -824,8 +824,8 @@ export const applyTheme = (config: Partial<ThemeConfig>) => {
       --finly-page: ${lightBg} !important;
       --finly-surface: ${lightCardBg} !important;
       --text-primary: #0F172A !important;
-      --text-secondary: #334155 !important;
-      --text-muted: #475569 !important;
+      --text-secondary: #1E293B !important;
+      --text-muted: #334155 !important;
     }
     ${isDark ? `
       html.dark body {
