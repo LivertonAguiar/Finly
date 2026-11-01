@@ -86,7 +86,8 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
   }, []);
 
   const handleToggleItem = (id: string) => {
-    // Keep at least dashboard or at least 1 item
+    // Ajustes e Início são essenciais e não podem ter sua exibição impedida/desmarcada
+    if (id === 'settings' || id === 'dashboard') return;
     if (activeItems.includes(id)) {
       if (activeItems.length <= 1) return;
       const updated = activeItems.filter(item => item !== id);
@@ -347,14 +348,23 @@ export const SidebarCustomizerModal: React.FC<SidebarCustomizerModalProps> = ({
                         </div>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => handleToggleItem(item.id)}
-                        className="w-5 h-5 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 transition-transform active:scale-95 cursor-pointer shadow-xs"
-                        title="Desmarcar (Mover para Mais Opções)"
-                      >
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      </button>
+                      {item.id === 'settings' || item.id === 'dashboard' ? (
+                        <div
+                          className="w-5 h-5 rounded-lg bg-purple-600/70 text-white flex items-center justify-center shrink-0 shadow-xs cursor-default"
+                          title="Item fixo da barra lateral (sempre visível, mas pode ser reordenado)"
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleItem(item.id)}
+                          className="w-5 h-5 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 transition-transform active:scale-95 cursor-pointer shadow-xs"
+                          title="Desmarcar (Mover para Mais Opções)"
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+                      )}
 
                       <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                         <Icon className="w-4 h-4" />

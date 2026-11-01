@@ -633,7 +633,30 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, handleSelectTab]);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('finly_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleSidebarCollapse = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('finly_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleSetSidebarCollapse = (collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+    try {
+      localStorage.setItem('finly_sidebar_collapsed', String(collapsed));
+    } catch {}
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
   const [newTxInitialType, setNewTxInitialType] = useState<'income' | 'expense' | 'transfer'>('expense');
@@ -754,14 +777,16 @@ const AppContent: React.FC = () => {
         activeTab={activeTab}
         setActiveTab={handleSelectTab}
         collapsed={sidebarCollapsed}
-        setCollapsed={setSidebarCollapsed}
+        setCollapsed={handleSetSidebarCollapse}
         mobileOpen={mobileMenuOpen}
         setMobileOpen={setMobileMenuOpen}
         onOpenNewTransaction={() => setIsNewTxOpen(true)}
       />
 
       {/* Main Column (Header + Content) */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen md:pl-[108px] transition-all duration-300">
+      <div className={`flex-1 flex flex-col min-w-0 min-h-screen ${
+        sidebarCollapsed ? 'md:pl-4 sm:md:pl-6' : 'md:pl-[108px]'
+      } transition-all duration-300`}>
         {/* Floating In-App Update Notice Popup on Entry (Exclusivo Android Nativo) */}
         {isNativeCapacitor() && <UpdateNoticeCard onGoToUpdate={handleGoToUpdate} />}
 
@@ -773,7 +798,7 @@ const AppContent: React.FC = () => {
           activeTab={activeTab}
           setActiveTab={handleSelectTab}
           collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
+          onToggleCollapse={handleToggleSidebarCollapse}
           onOpenNewTransaction={() => setIsNewTxOpen(true)}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />

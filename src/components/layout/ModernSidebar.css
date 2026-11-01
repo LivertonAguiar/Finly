@@ -46,7 +46,7 @@ html.dark {
   box-shadow: var(--finly-shadow);
   border: 1px solid var(--finly-border);
   white-space: nowrap;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
   z-index: 45;
 }
 
@@ -85,6 +85,17 @@ html.dark {
 .finly-modern-sidebar:hover .brand-title {
   opacity: 1;
   transition: opacity 0.25s 0.1s ease;
+}
+
+.finly-modern-sidebar .sidebar-collapse-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.finly-modern-sidebar:hover .sidebar-collapse-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Quick New Action Button */

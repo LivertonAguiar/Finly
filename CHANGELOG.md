@@ -5,6 +5,16 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-10-31
 
+### Barra Lateral Fixa, Encolhível e Reordenação de Ajustes
+- **Ajustes no Menu Lateral (Engrenagem Ativa & Reordenável)**:
+  - Inclusão oficial de `Ajustes` em `DEFAULT_SIDEBAR_ORDER` e na carga de itens ativos da barra lateral.
+  - No modal `Personalizar Menu Lateral`, `Ajustes` agora aparece marcado por padrão como item essencial, permitindo alterar livremente sua posição (arrastar ou mover pelas setas) sem permitir o desmarque acidental.
+  - Remoção de renderização duplicada fixa de `Ajustes` no rodapé da barra lateral, respeitando a ordem definida pelo usuário.
+- **Barra Lateral Fixa com Ocultação/Encolhimento Lateral**:
+  - Suporte completo ao estado recolhido (`collapsed`) persistido em `localStorage` (`finly_sidebar_collapsed`).
+  - Animação suave para fora da tela (`md:-translate-x-[calc(100%+32px)]`), expandindo o conteúdo principal para ocupar toda a largura da tela (`md:pl-4 sm:md:pl-6`).
+  - Botão de encolher no cabeçalho da barra lateral, botão no `Header` e aba flutuante na borda esquerda da tela para reabertura em 1 clique.
+
 ### 55 Cores Individuais & 31 Temas de Fundo em Scroll Picker
 - **55 Cores Individuais Separadas no `ColorScrollPicker`**:
   - Cada cor das 8 paletas de design foi desmembrada em uma opção individual com seu nome exclusivo e código HEX (ex: `#C6601F` Terracota Neon, `#7FB3B8` Aqua Oceano, `#8CA98C` Sálvia Menta, etc.).

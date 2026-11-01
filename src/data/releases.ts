@@ -42,8 +42,18 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
-    summary: 'Scroll Picker com 55 cores individuais isoladas, 31 temas de fundo selecionáveis com filtros de categoria e miniaturas dinâmicas com proteção de contraste.',
+    summary: 'Barra lateral fixa com recolhimento/expansão suave, Ajustes reordenável e ativo por padrão, Scroll Picker com 55 cores individuais e 31 temas de fundo.',
     highlights: [
+      {
+        title: 'Barra Lateral Fixa e Encolhível',
+        description: 'Possibilidade de recolher a barra lateral para aproveitar 100% da largura da tela, com transição suave, aba rápida de reabertura e persistência de preferência.',
+        type: 'improvement',
+      },
+      {
+        title: 'Ajustes Ativo e Reordenável no Menu',
+        description: 'O ícone de Ajustes (engrenagem) agora vem ativo por padrão no personalizador de menu lateral, permitindo reordenar sua posição sem risco de desmarque ou ocultação acidental.',
+        type: 'fix',
+      },
       {
         title: '55 Cores Individuais em Scroll Picker',
         description: 'Todas as tonalidades das 8 paletas designer disponibilizadas individualmente para cores de destaque, cartões e contas, com filtros por grupo de paleta e anéis de contraste.',

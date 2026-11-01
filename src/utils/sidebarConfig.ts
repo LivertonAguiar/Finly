@@ -88,6 +88,7 @@ export const DEFAULT_SIDEBAR_ORDER: string[] = [
   'patrimonio',
   'relatorios',
   'assistente',
+  'settings',
 ];
 
 export const SIDEBAR_STORAGE_KEY = 'finly_sidebar_custom_order_v2';
@@ -155,7 +156,16 @@ export const getStoredSidebarItems = (): string[] => {
     // Valida se os itens pertencem aos novos IDs
     const validIds = new Set(ALL_SIDEBAR_ITEMS.map(i => i.id));
     const filtered = parsed.filter(id => validIds.has(id));
-    return filtered.length > 0 ? filtered : DEFAULT_SIDEBAR_ORDER;
+    const result = filtered.length > 0 ? filtered : [...DEFAULT_SIDEBAR_ORDER];
+    // Garantir que 'settings' nunca seja omitido ou esquecido da barra lateral
+    if (!result.includes('settings')) {
+      result.push('settings');
+    }
+    // Garantir que 'dashboard' nunca seja omitido
+    if (!result.includes('dashboard')) {
+      result.unshift('dashboard');
+    }
+    return result;
   } catch (e) {
     return DEFAULT_SIDEBAR_ORDER;
   }
@@ -165,7 +175,10 @@ export const getStoredSidebarItems = (): string[] => {
 export const saveStoredSidebarItems = (items: string[]): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(items));
+    const safeItems = [...items];
+    if (!safeItems.includes('settings')) safeItems.push('settings');
+    if (!safeItems.includes('dashboard')) safeItems.unshift('dashboard');
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(safeItems));
     window.dispatchEvent(new CustomEvent('finly_sidebar_changed'));
   } catch (e) {
     console.error('Error saving sidebar items:', e);

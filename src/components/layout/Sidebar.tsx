@@ -4,6 +4,8 @@ import {
   MoreHorizontal,
   Plus,
   SlidersHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { FinlyLogo } from '../ui/FinlyLogo';
@@ -31,6 +33,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
+  collapsed,
+  setCollapsed,
   mobileOpen,
   setMobileOpen,
   onOpenNewTransaction,
@@ -95,8 +99,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Floating Modern Expandable Sidebar */}
       <aside
         className={`finly-modern-sidebar ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        } transition-transform duration-300 md:transition-[width,box-shadow]`}
+          mobileOpen
+            ? 'translate-x-0'
+            : collapsed
+            ? '-translate-x-full md:-translate-x-[calc(100%+32px)]'
+            : '-translate-x-full md:translate-x-0'
+        } transition-transform duration-300 md:transition-[transform,width,box-shadow]`}
         style={
           accentColor
             ? ({
@@ -108,21 +116,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : undefined
         }
       >
-        {/* 1. Brand Logo Section */}
-        <div
-          className="brand"
-          onClick={() => {
-            setActiveTab('dashboard');
-            setMobileOpen(false);
-          }}
-          title="Finly Dashboard"
-        >
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0">
-            <FinlyLogo size="md" showText={false} />
+        {/* 1. Brand Logo Section & Desktop Collapse Toggle */}
+        <div className="flex items-center justify-between gap-1 w-full shrink-0">
+          <div
+            className="brand flex-1 min-w-0"
+            onClick={() => {
+              setActiveTab('dashboard');
+              setMobileOpen(false);
+            }}
+            title="Finly Dashboard"
+          >
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0">
+              <FinlyLogo size="md" showText={false} />
+            </div>
+            <span className="brand-title">
+              Finly
+            </span>
           </div>
-          <span className="brand-title">
-            Finly
-          </span>
+
+          {/* Desktop Collapse Button */}
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            className="sidebar-collapse-btn hidden md:flex p-1.5 rounded-xl text-slate-400 hover:text-purple-500 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer shrink-0"
+            title="Recolher / Ocultar barra lateral"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
         </div>
 
         {/* 2. Quick New Transaction Button */}
@@ -173,22 +193,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
-
-          <hr />
-
-          {/* Botão Fixo de Ajustes */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('settings');
-              setMobileOpen(false);
-            }}
-            className={`nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}
-            title={t('nav.settings', 'Ajustes')}
-          >
-            <Settings className="icon" />
-            <p>{t('nav.settings', 'Ajustes')}</p>
-          </button>
         </nav>
 
         {/* 4. Footer Action: Customize Menu */}
@@ -206,6 +210,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </button>
       </aside>
+
+      {/* Edge Handle to Expand Sidebar when Collapsed on Desktop */}
+      {collapsed && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 hidden md:flex items-center justify-center py-4 px-1 rounded-r-2xl bg-white dark:bg-[#18181B] border border-l-0 border-slate-200/90 dark:border-white/10 shadow-xl text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer group transition-all hover:px-2 hover:bg-slate-50 dark:hover:bg-white/[0.04]"
+          title={t('nav.expand_sidebar', 'Expandir barra lateral')}
+        >
+          <PanelLeftOpen className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        </button>
+      )}
 
       {/* Sidebar Customizer Modal */}
       <SidebarCustomizerModal
