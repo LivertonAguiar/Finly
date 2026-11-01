@@ -40,7 +40,7 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 
 export const RELEASES: ReleaseInfo[] = [
   {
-    version: '1.1.83.24',
+    version: CURRENT_VERSION,
     releaseDate: '2026-11-01',
     summary: '8 Novos Temas Fintech Independentes, 55 Cores por Famílias Cromáticas e Liquidação Global de Fatura.',
     highlights: [
@@ -62,7 +62,7 @@ export const RELEASES: ReleaseInfo[] = [
     ],
   },
   {
-    version: CURRENT_VERSION,
+    version: '1.1.83.23',
     releaseDate: '2026-10-31',
             summary: 'Design em 2 níveis no widget de cartões do dashboard com exibição integral de nomes, limites e faturas sem colisões.',
     highlights: [

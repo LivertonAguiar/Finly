@@ -3,7 +3,7 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [1.1.83.24] - 2026-11-01
+## [1.1.83] - 2026-11-01
 
 ### 8 Novos Temas Fintech Independentes & Famílias Cromáticas
 - **Novos Temas Inspirados em Fintechs Globais**:
