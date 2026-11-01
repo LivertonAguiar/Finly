@@ -36,6 +36,7 @@ interface InvoicesTabProps {
   onOpenNewCard?: () => void;
   initialCardId?: string | null;
   onClearCardDetail?: () => void;
+  returnSubTab?: 'faturas' | 'cartoes' | 'contas';
 }
 
 type InvoiceFilter = 'all' | 'pending' | 'overdue' | 'paid';
@@ -44,6 +45,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
   onOpenNewCard,
   initialCardId,
   onClearCardDetail,
+  returnSubTab = 'faturas',
 }) => {
   const { cards, transactions, accounts, user, unpayCardInvoice } = useFinancial();
   const { confirm } = useConfirm();
@@ -271,12 +273,13 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 
   const handleCloseDetail = () => {
     setActiveDetailCardId(null);
+    const destinationTab = returnSubTab || 'faturas';
     onClearCardDetail?.();
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
-      url.searchParams.set('tab', 'faturas');
+      url.searchParams.set('tab', destinationTab);
       url.searchParams.delete('cardId');
-      window.history.pushState({ tab: 'contas-cartoes', subTab: 'faturas' }, '', url.pathname + url.search);
+      window.history.replaceState({ tab: 'contas-cartoes', subTab: destinationTab }, '', url.pathname + url.search);
     }
   };
 

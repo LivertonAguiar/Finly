@@ -42,8 +42,28 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-11-01',
-    summary: '8 Novos Temas Fintech Independentes, 55 Cores por Famílias Cromáticas e Liquidação Global de Fatura.',
+    summary: 'Refinamento visual na navegação de Cartões, preservação de abas ao fechar faturas e remoção de botão redundante na Navbar.',
     highlights: [
+      {
+        title: 'Simplificação e Fim de Truncamento em Cartões',
+        description: 'Padronização do nome de "Cartões de Crédito" para "Cartões" em abas, títulos e menus, eliminando o truncamento visual com reticências no mobile.',
+        type: 'visual',
+      },
+      {
+        title: 'Estabilidade Visual na Alternância de Opções',
+        description: 'Ajuste de bordas fixas e transições suaves de cor no componente de abas (Faturas / Cartões / Contas), eliminando layout shift e oscilações de pixels.',
+        type: 'improvement',
+      },
+      {
+        title: 'Preservação de Contexto ao Fechar Fatura',
+        description: 'Ao consultar os detalhes de uma fatura a partir da aba Cartões, o botão de voltar agora mantém o usuário na aba Cartões em vez de redirecionar para Faturas.',
+        type: 'fix',
+      },
+      {
+        title: 'Limpeza de Botão Redundante e Contraste na Navbar',
+        description: 'Remoção do botão flutuante secundário no canto inferior direito, centralizando a ação rápida exclusivamente na barra inferior com contraste dinâmico garantido.',
+        type: 'visual',
+      },
       {
         title: '8 Novos Temas de Alta Performance Inspirados em Fintechs',
         description: 'Chegada dos temas Linear Obsidian, Revolut Midnight, Raycast Charcoal, Ultraviolet VIP, Swiss Luxury Gold, Nordic Spruce Mint, Revolut Clean Light e Nordic Wheat Light, com fundos, superfícies elevadas e contrastes WCAG AAA testados.',

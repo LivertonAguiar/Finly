@@ -5,6 +5,12 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-11-01
 
+### Usabilidade e Interface Mobile (Cartões e Navbar)
+- **Padronização do Nome 'Cartões'**: Alterado de "Cartões de Crédito" para "Cartões" em abas, títulos e navegação, eliminando truncamentos (`Cartões de...`) no mobile.
+- **Alternância de Abas sem Oscilação**: Borda transparente fixa nos itens inativos de `TabNavigation` e transições de cores suaves, removendo layout shift ao alternar entre Faturas, Cartões e Contas.
+- **Preservação de Contexto ao Fechar Fatura**: Ao abrir a fatura a partir da aba Cartões, o retorno agora mantém o usuário na aba Cartões.
+- **Remoção de Botão Flutuante Redundante**: Eliminação do FAB secundário no canto inferior direito, mantendo as ações rápidas exclusivamente na Navbar inferior com contraste dinâmico de cores claras e escuras.
+
 ### 8 Novos Temas Fintech Independentes & Famílias Cromáticas
 - **Novos Temas Inspirados em Fintechs Globais**:
   - *Linear Obsidian* (#08090A / #121417 / #5E6AD2): Minimalismo escuro de alta precisão inspirado no Linear.app.

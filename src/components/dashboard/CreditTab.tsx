@@ -378,7 +378,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight truncate">
-                Cartões de crédito
+                Cartões
               </h2>
 
               {/* Mobile-only Action Buttons */}
@@ -655,7 +655,7 @@ export const CreditTab: React.FC<CreditTabProps> = ({ onOpenNewCard, initialCard
                 className="p-3.5 rounded-2xl border-2 border-dashed border-slate-200/80 dark:border-slate-800 hover:border-purple-500/60 dark:hover:border-purple-500/60 bg-white/40 dark:bg-[#18181B]/40 hover:bg-slate-50 dark:hover:bg-[#202024] flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 group"
               >
                 <Plus className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
-                <span>Cadastrar Novo Cartão de Crédito</span>
+                <span>Cadastrar Novo Cartão</span>
               </div>
 
               {cardsData.map(card => {

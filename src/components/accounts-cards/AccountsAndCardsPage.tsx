@@ -32,6 +32,16 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   };
 
   const [cardDetailId, setCardDetailId] = useState<string | null>(getCardIdFromUrl);
+  const [invoiceOriginSubTab, setInvoiceOriginSubTab] = useState<'faturas' | 'cartoes' | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab')?.toLowerCase();
+    const cardIdParam = params.get('cardId');
+    if (cardIdParam && (tabParam === 'cartoes' || tabParam === 'cartao' || tabParam === 'cards')) {
+      return 'cartoes';
+    }
+    return null;
+  });
 
   const getSubTabFromUrl = (): 'faturas' | 'cartoes' | 'contas' => {
     if (initialSubTab) return initialSubTab;
@@ -59,7 +69,10 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
     if (initialCardDetailId !== undefined) {
       setCardDetailId(initialCardDetailId);
       if (initialCardDetailId) {
-        // Ao abrir detalhe de fatura, vai direto para a aba faturas com o cartão selecionado
+        if (activeSubTab === 'cartoes' || getSubTabFromUrl() === 'cartoes') {
+          setInvoiceOriginSubTab('cartoes');
+        }
+        // Ao abrir detalhe de fatura, vai para a aba faturas exibindo a fatura do cartão selecionado
         setActiveSubTab('faturas');
       }
     }
@@ -67,8 +80,13 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
 
   useEffect(() => {
     const handlePopState = () => {
-      setActiveSubTab(getSubTabFromUrl());
-      setCardDetailId(getCardIdFromUrl());
+      const currentSubTab = getSubTabFromUrl();
+      const currentCardId = getCardIdFromUrl();
+      setActiveSubTab(currentSubTab);
+      setCardDetailId(currentCardId);
+      if (!currentCardId) {
+        setInvoiceOriginSubTab(null);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -77,17 +95,33 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   const handleTabChange = (tabId: string) => {
     const nextTab = tabId === 'faturas' ? 'faturas' : tabId === 'cartoes' ? 'cartoes' : 'contas';
     setActiveSubTab(nextTab);
+    setCardDetailId(null);
+    setInvoiceOriginSubTab(null);
     const targetUrl = `/contas-cartoes?tab=${nextTab}`;
-    if (window.location.pathname + window.location.search !== targetUrl) {
+    if (typeof window !== 'undefined' && window.location.pathname + window.location.search !== targetUrl) {
       window.history.replaceState({ tab: 'contas-cartoes', subTab: nextTab }, '', targetUrl);
     }
   };
 
   const handleNavigateToInvoiceDetail = (id: string) => {
+    setInvoiceOriginSubTab('cartoes');
     setCardDetailId(id);
     setActiveSubTab('faturas');
-    const targetUrl = `/contas-cartoes?tab=faturas&cardId=${id}`;
-    window.history.replaceState({ tab: 'contas-cartoes', subTab: 'faturas', cardId: id }, '', targetUrl);
+    const targetUrl = `/contas-cartoes?tab=cartoes&cardId=${id}`;
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ tab: 'contas-cartoes', subTab: 'cartoes', cardId: id }, '', targetUrl);
+    }
+  };
+
+  const handleCloseCardDetail = () => {
+    const returnTab = invoiceOriginSubTab || 'faturas';
+    setCardDetailId(null);
+    setInvoiceOriginSubTab(null);
+    setActiveSubTab(returnTab);
+    if (typeof window !== 'undefined') {
+      const targetUrl = `/contas-cartoes?tab=${returnTab}`;
+      window.history.replaceState({ tab: 'contas-cartoes', subTab: returnTab }, '', targetUrl);
+    }
   };
 
   // Bonus: Selo vermelho de alerta quando houver fatura vencida ou vencendo em até 3 dias
@@ -139,7 +173,7 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Top Floating Tab Switcher - Proporcional e Centralizado */}
-      <div className="flex items-center justify-center pb-1 border-b border-slate-200/60 dark:border-white/[0.06] w-full max-w-2xl mx-auto">
+      <div className="flex items-center justify-center pb-2 border-b border-slate-200/60 dark:border-white/[0.06] w-full max-w-2xl mx-auto">
         <TabNavigation
           tabs={tabs}
           activeTab={activeSubTab}
@@ -149,12 +183,13 @@ export const AccountsAndCardsPage: React.FC<AccountsAndCardsPageProps> = ({
       </div>
 
       {/* Tab Content */}
-      <div className="animate-in fade-in duration-200">
+      <div key={activeSubTab} className="animate-in fade-in duration-200">
         {activeSubTab === 'faturas' ? (
           <InvoicesTab
             onOpenNewCard={onOpenNewCard}
             initialCardId={cardDetailId}
-            onClearCardDetail={() => setCardDetailId(null)}
+            onClearCardDetail={handleCloseCardDetail}
+            returnSubTab={invoiceOriginSubTab || 'faturas'}
           />
         ) : activeSubTab === 'cartoes' ? (
           <CreditTab

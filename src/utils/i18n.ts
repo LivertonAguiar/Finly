@@ -17,7 +17,7 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'nav.customize_menu': 'Personalizar menu',
     'nav.home': 'Início',
     'nav.accounts': 'Contas',
-    'nav.cards': 'Cartões de crédito',
+    'nav.cards': 'Cartões',
     'nav.cards_short': 'Cartões',
     'nav.planning': 'Planejamento',
     'nav.goals': 'Metas',
@@ -32,7 +32,7 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
 
     // Abas de páginas agregadoras
     'tab.accounts': 'Contas',
-    'tab.cards': 'Cartões de Crédito',
+    'tab.cards': 'Cartões',
     'tab.budget': 'Orçamento',
     'tab.goals': 'Metas',
     'tab.investments': 'Investimentos',
@@ -153,7 +153,7 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'nav.customize_menu': 'Customize Menu',
     'nav.home': 'Home',
     'nav.accounts': 'Accounts',
-    'nav.cards': 'Credit Cards',
+    'nav.cards': 'Cards',
     'nav.cards_short': 'Cards',
     'nav.planning': 'Planning',
     'nav.goals': 'Goals',
@@ -168,7 +168,7 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
 
     // Aggregator Sub-tabs
     'tab.accounts': 'Accounts',
-    'tab.cards': 'Credit Cards',
+    'tab.cards': 'Cards',
     'tab.budget': 'Budget',
     'tab.goals': 'Goals',
     'tab.investments': 'Investments',
@@ -289,7 +289,7 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
     'nav.customize_menu': 'Personalizar menú',
     'nav.home': 'Inicio',
     'nav.accounts': 'Cuentas',
-    'nav.cards': 'Tarjetas de crédito',
+    'nav.cards': 'Tarjetas',
     'nav.cards_short': 'Tarjetas',
     'nav.planning': 'Planificación',
     'nav.goals': 'Metas',
@@ -304,7 +304,7 @@ export const DICTIONARY: Record<SupportedLanguage, Record<string, string>> = {
 
     // Subpestañas agregadoras
     'tab.accounts': 'Cuentas',
-    'tab.cards': 'Tarjetas de Crédito',
+    'tab.cards': 'Tarjetas',
     'tab.budget': 'Presupuesto',
     'tab.goals': 'Metas',
     'tab.investments': 'Inversiones',

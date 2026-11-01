@@ -16,6 +16,18 @@ import { useTranslation } from '../../utils/i18n';
 import { useFinancial } from '../../context/FinancialContext';
 import { useBackButton } from '../../hooks/useBackButton';
 
+const isLightColor = (hex: string): boolean => {
+  if (!hex || hex === '#FFFFFF' || hex === '#ffffff' || hex === 'white') return true;
+  if (hex.startsWith('#') && hex.length === 7) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 175;
+  }
+  return false;
+};
+
 interface BottomNavProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -222,29 +234,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </div>
       )}
 
-      {/* Floating Action Button (FAB) Discreto no canto inferior direito para Ações Rápidas */}
-      <button
-        type="button"
-        data-testid="bottom-nav-fab-action"
-        onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
-        style={{
-          backgroundColor: accentColor,
-          color: '#FFFFFF',
-          bottom: 'calc(68px + max(var(--sab, env(safe-area-inset-bottom, 0px)), 4px))',
-        }}
-        className={`fixed right-4 z-50 md:hidden w-12 h-12 rounded-full shadow-md active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer ${
-          isHidden ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100'
-        }`}
-        title="Nova Transação / Ação Rápida"
-        aria-label="Nova Transação / Ação Rápida"
-      >
-        {isSpeedDialOpen ? (
-          <X className="w-6 h-6 stroke-[2.5]" />
-        ) : (
-          <Plus className="w-6 h-6 stroke-[2.5]" />
-        )}
-      </button>
-
       {/* Main Bottom Navigation Bar - Tab Bar Bancária Sóbria Borda a Borda */}
       <nav
         className={`fixed bottom-0 left-0 right-0 z-50 md:hidden select-none finly-bottom-nav bg-white border-t border-slate-200 dark:border-white/[0.08] transition-transform duration-200 ${
@@ -319,7 +308,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
               style={{
                 backgroundColor: accentColor,
-                color: '#FFFFFF',
+                color: isLightColor(accentColor) ? '#121215' : 'var(--primary-accent-foreground, #FFFFFF)',
               }}
               className="w-11 h-11 rounded-full shadow-lg active:scale-90 transition-all flex items-center justify-center cursor-pointer -mt-4 border-2 border-white dark:border-[#1E1E22]"
               title="Ações Rápidas"

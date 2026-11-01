@@ -15,7 +15,7 @@ assert.equal((bottomNav.match(/w-8 h-8 stroke-\[2\.4\]/gu) || []).length, 4);
 assert.equal((bottomNav.match(/min-h-11 px-3 py-2 rounded-2xl/gu) || []).length, 4);
 assert.match(bottomNav, /data-testid="mobile-bottom-navbar"/u);
 assert.match(bottomNav, /grid grid-cols-5/u);
-assert.match(bottomNav, /data-testid="bottom-nav-fab-action"/u);
+assert.match(bottomNav, /data-testid="bottom-nav-fab-center"/u);
 
 const order = ['income', 'expense', 'card_expense', 'transfer'].map(action =>
   bottomNav.indexOf(`data-quick-action="${action}"`),

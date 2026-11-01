@@ -44,14 +44,14 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             style={isActive ? { color: 'var(--primary-accent, #7C4DFF)' } : undefined}
-            className={`flex items-center justify-center gap-2 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl font-bold transition-colors duration-200 cursor-pointer whitespace-nowrap border ${
               isProportional ? 'flex-1 min-w-0 text-center' : 'shrink-0'
             } ${
-              size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm'
+              size === 'sm' ? 'px-2.5 sm:px-3 py-1.5 text-xs' : 'px-2 sm:px-4 py-2 text-xs sm:text-sm'
             } ${
               isActive
-                ? 'bg-white dark:bg-[#1E1E24] shadow-xs border border-slate-200/80 dark:border-white/10'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/[0.02]'
+                ? 'bg-white dark:bg-[#1E1E24] shadow-xs border-slate-200/80 dark:border-white/10'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/[0.02]'
             }`}
           >
             {tab.icon && <span className="shrink-0">{tab.icon}</span>}
