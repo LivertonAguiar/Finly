@@ -1,4 +1,13 @@
 export type ThemePreset =
+  // Novos Temas Fintech Independentes
+  | 'linear-obsidian'
+  | 'revolut-midnight'
+  | 'raycast-charcoal'
+  | 'ultraviolet-vip'
+  | 'swiss-luxury'
+  | 'nordic-spruce-mint'
+  | 'revolut-clean-light'
+  | 'nordic-wheat-light'
   | 'sleek-obsidian'
   | 'sleek-neo-glass'
   | 'tech-green'
@@ -77,6 +86,62 @@ export const PRESET_COLORS: Record<
   ThemePreset,
   { bg: string; cardBg: string; text: string; mode: 'dark' | 'light'; defaultAccent: string }
 > = {
+  'linear-obsidian': {
+    bg: '#08090A',
+    cardBg: '#121417',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#5E6AD2',
+  },
+  'revolut-midnight': {
+    bg: '#0F172A',
+    cardBg: '#1E293B',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#4F55F1',
+  },
+  'raycast-charcoal': {
+    bg: '#0F1115',
+    cardBg: '#181B22',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#FF6363',
+  },
+  'ultraviolet-vip': {
+    bg: '#0B0A10',
+    cardBg: '#161324',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#820AD1',
+  },
+  'swiss-luxury': {
+    bg: '#071026',
+    cardBg: '#0D1B3E',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#D4AF37',
+  },
+  'nordic-spruce-mint': {
+    bg: '#0C1412',
+    cardBg: '#15221F',
+    text: '#FFFFFF',
+    mode: 'dark',
+    defaultAccent: '#10B981',
+  },
+  'revolut-clean-light': {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    text: '#0F172A',
+    mode: 'light',
+    defaultAccent: '#4F55F1',
+  },
+  'nordic-wheat-light': {
+    bg: '#F5EFEB',
+    cardBg: '#FFFFFF',
+    text: '#1C1917',
+    mode: 'light',
+    defaultAccent: '#B08D57',
+  },
   'sleek-obsidian': {
     bg: '#07080A',
     cardBg: '#14151B',
@@ -369,6 +434,87 @@ export const PRESET_COLORS: Record<
 };
 
 export const THEME_PRESET_DETAILS: ThemePresetDetails[] = [
+  // --- NOVOS TEMAS FINTECH INDEPENDENTES ---
+  {
+    id: 'linear-obsidian',
+    label: 'Linear Obsidian',
+    desc: 'Preto profundo hiperminimalista e Índigo Elétrico de alta precisão',
+    category: 'dark',
+    bg: '#08090A',
+    cardBg: '#121417',
+    accent: '#5E6AD2',
+    palette: ['#08090A', '#121417', '#1D2128', '#5E6AD2', '#F8FAFC', '#5E6AD2'],
+  },
+  {
+    id: 'revolut-midnight',
+    label: 'Revolut Midnight',
+    desc: 'Azul ardósia sofisticado com cartões slate e Azul Elétrico fintech',
+    category: 'dark',
+    bg: '#0F172A',
+    cardBg: '#1E293B',
+    accent: '#4F55F1',
+    palette: ['#0F172A', '#1E293B', '#334155', '#4F55F1', '#38BDF8', '#4F55F1'],
+  },
+  {
+    id: 'raycast-charcoal',
+    label: 'Raycast Charcoal',
+    desc: 'Carvão neutro de alta velocidade e Coral Neon de alto contraste',
+    category: 'dark',
+    bg: '#0F1115',
+    cardBg: '#181B22',
+    accent: '#FF6363',
+    palette: ['#0F1115', '#181B22', '#262A34', '#FF6363', '#F8FAFC', '#FF6363'],
+  },
+  {
+    id: 'ultraviolet-vip',
+    label: 'Ultraviolet VIP',
+    desc: 'Preto arroxeado nobre e Violeta Ultravioleta VIP luxuoso',
+    category: 'dark',
+    bg: '#0B0A10',
+    cardBg: '#161324',
+    accent: '#820AD1',
+    palette: ['#0B0A10', '#161324', '#261F3D', '#820AD1', '#A855F7', '#820AD1'],
+  },
+  {
+    id: 'swiss-luxury',
+    label: 'Swiss Luxury Gold',
+    desc: 'Azul marinho nobre e Ouro Champanhe de private banking',
+    category: 'dark',
+    bg: '#071026',
+    cardBg: '#0D1B3E',
+    accent: '#D4AF37',
+    palette: ['#071026', '#0D1B3E', '#16285A', '#D4AF37', '#FBBF24', '#D4AF37'],
+  },
+  {
+    id: 'nordic-spruce-mint',
+    label: 'Nordic Spruce Mint',
+    desc: 'Verde floresta escuro com Esmeralda e Menta sustentável',
+    category: 'dark',
+    bg: '#0C1412',
+    cardBg: '#15221F',
+    accent: '#10B981',
+    palette: ['#0C1412', '#15221F', '#243A34', '#10B981', '#34D399', '#10B981'],
+  },
+  {
+    id: 'revolut-clean-light',
+    label: 'Revolut Clean Light',
+    desc: 'Branco suave off-white com cartões elevados e Azul Elétrico',
+    category: 'light',
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    accent: '#4F55F1',
+    palette: ['#F8FAFC', '#FFFFFF', '#E2E8F0', '#4F55F1', '#0F172A', '#4F55F1'],
+  },
+  {
+    id: 'nordic-wheat-light',
+    label: 'Nordic Wheat Light',
+    desc: 'Tom quente de trigo e Ocre acolhedor com leitura editorial',
+    category: 'light',
+    bg: '#F5EFEB',
+    cardBg: '#FFFFFF',
+    accent: '#B08D57',
+    palette: ['#F5EFEB', '#FFFFFF', '#E7DFD8', '#B08D57', '#1C1917', '#B08D57'],
+  },
   // --- FUNDOS ESCUROS & AMBIENTES ---
   {
     id: 'teal-abyssal',

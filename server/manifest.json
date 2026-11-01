@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.23",
+    "version": "1.1.83.24",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.23.zip",
-    "sha256": "7d110f0d6ed64617e1ab395e4f345848c394d48b372bf0c93bcc7e6d1a4e7575",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.24.zip",
+    "sha256": "05ec4da7d8c6de4b6c3b1e9d149dc1d10b7fe6edd586ec77716c7a31726bec91",
     "mandatory": true,
-    "releaseDate": "2026-10-31",
+    "releaseDate": "2026-11-01",
     "notes": "Múltiplos tamanhos de Widgets Nativos para Android (Bento 4x2, Barra 4x1 e Mini 2x2), design moderno e ações rápidas interativas."
   }
 }

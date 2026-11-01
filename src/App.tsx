@@ -896,6 +896,18 @@ const AppContent: React.FC = () => {
         </Suspense>
       )}
 
+      {/* Global 2-Touch Pay Invoice Sheet */}
+      {payInvoiceSheetState.isOpen && (
+        <Suspense fallback={null}>
+          <PayInvoiceSheet
+            isOpen={payInvoiceSheetState.isOpen}
+            initialCardId={payInvoiceSheetState.cardId}
+            initialMonth={payInvoiceSheetState.month}
+            onClose={() => setPayInvoiceSheetState({ isOpen: false, cardId: null, month: null })}
+          />
+        </Suspense>
+      )}
+
       {isNewCardOpen && (
         <Suspense fallback={null}>
           <CardModal

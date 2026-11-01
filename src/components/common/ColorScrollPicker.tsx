@@ -131,7 +131,8 @@ export const ColorScrollPicker: React.FC<ColorScrollPickerProps> = ({
           {groups.map(g => {
             const isAll = g === 'all';
             const isActive = selectedGroup === g;
-            const labelText = isAll ? `Todas (${SYSTEM_COLORS.length})` : g;
+            const count = isAll ? SYSTEM_COLORS.length : SYSTEM_COLORS.filter(c => c.group === g).length;
+            const labelText = isAll ? `Todas (${count})` : `${g} (${count})`;
             return (
               <button
                 key={g}

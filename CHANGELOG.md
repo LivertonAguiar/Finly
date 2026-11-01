@@ -3,6 +3,27 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.83.24] - 2026-11-01
+
+### 8 Novos Temas Fintech Independentes & Famílias Cromáticas
+- **Novos Temas Inspirados em Fintechs Globais**:
+  - *Linear Obsidian* (#08090A / #121417 / #5E6AD2): Minimalismo escuro de alta precisão inspirado no Linear.app.
+  - *Revolut Midnight* (#0F172A / #1E293B / #4F55F1): Azul ardósia executivo do neobanco Revolut com acento elétrico.
+  - *Raycast Charcoal* (#0F1115 / #181B22 / #FF6363): Visual carvão rápido com toques em Coral Neon.
+  - *Ultraviolet VIP* (#0B0A10 / #161324 / #820AD1): Sofisticação e luxo em tons arroxeados profundos inspirados no Nubank Ultravioleta.
+  - *Swiss Luxury Gold* (#071026 / #0D1B3E / #D4AF37): Azul marinho com acabamentos dourados de private banking.
+  - *Nordic Spruce Mint* (#0C1412 / #15221F / #10B981): Verde floresta escuro suave com esmeralda e menta sustentável.
+  - *Revolut Clean Light* (#F8FAFC / #FFFFFF / #4F55F1): Modo claro moderno com cartões brancos elevados e sombra limpa.
+  - *Nordic Wheat Light* (#F5EFEB / #FFFFFF / #B08D57): Modo claro acolhedor em tom trigo com acento ocre suave.
+- **Catálogo de 55 Cores por Famílias Cromáticas**:
+  - Eliminação definitiva de pacotes ou conjuntos fechados de fotos.
+  - Organização no Scroll Picker em 6 famílias cromáticas autônomas: *Verdes & Menta (10)*, *Azuis & Celestes (11)*, *Roxos & Lavanda (9)*, *Dourados & Âmbar (9)*, *Corais & Rosas (8)* e *Neutros & Grafites (12)*.
+
+### Correções de Usabilidade & Ações Rápidas
+- **Pagar Fatura nas Ações Rápidas**: Ativação do componente PayInvoiceSheet global no App.tsx para permitir que o clique no atalho mobile abra imediatamente a liquidação em 2 toques.
+- **Contraste e Sobreposição no Menu Rápido**: Aumento do padding inferior para desobstruir o botão flutuante (X) da opção 'Cartões' e aplicação de fundo e texto de alto contraste nos 4 atalhos inferiores.
+- **Hierarquia Visual CSS**: Refinamento de index.css removendo regras que causavam achatamento de cartões e inputs.
+
 ## [1.1.83] - 2026-10-31
 
 ### Correção da Exibição do Badge & Roteamento para Ajustes

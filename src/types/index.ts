@@ -362,6 +362,14 @@ export interface InvestmentAsset {
 export interface UserProfile {
   language?: 'pt-BR' | 'en-US' | 'es-ES';
   themePreset?:
+    | 'linear-obsidian'
+    | 'revolut-midnight'
+    | 'raycast-charcoal'
+    | 'ultraviolet-vip'
+    | 'swiss-luxury'
+    | 'nordic-spruce-mint'
+    | 'revolut-clean-light'
+    | 'nordic-wheat-light'
     | 'sleek-obsidian'
     | 'sleek-neo-glass'
     | 'tech-green'

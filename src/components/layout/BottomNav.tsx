@@ -72,7 +72,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <div
           className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 flex flex-col justify-end items-center animate-in fade-in duration-200"
           style={{
-            paddingBottom: 'max(calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 76px), 84px)',
+            paddingBottom: 'max(calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 124px), 132px)',
           }}
           onClick={() => setIsSpeedDialOpen(false)}
         >
@@ -181,7 +181,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 setIsSpeedDialOpen(false);
                 setActiveTab('metas');
               }}
-              className="min-h-11 px-3 py-2 rounded-2xl bg-[#2C2C30] hover:bg-purple-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+              className="min-h-11 px-3 py-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 dark:bg-white/10 dark:hover:bg-white/20 border border-white/20 text-xs font-black text-white flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer"
             >
               <span>🎯</span> {t('nav.goals', 'Metas')}
             </button>
@@ -192,7 +192,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 setIsSpeedDialOpen(false);
                 setActiveTab('dividas');
               }}
-              className="min-h-11 px-3 py-2 rounded-2xl bg-[#2C2C30] hover:bg-rose-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+              className="min-h-11 px-3 py-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 dark:bg-white/10 dark:hover:bg-white/20 border border-white/20 text-xs font-black text-white flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer"
             >
               <span>📉</span> {t('nav.debts', 'Dívidas')}
             </button>
@@ -203,7 +203,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 setIsSpeedDialOpen(false);
                 setActiveTab('investimentos');
               }}
-              className="min-h-11 px-3 py-2 rounded-2xl bg-[#2C2C30] hover:bg-emerald-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+              className="min-h-11 px-3 py-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 dark:bg-white/10 dark:hover:bg-white/20 border border-white/20 text-xs font-black text-white flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer"
             >
               <span>📈</span> {t('nav.investments', 'Investimentos')}
             </button>
@@ -214,7 +214,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 setIsSpeedDialOpen(false);
                 setActiveTab('cartoes');
               }}
-              className="min-h-11 px-3 py-2 rounded-2xl bg-[#2C2C30] hover:bg-teal-900/50 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+              className="min-h-11 px-3 py-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 dark:bg-white/10 dark:hover:bg-white/20 border border-white/20 text-xs font-black text-white flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer"
             >
               <span>💳</span> {t('nav.cards', 'Cartões')}
             </button>

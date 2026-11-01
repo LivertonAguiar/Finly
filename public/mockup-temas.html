@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finly Design System - Novos Temas & Adaptações Fintech</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #07090E;
+      color: #F8FAFC;
+      padding: 24px 20px 60px 20px;
+      line-height: 1.4;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    /* Header */
+    .header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(99, 102, 241, 0.2);
+      color: #818CF8;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      margin-bottom: 12px;
+    }
+    .badge-mint {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+    .title span {
+      background: linear-gradient(90deg, #38BDF8, #818CF8, #E879F9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #94A3B8;
+      max-width: 760px;
+    }
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    /* Theme Card Outer */
+    .theme-card {
+      border-radius: 28px;
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .theme-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .card-source {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .card-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .hex-tag {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    /* Inner Dashboard Mock Card */
+    .mock-card {
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      margin-bottom: 16px;
+    }
+    .mock-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .mock-label {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.75;
+      margin-bottom: 2px;
+    }
+    .mock-value {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .mock-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 900;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .mock-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+    }
+    /* Meta bar */
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .dot-accent {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    /* Color Families Section */
+    .section-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 28px;
+      padding: 24px;
+      margin-top: 32px;
+    }
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .filter-pill {
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #E2E8F0;
+      cursor: pointer;
+    }
+    .filter-pill.active {
+      background: #06B6D4;
+      color: #080B14;
+      border-color: #06B6D4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header class="header">
+      <span class="badge">Pesquisa & Proposta Visual</span>
+      <h1 class="title">Temas Independentes Finly <span>& Inspirações Globais</span></h1>
+      <p class="subtitle">
+        Adequação completa das referências da internet (Linear, Revolut, Raycast, Nubank Ultravioleta, Swiss Wealth) eliminando conjuntos fechados e oferecendo temas de ambiente com alto contraste e cores 100% autônomas.
+      </p>
+    </header>
+
+    <!-- Banner Fotográfico Renderizado com Smartphones 3D -->
+    <div style="margin-bottom: 32px; border-radius: 28px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 50px rgba(0,0,0,0.6); background: #000000;">
+      <img src="finly_showcase_3themes_1793532494309.jpg" alt="Showcase de Smartphones Finly com os Temas" style="width: 100%; height: auto; display: block;" />
+    </div>
+
+    <!-- Grade dos 8 Novos Temas Adaptados -->
+    <div class="grid">
+
+      <!-- 1. Linear Obsidian -->
+      <div class="theme-card" style="background-color: #08090A; color: #FFFFFF;">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #818CF8;">Inspirado em Linear.app</div>
+              <div class="card-name">Linear Obsidian</div>
+            </div>
+            <div class="hex-tag">#08090A</div>
+          </div>
+          <div class="mock-card" style="background-color: #121417; border-color: rgba(255,255,255,0.08);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #94A3B8;">Saldo Disponível</div>
+                <div class="mock-value">R$ 24.850,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #5E6AD2; color: #FFFFFF;">✓</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: rgba(255,255,255,0.06);">
+              <span style="color: #94A3B8;">Cartão Black</span>
+              <span style="color: #818CF8; font-weight: 700;">Limite: R$ 15.000</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #94A3B8;">
+          <div><span class="dot-accent" style="background-color: #5E6AD2;"></span> Destaque: <strong style="color: #818CF8;">#5E6AD2</strong></div>
+          <div style="color: #34D399; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 2. Revolut Midnight -->
+      <div class="theme-card" style="background-color: #0F172A; color: #FFFFFF;">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #38BDF8;">Inspirado em Revolut</div>
+              <div class="card-name">Revolut Midnight</div>
+            </div>
+            <div class="hex-tag">#0F172A</div>
+          </div>
+          <div class="mock-card" style="background-color: #1E293B; border-color: rgba(255,255,255,0.08);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #94A3B8;">Patrimônio Líquido</div>
+                <div class="mock-value">R$ 58.420,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #4F55F1; color: #FFFFFF;">📊</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: rgba(255,255,255,0.06);">
+              <span style="color: #94A3B8;">Rendimento Mês</span>
+              <span style="color: #38BDF8; font-weight: 700;">+R$ 1.240,50</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #94A3B8;">
+          <div><span class="dot-accent" style="background-color: #4F55F1;"></span> Destaque: <strong style="color: #38BDF8;">#4F55F1</strong></div>
+          <div style="color: #34D399; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 3. Raycast Charcoal -->
+      <div class="theme-card" style="background-color: #0F1115; color: #FFFFFF;">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #FB7185;">Inspirado em Raycast</div>
+              <div class="card-name">Raycast Charcoal</div>
+            </div>
+            <div class="hex-tag">#0F1115</div>
+          </div>
+          <div class="mock-card" style="background-color: #181B22; border-color: rgba(255,255,255,0.08);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #94A3B8;">Despesas do Mês</div>
+                <div class="mock-value">R$ 3.840,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #FF6363; color: #FFFFFF;">⚡</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: rgba(255,255,255,0.06);">
+              <span style="color: #94A3B8;">Orçamento Restante</span>
+              <span style="color: #FB7185; font-weight: 700;">R$ 2.160,00</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #94A3B8;">
+          <div><span class="dot-accent" style="background-color: #FF6363;"></span> Destaque: <strong style="color: #FB7185;">#FF6363</strong></div>
+          <div style="color: #34D399; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 4. Nubank Ultravioleta VIP -->
+      <div class="theme-card" style="background-color: #0B0A10; color: #FFFFFF; border-color: rgba(168, 85, 247, 0.25);">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #C084FC;">Inspirado em Ultravioleta</div>
+              <div class="card-name">Ultraviolet VIP</div>
+            </div>
+            <div class="hex-tag">#0B0A10</div>
+          </div>
+          <div class="mock-card" style="background-color: #161324; border-color: rgba(168, 85, 247, 0.2);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #CBD5E1;">Cashback Acumulado</div>
+                <div class="mock-value">R$ 1.840,20</div>
+              </div>
+              <div class="mock-icon" style="background-color: #820AD1; color: #FFFFFF;">💎</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: rgba(255,255,255,0.06);">
+              <span style="color: #CBD5E1;">Crescendo a 200% CDI</span>
+              <span style="color: #C084FC; font-weight: 700;">+14,5% a.a.</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #CBD5E1;">
+          <div><span class="dot-accent" style="background-color: #820AD1;"></span> Destaque: <strong style="color: #C084FC;">#820AD1</strong></div>
+          <div style="color: #34D399; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 5. Swiss Luxury Gold -->
+      <div class="theme-card" style="background-color: #071026; color: #FFFFFF; border-color: rgba(212, 175, 55, 0.25);">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #FBBF24;">Private Banking</div>
+              <div class="card-name">Swiss Luxury Gold</div>
+            </div>
+            <div class="hex-tag">#071026</div>
+          </div>
+          <div class="mock-card" style="background-color: #0D1B3E; border-color: rgba(212, 175, 55, 0.2);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #CBD5E1;">Carteira Global</div>
+                <div class="mock-value">US$ 18.250,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #D4AF37; color: #071026;">★</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: rgba(255,255,255,0.06);">
+              <span style="color: #CBD5E1;">Câmbio Oficial</span>
+              <span style="color: #FBBF24; font-weight: 700;">R$ 5,68 / USD</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #CBD5E1;">
+          <div><span class="dot-accent" style="background-color: #D4AF37;"></span> Destaque: <strong style="color: #FBBF24;">#D4AF37</strong></div>
+          <div style="color: #34D399; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 6. Nordic Spruce Mint -->
+      <div class="theme-card" style="background-color: #0C1412; color: #FFFFFF; border-color: rgba(16, 185, 129, 0.25);">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #34D399;">Green Fintech</div>
+              <div class="card-name">Nordic Spruce Mint</div>
+            </div>
+            <div class="hex-tag">#0C1412</div>
+          </div>
+          <div class="mock-card" style="background-color: #15221F; border-color: rgba(16, 185, 129, 0.2);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #CBD5E1;">Reserva de Emergência</div>
+                <div class="mock-value">R$ 32.500,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #10B981; color: #0C1412;">🌱</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: rgba(255,255,255,0.06);">
+              <span style="color: #CBD5E1;">Metas Cumpridas</span>
+              <span style="color: #34D399; font-weight: 700;">100% atingida</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #CBD5E1;">
+          <div><span class="dot-accent" style="background-color: #10B981;"></span> Destaque: <strong style="color: #34D399;">#10B981</strong></div>
+          <div style="color: #34D399; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 7. Revolut Clean Light -->
+      <div class="theme-card" style="background-color: #F8FAFC; color: #0F172A; border-color: #E2E8F0;">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #2563EB;">Revolut / Stripe Light</div>
+              <div class="card-name" style="color: #0F172A;">Revolut Clean Light</div>
+            </div>
+            <div class="hex-tag" style="background-color: #E2E8F0; color: #334155;">#F8FAFC</div>
+          </div>
+          <div class="mock-card" style="background-color: #FFFFFF; border-color: #E2E8F0; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #475569;">Saldo em Conta</div>
+                <div class="mock-value" style="color: #0F172A;">R$ 12.450,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #4F55F1; color: #FFFFFF;">💳</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: #F1F5F9;">
+              <span style="color: #64748B;">Fatura Atual</span>
+              <span style="color: #2563EB; font-weight: 700;">R$ 1.840,00</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #64748B; border-top-color: #E2E8F0;">
+          <div><span class="dot-accent" style="background-color: #4F55F1;"></span> Destaque: <strong style="color: #2563EB;">#4F55F1</strong></div>
+          <div style="color: #059669; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+      <!-- 8. Nordic Wheat Light -->
+      <div class="theme-card" style="background-color: #F5EFEB; color: #1C1917; border-color: #E7DFD8;">
+        <div>
+          <div class="card-top">
+            <div>
+              <div class="card-source" style="color: #B45309;">Nordic Editorial</div>
+              <div class="card-name" style="color: #1C1917;">Nordic Wheat Light</div>
+            </div>
+            <div class="hex-tag" style="background-color: #EAE1DA; color: #44403C;">#F5EFEB</div>
+          </div>
+          <div class="mock-card" style="background-color: #FFFFFF; border-color: #E7DFD8; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+            <div class="mock-row">
+              <div>
+                <div class="mock-label" style="color: #57534E;">Total Investido</div>
+                <div class="mock-value" style="color: #1C1917;">R$ 45.200,00</div>
+              </div>
+              <div class="mock-icon" style="background-color: #B08D57; color: #FFFFFF;">📈</div>
+            </div>
+            <div class="mock-footer" style="border-top-color: #F5EFEB;">
+              <span style="color: #78716C;">Projeção 12 meses</span>
+              <span style="color: #B45309; font-weight: 700;">+R$ 5.400</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta" style="color: #78716C; border-top-color: #E7DFD8;">
+          <div><span class="dot-accent" style="background-color: #B08D57;"></span> Destaque: <strong style="color: #B45309;">#B08D57</strong></div>
+          <div style="color: #059669; font-weight: 700;">WCAG AAA</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Seção: Organização das Cores por Famílias Cromáticas -->
+    <div class="section-box">
+      <span class="badge badge-mint">Fim dos Conjuntos Fechados</span>
+      <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 8px 0 4px 0;">
+        Organização das 55 Cores por Famílias Cromáticas (100% Autônomas)
+      </h2>
+      <p style="font-size: 13px; color: #94A3B8;">
+        Substituição definitiva de nomes de coleções fechadas (ex.: <em>"Teal & Terracota"</em>) por categorias reais no ColorScrollPicker:
+      </p>
+
+      <div class="pill-group">
+        <span class="filter-pill active">Todas (55)</span>
+        <span class="filter-pill">Verdes & Menta (10)</span>
+        <span class="filter-pill">Azuis & Celestes (9)</span>
+        <span class="filter-pill">Roxos & Lavanda (8)</span>
+        <span class="filter-pill">Dourados & Âmbar (9)</span>
+        <span class="filter-pill">Corais & Rosas (8)</span>
+        <span class="filter-pill">Neutros & Grafites (11)</span>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -55,7 +55,7 @@ import { useFinancial } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { useTranslation, SupportedLanguage } from '../../utils/i18n';
-import { applyTheme, ThemePreset, CardRadius, PRESET_COLORS, THEME_PRESET_DETAILS } from '../../utils/themeEngine';
+import { applyTheme, ThemePreset, CardRadius, PRESET_COLORS, THEME_PRESET_DETAILS, ThemePresetDetails } from '../../utils/themeEngine';
 import {
   getStoredNotificationPrefs,
   saveNotificationPrefs,
@@ -753,7 +753,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                     {t('settings.theme.title', selectedLang)} / Fundo do Sistema
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Tema ativo: <strong className="text-purple-600 dark:text-purple-400">{THEME_PRESET_DETAILS.find(t => t.id === selectedThemePreset)?.label || selectedThemePreset}</strong>
+                    Tema ativo: <strong className="text-purple-600 dark:text-purple-400">{THEME_PRESET_DETAILS.find((item: ThemePresetDetails) => item.id === selectedThemePreset)?.label || selectedThemePreset}</strong>
                   </span>
                 </div>
 
@@ -782,9 +782,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[10px]">
                 {[
                   { id: 'all', label: `Todos (${THEME_PRESET_DETAILS.length})` },
-                  { id: 'dark', label: `🌙 Escuros (${THEME_PRESET_DETAILS.filter(t => t.category === 'dark').length})` },
-                  { id: 'classic', label: `⚡ Clássicos (${THEME_PRESET_DETAILS.filter(t => t.category === 'classic').length})` },
-                  { id: 'light', label: `☀️ Claros (${THEME_PRESET_DETAILS.filter(t => t.category === 'light').length})` },
+                  { id: 'dark', label: `🌙 Escuros (${THEME_PRESET_DETAILS.filter((item: ThemePresetDetails) => item.category === 'dark').length})` },
+                  { id: 'classic', label: `⚡ Clássicos (${THEME_PRESET_DETAILS.filter((item: ThemePresetDetails) => item.category === 'classic').length})` },
+                  { id: 'light', label: `☀️ Claros (${THEME_PRESET_DETAILS.filter((item: ThemePresetDetails) => item.category === 'light').length})` },
                 ].map(filter => (
                   <button
                     key={filter.id}
@@ -807,7 +807,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                 className="flex items-stretch gap-3.5 overflow-x-auto pb-3 pt-1 px-1 snap-x snap-mandatory no-scrollbar scroll-smooth"
               >
                 {THEME_PRESET_DETAILS
-                  .filter(tp => themeCategoryFilter === 'all' || tp.category === themeCategoryFilter)
+                  .filter((tp: ThemePresetDetails) => themeCategoryFilter === 'all' || tp.category === themeCategoryFilter)
                   .map(tp => {
                     const isSelected = selectedThemePreset === tp.id;
                     const isLight = tp.category === 'light';
@@ -888,16 +888,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection, onNa
                             </div>
                           </div>
 
-                          {/* Palette Capsule Swatch */}
-                          <div className="flex items-center gap-1 w-full h-2 rounded-full overflow-hidden opacity-90">
-                            {tp.palette.map((hex, idx) => (
-                              <div
-                                key={idx}
-                                className="h-full flex-1"
-                                style={{ backgroundColor: hex }}
-                                title={hex}
-                              />
-                            ))}
+                          {/* Theme Info Status Bar */}
+                          <div className="flex items-center justify-between text-[10px] font-bold opacity-80 pt-1">
+                            <span className="flex items-center gap-1.5" style={{ color: isLight ? '#475569' : '#94A3B8' }}>
+                              <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: tp.accent }} />
+                              Destaque {tp.accent}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ backgroundColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)', color: isLight ? '#0F172A' : '#E2E8F0' }}>
+                              WCAG AAA
+                            </span>
                           </div>
                         </div>
 

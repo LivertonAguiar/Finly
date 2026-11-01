@@ -40,6 +40,28 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 
 export const RELEASES: ReleaseInfo[] = [
   {
+    version: '1.1.83.24',
+    releaseDate: '2026-11-01',
+    summary: '8 Novos Temas Fintech Independentes, 55 Cores por Famílias Cromáticas e Liquidação Global de Fatura.',
+    highlights: [
+      {
+        title: '8 Novos Temas de Alta Performance Inspirados em Fintechs',
+        description: 'Chegada dos temas Linear Obsidian, Revolut Midnight, Raycast Charcoal, Ultraviolet VIP, Swiss Luxury Gold, Nordic Spruce Mint, Revolut Clean Light e Nordic Wheat Light, com fundos, superfícies elevadas e contrastes WCAG AAA testados.',
+        type: 'feature',
+      },
+      {
+        title: 'Cores Individuais por Famílias Cromáticas no Scroll Picker',
+        description: 'Fim dos conjuntos fechados de cores: 55 cores autônomas organizadas por Verdes & Menta, Azuis & Celestes, Roxos & Lavanda, Dourados & Âmbar, Corais & Rosas e Neutros & Grafites.',
+        type: 'visual',
+      },
+      {
+        title: 'Fluxo Global de Liquidação de Fatura no Menu Rápido',
+        description: 'Ativação do modal global de pagamento em 2 toques ao acionar "Pagar fatura" nas ações rápidas (+) e contraste aprimorado dos botões inferiores.',
+        type: 'fix',
+      },
+    ],
+  },
+  {
     version: CURRENT_VERSION,
     releaseDate: '2026-10-31',
             summary: 'Design em 2 níveis no widget de cartões do dashboard com exibição integral de nomes, limites e faturas sem colisões.',

@@ -160,32 +160,16 @@ html.dark {
   color-scheme: dark;
 }
 
-/* 1. Textos secundários e metadados no modo escuro (eleva para Slate 200 nítido) */
-html.dark .text-slate-400,
-html.dark .dark\:text-slate-400,
-html.dark .text-zinc-400,
-html.dark .dark\:text-zinc-400,
-html.dark .text-gray-400,
-html.dark .dark\:text-gray-400 {
-  color: #F8FAFC !important;
+/* 1. Textos secundários e metadados no modo escuro com hierarquia nítida */
+html.dark .text-slate-400:not([class*="bg-"]):not([class*="badge"]),
+html.dark .dark\:text-slate-400:not([class*="bg-"]):not([class*="badge"]) {
+  color: #94A3B8 !important;
 }
 
-/* 2. Textos terciários, legendas e rótulos de apoio (eleva para Slate 100/200 super nítido) */
-html.dark .text-slate-500,
-html.dark .dark\:text-slate-500,
-html.dark .text-zinc-500,
-html.dark .dark\:text-zinc-500,
-html.dark .text-gray-500,
-html.dark .dark\:text-gray-500 {
-  color: #E2E8F0 !important;
-}
-
-/* 3. Textos escuros (slate/zinc 600) que se perdiam em fundos OLED/escuros */
-html.dark .text-slate-600,
-html.dark .dark\:text-slate-600,
-html.dark .text-zinc-600,
-html.dark .dark\:text-zinc-600 {
-  color: #E2E8F0 !important;
+/* 2. Textos terciários e legendas de apoio */
+html.dark .text-slate-500:not([class*="bg-"]):not([class*="badge"]),
+html.dark .dark\:text-slate-500:not([class*="bg-"]):not([class*="badge"]) {
+  color: #64748B !important;
 }
 
 /* 4. Textos com opacidade reduzida no modo escuro (elimina textos apagados) */
@@ -201,18 +185,13 @@ html.dark .text-white\/70 {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* 5. Títulos e cabeçalhos principais */
-html.dark .text-slate-900,
-html.dark .text-zinc-900 {
+/* 5. Títulos e cabeçalhos principais (somente se não tiver fundo claro próprio) */
+html.dark h1.text-slate-900,
+html.dark h2.text-slate-900,
+html.dark h3.text-slate-900,
+html.dark h4.text-slate-900,
+html.dark h5.text-slate-900 {
   color: #FFFFFF !important;
-}
-html.dark .text-slate-800,
-html.dark .text-zinc-800 {
-  color: #FFFFFF !important;
-}
-html.dark .text-slate-700,
-html.dark .text-zinc-700 {
-  color: #F8FAFC !important;
 }
 
 /* 6. Cores financeiras semânticas de alto contraste no modo escuro */
@@ -360,39 +339,15 @@ html:not(.dark) .shadow-xl:not([class*="bg-black"]):not([class*="bg-purple"]):no
 /* Elimina textos desbotados e cinzas fracos em fundos claros                */
 /* ========================================================================= */
 
-/* Textos secundários no modo claro (Slate 700: contraste 8.5:1 contra branco) */
-html:not(.dark) .text-slate-400,
-html:not(.dark) .dark\:text-slate-400,
-html:not(.dark) .text-zinc-400,
-html:not(.dark) .dark\:text-zinc-400,
-html:not(.dark) .text-gray-400,
-html:not(.dark) .dark\:text-gray-400 {
-  color: #1E293B !important;
+/* Textos secundários no modo claro (Slate 600: legível e equilibrado) */
+html:not(.dark) .text-slate-400:not([class*="bg-black"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]),
+html:not(.dark) .text-zinc-400:not([class*="bg-black"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]) {
+  color: #64748B !important;
 }
 
-/* Textos terciários, legendas e badges no modo claro (Slate 900) */
-html:not(.dark) .text-slate-500,
-html:not(.dark) .dark\:text-slate-500,
-html:not(.dark) .text-zinc-500,
-html:not(.dark) .dark\:text-zinc-500,
-html:not(.dark) .text-gray-500,
-html:not(.dark) .dark\:text-gray-500 {
-  color: #0F172A !important;
-}
-
-/* Textos escuros no modo claro */
-html:not(.dark) .text-slate-600,
-html:not(.dark) .dark\:text-slate-600,
-html:not(.dark) .text-zinc-600,
-html:not(.dark) .dark\:text-zinc-600 {
-  color: #0F172A !important;
-}
-
-html:not(.dark) .text-slate-300,
-html:not(.dark) .dark\:text-slate-300,
-html:not(.dark) .text-slate-200,
-html:not(.dark) .dark\:text-slate-200 {
-  color: #334155 !important;
+/* Textos terciários no modo claro */
+html:not(.dark) .text-slate-500:not([class*="bg-black"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]) {
+  color: #475569 !important;
 }
 
 /* Textos com opacidade preta no modo claro */
@@ -529,15 +484,9 @@ html[data-theme-preset="sleek-neo-glass"].dark .dark\:bg-\[\#222226\] {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-html.dark .dark\:bg-\[\#2C2C2E\],
-html.dark .bg-\[\#2C2C2E\],
-html.dark .dark\:bg-\[\#1e222d\],
-html.dark .dark\:bg-\[\#252b38\],
-html.dark .dark\:bg-\[\#18181B\],
-html.dark .dark\:bg-slate-800,
-html.dark .dark\:bg-\[\#1C1C1E\],
-html.dark .dark\:bg-\[\#1E1E22\],
-html.dark .dark\:bg-\[\#1E1E20\] {
+/* Top-level standard cards use dynamic theme card background */
+html.dark .finly-theme-card,
+html.dark [data-theme-card="true"] {
   background-color: var(--app-card-bg, #121826) !important;
 }
 
