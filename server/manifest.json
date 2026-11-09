@@ -8,7 +8,7 @@
     "version": "1.1.83.26",
     "minNativeVersion": "1.1.0",
     "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.26.zip",
-    "sha256": "ad7dc5462f68d29596ae44d0fb37763f451c807c3bf488ade33529e6d7f10ec0",
+    "sha256": "1dfa28d9d1ae97cb1acfb511762c8b8465263549a35b95e2b7b2bdec9a9de941",
     "mandatory": true,
     "releaseDate": "2026-11-09",
     "notes": "Correcao visual do modal Pagar Fatura no Android com Portal z-120 e Safe Area"
