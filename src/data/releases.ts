@@ -41,9 +41,14 @@ export const CURRENT_BUILD_DATE = '2026-10-28';
 export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
-    releaseDate: '2026-11-01',
-    summary: 'Refinamento visual na navegação de Cartões, preservação de abas ao fechar faturas e remoção de botão redundante na Navbar.',
+    releaseDate: '2026-11-09',
+    summary: 'Correção de exibição ao pagar fatura no Android com Safe Area, refinamento visual na navegação de Cartões e novos temas.',
     highlights: [
+      {
+        title: 'Correção Visual ao Pagar Fatura no Android',
+        description: 'Renderização do modal via Portal z-[120], eliminação de sobreposição da barra de navegação e inclusão da Safe Area inferior, mantendo o botão de confirmação 100% visível.',
+        type: 'fix',
+      },
       {
         title: 'Simplificação e Fim de Truncamento em Cartões',
         description: 'Padronização do nome de "Cartões de Crédito" para "Cartões" em abas, títulos e menus, eliminando o truncamento visual com reticências no mobile.',

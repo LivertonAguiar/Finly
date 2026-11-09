@@ -3,7 +3,13 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [1.1.83] - 2026-11-01
+## [1.1.83] - 2026-11-09
+
+### Correções Visuais e Usabilidade Mobile (Android)
+- **Correção da Exibição do Modal Pagar Fatura no Android**:
+  - Renderização via `createPortal` com `z-[120]`, cobrindo por completo a barra de navegação inferior (`BottomNav`) e eliminando conflitos de *stacking context* causados por elementos ancestrais com animação.
+  - Reestruturação flexbox do corpo e inclusão de margem segura para a barra de gestos do Android (`paddingBottom: max(16px, env(safe-area-inset-bottom, 16px), var(--sab, 16px))`), eliminando o corte do botão verde "Confirmar Pagamento".
+  - Bloqueio automático de rolagem de fundo (`document.body.style.overflow = 'hidden'`) enquanto o modal estiver aberto.
 
 ### Usabilidade e Interface Mobile (Cartões e Navbar)
 - **Padronização do Nome 'Cartões'**: Alterado de "Cartões de Crédito" para "Cartões" em abas, títulos e navegação, eliminando truncamentos (`Cartões de...`) no mobile.

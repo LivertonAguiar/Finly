@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   CheckCircle2,
@@ -36,6 +37,24 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
   const { cards, accounts, transactions, user, payCardInvoice } = useFinancial();
 
   useBackButton(isOpen, onClose);
+
+  // Lock body scroll and handle Escape key while open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   // Month calculation
   const currentMonthPrefix = useMemo(() => {
@@ -184,24 +203,24 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const sheetContent = (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="w-full sm:max-w-md bg-white dark:bg-[#18181B] rounded-t-[32px] sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-6 duration-250"
+        className="w-full sm:max-w-md bg-white dark:bg-[#18181B] rounded-t-[32px] sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[88dvh] animate-in slide-in-from-bottom-6 duration-250 text-slate-900 dark:text-white"
       >
         {/* Mobile Drag Handle */}
-        <div className="sm:hidden pt-3 pb-1 flex justify-center">
+        <div className="sm:hidden shrink-0 pt-3 pb-1 flex justify-center">
           <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-white/20" />
         </div>
 
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+        <div className="shrink-0 px-5 py-3.5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
               <CreditCardIcon className="w-5 h-5" />
@@ -225,7 +244,7 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-160px)] scrollbar-none">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain p-5 space-y-4 touch-pan-y scrollbar-none">
           {/* Success state animation */}
           {isSuccess ? (
             <div className="py-10 text-center space-y-3 animate-in zoom-in-95 duration-200">
@@ -450,9 +469,14 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
           )}
         </div>
 
-        {/* Footer with 1-Touch Confirm Button (Touch 2) */}
+        {/* Footer with 1-Touch Confirm Button (Touch 2) & Android Gesture Safe-Area */}
         {!isSuccess && (
-          <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/[0.06] space-y-2">
+          <div
+            className="shrink-0 p-4 bg-slate-50 dark:bg-[#151518] border-t border-slate-100 dark:border-white/[0.06] space-y-2"
+            style={{
+              paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px), var(--sab, 16px))',
+            }}
+          >
             <button
               type="button"
               disabled={isSubmitting || currentPayAmount <= 0 || !activeCard || !selectedAccountId}
@@ -476,4 +500,10 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(sheetContent, document.body);
+  }
+
+  return sheetContent;
 };

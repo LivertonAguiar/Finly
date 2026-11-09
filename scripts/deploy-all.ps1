@@ -30,6 +30,7 @@ $ErrorActionPreference = "Stop"
 
 $startTime = Get-Date
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Set-Location $repoRoot
 $keyPath = "C:\Users\Suporte\Downloads\Oracle\ssh-key-2026-08-24.key"
 
 Write-Host "==========================================" -ForegroundColor Cyan

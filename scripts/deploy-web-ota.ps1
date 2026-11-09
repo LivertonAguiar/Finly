@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Set-Location $repoRoot
 $keyPath = "C:\Users\Suporte\Downloads\Oracle\ssh-key-2026-08-24.key"
 $server = "ubuntu@147.15.74.236"
 $remoteDir = "/opt/docker/finly"
