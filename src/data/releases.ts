@@ -42,8 +42,13 @@ export const RELEASES: ReleaseInfo[] = [
   {
     version: CURRENT_VERSION,
     releaseDate: '2026-11-09',
-    summary: 'Correção de exibição ao pagar fatura no Android com Safe Area, refinamento visual na navegação de Cartões e novos temas.',
+    summary: 'Lançamentos detalhados no modal Pagar Fatura, correção de exibição no Android com Safe Area e refinamento de Cartões.',
     highlights: [
+      {
+        title: 'Lançamentos Detalhados no Modal Pagar Fatura',
+        description: 'Visualização completa das compras, parcelas (ex: 1/3) e valores individuais que compõem a fatura antes da confirmação do pagamento.',
+        type: 'feature',
+      },
       {
         title: 'Correção Visual ao Pagar Fatura no Android',
         description: 'Renderização do modal via Portal z-[120], eliminação de sobreposição da barra de navegação e inclusão da Safe Area inferior, mantendo o botão de confirmação 100% visível.',

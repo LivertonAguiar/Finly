@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.26",
+    "version": "1.1.83.28",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.26.zip",
-    "sha256": "1dfa28d9d1ae97cb1acfb511762c8b8465263549a35b95e2b7b2bdec9a9de941",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.28.zip",
+    "sha256": "08907f06990a1ec8afa2c0b74625a49534fceea5c93e9485b473e71265cb7c33",
     "mandatory": true,
     "releaseDate": "2026-11-09",
-    "notes": "Correcao visual do modal Pagar Fatura no Android com Portal z-120 e Safe Area"
+    "notes": "Lancamentos detalhados da fatura no modal de pagamento"
   }
 }

@@ -5,7 +5,10 @@ O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR
 
 ## [1.1.83] - 2026-11-09
 
-### Correções Visuais e Usabilidade Mobile (Android)
+### Lançamentos da Fatura e Usabilidade Mobile (Android)
+- **Lançamentos Detalhados no Modal Pagar Fatura**:
+  - Exibição completa das compras e transações vinculadas à fatura diretamente no `PayInvoiceSheet` com lista expansível por padrão.
+  - Cada item apresenta ícone da categoria/subcategoria com cor temática, descrição da despesa, badge de parcelamento (ex: `1/3`), indicador de detalhamento, data da compra e valor individual formatado.
 - **Correção da Exibição do Modal Pagar Fatura no Android**:
   - Renderização via `createPortal` com `z-[120]`, cobrindo por completo a barra de navegação inferior (`BottomNav`) e eliminando conflitos de *stacking context* causados por elementos ancestrais com animação.
   - Reestruturação flexbox do corpo e inclusão de margem segura para a barra de gestos do Android (`paddingBottom: max(16px, env(safe-area-inset-bottom, 16px), var(--sab, 16px))`), eliminando o corte do botão verde "Confirmar Pagamento".

@@ -13,9 +13,11 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  Receipt,
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { useBackButton } from '../../hooks/useBackButton';
+import { resolveCategory } from '../../utils/categoryResolver';
 import { formatCurrency, formatDate, getTodayString } from '../../utils/formatters';
 import { BankLogo, CardBrandLogo, getCardBankInfo } from '../../utils/bankLogos';
 import { getCardTransactionInvoiceMonth, isCardInvoicePaid } from '../../utils/invoiceCalculator';
@@ -34,7 +36,7 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
   initialCardId,
   initialMonth,
 }) => {
-  const { cards, accounts, transactions, user, payCardInvoice } = useFinancial();
+  const { cards, accounts, transactions, categories, user, payCardInvoice } = useFinancial();
 
   useBackButton(isOpen, onClose);
 
@@ -114,6 +116,18 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
     );
     return expenses.reduce((sum, t) => sum + (t.amount || 0), 0);
   }, [activeCard, transactions, currentMonthPrefix]);
+
+  // Expenses / transactions belonging to this invoice
+  const activeInvoiceExpenses = useMemo(() => {
+    if (!activeCard) return [];
+    return transactions
+      .filter(
+        t => t.cardId === activeCard.id && t.type === 'expense' && getCardTransactionInvoiceMonth(t, activeCard) === currentMonthPrefix
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [activeCard, transactions, currentMonthPrefix]);
+
+  const [isExpensesListOpen, setIsExpensesListOpen] = useState<boolean>(true);
 
   const isAlreadyPaid = useMemo(() => {
     if (!activeCard) return false;
@@ -331,6 +345,95 @@ export const PayInvoiceSheet: React.FC<PayInvoiceSheetProps> = ({
                       {formatCurrency(activeInvoiceTotal, user.currency, !user.showValues)}
                     </span>
                   </div>
+                </div>
+              )}
+
+              {/* Lançamentos desta Fatura (Accordion / Lista Detalhada) */}
+              {activeCard && (
+                <div className="border border-slate-200/80 dark:border-white/[0.08] rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01]">
+                  <button
+                    type="button"
+                    onClick={() => setIsExpensesListOpen(!isExpensesListOpen)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                        <Receipt className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Lançamentos desta fatura</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-white/10 text-[10px] font-black text-slate-600 dark:text-slate-300">
+                        {activeInvoiceExpenses.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400">
+                      <span>{isExpensesListOpen ? 'Recolher' : 'Ver lançamentos'}</span>
+                      {isExpensesListOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </button>
+
+                  {isExpensesListOpen && (
+                    <div className="border-t border-slate-200/80 dark:border-white/[0.08]">
+                      {activeInvoiceExpenses.length === 0 ? (
+                        <div className="py-6 text-center text-slate-400 text-xs font-medium">
+                          Nenhum lançamento registrado nesta fatura.
+                        </div>
+                      ) : (
+                        <div className="max-h-56 overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-white/[0.04] scrollbar-thin">
+                          {activeInvoiceExpenses.map(t => {
+                            const cat = resolveCategory(categories, t.categoryId, t.subcategoryId, t.type || 'expense');
+                            return (
+                              <div
+                                key={t.id}
+                                className="p-3 px-3.5 flex items-center justify-between gap-2.5 hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  <div
+                                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black select-none shadow-2xs"
+                                    style={{
+                                      backgroundColor: (cat?.color || '#7c4dff') + '20',
+                                      color: cat?.color || '#7c4dff',
+                                    }}
+                                  >
+                                    {cat?.subIcon || cat?.icon || '💳'}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate block">
+                                        {t.description}
+                                      </span>
+                                      {t.installments && t.installments.total > 1 && (
+                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
+                                          {t.installments.current}/{t.installments.total}
+                                        </span>
+                                      )}
+                                      {t.hasComponents && Array.isArray(t.components) && t.components.length > 0 && (
+                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                                          {t.components.length} itens
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                      <span className="font-mono text-slate-400">{formatDate(t.date)}</span>
+                                      <span>•</span>
+                                      <span className="font-medium text-slate-500 dark:text-slate-400 truncate">
+                                        {cat?.subName || cat?.name || 'Geral'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="text-right shrink-0">
+                                  <span className="font-black text-xs text-rose-600 dark:text-rose-400 block">
+                                    {formatCurrency(t.amount, user.currency, !user.showValues)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
