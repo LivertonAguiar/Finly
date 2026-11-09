@@ -8,7 +8,7 @@
     "version": "1.1.83.28",
     "minNativeVersion": "1.1.0",
     "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.28.zip",
-    "sha256": "08907f06990a1ec8afa2c0b74625a49534fceea5c93e9485b473e71265cb7c33",
+    "sha256": "46479eedaf88f8121c9e5a7d8efcaa03eb17ff13d7db8ee52f8ae9bd363ffc31",
     "mandatory": true,
     "releaseDate": "2026-11-09",
     "notes": "Lancamentos detalhados da fatura no modal de pagamento"
