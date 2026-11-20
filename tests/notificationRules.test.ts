@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   selectFinancialNotificationCandidates,
   computeFutureNotificationSchedule,
+  diffSystemNotifications,
   stableNotificationId,
   DEFAULT_NOTIFICATION_PREFS,
 } from '../src/utils/notificationEngine';
@@ -158,5 +159,60 @@ const pastSchedule = computeFutureNotificationSchedule({
 });
 assert.equal(pastSchedule.length, 0, 'Conta no passado não deve gerar alarme futuro');
 
+// 5. Teste de Deteccao de Alteracao de Valor / Conteudo em Notificacoes Pendentes
+const testNotifId = stableNotificationId('sys_bill:tx-series-1:due_day:2026-11-20');
+const targetDueAt = new Date(2026, 10, 20, 9, 0, 0);
+
+// Cenário A: Alarme no Android com valor antigo (R$ 277,41) e o usuário editou para R$ 332,41
+const pendingWithOldAmount = [
+  {
+    id: testNotifId,
+    title: '⏰ Conta a Pagar Vence Hoje',
+    body: 'A conta "Taxa do Condomínio" (R$ 277,41) vence hoje!',
+    schedule: { at: targetDueAt },
+  },
+];
+
+const targetWithNewAmount = [
+  {
+    id: testNotifId,
+    key: 'sys_bill:tx-series-1:due_day:2026-11-20',
+    title: '⏰ Conta a Pagar Vence Hoje',
+    body: 'A conta "Taxa do Condomínio" (R$ 332,41) vence hoje!',
+    scheduledAt: targetDueAt,
+    kind: 'pending_bill' as const,
+    entityId: 'tx-series-1',
+    amount: 332.41,
+    dueDate: '2026-11-20',
+  },
+];
+
+const diffModified = diffSystemNotifications(pendingWithOldAmount, targetWithNewAmount);
+assert.equal(diffModified.toCancelIds.length, 1, 'Deve cancelar o alarme antigo com valor defasado');
+assert.equal(diffModified.toCancelIds[0], testNotifId, 'ID cancelado deve coincidir');
+assert.equal(diffModified.toSchedule.length, 1, 'Deve reagendar o alarme com o novo valor');
+assert.equal(diffModified.toSchedule[0].body, 'A conta "Taxa do Condomínio" (R$ 332,41) vence hoje!');
+
+// Cenário B: Alarme no Android idêntico ao planejado (não deve reagendar nem cancelar nada)
+const diffUnchanged = diffSystemNotifications(
+  [
+    {
+      id: testNotifId,
+      title: '⏰ Conta a Pagar Vence Hoje',
+      body: 'A conta "Taxa do Condomínio" (R$ 332,41) vence hoje!',
+      schedule: { at: targetDueAt },
+    },
+  ],
+  targetWithNewAmount
+);
+assert.equal(diffUnchanged.toCancelIds.length, 0, 'Alarme idêntico não deve ser cancelado');
+assert.equal(diffUnchanged.toSchedule.length, 0, 'Alarme idêntico não deve ser reagendado');
+
+// Cenário C: Alarme obsoleto (conta paga ou excluída)
+const diffStale = diffSystemNotifications(pendingWithOldAmount, []);
+assert.equal(diffStale.toCancelIds.length, 1, 'Conta excluída/paga deve ter alarme cancelado');
+assert.equal(diffStale.toSchedule.length, 0, 'Nenhum novo agendamento necessário');
+
 console.log('OK: notificações respeitam opt-in, vencimento, horário, fatura consolidada e origem do ciclo.');
 console.log('OK: agendamentos futuros para app fechado (AlarmManager) validados com sucesso.');
+console.log('OK: diff de notificações nativas detecta alteração de valor e atualiza alarmes.');

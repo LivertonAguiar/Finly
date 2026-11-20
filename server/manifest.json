@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.28",
+    "version": "1.1.83.30",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.28.zip",
-    "sha256": "46479eedaf88f8121c9e5a7d8efcaa03eb17ff13d7db8ee52f8ae9bd363ffc31",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.30.zip",
+    "sha256": "8fc7bf5d67c72eb7ec376d1af0760cff475a907af7ca98362d5070787f5c59a6",
     "mandatory": true,
-    "releaseDate": "2026-11-09",
-    "notes": "Lancamentos detalhados da fatura no modal de pagamento"
+    "releaseDate": "2026-11-20",
+    "notes": "Correção na sincronização de notificações nativas no Android ao alterar valor de despesas"
   }
 }

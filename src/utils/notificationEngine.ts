@@ -820,6 +820,64 @@ export function computeFutureNotificationSchedule({
   return items.sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 }
 
+export interface PendingNativeNotificationLike {
+  id: number;
+  title?: string;
+  body?: string;
+  schedule?: { at?: Date | string };
+}
+
+/**
+ * Compares current native pending alarms against desired target alarms.
+ * Identifies:
+ * 1. Stale alarms to cancel (no longer in target items)
+ * 2. Modified alarms to cancel & reschedule (amount, title, body, or reminder time changed)
+ * 3. New alarms to schedule
+ */
+export function diffSystemNotifications(
+  pendingList: PendingNativeNotificationLike[],
+  targetItems: SystemNotificationScheduleItem[]
+): {
+  toCancelIds: number[];
+  toSchedule: SystemNotificationScheduleItem[];
+} {
+  const existingMap = new Map(pendingList.map(n => [n.id, n]));
+  const targetIds = new Set(targetItems.map(item => item.id));
+  const toCancelIds = new Set<number>();
+  const toSchedule: SystemNotificationScheduleItem[] = [];
+
+  // 1. Identify stale alarms (e.g. bills that were paid, deleted, or whose date changed)
+  for (const n of pendingList) {
+    if (!targetIds.has(n.id)) {
+      toCancelIds.add(n.id);
+    }
+  }
+
+  // 2. Identify new or modified alarms
+  for (const item of targetItems) {
+    const existing = existingMap.get(item.id);
+    if (!existing) {
+      toSchedule.push(item);
+    } else {
+      const bodyChanged = existing.body !== item.body;
+      const titleChanged = existing.title !== item.title;
+      const existingTime = existing.schedule?.at ? new Date(existing.schedule.at).getTime() : null;
+      const targetTime = item.scheduledAt.getTime();
+      const timeChanged = existingTime !== null && Math.abs(existingTime - targetTime) > 60000;
+
+      if (bodyChanged || titleChanged || timeChanged) {
+        toCancelIds.add(item.id);
+        toSchedule.push(item);
+      }
+    }
+  }
+
+  return {
+    toCancelIds: Array.from(toCancelIds),
+    toSchedule,
+  };
+}
+
 /**
  * Synchronizes native system alarms with local pending transactions and card invoices.
  * Schedules alarms using allowWhileIdle: true so Android fires notifications even when the app is closed.
@@ -843,16 +901,16 @@ export async function syncSystemScheduledNotifications(data: {
     }
 
     const pendingNative = await LocalNotifications.getPending();
-    const existingIds = new Set((pendingNative.notifications || []).map(n => n.id));
+    const existingList = pendingNative.notifications || [];
 
     // If notifications disabled by user, cancel all pending
     if (!prefs.enabled) {
-      if (pendingNative.notifications && pendingNative.notifications.length > 0) {
+      if (existingList.length > 0) {
         await LocalNotifications.cancel({
-          notifications: pendingNative.notifications.map(n => ({ id: n.id })),
+          notifications: existingList.map(n => ({ id: n.id })),
         });
       }
-      return { scheduled: 0, active: 0, cancelled: pendingNative.notifications?.length || 0 };
+      return { scheduled: 0, active: 0, cancelled: existingList.length };
     }
 
     // Compute future items required
@@ -863,19 +921,13 @@ export async function syncSystemScheduledNotifications(data: {
       now: new Date(),
     });
 
-    const targetIds = new Set(targetItems.map(item => item.id));
+    const { toCancelIds, toSchedule } = diffSystemNotifications(existingList, targetItems);
 
-    // Identify stale notifications (e.g. bills that were paid or deleted)
-    const toCancel = (pendingNative.notifications || [])
-      .filter(n => !targetIds.has(n.id))
-      .map(n => ({ id: n.id }));
-
-    if (toCancel.length > 0) {
-      await LocalNotifications.cancel({ notifications: toCancel });
+    if (toCancelIds.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: toCancelIds.map(id => ({ id })),
+      });
     }
-
-    // Identify new items to schedule (not already in native queue)
-    const toSchedule = targetItems.filter(item => !existingIds.has(item.id));
 
     if (toSchedule.length > 0) {
       // Limit to 40 upcoming alarms to respect Android AlarmManager quota
@@ -905,7 +957,7 @@ export async function syncSystemScheduledNotifications(data: {
     return {
       scheduled: toSchedule.length,
       active: targetItems.length,
-      cancelled: toCancel.length,
+      cancelled: toCancelIds.length,
     };
   } catch (err) {
     console.warn('[Finly Notifications] syncSystemScheduledNotifications failed:', err);

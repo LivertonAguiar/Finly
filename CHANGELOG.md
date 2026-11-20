@@ -3,6 +3,13 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato segue o padrão de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.83] - 2026-11-20
+
+### Notificações Nativas e AlarmManager (Android)
+- **Sincronização de Valor em Despesas e Faturas**:
+  - Implementada a função `diffSystemNotifications` no `notificationEngine.ts` para detectar alterações de valor (`amount`), corpo da mensagem, título ou horário agendado de lembrete em alarmes nativos pendentes do Android (`AlarmManager`).
+  - O Finly agora cancela e reagenda automaticamente qualquer notificação cujos dados tenham sido modificados após o agendamento inicial (ex: acréscimo de taxas/reservas em despesas de condomínio ou novas compras em faturas de cartão de crédito).
+
 ## [1.1.83] - 2026-11-09
 
 ### Lançamentos da Fatura e Usabilidade Mobile (Android)
