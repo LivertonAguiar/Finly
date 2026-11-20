@@ -5,12 +5,12 @@
     "downloadUrl": "https://github.com/LivertonAguiar/Finly/releases/download/v1.1.83/finly-v1.1.83.apk"
   },
   "web": {
-    "version": "1.1.83.30",
+    "version": "1.1.83.31",
     "minNativeVersion": "1.1.0",
-    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.30.zip",
-    "sha256": "8fc7bf5d67c72eb7ec376d1af0760cff475a907af7ca98362d5070787f5c59a6",
+    "bundleUrl": "https://finly.lpaguiar.com.br/bundles/finly-bundle-v1.1.83.31.zip",
+    "sha256": "2e1a29813338675e3b81abc728bb54a56ea7399722c046ca5b7cc170e48bbaf7",
     "mandatory": true,
     "releaseDate": "2026-11-20",
-    "notes": "Correção na sincronização de notificações nativas no Android ao alterar valor de despesas"
+    "notes": "Sincronização dos dados oficiais do Financiamento Imobiliário Caixa (Parcela 22 a R$ 752,04, Saldo Devedor R$ 154.480,01 e Contrato nº 878772194236-2)"
   }
 }

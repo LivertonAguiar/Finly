@@ -285,6 +285,20 @@ export const HISTORICAL_CAIXA_PAYMENTS: DebtPayment[] = [
     isHistorical: true,
     status: 'historical_paid',
   },
+  {
+    id: 'pay-caixa-p21',
+    installmentNumber: 21,
+    date: '2026-10-21',
+    amount: 750.88,
+    amortizationAmount: 175.73,
+    interestAmount: 546.39,
+    insuranceAmount: 28.76,
+    adminFeeAmount: 0.00,
+    correctionAmount: 263.85,
+    remainingBalanceAfter: 154480.01,
+    isHistorical: true,
+    status: 'historical_paid',
+  },
 ];
 
 export const DEFAULT_CAIXA_FINANCING_DEBT: Debt = {
@@ -292,31 +306,31 @@ export const DEFAULT_CAIXA_FINANCING_DEBT: Debt = {
   title: 'Financiamento Imobiliário Caixa',
   creditor: 'Caixa Econômica Federal',
   contractType: 'real_estate',
-  contractNumber: 'SFH-17012025-001',
+  contractNumber: '878772194236-2',
   totalAmount: 152350.00,
-  remainingAmount: 154070.70,
+  remainingAmount: 154480.01,
   interestRate: 4.25,
-  effectiveInterestRate: 4.3338,
-  installmentAmount: 750.88,
+  effectiveInterestRate: 4.3337,
+  installmentAmount: 752.04,
   totalInstallments: 420,
-  paidInstallments: 20,
-  historicalPaidCount: 20,
+  paidInstallments: 21,
+  historicalPaidCount: 21,
   dueDay: 21,
-  nextDueDate: '2026-10-21',
+  nextDueDate: '2026-11-21',
   amortizationSystem: 'PRICE',
   indexer: 'TR',
   indexerRate: 0.1708,
-  insuranceMonthly: 28.76,
+  insuranceMonthly: 28.82,
   adminFeeMonthly: 0.00,
-  defaultAccountId: 'acc-demo-itau',
+  defaultAccountId: 'acc-carteira-padrao',
   syncToTransactions: true,
-  notes: 'Contrato Caixa SFH assinado em 17/01/2025 • Avaliação R$ 213.450,00 • FGTS R$ 2.899,00 • Parcelas 1 a 20 registradas como pagas antes do início do Finly.',
+  notes: 'Contrato Caixa nº 878772194236-2 • SFH assinado em 17/01/2025 • Avaliação R$ 213.450,00 • FGTS R$ 2.899,00 • Parcelas 1 a 21 registradas como pagas.',
   payments: HISTORICAL_CAIXA_PAYMENTS,
 };
 
 /**
  * Normaliza a lista de dívidas garantindo que o Financiamento Imobiliário Caixa
- * reflita os dados contratuais reais auditados e as 20 parcelas pagas antes do Finly.
+ * reflita os dados contratuais reais auditados e as 21 parcelas pagas antes do vencimento atual.
  * Se o usuário for Liverton, assegura que o financiamento conste em sua conta.
  */
 export function normalizeUserDebts(debts: Debt[], userEmail?: string, userId?: string): Debt[] {
@@ -337,6 +351,7 @@ export function normalizeUserDebts(debts: Debt[], userEmail?: string, userId?: s
       d &&
       (d.id === 'debt-financiamento-caixa' ||
        d.contractNumber === 'SFH-17012025-001' ||
+       d.contractNumber === '878772194236-2' ||
        (d.contractType === 'real_estate' && d.creditor?.toLowerCase().includes('caixa')))
     );
 
@@ -347,11 +362,25 @@ export function normalizeUserDebts(debts: Debt[], userEmail?: string, userId?: s
   if (isLiverton || caixaDebts.length > 0) {
     const primaryCaixa = caixaDebts[0] || {};
     const unifiedCaixa: Debt = {
-      ...primaryCaixa,
       ...DEFAULT_CAIXA_FINANCING_DEBT,
+      ...primaryCaixa,
       id: 'debt-financiamento-caixa',
+      contractNumber: primaryCaixa.contractNumber || '878772194236-2',
       defaultAccountId: primaryCaixa.defaultAccountId || DEFAULT_CAIXA_FINANCING_DEBT.defaultAccountId,
     };
+    // Sincronizar para a realidade auditada da Caixa se estiver em 20 parcelas ou com dados antigos
+    if ((unifiedCaixa.paidInstallments || 0) <= 20) {
+      unifiedCaixa.paidInstallments = 21;
+      unifiedCaixa.historicalPaidCount = 21;
+      unifiedCaixa.remainingAmount = 154480.01;
+      unifiedCaixa.installmentAmount = 752.04;
+      unifiedCaixa.nextDueDate = '2026-11-21';
+      unifiedCaixa.insuranceMonthly = 28.82;
+      unifiedCaixa.contractNumber = '878772194236-2';
+      if (!unifiedCaixa.payments || unifiedCaixa.payments.length <= 20) {
+        unifiedCaixa.payments = HISTORICAL_CAIXA_PAYMENTS;
+      }
+    }
     return [...otherDebts, unifiedCaixa];
   }
 

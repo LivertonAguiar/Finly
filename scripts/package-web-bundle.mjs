@@ -122,12 +122,24 @@ console.log(`   - Obrigatória: ${mandatory ? 'SIM' : 'NÃO'}`);
 const zipFileName = `finly-bundle-v${targetWebVersion}.zip`;
 const zipFilePath = path.join(bundlesDir, zipFileName);
 
-// Create ZIP from dist/ using PowerShell Compress-Archive or tar -a
+// Create ZIP from dist/ using zip/python on POSIX or PowerShell on Windows
 console.log(`⚡ Criando arquivo ZIP: ${zipFilePath}...`);
 try {
-  // Use PowerShell Compress-Archive for reliable zip creation on Windows
-  const psCmd = `powershell -NoProfile -Command "Compress-Archive -Path '${distDir}\\*' -DestinationPath '${zipFilePath}' -Force"`;
-  execSync(psCmd, { stdio: 'inherit' });
+  if (process.platform === 'win32') {
+    const psCmd = `powershell -NoProfile -Command "Compress-Archive -Path '${distDir}\\*' -DestinationPath '${zipFilePath}' -Force"`;
+    execSync(psCmd, { stdio: 'inherit' });
+  } else {
+    // Linux / macOS: use python zipfile module or zip command
+    const pyCmd = `python3 -c "import zipfile, os
+with zipfile.ZipFile('${zipFilePath}', 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, _, files in os.walk('${distDir}'):
+        for file in files:
+            full_path = os.path.join(root, file)
+            arcname = os.path.relpath(full_path, '${distDir}')
+            zf.write(full_path, arcname)
+"`;
+    execSync(pyCmd, { stdio: 'inherit' });
+  }
 } catch (err) {
   console.error('❌ Falha ao criar arquivo ZIP:', err);
   process.exit(1);

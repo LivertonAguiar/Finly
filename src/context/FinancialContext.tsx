@@ -747,10 +747,12 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (localD && localD.id && !GHOST_DEBT_IDS.has(localD.id) && !byId.has(localD.id)) {
         const isCaixa = localD.id === 'debt-financiamento-caixa' ||
           localD.contractNumber === 'SFH-17012025-001' ||
+          localD.contractNumber === '878772194236-2' ||
           (localD.contractType === 'real_estate' && localD.creditor?.toLowerCase().includes('caixa'));
         const alreadyHasCaixa = Array.from(byId.values()).some(d =>
           d.id === 'debt-financiamento-caixa' ||
           d.contractNumber === 'SFH-17012025-001' ||
+          d.contractNumber === '878772194236-2' ||
           (d.contractType === 'real_estate' && d.creditor?.toLowerCase().includes('caixa'))
         );
         if (isCaixa && alreadyHasCaixa) continue;
